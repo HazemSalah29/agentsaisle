@@ -4,6 +4,7 @@ import { Receipt } from "../components/Receipt";
 import { Section } from "../components/Section";
 import { SkillCard } from "../components/SkillCard";
 import { getCatalog } from "../lib/catalog";
+import { getRegistry } from "../lib/registry";
 import { sortSkills } from "../lib/search";
 
 export const revalidate = 3600;
@@ -31,6 +32,11 @@ export default async function Home() {
     "newest",
   ).slice(0, 3);
   const first = featured[0] ?? skills[0];
+  const profile = getRegistry().profiles[0];
+  const starter = (profile?.skills ?? skills.slice(0, 3).map((x) => x.name)).flatMap((name) => {
+    const s = skills.find((x) => x.name === name);
+    return s ? [{ name: s.name, version: s.latest }] : [];
+  });
 
   return (
     <>
@@ -123,19 +129,16 @@ export default async function Home() {
         intro="Answer a few questions and get a bundle of skills with one command to install them all."
       >
         <div className="flex flex-wrap items-start gap-8">
-          <Receipt
-            items={skills.slice(0, 3).map((x) => ({ name: x.name, version: x.latest }))}
-            date="sample"
-          />
+          <Receipt items={starter} date="starter bundle" />
           <div className="max-w-sm">
             <p className="text-sm text-muted">
-              The profile picker is coming next. It will build a bundle like this one for you.
+              This is the code starter bundle. The picker builds one to fit how you work.
             </p>
             <a
               href="/profiles"
               className="hud-label mt-4 inline-block text-accent-ink underline underline-offset-4"
             >
-              About profiles
+              Pick your bundle
             </a>
           </div>
         </div>

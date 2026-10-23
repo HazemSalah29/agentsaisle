@@ -10,3 +10,8 @@ export function installCommand(name: string, version?: string, latest?: string):
 export function bundleCommand(names: string[]): string {
   return `npx ${CLI_PACKAGE} add ${names.join(" ")}`;
 }
+
+/** The command that installs a starter bundle through the CLI. */
+export function initCommand(profileId: string): string {
+  return `npx ${CLI_PACKAGE} init --profile ${profileId}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bundleCommand, installCommand } from "./install-command";
+import { bundleCommand, initCommand, installCommand } from "./install-command";
 
 describe("installCommand", () => {
   it("omits the version for latest or none", () => {
@@ -13,5 +13,8 @@ describe("installCommand", () => {
   });
   it("joins bundles", () => {
     expect(bundleCommand(["plan", "explore"])).toBe("npx @agentsaisle/cli add plan explore");
+  });
+  it("builds the init command", () => {
+    expect(initCommand("code")).toBe("npx @agentsaisle/cli init --profile code");
   });
 });
