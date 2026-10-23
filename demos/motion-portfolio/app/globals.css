@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "../src/components/kit/tokens.css";
+/* The synced kit copy is git-ignored here, and Tailwind skips ignored files unless told. */
+@source "../src/components/kit";
