@@ -23,6 +23,12 @@ const LINE_RULES = [
       }
       if (/\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\(/.test(line))
         return "raw color function. Use a color token (text-ink, bg-raised, var(--color-...)).";
+      const palette =
+        /(?<![\w-])(?:bg|text|border|ring|fill|stroke|divide|outline|decoration|accent|caret|placeholder)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/.exec(
+          line,
+        );
+      if (palette)
+        return `default palette color ${palette[0]}. Use a token: text-ink, text-muted, bg-raised, text-accent.`;
       return null;
     },
   ],

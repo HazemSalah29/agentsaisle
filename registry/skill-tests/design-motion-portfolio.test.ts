@@ -64,6 +64,15 @@ describe("design-lint", () => {
     expect(rules("src/app/a.tsx", WITH_KIT + code)).toContain(rule);
   });
 
+  it("flags default Tailwind palette colors but not kit tokens", () => {
+    expect(rules("src/a.tsx", WITH_KIT + '<p className="text-gray-500 bg-blue-600" />')).toContain(
+      "raw-color",
+    );
+    expect(
+      rules("src/a.tsx", WITH_KIT + '<p className="text-muted bg-raised text-accent" />'),
+    ).toEqual([]);
+  });
+
   it("does not mistake an anchor link for a color", () => {
     expect(rules("src/app/a.tsx", WITH_KIT + '<a href="#add">x</a>')).not.toContain("raw-color");
     expect(rules("src/app/a.tsx", WITH_KIT + '<a href="#">x</a>')).toEqual([]);
