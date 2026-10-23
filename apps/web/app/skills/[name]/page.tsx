@@ -6,6 +6,7 @@ import { InstallCommand } from "../../../components/InstallCommand";
 import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
 import { getRegistry, getSkill } from "../../../lib/registry";
+import { previewCaption, previewSrc } from "../../../lib/links";
 import { REPO_URL, reportUrl } from "../../../lib/site";
 
 export const revalidate = 3600;
@@ -115,6 +116,44 @@ export default async function SkillPage({ params }: Props) {
             <code className="font-mono">--global</code> to install it for every project.
           </p>
         </section>
+
+        {skill.demo && skill.demo.screenshots.length > 0 && (
+          <section aria-labelledby="preview" className="space-y-4">
+            <h2 id="preview" className="text-xl">
+              Preview
+            </h2>
+            <p className="text-sm text-muted">
+              Screenshots of a demo site built only from this skill&apos;s kit. They show the style,
+              not a measured result.
+              {skill.demo.url && (
+                <>
+                  {" "}
+                  <a
+                    href={skill.demo.url}
+                    rel="noopener noreferrer"
+                    className="text-accent-ink underline underline-offset-4"
+                  >
+                    Open the live demo
+                  </a>
+                  .
+                </>
+              )}
+            </p>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {skill.demo.screenshots.map((file) => (
+                <li key={file} className="border border-line-strong bg-bg-raised">
+                  <img
+                    src={previewSrc(skill.name, file)}
+                    alt={previewCaption(file)}
+                    loading="lazy"
+                    className="block aspect-[8/5] w-full object-cover object-top"
+                  />
+                  <p className="hud-label px-3 py-2 text-muted">{previewCaption(file)}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {skill.runsScripts && (
           <section aria-labelledby="scripts" className="border border-invert-bg bg-bg-raised p-5">

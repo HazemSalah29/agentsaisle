@@ -180,6 +180,14 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
     );
   }
 
+  // demo screenshots must be plain file names that exist in preview/
+  for (const shotName of meta?.demo?.screenshots ?? []) {
+    if (!/^[\w.-]+\.(png|jpe?g|webp)$/i.test(shotName))
+      add("skill.meta.yaml", "demo", `screenshot "${shotName}" must be a file name in preview/.`);
+    else if (!existsSync(path.join(skillDir, "preview", shotName)))
+      add("skill.meta.yaml", "demo", `screenshot "${shotName}" not found in preview/.`);
+  }
+
   // invocation
   if (/^(design|image|video)-/.test(skill) && frontmatter["disable-model-invocation"] !== true) {
     add(

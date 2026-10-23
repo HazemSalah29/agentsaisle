@@ -11,3 +11,14 @@ permissions:
   runs_scripts: true
   network: false
   needs_api_keys: []
+demo:
+  screenshots:
+    - 01-hero.jpg
+    - 02-statement-and-numbers.jpg
+    - 03-work-gallery-start.jpg
+    - 04-work-gallery-scrolling.jpg
+    - 05-services-hover.jpg
+    - 06-contact-and-footer.jpg
+    - 07-case-study.jpg
+    - 08-menu-overlay.jpg
+    - 09-phone-hero.jpg

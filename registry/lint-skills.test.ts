@@ -257,4 +257,29 @@ describe("lintAll", () => {
     expect(report.findings).toHaveLength(1);
     expect(report.findings[0]).toMatchObject({ rule: "config", skill: "gone" });
   });
+
+  describe("demo screenshots", () => {
+    const withShots = (names: string[]) =>
+      meta(`demo:\n  screenshots: [${names.map((n) => `"${n}"`).join(", ")}]\n`);
+
+    it("passes when every listed screenshot exists in preview/", async () => {
+      const dir = await skill("code-shots", {
+        "skill.meta.yaml": withShots(["a.jpg"]),
+        "preview/a.jpg": "x",
+      });
+      expect(rules(await lint(dir))).not.toContain("demo");
+    });
+
+    it("flags a screenshot that is missing", async () => {
+      const dir = await skill("code-missing", { "skill.meta.yaml": withShots(["gone.jpg"]) });
+      expect(rules(await lint(dir))).toContain("demo");
+    });
+
+    it("flags a path instead of a file name, and a non-image", async () => {
+      const dir = await skill("code-badshot", {
+        "skill.meta.yaml": withShots(["../x.jpg", "notes.txt"]),
+      });
+      expect(rules(await lint(dir)).filter((r) => r === "demo")).toHaveLength(2);
+    });
+  });
 });
