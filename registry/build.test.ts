@@ -438,4 +438,25 @@ describe("aisles.yaml and elsewhere.yaml", () => {
     );
     await expect(build()).rejects.toThrow(/registry\/elsewhere\.yaml/);
   });
+
+  describe("kits (profiles with an aisle)", () => {
+    const aislesYaml =
+      "aisles:\n  - {id: web-design, name: Web design, description: d, niches: [design]}\n";
+    const profileYaml = (aisle: string) =>
+      `profiles:\n  - {id: kit, name: Kit, description: d, skills: [explore], aisle: ${aisle}}\nquestions:\n  - id: q\n    prompt: What?\n    options:\n      - {label: A, adds: [explore]}\n      - {label: B, adds: []}\n`;
+
+    it("keeps the aisle on the profile", async () => {
+      await official("explore");
+      await writeFile(path.join(root, "aisles.yaml"), aislesYaml);
+      await writeFile(path.join(root, "profiles.yaml"), profileYaml("web-design"));
+      expect((await build()).profiles[0]).toMatchObject({ id: "kit", aisle: "web-design" });
+    });
+
+    it("rejects a kit whose aisle does not exist", async () => {
+      await official("explore");
+      await writeFile(path.join(root, "aisles.yaml"), aislesYaml);
+      await writeFile(path.join(root, "profiles.yaml"), profileYaml("ghost"));
+      await expect(build()).rejects.toThrow(/profile "kit" uses unknown aisle "ghost"/);
+    });
+  });
 });

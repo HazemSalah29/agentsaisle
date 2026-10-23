@@ -154,6 +154,8 @@ export const Profile = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   skills: z.array(SkillName).min(1),
+  /** Set for a kit: a curated bundle shown on this aisle's page. Must be an id from aisles.yaml. */
+  aisle: SkillName.optional(),
 });
 export type Profile = z.infer<typeof Profile>;
 

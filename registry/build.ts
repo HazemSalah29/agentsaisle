@@ -443,6 +443,14 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
     new Map(skills.filter((s) => s.source === "official").map((s) => [s.name, s.niche])),
   );
   const elsewhere = await readElsewhere(rootDir, new Set(aisles.map((a) => a.id)));
+  const aisleIds = new Set(aisles.map((a) => a.id));
+  const badKits = (profiles.profiles ?? []).filter((p) => p.aisle && !aisleIds.has(p.aisle));
+  if (badKits.length)
+    throw new Error(
+      `Registry validation failed:\n- ${badKits
+        .map((p) => `registry/profiles.yaml: profile "${p.id}" uses unknown aisle "${p.aisle}"`)
+        .join("\n- ")}`,
+    );
   return RegistryIndex.parse({
     generatedAt: (opts.now ?? new Date()).toISOString(),
     skills,

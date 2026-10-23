@@ -14,6 +14,18 @@ profiles:
     description: Design and brand work. This bundle grows as video and image skills are added.
     skills: [brand-guidelines]
 
+  # Kits: curated bundles shown on an aisle page. `aisle` ties a kit to its aisle (see aisles.yaml).
+  - id: motion-portfolio-site
+    name: Motion portfolio site
+    description: A dark, animation-heavy portfolio built from one component kit, with the checks that keep it fast, safe and clean.
+    skills: [design-motion-portfolio, code-quality, web-performance, web-security, verify]
+    aisle: web-design
+  - id: clean-saas-site
+    name: Clean SaaS site
+    description: A minimal startup or SaaS site built from one component kit, with the checks that keep it fast, safe and clean.
+    skills: [design-clean-saas, code-quality, web-performance, web-security, verify]
+    aisle: web-design
+
 questions:
   - id: focus
     prompt: What do you mostly make with your agent?
