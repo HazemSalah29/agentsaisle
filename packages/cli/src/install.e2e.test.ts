@@ -57,6 +57,8 @@ beforeAll(async () => {
   const index: RegistryIndex = {
     generatedAt: "2026-01-01T00:00:00.000Z",
     questions: [],
+    aisles: [],
+    elsewhere: [],
     houseRules: "## Test rules\n- Be brief.",
     profiles: [
       { id: "starter", name: "Starter", description: "Basics", skills: ["explore"] },

@@ -172,12 +172,50 @@ export const ProfilesFile = z.object({
 });
 export type ProfilesFile = z.infer<typeof ProfilesFile>;
 
+/** One aisle (niche group) of the catalog. `niches` are the values of `niche` in skill.meta.yaml. */
+export const Aisle = z.object({
+  id: SkillName,
+  name: z.string().min(1),
+  description: z.string().min(1),
+  niches: z.array(SkillName).min(1),
+});
+export type Aisle = z.infer<typeof Aisle>;
+
+/** registry/aisles.yaml */
+export const AislesFile = z.object({ aisles: z.array(Aisle).min(1) });
+export type AislesFile = z.infer<typeof AislesFile>;
+
+/**
+ * A skill by another author, listed on its own aisle with a link out. We do not copy it and do not
+ * install it. `description` is one short neutral line written by us.
+ */
+export const ElsewhereEntry = z
+  .object({
+    name: z.string().min(1).max(80),
+    author: z.string().min(1),
+    repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/, "must be <owner>/<repo>"),
+    /** Folder inside the repo, or empty for the repo root. */
+    path: z.string().default(""),
+    description: z.string().min(1).max(160),
+    /** SPDX id as reported by GitHub, such as MIT or Apache-2.0. */
+    license: z.string().min(1),
+    aisle: SkillName,
+  })
+  .strict();
+export type ElsewhereEntry = z.infer<typeof ElsewhereEntry>;
+
+/** registry/elsewhere.yaml */
+export const ElsewhereFile = z.object({ entries: z.array(ElsewhereEntry) });
+export type ElsewhereFile = z.infer<typeof ElsewhereFile>;
+
 export const RegistryIndex = z.object({
   generatedAt: z.string(),
   skills: z.array(RegistrySkill),
   // Defaults keep older cached registry.json files (without profiles) valid.
   profiles: z.array(Profile).default([]),
   questions: z.array(Question).default([]),
+  aisles: z.array(Aisle).default([]),
+  elsewhere: z.array(ElsewhereEntry).default([]),
   /** The block `aisle init` writes into CLAUDE.md or AGENTS.md. Delivered here so a site deploy can change it. */
   houseRules: z.string().optional(),
 });

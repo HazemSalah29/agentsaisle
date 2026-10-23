@@ -15,6 +15,10 @@ import {
   splitFrontmatter,
   type RegistrySkill,
   type OfficialMeta as OfficialMetaType,
+  AislesFile,
+  ElsewhereFile,
+  type Aisle,
+  type ElsewhereEntry,
 } from "@agentsaisle/registry-schema";
 
 /** GitHub repo that hosts registry/official. */
@@ -273,6 +277,58 @@ export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySki
   };
 }
 
+/** aisles.yaml is optional. When present, ids are unique and each official niche sits in exactly one aisle. */
+async function readAisles(
+  rootDir: string,
+  nicheOf: Map<string, string | undefined>,
+): Promise<Aisle[]> {
+  const file = path.join(rootDir, "aisles.yaml");
+  if (!existsSync(file)) return [];
+  const label = "registry/aisles.yaml";
+  const data = await readYaml(file, AislesFile, label).catch((e: Error) => {
+    throw new Error(`Registry validation failed:\n- ${e.message}`);
+  });
+  const problems: string[] = [];
+  const ids = data.aisles.map((a) => a.id);
+  ids
+    .filter((id, i) => ids.indexOf(id) !== i)
+    .forEach((id) => problems.push(`${label}: duplicate aisle id "${id}"`));
+  const owner = new Map<string, string>();
+  for (const a of data.aisles)
+    for (const n of a.niches) {
+      if (owner.has(n))
+        problems.push(`${label}: niche "${n}" is in both "${owner.get(n)}" and "${a.id}"`);
+      owner.set(n, a.id);
+    }
+  for (const [skill, niche] of nicheOf)
+    if (niche && !owner.has(niche))
+      problems.push(`registry/official/${skill}: niche "${niche}" is not in any aisle (${label})`);
+  if (problems.length) throw new Error(`Registry validation failed:\n- ${problems.join("\n- ")}`);
+  return data.aisles;
+}
+
+/** elsewhere.yaml is optional. Entries must point at a known aisle and be unique by repo and path. */
+async function readElsewhere(rootDir: string, aisleIds: Set<string>): Promise<ElsewhereEntry[]> {
+  const file = path.join(rootDir, "elsewhere.yaml");
+  if (!existsSync(file)) return [];
+  const label = "registry/elsewhere.yaml";
+  const data = await readYaml(file, ElsewhereFile, label).catch((e: Error) => {
+    throw new Error(`Registry validation failed:\n- ${e.message}`);
+  });
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const e of data.entries) {
+    if (!aisleIds.has(e.aisle))
+      problems.push(`${label}: "${e.name}" uses unknown aisle "${e.aisle}"`);
+    const key = `${e.repo}/${e.path}`.toLowerCase();
+    if (seen.has(key))
+      problems.push(`${label}: "${e.name}" duplicates ${e.repo}${e.path ? "/" + e.path : ""}`);
+    seen.add(key);
+  }
+  if (problems.length) throw new Error(`Registry validation failed:\n- ${problems.join("\n- ")}`);
+  return data.entries;
+}
+
 /** The text `aisle init` writes into CLAUDE.md or AGENTS.md, from registry/_shared/house-rules.md. */
 async function readHouseRules(rootDir: string): Promise<string | undefined> {
   const file = path.join(rootDir, "_shared", "house-rules.md");
@@ -382,10 +438,17 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   skills.sort((a, b) => a.name.localeCompare(b.name));
 
   const profiles = await readProfiles(rootDir, new Set(skills.map((s) => s.name)));
+  const aisles = await readAisles(
+    rootDir,
+    new Map(skills.filter((s) => s.source === "official").map((s) => [s.name, s.niche])),
+  );
+  const elsewhere = await readElsewhere(rootDir, new Set(aisles.map((a) => a.id)));
   return RegistryIndex.parse({
     generatedAt: (opts.now ?? new Date()).toISOString(),
     skills,
     ...profiles,
+    aisles,
+    elsewhere,
     houseRules: await readHouseRules(rootDir),
   });
 }

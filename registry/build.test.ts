@@ -355,3 +355,87 @@ describe("fetchTagIndex", () => {
     expect(auth).toBe("Bearer t0k");
   });
 });
+
+describe("aisles.yaml and elsewhere.yaml", () => {
+  const officialWithNiche = async (name: string, niche: string) => {
+    await official(name);
+    const meta = path.join(root, "official", name, "skill.meta.yaml");
+    await writeFile(
+      meta,
+      `version: 1.0.0\ncategory: [code]\nclients: [claude-code]\nruns_scripts: false\nniche: ${niche}\n`,
+    );
+  };
+  const aisles = `aisles:
+  - {id: database, name: Database, description: Schemas and queries, niches: [db]}
+  - {id: testing, name: Testing, description: Tests, niches: [test, debug]}
+`;
+
+  it("are optional and default to empty lists", async () => {
+    await official("explore");
+    const idx = await build();
+    expect(idx.aisles).toEqual([]);
+    expect(idx.elsewhere).toEqual([]);
+  });
+
+  it("loads aisles and elsewhere entries into the index", async () => {
+    await officialWithNiche("db-schema", "db");
+    await writeFile(path.join(root, "aisles.yaml"), aisles);
+    await writeFile(
+      path.join(root, "elsewhere.yaml"),
+      "entries:\n  - {name: Debugging, author: someone, repo: someone/skills, path: debug, description: Hypothesis-led debugging., license: MIT, aisle: testing}\n",
+    );
+    const idx = await build();
+    expect(idx.aisles.map((a) => a.id)).toEqual(["database", "testing"]);
+    expect(idx.elsewhere[0]).toMatchObject({
+      repo: "someone/skills",
+      aisle: "testing",
+      license: "MIT",
+    });
+  });
+
+  it("fails when an official skill's niche is in no aisle", async () => {
+    await officialWithNiche("db-schema", "db");
+    await officialWithNiche("img-thing", "image");
+    await writeFile(path.join(root, "aisles.yaml"), aisles);
+    await expect(build()).rejects.toThrow(/img-thing: niche "image" is not in any aisle/);
+  });
+
+  it("fails on duplicate aisle ids and on a niche used by two aisles", async () => {
+    await writeFile(
+      path.join(root, "aisles.yaml"),
+      "aisles:\n  - {id: a, name: A, description: d, niches: [x]}\n  - {id: a, name: B, description: d, niches: [x]}\n",
+    );
+    await expect(build()).rejects.toThrow(/duplicate aisle id "a"/);
+    await expect(build()).rejects.toThrow(/niche "x" is in both/);
+  });
+
+  it("rejects malformed aisles and elsewhere files", async () => {
+    await writeFile(path.join(root, "aisles.yaml"), "aisles: []\n");
+    await expect(build()).rejects.toThrow(/registry\/aisles\.yaml/);
+    await writeFile(path.join(root, "aisles.yaml"), aisles);
+    await writeFile(path.join(root, "elsewhere.yaml"), "entries:\n  - {name: X}\n");
+    await expect(build()).rejects.toThrow(/registry\/elsewhere\.yaml/);
+  });
+
+  it("rejects elsewhere entries with an unknown aisle or a duplicate repo path", async () => {
+    await writeFile(path.join(root, "aisles.yaml"), aisles);
+    const entry = (aisle: string) =>
+      `  - {name: N, author: a, repo: o/r, path: p, description: d, license: MIT, aisle: ${aisle}}\n`;
+    await writeFile(path.join(root, "elsewhere.yaml"), `entries:\n${entry("ghost")}`);
+    await expect(build()).rejects.toThrow(/unknown aisle "ghost"/);
+    await writeFile(
+      path.join(root, "elsewhere.yaml"),
+      `entries:\n${entry("testing")}${entry("database")}`,
+    );
+    await expect(build()).rejects.toThrow(/duplicates o\/r\/p/);
+  });
+
+  it("limits the one-line description to 160 characters", async () => {
+    await writeFile(path.join(root, "aisles.yaml"), aisles);
+    await writeFile(
+      path.join(root, "elsewhere.yaml"),
+      `entries:\n  - {name: N, author: a, repo: o/r, description: "${"x".repeat(161)}", license: MIT, aisle: testing}\n`,
+    );
+    await expect(build()).rejects.toThrow(/registry\/elsewhere\.yaml/);
+  });
+});
