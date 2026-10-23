@@ -52,3 +52,17 @@ registry/build.ts          compiles everything into dist/registry.json
 ## Milestones
 
 1 Foundation · 2 CLI core · 3 Design system · 4 Website pages · 5 Profiles + submit · 6 Ship
+
+## Branches
+
+`main` is the deployed branch (Vercel production, `/registry.json`); never push to it directly. Develop on `stage`, use `test` for testing, and merge `stage` into `main` with a pull request so CI runs first.
+
+## V2: curated skills (`V2_BRIEF.md` is the spec; BUILD_BRIEF rules still apply)
+
+V2 turns the catalog into deep, opinionated, measured skills: a baseline layer (`code-quality`, `web-performance`, `web-security`, core kit, house rules), two design skills with real component kits (`design-motion-portfolio`, `design-clean-saas`), media skills (`image-logo`, `video-explainer`, `video-cartoon-episode`, `video-slapstick-chase`), database/testing/debugging skills, preview pages with measured numbers, and an "Elsewhere" shelf of other authors' public skills. Milestones 7 to 14, in order, one per session, each starting in plan mode.
+
+- **IP:** never copy another author's code, components, copy, images or layout into an official skill. The two inspiration sites are commercial templates; capture the genre with original work only. Third-party skills may be listed and linked, never copied. Media skills refuse to recreate copyrighted or trademarked characters, logos or real people's likeness and offer original ones instead.
+- **Honesty:** no skill guarantees a first-try result; media skills minimize regeneration and say so. Every number on the site comes from the eval harness, never hand-written.
+- **House standard:** `SKILL.md` at most 150 lines (Use when, Don't use when, Steps, Budget, Output, Done when); `references/` one level deep; `scripts/` deterministic and never fetching remote code; `evals/`, `preview/` and `README.md` are not installed; names are `<niche>-<task>`; style and expensive media skills set `disable-model-invocation: true`; shared rules come from `registry/_shared/*.md` through `<!-- include: _shared/x.md -->` markers; `skill.meta.yaml` carries niche, kind (saver or quality), tier, tested, permissions and demo.
+- **Gates:** saver skills need median token savings of 30% or more with success at least baseline; quality skills need success above baseline with tokens within +10%; both need a blind comparison against the best public alternative and trigger and safety tests. A skill that fails a gate does not ship.
+- **Process:** ask before adding any dependency, paid API call or provider; check official docs for current library and provider APIs and write `TODO(verify)` where unsure; show intermediate results early in creative milestones (9, 10, 12); run evals with a Console API key from the environment and print the cost.
