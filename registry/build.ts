@@ -21,8 +21,8 @@ const OFFICIAL_AUTHOR = "agentsaisle";
 
 /** Returns the raw SKILL.md text for a repo path at a commit SHA. */
 export type SkillFetcher = (repo: string, sha: string, skillPath: string) => Promise<string>;
-/** Returns the commit SHA for a git tag, or the current HEAD when no tag exists. */
-export type ShaResolver = (tag: string) => string;
+/** Returns the commit SHA that an official skill version is pinned to. */
+export type ShaResolver = (tag: string) => string | Promise<string>;
 
 export const githubFetcher: SkillFetcher = async (repo, sha, skillPath) => {
   const url = `https://raw.githubusercontent.com/${repo}/${sha}/${skillPath}/SKILL.md`;
@@ -33,21 +33,88 @@ export const githubFetcher: SkillFetcher = async (repo, sha, skillPath) => {
   return res.text();
 };
 
-export function gitShaResolver(cwd: string): ShaResolver {
-  const git = (...args: string[]) =>
-    execFileSync("git", args, {
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
+/** The commit a local git tag points at, or undefined when the tag isn't in this checkout. */
+export function localTagSha(cwd: string, tag: string): string | undefined {
+  try {
+    return execFileSync("git", ["rev-parse", `${tag}^{commit}`], {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
-  return (tag) => {
-    try {
-      return git("rev-parse", `${tag}^{commit}`);
-    } catch {
-      console.warn(`warn: no git tag "${tag}"; pinning to HEAD`);
-      return git("rev-parse", "HEAD");
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The commit a tag points at on GitHub. Needed where the checkout has no tags (Vercel clones
+ * shallowly). Returns undefined when the tag doesn't exist or GitHub can't be reached.
+ */
+export async function remoteTagSha(
+  repo: string,
+  tag: string,
+  opts: { fetch?: typeof fetch; token?: string } = {},
+): Promise<string | undefined> {
+  const doFetch = opts.fetch ?? fetch;
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+  if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  try {
+    const res = await doFetch(
+      `https://api.github.com/repos/${repo}/commits/${encodeURIComponent(tag)}`,
+      {
+        headers,
+      },
+    );
+    if (!res.ok) return undefined;
+    const { sha } = (await res.json()) as { sha?: unknown };
+    return typeof sha === "string" && FULL_SHA.test(sha) ? sha : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Resolve `<name>@<version>` to a commit: local tag first, then GitHub. If neither knows the tag,
+ * `strict` (CI and Vercel) fails the build, because pinning a wrong commit would ship broken
+ * installs; otherwise (local development) it pins HEAD and warns.
+ */
+export function createShaResolver(opts: {
+  local: (tag: string) => string | undefined;
+  remote: (tag: string) => Promise<string | undefined>;
+  head: () => string;
+  strict: boolean;
+  warn?: (message: string) => void;
+}): ShaResolver {
+  return async (tag) => {
+    const found = opts.local(tag) ?? (await opts.remote(tag));
+    if (found) return found;
+    if (opts.strict) {
+      throw new Error(
+        `Cannot resolve git tag "${tag}" locally or on GitHub. Push the tag (git push origin ${tag}) and build again.`,
+      );
     }
+    (opts.warn ?? console.warn)(`warn: no git tag "${tag}"; pinning to HEAD (local build only)`);
+    return opts.head();
   };
+}
+
+export function gitShaResolver(
+  cwd: string,
+  strict = Boolean(process.env.CI || process.env.VERCEL),
+): ShaResolver {
+  return createShaResolver({
+    local: (tag) => localTagSha(cwd, tag),
+    remote: (tag) => remoteTagSha(OFFICIAL_REPO, tag, { token: process.env.GITHUB_TOKEN }),
+    head: () =>
+      execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim(),
+    strict,
+  });
 }
 
 function frontmatterOf(md: string, where: string): SkillFrontmatter {
@@ -138,7 +205,7 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
         repo: OFFICIAL_REPO,
         path: `registry/official/${name}`,
         latest: meta.version,
-        versions: [{ version: meta.version, sha: resolveSha(`${name}@${meta.version}`) }],
+        versions: [{ version: meta.version, sha: await resolveSha(`${name}@${meta.version}`) }],
         category: meta.category,
         clients: meta.clients,
         runsScripts: meta.runs_scripts || (await hasScriptsDir(dir)),

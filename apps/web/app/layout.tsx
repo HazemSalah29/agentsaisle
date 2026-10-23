@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Geist_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import { SiteFooter } from "../components/SiteFooter";
+import { SITE_URL } from "../lib/site";
 import { SiteHeader } from "../components/SiteHeader";
 import "./globals.css";
 
@@ -19,6 +20,7 @@ const body = IBM_Plex_Sans({
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--f-mono" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Agent Aisle",
   description: "A store for Agent Skills.",
 };

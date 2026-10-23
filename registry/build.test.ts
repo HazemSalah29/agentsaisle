@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { buildRegistry, type SkillFetcher } from "./build";
+import { buildRegistry, createShaResolver, remoteTagSha, type SkillFetcher } from "./build";
 
 const SHA1 = "a1".repeat(20);
 const SHA2 = "b2".repeat(20);
@@ -117,5 +117,71 @@ describe("buildRegistry", () => {
       await writeFile(path.join(root, "profiles.yaml"), "profiles: []\nquestions: []\n");
       await expect(build()).rejects.toThrow(/registry\/profiles\.yaml/);
     });
+  });
+});
+
+describe("official SHA resolution", () => {
+  const TAG_SHA = "c".repeat(40);
+  const base = {
+    local: () => undefined as string | undefined,
+    remote: async () => undefined as string | undefined,
+    head: () => "d".repeat(40),
+    warn: () => {},
+  };
+
+  it("prefers the local tag", async () => {
+    const resolve = createShaResolver({
+      ...base,
+      local: () => TAG_SHA,
+      remote: async () => "e".repeat(40),
+      strict: true,
+    });
+    expect(await resolve("explore@1.0.0")).toBe(TAG_SHA);
+  });
+
+  it("falls back to GitHub when the checkout has no tags", async () => {
+    const resolve = createShaResolver({ ...base, remote: async () => TAG_SHA, strict: true });
+    expect(await resolve("explore@1.0.0")).toBe(TAG_SHA);
+  });
+
+  it("fails the build in strict mode instead of pinning HEAD", async () => {
+    const resolve = createShaResolver({ ...base, strict: true });
+    await expect(resolve("explore@1.0.0")).rejects.toThrow(
+      /Cannot resolve git tag "explore@1\.0\.0".*git push origin explore@1\.0\.0/,
+    );
+  });
+
+  it("pins HEAD with a warning in local development", async () => {
+    const warnings: string[] = [];
+    const resolve = createShaResolver({ ...base, strict: false, warn: (m) => warnings.push(m) });
+    expect(await resolve("explore@1.0.0")).toBe("d".repeat(40));
+    expect(warnings[0]).toMatch(/no git tag "explore@1\.0\.0"/);
+  });
+});
+
+describe("remoteTagSha", () => {
+  const json = (body: unknown, status = 200) =>
+    (async () => new Response(JSON.stringify(body), { status })) as typeof fetch;
+
+  it("returns the commit for a tag, encoding the @ in the name", async () => {
+    let url = "";
+    const sha = "a".repeat(40);
+    const f = (async (u: string) => {
+      url = u;
+      return new Response(JSON.stringify({ sha }));
+    }) as unknown as typeof fetch;
+    expect(await remoteTagSha("o/r", "explore@1.0.0", { fetch: f })).toBe(sha);
+    expect(url).toBe("https://api.github.com/repos/o/r/commits/explore%401.0.0");
+  });
+
+  it("returns undefined for a missing tag, a bad payload or a network error", async () => {
+    expect(
+      await remoteTagSha("o/r", "x@1.0.0", { fetch: json({ message: "No commit found" }, 422) }),
+    ).toBeUndefined();
+    expect(await remoteTagSha("o/r", "x@1.0.0", { fetch: json({ sha: "short" }) })).toBeUndefined();
+    const boom = (async () => {
+      throw new Error("offline");
+    }) as typeof fetch;
+    expect(await remoteTagSha("o/r", "x@1.0.0", { fetch: boom })).toBeUndefined();
   });
 });
