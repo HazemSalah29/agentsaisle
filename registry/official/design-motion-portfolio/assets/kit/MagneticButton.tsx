@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { m, useMotionValue, useSpring } from "motion/react";
 import type { PointerEvent, ReactNode } from "react";
 import { useMotionOk } from "./use-motion-ok";
 
@@ -52,12 +52,12 @@ export function MagneticButton({
 
   const shared = { onPointerMove: move, onPointerLeave: leave, style: { x: sx, y: sy } };
   return href ? (
-    <motion.a href={href} className={cls} {...shared}>
+    <m.a href={href} className={cls} {...shared}>
       {children}
-    </motion.a>
+    </m.a>
   ) : (
-    <motion.button type="button" onClick={onClick} className={cls} {...shared}>
+    <m.button type="button" onClick={onClick} className={cls} {...shared}>
       {children}
-    </motion.button>
+    </m.button>
   );
 }

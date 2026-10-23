@@ -58,6 +58,10 @@
   --duration-epic: 1400ms;
   --stagger-word: 40ms;
   --stagger-item: 80ms;
+  /* Time for one full loop of a marquee. */
+  --marquee-slow: 60s;
+  --marquee-base: 36s;
+  --marquee-fast: 20s;
 }
 
 html {
@@ -80,6 +84,12 @@ body {
 ::selection {
   background: var(--color-accent);
   color: var(--color-on-accent);
+}
+
+@keyframes kit-marquee {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* Lenis smooth scroll (from its documented base styles). */

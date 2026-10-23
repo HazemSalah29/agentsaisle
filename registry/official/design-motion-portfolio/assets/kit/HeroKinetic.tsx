@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { ReactNode } from "react";
 import { RevealText, type RevealLine } from "./RevealText";
 import { duration, ease } from "./tokens";
@@ -51,16 +51,16 @@ export function HeroKinetic({ lines, intro, actions, media }: HeroKineticProps) 
         </div>
         {media ? (
           <div className="relative overflow-hidden md:col-span-6 md:col-start-7">
-            <motion.div
+            <m.div
               data-kit-motion
               initial={motionOk ? { scale: 1.25 } : false}
               animate={{ scale: 1 }}
               transition={{ duration: duration.epic, ease: ease.outExpo, delay: 0.5 }}
             >
               {media}
-            </motion.div>
+            </m.div>
             {motionOk ? (
-              <motion.div
+              <m.div
                 data-kit-curtain
                 aria-hidden="true"
                 className="absolute inset-0 bg-accent will-change-transform"

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView } from "motion/react";
+import { m, useInView } from "motion/react";
 import { useRef, type ElementType } from "react";
 import { duration, ease, stagger } from "./tokens";
 import { useMotionOk } from "./use-motion-ok";
@@ -51,7 +51,7 @@ export function RevealText({
               : "inline-block overflow-hidden align-bottom pb-[0.12em] -mb-[0.12em]"
           }
         >
-          <motion.span
+          <m.span
             data-kit-motion
             className="inline-block will-change-transform"
             initial={motionOk ? { y: "110%" } : false}
@@ -60,7 +60,7 @@ export function RevealText({
           >
             {unit}
             {typeof text === "string" && i < units.length - 1 ? " " : ""}
-          </motion.span>
+          </m.span>
         </span>
       ))}
     </Tag>
