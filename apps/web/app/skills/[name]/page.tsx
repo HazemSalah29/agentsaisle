@@ -7,6 +7,7 @@ import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
 import { getRegistry, getSkill } from "../../../lib/registry";
 import { previewCaption, previewSrc } from "../../../lib/links";
+import { isUntested } from "../../../lib/trust";
 import { REPO_URL, reportUrl } from "../../../lib/site";
 
 export const revalidate = 3600;
@@ -91,8 +92,15 @@ export default async function SkillPage({ params }: Props) {
                     : "unverified"
               }
             />
+            {isUntested(skill) ? <Badge kind="untested" /> : null}
             {skill.runsScripts ? <Badge kind="scripts" /> : null}
           </div>
+          {isUntested(skill) && (
+            <p className="mt-4 max-w-prose text-sm text-muted">
+              No measured results yet. Numbers appear on this page only after the evaluation harness
+              has run, and never before.
+            </p>
+          )}
         </div>
         <dl className="self-start border border-line-strong bg-bg-raised text-sm">
           {facts.map(([k, v]) => (

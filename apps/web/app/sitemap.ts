@@ -7,6 +7,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${SITE_URL}/`, lastModified: now },
     { url: `${SITE_URL}/skills`, lastModified: now },
+    { url: `${SITE_URL}/aisles`, lastModified: now },
+    ...getRegistry().aisles.map((a) => ({ url: `${SITE_URL}/aisles/${a.id}`, lastModified: now })),
     { url: `${SITE_URL}/docs`, lastModified: now },
     { url: `${SITE_URL}/profiles`, lastModified: now },
     { url: `${SITE_URL}/submit`, lastModified: now },

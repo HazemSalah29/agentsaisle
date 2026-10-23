@@ -42,3 +42,11 @@ export function previewCaption(file: string): string {
     .trim();
   return words ? words[0]!.toUpperCase() + words.slice(1) : file;
 }
+
+/** Where an Elsewhere entry lives on GitHub. The folder, or the repo root when the path is empty. */
+export function elsewhereUrl(entry: { repo: string; path: string }): string {
+  const tail = entry.path.split("/").filter(Boolean).map(encodeURIComponent).join("/");
+  return tail
+    ? `https://github.com/${entry.repo}/tree/HEAD/${tail}`
+    : `https://github.com/${entry.repo}`;
+}
