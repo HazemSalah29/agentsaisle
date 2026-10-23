@@ -185,3 +185,101 @@ describe("remoteTagSha", () => {
     expect(await remoteTagSha("o/r", "x@1.0.0", { fetch: boom })).toBeUndefined();
   });
 });
+
+describe("house standard in the index", () => {
+  const richMeta = `version: 1.0.0
+category: [code]
+clients: [claude-code]
+runs_scripts: false
+niche: code
+kind: saver
+tier: baseline
+tested:
+  model: claude-sonnet-5-5
+  date: "2026-10-23"
+  tasks: 30
+  token_savings_median: 0.42
+  success_rate: 0.9
+  baseline_success_rate: 0.7
+  preferred_in_blind_test: 0.65
+permissions:
+  tools: [Read, Bash]
+  writes_files: false
+  runs_scripts: false
+  network: false
+  needs_api_keys: []
+demo:
+  url: https://demo.example.dev
+  screenshots: [preview/home.png]
+`;
+
+  it("carries the new meta fields into the index in camelCase", async () => {
+    await official("code-quality");
+    await writeFile(path.join(root, "official", "code-quality", "skill.meta.yaml"), richMeta);
+    const skill = (await build()).skills[0]!;
+    expect(skill).toMatchObject({ niche: "code", kind: "saver", tier: "baseline" });
+    expect(skill.tested).toEqual({
+      model: "claude-sonnet-5-5",
+      date: "2026-10-23",
+      tasks: 30,
+      tokenSavingsMedian: 0.42,
+      successRate: 0.9,
+      baselineSuccessRate: 0.7,
+      preferredInBlindTest: 0.65,
+    });
+    expect(skill.permissions).toEqual({
+      tools: ["Read", "Bash"],
+      writesFiles: false,
+      runsScripts: false,
+      network: false,
+      needsApiKeys: [],
+    });
+    expect(skill.demo).toEqual({
+      url: "https://demo.example.dev",
+      screenshots: ["preview/home.png"],
+    });
+  });
+
+  it("leaves the new fields out for skills that don't set them", async () => {
+    await official("explore");
+    const skill = (await build()).skills[0]!;
+    for (const key of ["niche", "kind", "tier", "tested", "permissions", "demo"])
+      expect(skill).not.toHaveProperty(key);
+  });
+
+  it("includes the house rules text when _shared/house-rules.md exists", async () => {
+    await official("explore");
+    expect((await build()).houseRules).toBeUndefined();
+    await mkdir(path.join(root, "_shared"), { recursive: true });
+    await writeFile(path.join(root, "_shared", "house-rules.md"), "\n## Rules\n- Be brief.\n\n");
+    expect((await build()).houseRules).toBe("## Rules\n- Be brief.");
+  });
+
+  it("builds from a generated SKILL.md and fails when it is stale", async () => {
+    await official("explore");
+    const dir = path.join(root, "official", "explore");
+    await mkdir(path.join(root, "_shared"), { recursive: true });
+    await writeFile(path.join(root, "_shared", "budget.md"), "- Read line ranges.\n");
+    const src = `---\nname: explore\ndescription: Does explore.\n---\n# explore\n<!-- include: _shared/budget.md -->\n`;
+    await writeFile(path.join(dir, "SKILL.src.md"), src);
+
+    await expect(build()).rejects.toThrow(
+      /registry\/official\/explore: SKILL\.md is out of date with SKILL\.src\.md\. Run: pnpm skills:build/,
+    );
+
+    await writeFile(
+      path.join(dir, "SKILL.md"),
+      src.replace("<!-- include: _shared/budget.md -->", "- Read line ranges."),
+    );
+    expect((await build()).skills[0]!.name).toBe("explore");
+  });
+
+  it("reports a broken include as a build error", async () => {
+    await official("explore");
+    await writeFile(
+      path.join(root, "official", "explore", "SKILL.src.md"),
+      "<!-- include: _shared/missing.md -->\n",
+    );
+    await expect(build()).rejects.toThrow(/unknown fragment "_shared\/missing\.md"/);
+  });
+});

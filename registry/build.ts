@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
+import { compileAll, IncludeError } from "./compile";
 import {
   CommunityEntry,
   OfficialMeta,
@@ -13,6 +14,7 @@ import {
   compareSemver,
   splitFrontmatter,
   type RegistrySkill,
+  type OfficialMeta as OfficialMetaType,
 } from "@agentsaisle/registry-schema";
 
 /** GitHub repo that hosts registry/official. */
@@ -177,6 +179,53 @@ async function readProfiles(rootDir: string, names: Set<string>): Promise<Partia
   return data;
 }
 
+/** The house standard fields from skill.meta.yaml, converted to the index's camelCase. Only what is set. */
+export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySkill> {
+  return {
+    ...(meta.niche ? { niche: meta.niche } : {}),
+    ...(meta.kind ? { kind: meta.kind } : {}),
+    ...(meta.tier ? { tier: meta.tier } : {}),
+    ...(meta.tested
+      ? {
+          tested: {
+            model: meta.tested.model,
+            date: meta.tested.date,
+            tasks: meta.tested.tasks,
+            tokenSavingsMedian: meta.tested.token_savings_median,
+            successRate: meta.tested.success_rate,
+            baselineSuccessRate: meta.tested.baseline_success_rate,
+            preferredInBlindTest: meta.tested.preferred_in_blind_test,
+          },
+        }
+      : {}),
+    ...(meta.permissions
+      ? {
+          permissions: {
+            tools: meta.permissions.tools,
+            writesFiles: meta.permissions.writes_files,
+            runsScripts: meta.permissions.runs_scripts,
+            network: meta.permissions.network,
+            needsApiKeys: meta.permissions.needs_api_keys,
+          },
+        }
+      : {}),
+    ...(meta.demo
+      ? {
+          demo: {
+            ...(meta.demo.url ? { url: meta.demo.url } : {}),
+            screenshots: meta.demo.screenshots,
+          },
+        }
+      : {}),
+  };
+}
+
+/** The text `aisle init` writes into CLAUDE.md or AGENTS.md, from registry/_shared/house-rules.md. */
+async function readHouseRules(rootDir: string): Promise<string | undefined> {
+  const file = path.join(rootDir, "_shared", "house-rules.md");
+  return existsSync(file) ? (await readFile(file, "utf8")).trim() : undefined;
+}
+
 export interface BuildOptions {
   rootDir: string;
   fetchSkill: SkillFetcher;
@@ -188,6 +237,23 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   const { rootDir, fetchSkill, resolveSha } = opts;
   const skills: RegistrySkill[] = [];
   const errors: string[] = [];
+
+  // Generated SKILL.md files must match their SKILL.src.md, or installs would ship stale text.
+  try {
+    const compiled = await compileAll(
+      path.join(rootDir, "official"),
+      path.join(rootDir, "_shared"),
+      "check",
+    );
+    for (const r of compiled.filter((c) => c.status === "stale")) {
+      errors.push(
+        `registry/official/${r.skill}: SKILL.md is out of date with SKILL.src.md. Run: pnpm skills:build`,
+      );
+    }
+  } catch (e) {
+    if (!(e instanceof IncludeError)) throw e;
+    errors.push(e.message);
+  }
 
   for (const name of await listDirs(path.join(rootDir, "official"))) {
     const dir = path.join(rootDir, "official", name);
@@ -210,6 +276,7 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
         clients: meta.clients,
         runsScripts: meta.runs_scripts || (await hasScriptsDir(dir)),
         verified: true,
+        ...houseStandardFields(meta),
       });
     } catch (e) {
       errors.push((e as Error).message);
@@ -266,6 +333,7 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
     generatedAt: (opts.now ?? new Date()).toISOString(),
     skills,
     ...profiles,
+    houseRules: await readHouseRules(rootDir),
   });
 }
 
