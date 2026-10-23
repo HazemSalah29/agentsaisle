@@ -102,7 +102,7 @@ export function SkillCard({
         </ul>
         <p className="hud-label flex items-center justify-between border-t border-line pt-3 text-ink group-hover:text-accent-ink">
           <span>View skill</span>
-          {stars !== undefined && (
+          {stars !== undefined && stars > 0 && (
             <span className="ml-auto mr-3 text-muted" title="GitHub stars">
               ★ {stars}
             </span>

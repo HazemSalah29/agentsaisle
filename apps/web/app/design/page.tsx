@@ -264,12 +264,9 @@ export default async function DesignPage() {
         title="The lineup"
         intro="Real skills from the registry, then harder cases: a long description and a community skill that runs scripts."
       >
-        <ul
-          className="mb-6 flex flex-wrap border-l border-t border-line-strong"
-          aria-label="Skills"
-        >
+        <ul className="mb-6 flex flex-wrap pl-px pt-px" aria-label="Skills">
           {lineup.map((s) => (
-            <li key={s.name} className="border-b border-r border-line-strong bg-bg-raised">
+            <li key={s.name} className="-ml-px -mt-px border border-line-strong bg-bg-raised">
               <a
                 href="#lineup"
                 title={s.name}
@@ -282,9 +279,9 @@ export default async function DesignPage() {
             </li>
           ))}
         </ul>
-        <ul className="grid border-l border-t border-line-strong sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid pl-px pt-px sm:grid-cols-2 xl:grid-cols-3">
           {lineup.map((s, i) => (
-            <li key={s.name} className="border-b border-r border-line-strong bg-bg-raised">
+            <li key={s.name} className="-ml-px -mt-px border border-line-strong bg-bg-raised">
               <SkillCard skill={s} index={i + 1} href="#lineup" />
             </li>
           ))}

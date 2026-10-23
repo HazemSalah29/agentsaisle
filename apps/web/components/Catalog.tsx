@@ -45,9 +45,9 @@ export function Catalog({ skills }: { skills: CatalogSkill[] }) {
           </button>
         </div>
       ) : (
-        <ul className="grid border-l border-t border-line-strong sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid pl-px pt-px sm:grid-cols-2 xl:grid-cols-3">
           {results.map((s) => (
-            <li key={s.name} className="border-b border-r border-line-strong bg-bg-raised">
+            <li key={s.name} className="-ml-px -mt-px border border-line-strong bg-bg-raised">
               <SkillCard skill={s} href={`/skills/${s.name}`} stars={s.stars} />
             </li>
           ))}
