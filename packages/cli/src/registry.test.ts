@@ -8,6 +8,8 @@ import { SHA, tmpDir } from "./test-utils.js";
 const sha2 = "b".repeat(40);
 const index: RegistryIndex = {
   generatedAt: "2026-01-01T00:00:00.000Z",
+  profiles: [],
+  questions: [],
   skills: [
     {
       name: "explore",

@@ -44,6 +44,16 @@ beforeAll(async () => {
   );
   const index: RegistryIndex = {
     generatedAt: "2026-01-01T00:00:00.000Z",
+    questions: [],
+    profiles: [
+      { id: "starter", name: "Starter", description: "Basics", skills: ["explore"] },
+      {
+        id: "mixed",
+        name: "Mixed",
+        description: "With a script skill",
+        skills: ["explore", "risky"],
+      },
+    ],
     skills: [
       skill("explore", "registry/official/explore"),
       skill("risky", "skills/risky", false, false),
@@ -164,5 +174,46 @@ describe("aisle CLI (end to end, no network)", () => {
     const res = await aisle(await tmpDir(), ["info", "risky"]);
     expect(res.stdout).toContain("risky 1.0.0");
     expect(res.stderr).toContain("not verified");
+  });
+
+  it("init installs a profile's bundle and records it in the lockfile", async () => {
+    const project = await tmpDir();
+    const res = await aisle(project, ["init", "--profile", "starter", "--yes"]);
+    expect(res.code, res.stderr).toBe(0);
+    expect(res.stdout).toContain("Starter: Basics");
+    expect(res.stdout).toContain("Installed explore@1.0.0");
+    expect(existsSync(path.join(project, ".claude", "skills", "explore", "SKILL.md"))).toBe(true);
+    expect(Object.keys((await lock(project)).skills)).toEqual(["explore"]);
+  });
+
+  it("init --dry-run writes nothing", async () => {
+    const project = await tmpDir();
+    const res = await aisle(project, ["init", "--profile", "mixed", "--dry-run"]);
+    expect(res.code, res.stderr).toBe(0);
+    expect(res.stdout).toContain("[dry-run] would install explore");
+    expect(res.stdout).toContain("[dry-run] would install risky");
+    expect(await readdir(project)).toEqual([]);
+  });
+
+  it("init still warns about scripts inside a bundle", async () => {
+    const project = await tmpDir();
+    const refused = await aisle(project, ["init", "--profile", "mixed"]);
+    expect(refused.code).toBe(1);
+    expect(refused.stderr).toContain("--yes");
+    const ok = await aisle(project, ["init", "--profile", "mixed", "--yes"]);
+    expect(ok.code, ok.stderr).toBe(0);
+    expect(ok.stderr).toContain("scripts/run.sh");
+    expect(existsSync(path.join(project, ".claude", "skills", "risky"))).toBe(true);
+  });
+
+  it("init fails clearly for an unknown profile, and without a terminal or --profile", async () => {
+    const project = await tmpDir();
+    const unknown = await aisle(project, ["init", "--profile", "starte", "--yes"]);
+    expect(unknown.code).toBe(1);
+    expect(unknown.stderr).toContain("Did you mean: starter");
+    const noProfile = await aisle(project, ["init"]);
+    expect(noProfile.code).toBe(1);
+    expect(noProfile.stderr).toContain("Pass --profile <id>");
+    expect(noProfile.stderr).toContain("starter, mixed");
   });
 });

@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { removeSkill, listSkills, showInfo } from "./commands.js";
 import { createContext, type CommonOptions } from "./context.js";
+import { initProfile } from "./init.js";
 import { installMany } from "./install.js";
 
 export const VERSION = "0.0.0";
@@ -43,6 +44,16 @@ export function createProgram(): Command {
       .action((opts: CommonOptions) => listSkills(createContext(opts))),
     ["global", "agent"],
   );
+  withFlags(
+    program
+      .command("init")
+      .description("Pick a profile and install its starter bundle")
+      .option("--profile <id>", "install this profile without asking")
+      .action((opts: CommonOptions & { profile?: string }) =>
+        initProfile(opts.profile, createContext(opts)),
+      ),
+    ["global", "agent", "yes", "dry-run"],
+  );
   program
     .command("info <name>")
     .description("Show details for a skill")
@@ -58,7 +69,6 @@ export function createProgram(): Command {
       });
   stub("search", "<query>", "Search the registry");
   stub("update", "[name]", "Update one or all skills");
-  stub("init", "", "Pick a profile and install its starter bundle");
 
   return program;
 }

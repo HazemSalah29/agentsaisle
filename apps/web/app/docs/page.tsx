@@ -28,7 +28,11 @@ const commands: Array<[string, string, boolean]> = [
   ["aisle info <name>", "Description, author, versions, clients and any scripts warning.", true],
   ["aisle search <query>", "Search the registry from the terminal.", false],
   ["aisle update [name]", "Update one or all skills to the latest version.", false],
-  ["aisle init", "Pick a profile and install its starter bundle.", false],
+  [
+    "aisle init [--profile <id>]",
+    "Pick a profile and install its starter bundle. With --profile it never asks which.",
+    true,
+  ],
 ];
 
 const flags: Array<[string, string]> = [
