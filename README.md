@@ -45,7 +45,7 @@ aisle init --profile code    # a starter bundle plus the house rules in CLAUDE.m
 
 - Every version is pinned to a full commit SHA, so a later push to the author's repository can't change what you install.
 - The CLI downloads and copies files. It never runs anything from a skill.
-- Skills with a `scripts/` folder show the file list and ask before installing.
+- Skills with a `scripts/` folder show the file list. Community and unverified skills ask before installing; verified official skills, whose scripts a maintainer read in full, list them without asking.
 - **Verified** means a maintainer read the skill and any scripts in full. Community skills are unverified until then and labeled that way.
 
 ## Add your skill

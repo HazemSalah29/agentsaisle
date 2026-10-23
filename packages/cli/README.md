@@ -72,7 +72,7 @@ Development files in a skill (`evals/`, `preview/`, the top-level `README.md`) a
 
 - Every registry version is pinned to a full commit SHA, so a later push to the author's repository can't change what you install.
 - The CLI downloads and copies files. **It never runs anything from a skill.**
-- If a skill has a `scripts/` folder, the CLI lists the files and asks before installing (`--yes` skips the question).
+- If a skill has a `scripts/` folder, the CLI lists the files. Community and unverified skills ask before installing (`--yes` skips the question); verified official skills, whose scripts a maintainer read in full, are listed without asking.
 - Skills added with `aisle add <owner>/<repo>` and community skills not yet reviewed are shown as unverified.
 
 ## Configuration

@@ -207,7 +207,11 @@ description: Write a clear git commit for the current changes. Use when asked to
             repository can&apos;t change what you install.
           </li>
           <li>The CLI downloads and copies files. It never runs anything from a skill.</li>
-          <li>Skills with scripts show the file list and ask before installing.</li>
+          <li>
+            Skills with scripts list the files. Community and unverified skills ask before
+            installing; verified official skills, whose scripts a maintainer has read in full, list
+            them without asking.
+          </li>
           <li>
             <strong>Verified</strong> means a maintainer read the skill and any scripts in full.
             Community skills are <strong>unverified</strong> until then, and labeled that way

@@ -123,8 +123,9 @@ export default async function SkillPage({ params }: Props) {
               This skill includes scripts
             </h2>
             <p className="mt-3 text-sm">
-              Your agent may run these scripts on your machine. The CLI lists the files and asks you
-              to confirm before it installs. Read them on GitHub first.
+              {skill.source === "official" && skill.verified
+                ? "Your agent may run these scripts on your machine. A maintainer has read every one in full, and the CLI lists the files when you install. You can read them on GitHub first."
+                : "Your agent may run these scripts on your machine. The CLI lists the files and asks you to confirm before it installs. Read them on GitHub first."}
             </p>
             <a
               href={githubTreeUrl(skill, latest.sha)}

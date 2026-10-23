@@ -20,10 +20,16 @@ let registryFile: string;
 let newerRegistryFile: string;
 let noRulesRegistryFile: string;
 
-const skill = (name: string, skillPath: string, runsScripts = false, verified = true) => ({
+const skill = (
+  name: string,
+  skillPath: string,
+  runsScripts = false,
+  verified = true,
+  source: "official" | "community" = "official",
+) => ({
   name,
   description: `Test skill ${name}.`,
-  source: "official" as const,
+  source,
   author: "test",
   repo: "o/r",
   path: skillPath,
@@ -42,6 +48,10 @@ beforeAll(async () => {
       "skills/risky/SKILL.md": skillMd("risky"),
       "skills/risky/scripts/run.sh": "echo should never run\n",
       "skills/mismatch/SKILL.md": skillMd("other-name"),
+      "skills/trusted/SKILL.md": skillMd("trusted"),
+      "skills/trusted/scripts/check.mjs": "console.log('checked')\n",
+      "skills/shared/SKILL.md": skillMd("shared"),
+      "skills/shared/scripts/check.mjs": "console.log('checked')\n",
     }),
   );
   const index: RegistryIndex = {
@@ -60,6 +70,8 @@ beforeAll(async () => {
     skills: [
       skill("explore", "registry/official/explore"),
       skill("risky", "skills/risky", false, false),
+      skill("trusted", "skills/trusted", true, true, "official"),
+      skill("shared", "skills/shared", true, true, "community"),
       skill("mismatch", "skills/mismatch"),
     ],
   };
@@ -156,6 +168,27 @@ describe("aisle CLI (end to end, no network)", () => {
     expect(existsSync(path.join(project, ".claude", "skills", "risky", "scripts", "run.sh"))).toBe(
       true,
     );
+  });
+
+  it("lists scripts of a verified official skill without asking", async () => {
+    const project = await tmpDir();
+    const res = await aisle(project, ["add", "trusted"]); // no --yes and no terminal: a prompt would fail
+    expect(res.code, res.stderr).toBe(0);
+    expect(res.stdout).toContain("trusted includes scripts (reviewed by Agent Aisle):");
+    expect(res.stdout).toContain("- scripts/check.mjs");
+    expect(res.stderr).not.toContain("Warning");
+    expect(
+      existsSync(path.join(project, ".claude", "skills", "trusted", "scripts", "check.mjs")),
+    ).toBe(true);
+  });
+
+  it("still asks about scripts for community skills, even verified ones", async () => {
+    const project = await tmpDir();
+    const refused = await aisle(project, ["add", "shared"]);
+    expect(refused.code).toBe(1);
+    expect(refused.stderr).toContain("scripts/check.mjs");
+    expect(refused.stderr).toContain("--yes");
+    expect(existsSync(path.join(project, ".claude"))).toBe(false);
   });
 
   it("asks before overwriting", async () => {
