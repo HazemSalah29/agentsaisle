@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "predev": "tsx scripts/copy-registry.mts",
+    "pretypecheck": "tsx scripts/copy-registry.mts",
+    "pretest": "tsx scripts/copy-registry.mts"
   },
   "dependencies": {
     "next": "^16.4.2",

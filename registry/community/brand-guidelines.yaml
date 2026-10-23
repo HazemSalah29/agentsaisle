@@ -7,6 +7,9 @@ versions:
   - version: 1.0.0
     ref: main
     sha: dbd4588f9e1033efb41dad4bef2f7947c8993d44
+  - version: 0.9.0
+    ref: ef74077
+    sha: ef740771ac901e03fbca3ce4e1c453a96010f30a
 category: [design]
 clients: [claude-code]
 runs_scripts: false

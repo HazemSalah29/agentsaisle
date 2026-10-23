@@ -2,25 +2,9 @@
 
 import { useId, type ReactNode } from "react";
 
-export type Filters = {
-  query: string;
-  aisles: string[];
-  clients: string[];
-  source: "all" | "official" | "community";
-  verifiedOnly: boolean;
-  hideScripts: boolean;
-  sort: "popular" | "newest" | "name";
-};
+import { defaultFilters, type Filters } from "../lib/filters";
 
-export const defaultFilters: Filters = {
-  query: "",
-  aisles: [],
-  clients: [],
-  source: "all",
-  verifiedOnly: false,
-  hideScripts: false,
-  sort: "popular",
-};
+export { defaultFilters, type Filters };
 
 const toggle = (list: string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
