@@ -1,0 +1,39 @@
+name: Validate registry entries
+
+# Runs on every pull request that touches community entries (brief section 8).
+# It also runs on pushes to m5-test-** branches: a testing hook so the check can be proven
+# without opening pull requests. Remove the push trigger if you don't want it.
+on:
+  pull_request:
+    paths:
+      - "registry/community/**"
+      - "registry/validate*.ts"
+  push:
+    branches:
+      - "m5-test-**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed to diff against main
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Only the schema package is needed; this job never builds or runs submitted skills.
+      - run: pnpm --filter @agentsaisle/registry-schema build
+      - name: Validate changed community entries
+        run: pnpm registry:validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REF: origin/main
+          # Only the repository owner may set `verified: true`.
+          ALLOW_VERIFIED: ${{ github.actor == github.repository_owner && '1' || '0' }}

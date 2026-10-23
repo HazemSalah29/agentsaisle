@@ -11,7 +11,8 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
-    "registry:build": "tsx registry/build.ts"
+    "registry:build": "tsx registry/build.ts",
+    "registry:validate": "tsx registry/validate-pr.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
