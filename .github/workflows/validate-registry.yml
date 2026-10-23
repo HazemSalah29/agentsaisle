@@ -1,16 +1,11 @@
 name: Validate registry entries
 
 # Runs on every pull request that touches community entries (brief section 8).
-# It also runs on pushes to m5-test-** branches: a testing hook so the check can be proven
-# without opening pull requests. Remove the push trigger if you don't want it.
 on:
   pull_request:
     paths:
       - "registry/community/**"
       - "registry/validate*.ts"
-  push:
-    branches:
-      - "m5-test-**"
 
 permissions:
   contents: read
