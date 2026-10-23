@@ -23,22 +23,20 @@ const icons: Record<BadgeKind, ReactNode> = {
   scripts: <path d="M12 3l10 18H2L12 3Zm0 7v5m0 3v.5" />,
 };
 
-// Badges carry their own colors (label stock) so they read on the page and on cards alike.
+// Each state differs in shape or fill as well as color, so none relies on color alone.
 const styles: Record<BadgeKind, string> = {
-  official: "bg-sticker text-on-sticker border-label-rule",
-  verified: "bg-label text-label-ink border-label-rule",
-  unverified: "bg-label text-label-ink border-dashed border-label-rule",
-  scripts: "bg-label-ink text-label border-label-ink",
+  official: "border-accent bg-accent text-on-accent",
+  verified: "border-line-strong text-ink",
+  unverified: "border-dashed border-line-strong text-muted",
+  scripts: "border-invert-bg bg-invert-bg text-invert-fg",
 };
 
 export function Badge({ kind, children }: { kind: BadgeKind; children?: ReactNode }) {
   return (
-    <span
-      className={`inline-flex min-h-6 items-center gap-1 rounded-label border-[1.5px] px-2 font-display text-xs font-bold leading-none ${styles[kind]}`}
-    >
+    <span className={`hud-label inline-flex h-6 items-center gap-1.5 border px-2 ${styles[kind]}`}>
       <svg
-        width="14"
-        height="14"
+        width="12"
+        height="12"
         viewBox="0 0 24 24"
         fill={kind === "official" ? "currentColor" : "none"}
         stroke="currentColor"

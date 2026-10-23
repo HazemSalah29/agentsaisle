@@ -4,8 +4,8 @@ import { CopyButton } from "./CopyButton";
 export type ReceiptItem = { name: string; version: string };
 
 /**
- * A bundle printed as a till receipt. The install command sits at the bottom like the total.
- * `newest` marks the item that was just added, so only it slides on.
+ * A bundle shown as a ledger, ending in one install command like the total on a receipt.
+ * `newest` marks the item that was just added, so only it flashes.
  */
 export function Receipt({
   items,
@@ -18,47 +18,44 @@ export function Receipt({
 }) {
   const command = bundleCommand(items.map((i) => i.name));
   return (
-    <div className="relative max-w-sm [filter:drop-shadow(3px_3px_0_var(--edge))]">
-      <div className="torn-edge bg-thermal px-6 pb-12 pt-6 font-mono text-sm text-thermal-ink ">
-        <p className="font-display text-2xl font-black leading-none">Agent Aisle</p>
-        <p className="mt-1 text-xs text-thermal-ink-soft">Your bundle, {date}</p>
-        <hr className="my-4 border-t-2 border-dashed border-thermal-ink" />
-        {items.length === 0 ? (
-          <p className="py-4 text-thermal-ink-soft">
-            Nothing in the bag yet. Add a skill to start your bundle.
-          </p>
-        ) : (
-          <ul className="space-y-1.5">
-            {items.map((i) => (
-              <li
-                key={i.name}
-                className={`flex items-baseline gap-2 ${i.name === newest ? "animate-slide-on" : ""}`}
-              >
-                <span className="font-medium">{i.name}</span>
-                <span
-                  aria-hidden="true"
-                  className="min-w-4 flex-1 translate-y-[-3px] border-b border-dotted border-thermal-ink-soft"
-                />
-                <span>{i.version}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <hr className="my-4 border-t-2 border-dashed border-thermal-ink" />
-        <div className="flex justify-between font-medium">
-          <span>Skills</span>
-          <span>{items.length}</span>
-        </div>
-        <p className="mt-4 text-xs text-thermal-ink-soft">Run this to install the lot:</p>
-        <code className="mt-1 block break-words border-2 border-thermal-ink px-3 py-2 text-sm">
-          {command}
-        </code>
-        {items.length > 0 && (
-          <div className="relative mt-4">
-            <CopyButton text={command} label="Copy command" />
-          </div>
-        )}
+    <div className="w-full max-w-md border border-line-strong bg-bg-raised font-mono text-sm">
+      <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
+        <p className="hud-label text-ink-strong">Your bundle</p>
+        <p className="hud-label text-muted">{date}</p>
       </div>
+      {items.length === 0 ? (
+        <p className="px-4 py-6 text-muted">Nothing here yet. Add a skill to start your bundle.</p>
+      ) : (
+        <ol className="divide-y divide-line">
+          {items.map((i, n) => (
+            <li
+              key={i.name}
+              className={`flex items-baseline gap-3 px-4 py-2.5 ${i.name === newest ? "animate-flash-in" : ""}`}
+            >
+              <span className="w-6 text-muted">{String(n + 1).padStart(2, "0")}</span>
+              <span className="text-ink-strong">{i.name}</span>
+              <span
+                aria-hidden="true"
+                className="min-w-4 flex-1 -translate-y-1 border-b border-dotted border-line-strong"
+              />
+              <span className="text-muted">{i.version}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      <div className="flex justify-between border-t border-line-strong px-4 py-3">
+        <span className="hud-label text-muted">Skills</span>
+        <span className="text-ink-strong">{items.length}</span>
+      </div>
+      <div className="border-t border-line bg-bg-sunken px-4 py-3">
+        <p className="hud-label text-muted">Run this to install the lot</p>
+        <code className="mt-2 block break-words text-ink">{command}</code>
+      </div>
+      {items.length > 0 && (
+        <div className="border-t border-line">
+          <CopyButton text={command} label="Copy command" />
+        </div>
+      )}
     </div>
   );
 }

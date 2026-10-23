@@ -34,22 +34,22 @@ export function ReceiptDemo({ date }: { date: string }) {
   const left = shelf.filter((s) => !items.some((i) => i.name === s.name));
 
   return (
-    <div className="flex flex-wrap items-start gap-10">
+    <div className="flex flex-wrap items-start gap-8">
       <Receipt items={items} date={date} newest={newest} />
       <div className="flex max-w-sm flex-col gap-3">
-        <p className="font-display text-xl font-bold">Add skills to the bag</p>
+        <p className="hud-label text-muted">Add skills to the bundle</p>
         <div className="flex flex-wrap gap-2">
           {left.map((s) => (
             <button
               key={s.name}
               type="button"
               onClick={() => add(s)}
-              className="min-h-11 rounded-sticker border-[1.5px] border-ink px-4 font-display text-md font-bold hover:bg-ink hover:text-bag"
+              className="hud-label h-11 border border-line-strong px-4 hover:bg-invert-bg hover:text-invert-fg"
             >
               Add {s.name}
             </button>
           ))}
-          {left.length === 0 && <p className="text-ink-soft">Everything is in the bag.</p>}
+          {left.length === 0 && <p className="text-sm text-muted">Everything is in the bundle.</p>}
         </div>
         <button
           type="button"
@@ -58,9 +58,9 @@ export function ReceiptDemo({ date }: { date: string }) {
             setNewest(undefined);
           }}
           disabled={items.length === 0}
-          className="min-h-11 self-start font-display text-md font-bold underline underline-offset-4 disabled:opacity-50"
+          className="hud-label h-11 self-start px-1 text-accent-ink underline underline-offset-4 disabled:opacity-40"
         >
-          Empty the bag
+          Clear bundle
         </button>
       </div>
     </div>

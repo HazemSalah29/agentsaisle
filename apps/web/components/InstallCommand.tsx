@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { installCommand } from "../lib/install-command";
 import { CopyButton } from "./CopyButton";
 
+/** The install command in a terminal bar, with a version selector when there is more than one. */
 export function InstallCommand({ name, versions }: { name: string; versions: string[] }) {
   const id = useId();
   const latest = versions[0];
@@ -11,18 +12,19 @@ export function InstallCommand({ name, versions }: { name: string; versions: str
   const command = installCommand(name, version, latest);
 
   return (
-    <div className="relative border-[1.5px] border-label-rule bg-label p-4 text-label-ink shadow-label rounded-label">
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+    <div className="border border-line-strong bg-bg-raised">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 border-b border-line px-4 py-2">
+        <p className="hud-label text-muted">Install {name}</p>
         {versions.length > 1 && (
-          <div className="flex flex-col gap-1">
-            <label htmlFor={id} className="font-display text-md font-bold">
+          <div className="flex items-center gap-2">
+            <label htmlFor={id} className="hud-label text-muted">
               Version
             </label>
             <select
               id={id}
               value={version}
               onChange={(e) => setVersion(e.target.value)}
-              className="min-h-11 rounded-label border-[1.5px] border-label-rule bg-label px-3 font-mono text-sm"
+              className="h-8 border border-line-strong bg-bg px-2 font-mono text-sm text-ink"
             >
               {versions.map((v, i) => (
                 <option key={v} value={v}>
@@ -33,15 +35,14 @@ export function InstallCommand({ name, versions }: { name: string; versions: str
             </select>
           </div>
         )}
-        <div className="flex min-w-0 flex-1 basis-72 flex-col gap-1">
-          <span className="font-display text-md font-bold">Install</span>
-          <code className="block min-h-11 break-all rounded-label bg-label-ink px-4 py-2.5 font-mono text-sm text-label">
-            <span aria-hidden="true" className="select-none text-sticker">
-              ${" "}
-            </span>
-            {command}
-          </code>
-        </div>
+      </div>
+      <div className="flex flex-wrap items-stretch">
+        <code className="min-w-0 flex-1 basis-64 break-all bg-bg-sunken px-4 py-3 font-mono text-sm text-ink">
+          <span aria-hidden="true" className="select-none text-accent-ink">
+            ${" "}
+          </span>
+          {command}
+        </code>
         <CopyButton text={command} />
       </div>
     </div>
