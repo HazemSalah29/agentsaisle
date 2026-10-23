@@ -35,10 +35,9 @@ export function SkillCard({ skill, href }: { skill: RegistrySkill; href?: string
             skill.source === "official" ? "official" : skill.verified ? "verified" : "unverified"
           }
         />
-        {skill.source === "official" && skill.verified ? <Badge kind="verified" /> : null}
         {skill.runsScripts ? <Badge kind="scripts" /> : null}
       </div>
-      <p className="mt-3 line-clamp-3 text-sm">{skill.description}</p>
+      <p className="mb-5 mt-3 line-clamp-3 text-sm">{skill.description}</p>
       <dl className="mt-auto border-t-[6px] border-label-rule pt-0.5 text-xs">
         <div className="border-b border-label-rule py-1 font-bold">Details</div>
         {rows.map(([k, v]) => (

@@ -35,7 +35,7 @@ export function InstallCommand({ name, versions }: { name: string; versions: str
         )}
         <div className="flex min-w-0 flex-1 basis-72 flex-col gap-1">
           <span className="font-display text-md font-bold">Install</span>
-          <code className="block min-h-11 overflow-x-auto whitespace-nowrap rounded-label bg-label-ink px-4 py-2.5 font-mono text-sm text-label">
+          <code className="block min-h-11 break-all rounded-label bg-label-ink px-4 py-2.5 font-mono text-sm text-label">
             <span aria-hidden="true" className="select-none text-sticker">
               ${" "}
             </span>

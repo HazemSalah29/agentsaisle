@@ -18,8 +18,8 @@ export function Receipt({
 }) {
   const command = bundleCommand(items.map((i) => i.name));
   return (
-    <div className="relative max-w-sm">
-      <div className="torn-edge bg-thermal px-6 pb-12 pt-6 font-mono text-sm text-thermal-ink shadow-label">
+    <div className="relative max-w-sm [filter:drop-shadow(3px_3px_0_var(--edge))]">
+      <div className="torn-edge bg-thermal px-6 pb-12 pt-6 font-mono text-sm text-thermal-ink ">
         <p className="font-display text-2xl font-black leading-none">Agent Aisle</p>
         <p className="mt-1 text-xs text-thermal-ink-soft">Your bundle, {date}</p>
         <hr className="my-4 border-t-2 border-dashed border-thermal-ink" />
