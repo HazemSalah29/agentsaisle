@@ -1,4 +1,13 @@
-version: 1.0.0
+version: 1.1.0
 category: [writing]
 clients: [claude-code, codex, cursor]
 runs_scripts: false
+niche: core
+kind: quality
+tier: core
+permissions:
+  tools: [Read, Edit, Write]
+  writes_files: true
+  runs_scripts: false
+  network: false
+  needs_api_keys: []
