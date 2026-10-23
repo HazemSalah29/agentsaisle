@@ -83,6 +83,17 @@ describe("lintSkill", () => {
     );
   });
 
+  it("rule 3: the core niche keeps short names", async () => {
+    const dir = await skill("plan", {
+      "skill.meta.yaml": meta().replace("niche: code", "niche: core"),
+    });
+    expect(rules(await lint(dir))).not.toContain("name");
+    const other = await skill("verify-all", {
+      "skill.meta.yaml": meta().replace("niche: code", "niche: web"),
+    });
+    expect(rules(await lint(other))).toContain("name");
+  });
+
   it("rule 4: all six sections are required, in order", async () => {
     const missing = await skill("code-a", {
       "SKILL.md": `${frontmatter("code-a")}${body(["Use when", "Steps"])}`,

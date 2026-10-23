@@ -17,6 +17,8 @@ export interface LintFinding {
   message: string;
 }
 
+/** Niche of the core kit, exempt from the `<niche>-<task>` naming rule. */
+export const CORE_NICHE = "core";
 export const MAX_LINES = 150;
 export const MAX_DESCRIPTION = 1024;
 export const REQUIRED_SECTIONS = [
@@ -128,8 +130,8 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
       `${lineCount} lines (max ${MAX_LINES}). Move detail into references/.`,
     );
 
-  // name format
-  if (meta?.niche && !skill.startsWith(`${meta.niche}-`)) {
+  // name format. The core kit (niche "core") keeps short names like "plan" and "verify".
+  if (meta?.niche && meta.niche !== CORE_NICHE && !skill.startsWith(`${meta.niche}-`)) {
     add("SKILL.md", "name", `name must start with the niche: "${meta.niche}-<task>".`);
   }
 
