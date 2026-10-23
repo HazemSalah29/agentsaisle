@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { duration, ease, stagger } from "../src/components/kit/tokens";
+import { duration, ease, stagger } from "../official/design-motion-portfolio/assets/kit/tokens";
 
 const css = readFileSync(
-  path.join(__dirname, "..", "src", "components", "kit", "tokens.css"),
+  path.join(__dirname, "..", "official", "design-motion-portfolio", "assets", "kit", "tokens.css"),
   "utf8",
 );
 

@@ -11,5 +11,4 @@ apps/web/public/registry.json
 next-env.d.ts
 test-results
 playwright-report
-demos/motion-portfolio/src/components/kit
 apps/web/public/previews

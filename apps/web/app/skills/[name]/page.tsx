@@ -65,6 +65,10 @@ export default async function SkillPage({ params }: Props) {
     ...(meta ? ([["Stars", meta.stars.toLocaleString("en-US")]] as Array<[string, string]>) : []),
   ];
 
+  const shots = skill.demo?.screenshots ?? [];
+  const phoneShots = shots.filter((f) => /phone/i.test(f));
+  const desktopShots = shots.filter((f) => !/phone/i.test(f));
+
   return (
     <article>
       <header className="grid gap-x-10 gap-y-8 px-4 py-12 sm:px-8 lg:grid-cols-[1fr_20rem]">
@@ -139,19 +143,34 @@ export default async function SkillPage({ params }: Props) {
                 </>
               )}
             </p>
-            <ul className="grid gap-4 sm:grid-cols-2">
-              {skill.demo.screenshots.map((file) => (
-                <li key={file} className="border border-line-strong bg-bg-raised">
-                  <img
-                    src={previewSrc(skill.name, file)}
-                    alt={previewCaption(file)}
-                    loading="lazy"
-                    className="block aspect-[8/5] w-full object-cover object-top"
-                  />
-                  <p className="hud-label px-3 py-2 text-muted">{previewCaption(file)}</p>
-                </li>
-              ))}
-            </ul>
+            {[
+              {
+                shots: desktopShots,
+                list: "grid gap-4 sm:grid-cols-2",
+                img: "aspect-[8/5] object-top",
+              },
+              {
+                shots: phoneShots,
+                list: "grid max-w-xl grid-cols-3 gap-4",
+                img: "aspect-[9/19] object-top",
+              },
+            ].map(({ shots, list, img }) =>
+              shots.length === 0 ? null : (
+                <ul key={list} className={list}>
+                  {shots.map((file) => (
+                    <li key={file} className="border border-line-strong bg-bg-raised">
+                      <img
+                        src={previewSrc(skill.name, file)}
+                        alt={previewCaption(file)}
+                        loading="lazy"
+                        className={`block w-full object-cover ${img}`}
+                      />
+                      <p className="hud-label px-3 py-2 text-muted">{previewCaption(file)}</p>
+                    </li>
+                  ))}
+                </ul>
+              ),
+            )}
           </section>
         )}
 

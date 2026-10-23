@@ -167,15 +167,38 @@ describe("design-lint", () => {
     expect(found.sort()).toEqual(["src/app/page.tsx", "src/lib/a.ts"]);
   });
 
-  it("passes on the demo site, which is built only from the kit", () => {
+  it("passes on a project built only from kit components and tokens", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "dmp-good-"));
+    await mkdir(path.join(dir, "src/app/work"), { recursive: true });
+    await writeFile(
+      path.join(dir, "src/app/page.tsx"),
+      `import { Container, HeroKinetic, Section } from "@/components/kit";
+export default function Home() {
+  return (
+    <main>
+      <Section pad="hero">
+        <Container className="pt-20">
+          <HeroKinetic lines={["Hello", "world."]} intro="Hi" />
+          <a href="#work" className="text-accent duration-(--duration-slow) ease-out-expo">Work</a>
+        </Container>
+      </Section>
+    </main>
+  );
+}
+`,
+    );
+    await writeFile(
+      path.join(dir, "src/app/work/page.tsx"),
+      `import { Section } from "@/components/kit";
+export default () => <Section>x</Section>;
+`,
+    );
     const r = spawnSync(
       process.execPath,
-      [
-        skillFile(SKILL, "scripts/design-lint.mjs"),
-        "--cwd",
-        path.resolve(__dirname, "../../demos/motion-portfolio"),
-      ],
-      { encoding: "utf8" },
+      [skillFile(SKILL, "scripts/design-lint.mjs"), "--cwd", dir],
+      {
+        encoding: "utf8",
+      },
     );
     expect(r.stdout).toMatch(/no problems/);
     expect(r.status).toBe(0);

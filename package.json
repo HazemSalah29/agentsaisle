@@ -16,8 +16,7 @@
     "registry:validate": "tsx registry/validate-pr.ts",
     "skills:build": "tsx registry/compile-skills.ts",
     "skills:check": "tsx registry/compile-skills.ts --check",
-    "lint:skills": "tsx registry/run-lint-skills.ts",
-    "dev:motion": "npm run dev --prefix demos/motion-portfolio"
+    "lint:skills": "tsx registry/run-lint-skills.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
