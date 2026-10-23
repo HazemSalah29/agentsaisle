@@ -18,6 +18,7 @@ const exploreMd = path.resolve(here, "../../../registry/official/explore/SKILL.m
 let server: Awaited<ReturnType<typeof serveTarball>>;
 let registryFile: string;
 let newerRegistryFile: string;
+let noRulesRegistryFile: string;
 
 const skill = (name: string, skillPath: string, runsScripts = false, verified = true) => ({
   name,
@@ -46,6 +47,7 @@ beforeAll(async () => {
   const index: RegistryIndex = {
     generatedAt: "2026-01-01T00:00:00.000Z",
     questions: [],
+    houseRules: "## Test rules\n- Be brief.",
     profiles: [
       { id: "starter", name: "Starter", description: "Basics", skills: ["explore"] },
       {
@@ -69,6 +71,8 @@ beforeAll(async () => {
         : sk,
     ),
   };
+  noRulesRegistryFile = path.join(await tmpDir(), "registry.json");
+  await writeFile(noRulesRegistryFile, JSON.stringify({ ...index, houseRules: undefined }));
   newerRegistryFile = path.join(await tmpDir(), "registry.json");
   await writeFile(newerRegistryFile, JSON.stringify(newer));
   registryFile = path.join(await tmpDir(), "registry.json");
@@ -289,5 +293,128 @@ describe("aisle CLI (end to end, no network)", () => {
     expect(done.code, done.stderr).toBe(0);
     expect((await lock(home)).skills.explore.version).toBe("1.1.0");
     expect(existsSync(path.join(project, ".claude"))).toBe(false);
+  });
+
+  describe("init and the house rules block", () => {
+    const START = "<!-- agent-aisle:start -->";
+    const count = (text: string) => text.split(START).length - 1;
+    const read = (file: string) => readFile(file, "utf8");
+
+    it("writes the block, and a second run leaves exactly one block and identical bytes", async () => {
+      const project = await tmpDir();
+      const claude = path.join(project, "CLAUDE.md");
+      await writeFile(claude, "# My project\n\nKeep this text.\n");
+
+      const first = await aisle(project, ["init", "--profile", "starter", "--yes"]);
+      expect(first.code, first.stderr).toBe(0);
+      expect(first.stdout).toContain("Installed explore@1.0.0");
+      expect(first.stdout).toMatch(/Wrote house rules to .*CLAUDE\.md \(added the block\)/);
+      const afterFirst = await read(claude);
+      expect(afterFirst.startsWith("# My project\n\nKeep this text.\n")).toBe(true);
+      expect(afterFirst).toContain("## Test rules");
+      expect(count(afterFirst)).toBe(1);
+
+      const second = await aisle(project, ["init", "--profile", "starter", "--yes"]);
+      expect(second.code, second.stderr).toBe(0);
+      expect(second.stdout).toContain("already up to date");
+      expect(await read(claude)).toBe(afterFirst);
+      expect(count(await read(claude))).toBe(1);
+    });
+
+    it("--no-rules installs the bundle without touching CLAUDE.md", async () => {
+      const project = await tmpDir();
+      const res = await aisle(project, ["init", "--profile", "starter", "--yes", "--no-rules"]);
+      expect(res.code, res.stderr).toBe(0);
+      expect(existsSync(path.join(project, ".claude", "skills", "explore"))).toBe(true);
+      expect(existsSync(path.join(project, "CLAUDE.md"))).toBe(false);
+    });
+
+    it("--rules-only writes the block and installs no skills", async () => {
+      const project = await tmpDir();
+      const res = await aisle(project, ["init", "--rules-only", "--yes"]);
+      expect(res.code, res.stderr).toBe(0);
+      expect(count(await read(path.join(project, "CLAUDE.md")))).toBe(1);
+      expect(existsSync(path.join(project, ".claude"))).toBe(false);
+      expect(existsSync(path.join(project, "aisle-lock.json"))).toBe(false);
+    });
+
+    it("rejects --rules-only together with --no-rules", async () => {
+      const res = await aisle(await tmpDir(), ["init", "--rules-only", "--no-rules", "--yes"]);
+      expect(res.code).toBe(1);
+      expect(res.stderr).toContain("can't be used together");
+    });
+
+    it("--dry-run reports what it would do and writes nothing", async () => {
+      const project = await tmpDir();
+      const res = await aisle(project, ["init", "--profile", "starter", "--dry-run"]);
+      expect(res.code, res.stderr).toBe(0);
+      expect(res.stdout).toContain("[dry-run] would install explore");
+      expect(res.stdout).toContain("[dry-run] would create");
+      expect(await readdir(project)).toEqual([]);
+    });
+
+    it("writes AGENTS.md for Codex and Cursor", async () => {
+      for (const agent of ["codex", "cursor"]) {
+        const project = await tmpDir();
+        const res = await aisle(project, ["init", "--rules-only", "--yes", "--agent", agent]);
+        expect(res.code, res.stderr).toBe(0);
+        expect(count(await read(path.join(project, "AGENTS.md")))).toBe(1);
+        expect(existsSync(path.join(project, "CLAUDE.md"))).toBe(false);
+      }
+    });
+
+    it("writes ~/.claude/CLAUDE.md with --global, and refuses --global for Cursor", async () => {
+      const project = await tmpDir();
+      const home = await tmpDir();
+      const ok = await aisle(project, ["init", "--rules-only", "--yes", "--global"], home);
+      expect(ok.code, ok.stderr).toBe(0);
+      expect(count(await read(path.join(home, ".claude", "CLAUDE.md")))).toBe(1);
+      expect(await readdir(project)).toEqual([]);
+
+      const cursor = await aisle(
+        project,
+        ["init", "--rules-only", "--yes", "--global", "--agent", "cursor"],
+        home,
+      );
+      expect(cursor.code).toBe(1);
+      expect(cursor.stderr).toContain("no user-level rules file");
+    });
+
+    it("refuses a damaged file and leaves it unchanged", async () => {
+      const project = await tmpDir();
+      const claude = path.join(project, "CLAUDE.md");
+      const damaged = `# Mine\n${START}\nhalf a block\n`;
+      await writeFile(claude, damaged);
+      const res = await aisle(project, ["init", "--rules-only", "--yes"]);
+      expect(res.code).toBe(1);
+      expect(res.stderr).toContain("start marker without a matching end marker");
+      expect(await read(claude)).toBe(damaged);
+    });
+
+    it("fails before installing anything when the registry has no house rules", async () => {
+      const project = await tmpDir();
+      const res = await aisle(
+        project,
+        ["init", "--profile", "starter", "--yes"],
+        undefined,
+        noRulesRegistryFile,
+      );
+      expect(res.code).toBe(1);
+      expect(res.stderr).toContain("no house rules yet");
+      expect(await readdir(project)).toEqual([]);
+      const skipped = await aisle(
+        project,
+        ["init", "--profile", "starter", "--yes", "--no-rules"],
+        undefined,
+        noRulesRegistryFile,
+      );
+      expect(skipped.code, skipped.stderr).toBe(0);
+    });
+
+    it("needs --yes when there is no terminal", async () => {
+      const res = await aisle(await tmpDir(), ["init", "--rules-only"]);
+      expect(res.code).toBe(1);
+      expect(res.stderr).toContain("--yes");
+    });
   });
 });

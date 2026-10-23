@@ -51,10 +51,14 @@ export function createProgram(): Command {
   withFlags(
     program
       .command("init")
-      .description("Pick a profile and install its starter bundle")
+      .description(
+        "Install a starter bundle and add the Agent Aisle house rules to CLAUDE.md or AGENTS.md",
+      )
       .option("--profile <id>", "install this profile without asking")
-      .action((opts: CommonOptions & { profile?: string }) =>
-        initProfile(opts.profile, createContext(opts)),
+      .option("--no-rules", "do not write the house rules block")
+      .option("--rules-only", "only write the house rules block; skip the starter bundle")
+      .action((opts: CommonOptions & { profile?: string; rules?: boolean; rulesOnly?: boolean }) =>
+        initProfile(opts, createContext(opts)),
       ),
     ["global", "agent", "yes", "dry-run"],
   );
