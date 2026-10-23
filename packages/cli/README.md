@@ -26,12 +26,14 @@ Requires Node.js 20 or newer. Works on macOS, Linux and Windows.
 | `aisle info <name>`                     | Description, author, versions, clients, warnings   |
 | `aisle search <query>`                  | Search the registry by name, aisle or description  |
 | `aisle update [name]`                   | Update one or all skills to the latest version     |
-| `aisle init [--profile <id>]`           | Pick a profile and install its starter bundle      |
+| `aisle init [--profile <id>]`           | Install a starter bundle and add the house rules   |
 
 ```sh
 aisle add explore@1.0.0              # a specific version
 aisle add plan implement review      # several at once
-aisle init --profile code            # a starter bundle, no questions asked
+aisle init --profile code            # a starter bundle plus house rules, no questions asked
+aisle init --rules-only              # only the house rules block
+aisle init --no-rules                # only the starter bundle
 aisle add explore --dry-run          # see what would happen
 aisle search git                     # find skills
 aisle update                         # move installed skills to their latest versions
@@ -59,6 +61,12 @@ The Codex and Cursor folders follow each tool's convention at the time of writin
 `aisle update` only moves forward: it updates a skill when the registry has a newer version, never downgrades, and leaves skills installed straight from GitHub alone.
 
 Installs are recorded in `aisle-lock.json` in your project root (your home folder with `--global`): name, version, repository, path, commit and install time.
+
+## House rules
+
+`aisle init` also writes a short block of working rules into `CLAUDE.md` (`AGENTS.md` for Codex and Cursor; `~/.claude/CLAUDE.md` with `--global` for Claude Code) between `<!-- agent-aisle:start -->` and `<!-- agent-aisle:end -->` markers. Running it again replaces only that block and leaves everything else in the file untouched. A file with damaged markers is left alone and reported.
+
+Development files in a skill (`evals/`, `preview/`, the top-level `README.md`) are not installed.
 
 ## Safety
 

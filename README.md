@@ -23,7 +23,7 @@ npm i -g @agentsaisle/cli
 aisle add explore
 aisle add explore@1.0.0      # a specific version
 aisle add plan implement review
-aisle init --profile code    # a starter bundle
+aisle init --profile code    # a starter bundle plus the house rules in CLAUDE.md
 ```
 
 | Command                                 | What it does                                       |
@@ -33,9 +33,9 @@ aisle init --profile code    # a starter bundle
 | `aisle remove <name>`                   | Delete a skill and its lockfile entry              |
 | `aisle list`                            | Show installed skills and whether updates exist    |
 | `aisle info <name>`                     | Description, author, versions and warnings         |
-| `aisle init [--profile <id>]`           | Install a starter bundle                           |
+| `aisle init [--profile <id>]`           | Install a starter bundle and add the house rules   |
 
-Flags for `add`, `remove`, `list`, `init` and `update`: `--global` (user-level folder), `--agent <claude-code|codex|cursor>`, `--yes` (skip prompts), `--dry-run`. Skills land in `.claude/skills/<name>/` for Claude Code, and installs are recorded in `aisle-lock.json`.
+`init` also takes `--no-rules` and `--rules-only`. Flags for `add`, `remove`, `list`, `init` and `update`: `--global` (user-level folder), `--agent <claude-code|codex|cursor>`, `--yes` (skip prompts), `--dry-run`. Skills land in `.claude/skills/<name>/` for Claude Code, and installs are recorded in `aisle-lock.json`.
 
 ### Why not `npm install`?
 

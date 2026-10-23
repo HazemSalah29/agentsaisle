@@ -53,6 +53,8 @@ registry/build.ts          compiles everything into dist/registry.json
 
 1 Foundation · 2 CLI core · 3 Design system · 4 Website pages · 5 Profiles + submit · 6 Ship
 
+- Skill tooling (V2): `registry/_shared/*.md` are shared fragments (`house-rules.md` becomes `houseRules` in `registry.json` for `aisle init`). A skill may keep `SKILL.src.md` with `<!-- include: _shared/x.md -->` markers; `pnpm skills:build` writes the committed `SKILL.md` and `pnpm skills:check` (also in the registry build and `pnpm lint`) fails if it is stale. `pnpm lint:skills` enforces the house standard (`registry/lint-skills.ts`); the six V1 skills are listed in `registry/lint-skills.config.json` as legacy, exempt from the section and meta rules until Milestone 8, when that list is deleted. The CLI never installs `evals/`, `preview/`, the root `README.md` or `SKILL.src.md`.
+
 ## Branches
 
 `main` is the deployed branch (Vercel production, `/registry.json`); never push to it directly. Develop on `stage`, use `test` for testing, and merge `stage` into `main` with a pull request so CI runs first.

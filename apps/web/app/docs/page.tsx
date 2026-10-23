@@ -37,8 +37,8 @@ const commands: Array<[string, string, boolean]> = [
     true,
   ],
   [
-    "aisle init [--profile <id>]",
-    "Pick a profile and install its starter bundle. With --profile it never asks which.",
+    "aisle init [--profile <id>] [--no-rules | --rules-only]",
+    "Install a starter bundle and add the Agent Aisle house rules to CLAUDE.md (AGENTS.md for Codex and Cursor). With --profile it never asks which bundle.",
     true,
   ],
 ];
@@ -132,6 +132,19 @@ export default function DocsPage() {
             <p className="mt-3 text-sm text-muted">
               Installs are recorded in <code className="font-mono">aisle-lock.json</code> in your
               project root (or your home folder with <code className="font-mono">--global</code>).
+              Development files in a skill folder (<code className="font-mono">evals/</code>,{" "}
+              <code className="font-mono">preview/</code> and the top-level{" "}
+              <code className="font-mono">README.md</code>) are not installed.
+            </p>
+            <h3 className="mt-8 mb-3 text-lg">House rules</h3>
+            <p className="text-sm text-muted">
+              <code className="font-mono">aisle init</code> writes a short block of working rules
+              (search before reading, change only what the task needs, run the checks before saying
+              done) between <code className="font-mono">&lt;!-- agent-aisle:start --&gt;</code> and{" "}
+              <code className="font-mono">&lt;!-- agent-aisle:end --&gt;</code> markers. Running it
+              again replaces only that block and never touches the rest of the file. Use{" "}
+              <code className="font-mono">--rules-only</code> to skip the skills or{" "}
+              <code className="font-mono">--no-rules</code> to skip the rules.
             </p>
           </div>
         </div>
