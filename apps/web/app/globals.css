@@ -178,3 +178,80 @@
     animation: none;
   }
 }
+
+/* Rendered SKILL.md. Scoped so community markdown can't restyle the site. */
+.skill-prose {
+  max-width: 68ch;
+  font-size: var(--text-base);
+}
+.skill-prose > * + * {
+  margin-top: 1rem;
+}
+.skill-prose h2 {
+  font-size: var(--text-xl);
+  margin-top: 2.5rem;
+}
+.skill-prose h3 {
+  font-size: var(--text-lg);
+  margin-top: 2rem;
+}
+.skill-prose h4,
+.skill-prose h5 {
+  font-size: var(--text-md);
+  margin-top: 1.5rem;
+}
+.skill-prose a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.skill-prose ul,
+.skill-prose ol {
+  padding-left: 1.5rem;
+}
+.skill-prose ul {
+  list-style: square;
+}
+.skill-prose ol {
+  list-style: decimal;
+}
+.skill-prose li + li {
+  margin-top: 0.35rem;
+}
+.skill-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--bg-sunken);
+  padding: 0.1em 0.35em;
+}
+.skill-prose pre {
+  overflow-x: auto;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  padding: 1rem;
+}
+.skill-prose pre code {
+  background: none;
+  padding: 0;
+}
+.skill-prose blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted);
+}
+.skill-prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.skill-prose th,
+.skill-prose td {
+  border: 1px solid var(--line-strong);
+  padding: 0.4rem 0.75rem;
+  text-align: left;
+}
+.skill-prose hr {
+  border: 0;
+  border-top: 1px solid var(--line-strong);
+}
