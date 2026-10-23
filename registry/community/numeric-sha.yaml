@@ -1,0 +1,11 @@
+name: numeric-sha
+author: someone
+repo: anthropics/skills
+path: skills/doc-coauthoring
+versions:
+  - version: 1.0.0
+    ref: main
+    sha: 1111111111111111111111111111111111111111
+category: [writing]
+clients: [claude-code]
+runs_scripts: false
