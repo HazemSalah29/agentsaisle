@@ -6,7 +6,8 @@ import { buildRegistry, type SkillFetcher } from "./build";
 
 const SHA1 = "a1".repeat(20);
 const SHA2 = "b2".repeat(20);
-const skillMd = (name: string) => `---\nname: ${name}\ndescription: Does ${name}.\n---\n# ${name}\n`;
+const skillMd = (name: string) =>
+  `---\nname: ${name}\ndescription: Does ${name}.\n---\n# ${name}\n`;
 const fetchSkill: SkillFetcher = async (_repo, _sha, p) => skillMd(p.split("/").pop()!);
 const resolveSha = () => "f".repeat(40);
 
@@ -16,7 +17,10 @@ async function official(name: string, mdName = name) {
   const dir = path.join(root, "official", name);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, "SKILL.md"), skillMd(mdName));
-  await writeFile(path.join(dir, "skill.meta.yaml"), "version: 1.0.0\ncategory: [code]\nclients: [claude-code]\nruns_scripts: false\n");
+  await writeFile(
+    path.join(dir, "skill.meta.yaml"),
+    "version: 1.0.0\ncategory: [code]\nclients: [claude-code]\nruns_scripts: false\n",
+  );
 }
 
 async function community(name: string, extra = "") {
@@ -55,7 +59,9 @@ describe("buildRegistry", () => {
   it("reports all problems with file names", async () => {
     await official("a", "wrong-name");
     await community("bad", "bogus: 1\n");
-    await expect(build()).rejects.toThrow(/registry\/official\/a.*must match folder[\s\S]*registry\/community\/bad\.yaml/);
+    await expect(build()).rejects.toThrow(
+      /registry\/official\/a.*must match folder[\s\S]*registry\/community\/bad\.yaml/,
+    );
   });
 
   it("rejects duplicate names across official and community", async () => {

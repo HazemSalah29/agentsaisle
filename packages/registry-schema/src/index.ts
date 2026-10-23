@@ -9,7 +9,9 @@ export const SkillName = z
   .max(64)
   .regex(SKILL_NAME_RE, "must be lowercase kebab-case (a-z, 0-9, hyphens)");
 export const Semver = z.string().regex(SEMVER_RE, "must be a semantic version like 1.2.0");
-export const CommitSha = z.string().regex(SHA_RE, "must be a full 40-character lowercase commit SHA");
+export const CommitSha = z
+  .string()
+  .regex(SHA_RE, "must be a full 40-character lowercase commit SHA");
 export const Client = z.enum(["claude-code", "codex", "cursor"]);
 
 const common = {

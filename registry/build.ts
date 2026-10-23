@@ -33,7 +33,11 @@ export const githubFetcher: SkillFetcher = async (repo, sha, skillPath) => {
 
 export function gitShaResolver(cwd: string): ShaResolver {
   const git = (...args: string[]) =>
-    execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    execFileSync("git", args, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
   return (tag) => {
     try {
       return git("rev-parse", `${tag}^{commit}`);
@@ -48,7 +52,8 @@ function frontmatterOf(md: string, where: string): SkillFrontmatter {
   const parts = splitFrontmatter(md);
   if (!parts) throw new Error(`${where}: SKILL.md has no frontmatter`);
   const res = SkillFrontmatter.safeParse(parseYaml(parts.frontmatter));
-  if (!res.success) throw new Error(`${where}: invalid SKILL.md frontmatter: ${formatIssues(res.error.issues)}`);
+  if (!res.success)
+    throw new Error(`${where}: invalid SKILL.md frontmatter: ${formatIssues(res.error.issues)}`);
   return res.data;
 }
 
@@ -67,7 +72,11 @@ type Parsed<T> = { success: true; data: T } | { success: false; error: { issues:
 const formatIssues = (issues: Issue[]) =>
   issues.map((i) => `${i.path.map(String).join(".") || "(root)"}: ${i.message}`).join("; ");
 
-async function readYaml<T>(file: string, schema: { safeParse(v: unknown): Parsed<T> }, label: string): Promise<T> {
+async function readYaml<T>(
+  file: string,
+  schema: { safeParse(v: unknown): Parsed<T> },
+  label: string,
+): Promise<T> {
   const res = schema.safeParse(parseYaml(await readFile(file, "utf8")));
   if (!res.success) throw new Error(`${label}: ${formatIssues(res.error.issues)}`);
   return res.data;
@@ -91,7 +100,8 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
     try {
       const meta = await readYaml(path.join(dir, "skill.meta.yaml"), OfficialMeta, label);
       const fm = frontmatterOf(await readFile(path.join(dir, "SKILL.md"), "utf8"), label);
-      if (fm.name !== name) throw new Error(`${label}: SKILL.md name "${fm.name}" must match folder "${name}"`);
+      if (fm.name !== name)
+        throw new Error(`${label}: SKILL.md name "${fm.name}" must match folder "${name}"`);
       skills.push({
         name,
         description: fm.description,
@@ -112,16 +122,22 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   }
 
   const communityDir = path.join(rootDir, "community");
-  const files = (await readdir(communityDir).catch(() => [] as string[])).filter((f) => f.endsWith(".yaml"));
+  const files = (await readdir(communityDir).catch(() => [] as string[])).filter((f) =>
+    f.endsWith(".yaml"),
+  );
   for (const file of files) {
     const label = `registry/community/${file}`;
     try {
       const entry = await readYaml(path.join(communityDir, file), CommunityEntry, label);
-      if (`${entry.name}.yaml` !== file) throw new Error(`${label}: file name must be "${entry.name}.yaml"`);
+      if (`${entry.name}.yaml` !== file)
+        throw new Error(`${label}: file name must be "${entry.name}.yaml"`);
       const versions = [...entry.versions].sort((a, b) => compareSemver(b.version, a.version));
       const latest = versions[0]!;
       const fm = frontmatterOf(await fetchSkill(entry.repo, latest.sha, entry.path), label);
-      if (fm.name !== entry.name) throw new Error(`${label}: SKILL.md name "${fm.name}" must match entry name "${entry.name}"`);
+      if (fm.name !== entry.name)
+        throw new Error(
+          `${label}: SKILL.md name "${fm.name}" must match entry name "${entry.name}"`,
+        );
       skills.push({
         name: entry.name,
         description: fm.description,
@@ -162,7 +178,9 @@ async function main() {
   const out = path.join(rootDir, "dist", "registry.json");
   await mkdir(path.dirname(out), { recursive: true });
   await writeFile(out, JSON.stringify(index, null, 2) + "\n");
-  console.log(`registry: wrote ${index.skills.length} skills to ${path.relative(process.cwd(), out)}`);
+  console.log(
+    `registry: wrote ${index.skills.length} skills to ${path.relative(process.cwd(), out)}`,
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

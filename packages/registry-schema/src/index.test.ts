@@ -36,19 +36,31 @@ describe("CommunityEntry", () => {
 describe("OfficialMeta / SkillFrontmatter", () => {
   it("validates meta", () => {
     expect(
-      OfficialMeta.safeParse({ version: "1.0.0", category: ["code"], clients: ["codex"], runs_scripts: false })
-        .success,
+      OfficialMeta.safeParse({
+        version: "1.0.0",
+        category: ["code"],
+        clients: ["codex"],
+        runs_scripts: false,
+      }).success,
     ).toBe(true);
-    expect(OfficialMeta.safeParse({ version: "1", category: [], clients: [], runs_scripts: false }).success).toBe(false);
+    expect(
+      OfficialMeta.safeParse({ version: "1", category: [], clients: [], runs_scripts: false })
+        .success,
+    ).toBe(false);
   });
   it("allows extra frontmatter keys", () => {
-    expect(SkillFrontmatter.safeParse({ name: "x", description: "d", "allowed-tools": "Read" }).success).toBe(true);
+    expect(
+      SkillFrontmatter.safeParse({ name: "x", description: "d", "allowed-tools": "Read" }).success,
+    ).toBe(true);
   });
 });
 
 describe("helpers", () => {
   it("splits frontmatter", () => {
-    expect(splitFrontmatter("---\nname: a\n---\nbody")).toEqual({ frontmatter: "name: a", body: "body" });
+    expect(splitFrontmatter("---\nname: a\n---\nbody")).toEqual({
+      frontmatter: "name: a",
+      body: "body",
+    });
     expect(splitFrontmatter("no fm")).toBeNull();
   });
   it("compares semver", () => {
