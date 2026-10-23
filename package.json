@@ -6,9 +6,10 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "npm run dev --prefix apps/web",
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "eslint . && prettier --check . && pnpm skills:check && pnpm lint:skills",
+    "lint": "eslint . && prettier --check . && npm run skills:check && npm run lint:skills",
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
     "registry:build": "tsx registry/build.ts",

@@ -2,7 +2,13 @@ import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { buildRegistry, createShaResolver, remoteTagSha, type SkillFetcher } from "./build";
+import {
+  buildRegistry,
+  createShaResolver,
+  fetchTagIndex,
+  remoteTagSha,
+  type SkillFetcher,
+} from "./build";
 
 const SHA1 = "a1".repeat(20);
 const SHA2 = "b2".repeat(20);
@@ -281,5 +287,71 @@ demo:
       "<!-- include: _shared/missing.md -->\n",
     );
     await expect(build()).rejects.toThrow(/unknown fragment "_shared\/missing\.md"/);
+  });
+});
+
+describe("fetchTagIndex", () => {
+  const sha = (n: number) => n.toString(16).padStart(40, "0");
+  const ref = (name: string, n: number, type = "commit") => ({
+    ref: `refs/tags/${name}`,
+    object: { sha: sha(n), type },
+  });
+  const pages = (all: unknown[][]) => {
+    const urls: string[] = [];
+    const f = (async (url: string) => {
+      urls.push(url);
+      const page = Number(new URL(url).searchParams.get("page"));
+      return new Response(JSON.stringify(all[page - 1] ?? []));
+    }) as unknown as typeof fetch;
+    return { f, urls };
+  };
+
+  it("maps every tag to its commit with a single request when they fit on one page", async () => {
+    const { f, urls } = pages([[ref("plan@1.1.0", 1), ref("verify@1.0.0", 2)]]);
+    const index = await fetchTagIndex("o/r", { fetch: f });
+    expect(index.get("plan@1.1.0")).toBe(sha(1));
+    expect(index.get("verify@1.0.0")).toBe(sha(2));
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toContain("/repos/o/r/git/matching-refs/tags?per_page=100&page=1");
+  });
+
+  it("follows pages until one has fewer than 100 tags", async () => {
+    const first = Array.from({ length: 100 }, (_, i) => ref(`a${i}@1.0.0`, i + 1));
+    const { f, urls } = pages([first, [ref("last@1.0.0", 999)]]);
+    const index = await fetchTagIndex("o/r", { fetch: f });
+    expect(index.size).toBe(101);
+    expect(index.get("last@1.0.0")).toBe(sha(999));
+    expect(urls).toHaveLength(2);
+  });
+
+  it("skips annotated tags (they point at a tag object, not a commit) and non-tag refs", async () => {
+    const { f } = pages([
+      [
+        ref("ok@1.0.0", 1),
+        ref("annotated@1.0.0", 2, "tag"),
+        { ref: "refs/heads/main", object: { sha: sha(3), type: "commit" } },
+      ],
+    ]);
+    const index = await fetchTagIndex("o/r", { fetch: f });
+    expect([...index.keys()]).toEqual(["ok@1.0.0"]);
+  });
+
+  it("returns what it has, or nothing, when GitHub fails", async () => {
+    const limited = (async () => new Response("{}", { status: 403 })) as unknown as typeof fetch;
+    expect((await fetchTagIndex("o/r", { fetch: limited })).size).toBe(0);
+    const boom = (async () => {
+      throw new Error("offline");
+    }) as unknown as typeof fetch;
+    expect((await fetchTagIndex("o/r", { fetch: boom })).size).toBe(0);
+  });
+
+  it("sends the token when given", async () => {
+    let auth: string | undefined;
+    const f = (async (_u: string, init?: RequestInit) => {
+      auth = (init?.headers as Record<string, string>).Authorization;
+      return new Response("[]");
+    }) as unknown as typeof fetch;
+    await fetchTagIndex("o/r", { fetch: f, token: "t0k" });
+    expect(auth).toBe("Bearer t0k");
   });
 });

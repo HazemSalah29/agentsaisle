@@ -51,6 +51,51 @@ export function localTagSha(cwd: string, tag: string): string | undefined {
 }
 
 /**
+ * Every lightweight tag of a repository in as few requests as possible (100 tags per request),
+ * as a map from tag name to commit SHA. A build resolves a dozen official skills, and one request
+ * is much less likely to hit GitHub's rate limit on shared build machines than one per skill.
+ * Annotated tags are left out (they point at a tag object, not a commit); callers fall back to
+ * `remoteTagSha` for those. Returns an empty map when GitHub can't be reached.
+ */
+export async function fetchTagIndex(
+  repo: string,
+  opts: { fetch?: typeof fetch; token?: string } = {},
+): Promise<Map<string, string>> {
+  const doFetch = opts.fetch ?? fetch;
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+  if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  const index = new Map<string, string>();
+  try {
+    for (let page = 1; page <= 20; page++) {
+      const res = await doFetch(
+        `https://api.github.com/repos/${repo}/git/matching-refs/tags?per_page=100&page=${page}`,
+        { headers },
+      );
+      if (!res.ok) break;
+      const refs = (await res.json()) as Array<{
+        ref?: string;
+        object?: { sha?: string; type?: string };
+      }>;
+      for (const r of refs) {
+        const sha = r.object?.sha;
+        if (
+          r.ref?.startsWith("refs/tags/") &&
+          r.object?.type === "commit" &&
+          sha &&
+          FULL_SHA.test(sha)
+        ) {
+          index.set(r.ref.slice("refs/tags/".length), sha);
+        }
+      }
+      if (refs.length < 100) break;
+    }
+  } catch {
+    // keep whatever was read
+  }
+  return index;
+}
+
+/**
  * The commit a tag points at on GitHub. Needed where the checkout has no tags (Vercel clones
  * shallowly). Returns undefined when the tag doesn't exist or GitHub can't be reached.
  */
@@ -106,9 +151,17 @@ export function gitShaResolver(
   cwd: string,
   strict = Boolean(process.env.CI || process.env.VERCEL),
 ): ShaResolver {
+  let index: Promise<Map<string, string>> | undefined;
   return createShaResolver({
     local: (tag) => localTagSha(cwd, tag),
-    remote: (tag) => remoteTagSha(OFFICIAL_REPO, tag, { token: process.env.GITHUB_TOKEN }),
+    // One request for all tags, then a per-tag lookup only for any it did not contain.
+    remote: async (tag) => {
+      index ??= fetchTagIndex(OFFICIAL_REPO, { token: process.env.GITHUB_TOKEN });
+      return (
+        (await index).get(tag) ??
+        remoteTagSha(OFFICIAL_REPO, tag, { token: process.env.GITHUB_TOKEN })
+      );
+    },
     head: () =>
       execFileSync("git", ["rev-parse", "HEAD"], {
         cwd,
