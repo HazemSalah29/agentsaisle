@@ -1,0 +1,13 @@
+version: 1.0.0
+category: [workflow]
+clients: [claude-code, codex, cursor]
+runs_scripts: true
+niche: core
+kind: saver
+tier: core
+permissions:
+  tools: [Read, Write, Bash]
+  writes_files: true
+  runs_scripts: true
+  network: false
+  needs_api_keys: []

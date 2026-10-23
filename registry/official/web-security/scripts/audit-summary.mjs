@@ -2,7 +2,7 @@
 // Reads `npm audit --json` (or `pnpm audit --json`) on standard input and prints only high and
 // critical findings. It runs nothing and makes no network calls; the agent runs the audit itself:
 //   npm audit --omit=dev --json | node audit-summary.mjs
-import path from "node:path";
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const MAX_LINES = 20;
@@ -109,5 +109,6 @@ async function main() {
   process.exit(serious.length ? 1 : 0);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href)
+// realpathSync: a script reached through a symlinked folder must still count as the entry point.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href)
   await main();

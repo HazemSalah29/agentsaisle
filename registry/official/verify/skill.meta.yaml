@@ -1,0 +1,13 @@
+version: 1.0.0
+category: [code, quality]
+clients: [claude-code, codex, cursor]
+runs_scripts: true
+niche: core
+kind: saver
+tier: core
+permissions:
+  tools: [Read, Grep, Glob, Bash]
+  writes_files: false
+  runs_scripts: true
+  network: false
+  needs_api_keys: []

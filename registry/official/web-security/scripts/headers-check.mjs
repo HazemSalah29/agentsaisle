@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Checks that a Next.js project sets the standard security headers.
 // It reads next.config and middleware/proxy files as TEXT. It never imports or runs them.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -88,5 +88,6 @@ function main(argv) {
   process.exit(result.missing.length ? 1 : 0);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href)
+// realpathSync: a script reached through a symlinked folder must still count as the entry point.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href)
   main(process.argv.slice(2));

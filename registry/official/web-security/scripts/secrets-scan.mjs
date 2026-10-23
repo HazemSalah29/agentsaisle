@@ -3,7 +3,7 @@
 // Matches are MASKED in the output, so a secret never reaches a log or the agent's context.
 // Reads files and runs `git diff`; it makes no network calls.
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -197,5 +197,6 @@ function main(argv) {
   process.exit(findings.length ? 1 : 0);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href)
+// realpathSync: a script reached through a symlinked folder must still count as the entry point.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href)
   main(process.argv.slice(2));
