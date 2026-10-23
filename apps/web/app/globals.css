@@ -6,7 +6,8 @@
  * Label stock, receipt paper and the sticker are physical objects and stay light in both themes,
  * so they carry their own text colors (label-ink, thermal-ink, on-sticker).
  */
-:root {
+:root,
+[data-theme="light"] {
   color-scheme: light;
   --bag: #e4dcc8; /* kraft bag paper: page ground */
   --ink: #1e1a12;
@@ -33,7 +34,7 @@
   }
 }
 
-:root[data-theme="dark"] {
+[data-theme="dark"] {
   color-scheme: dark;
   --bag: #1b1810;
   --ink: #efe9d8;

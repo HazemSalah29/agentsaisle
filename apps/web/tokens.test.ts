@@ -4,19 +4,20 @@ import { describe, expect, it } from "vitest";
 
 const css = readFileSync(path.join(__dirname, "app", "globals.css"), "utf8");
 
-/** Variables declared in the first block that starts with `selector`. */
-function block(selector: string): Record<string, string> {
-  const start = css.indexOf(selector + " {");
-  if (start === -1) throw new Error(`no block for ${selector}`);
-  const body = css.slice(css.indexOf("{", start) + 1, css.indexOf("}", start));
+/** Variables declared in the first block whose selector line matches `selector`. */
+function block(selector: RegExp): Record<string, string> {
+  const m = selector.exec(css);
+  if (!m) throw new Error(`no block for ${selector}`);
+  const open = css.indexOf("{", m.index);
+  const body = css.slice(open + 1, css.indexOf("}", open));
   return Object.fromEntries(
-    [...body.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1]!, m[2]!]),
+    [...body.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map((x) => [x[1]!, x[2]!]),
   );
 }
 
-const light = block(":root");
-const dark = { ...light, ...block(':root[data-theme="dark"]') };
-const media = { ...light, ...block(':root:not([data-theme="light"])') };
+const light = block(/^:root,\s*\[data-theme="light"\]\s*\{/m);
+const dark = { ...light, ...block(/^\[data-theme="dark"\]\s*\{/m) };
+const media = { ...light, ...block(/^\s*:root:not\(\[data-theme="light"\]\)\s*\{/m) };
 
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
