@@ -141,3 +141,4 @@ export function compareSemver(a: string, b: string): number {
   // a prerelease sorts below the same release
   return Number(!a.includes("-")) - Number(!b.includes("-"));
 }
+export * from "./search";

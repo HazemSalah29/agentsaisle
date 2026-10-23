@@ -1,42 +1,10 @@
-import type { RegistrySkill } from "@agentsaisle/registry-schema";
+import { searchSkills, type RegistrySkill } from "@agentsaisle/registry-schema";
 import type { Filters } from "./filters";
+
+export { searchSkills };
 
 /** A registry skill plus optional numbers fetched from GitHub at build time. */
 export type CatalogSkill = RegistrySkill & { stars?: number; updatedAt?: string };
-
-const WEIGHTS = { namePrefix: 10, name: 6, aisle: 4, author: 2, description: 1 };
-
-function scoreToken(skill: CatalogSkill, token: string): number {
-  const name = skill.name.toLowerCase();
-  let score = 0;
-  if (name.startsWith(token)) score += WEIGHTS.namePrefix;
-  else if (name.includes(token)) score += WEIGHTS.name;
-  if (skill.category.some((c) => c.toLowerCase().includes(token))) score += WEIGHTS.aisle;
-  if (skill.author.toLowerCase().includes(token)) score += WEIGHTS.author;
-  if (skill.description.toLowerCase().includes(token)) score += WEIGHTS.description;
-  return score;
-}
-
-/**
- * Skills matching every word of `query` (name, aisle, author, description), best match first.
- * An empty query returns the skills unchanged.
- */
-export function searchSkills<T extends CatalogSkill>(skills: T[], query: string): T[] {
-  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return skills;
-  return skills
-    .map((skill, index) => {
-      const scores = tokens.map((t) => scoreToken(skill, t));
-      return {
-        skill,
-        index,
-        total: scores.every((s) => s > 0) ? scores.reduce((a, b) => a + b, 0) : 0,
-      };
-    })
-    .filter((r) => r.total > 0)
-    .sort((a, b) => b.total - a.total || a.index - b.index)
-    .map((r) => r.skill);
-}
 
 export function filterSkills<T extends CatalogSkill>(skills: T[], f: Filters): T[] {
   return skills.filter(
