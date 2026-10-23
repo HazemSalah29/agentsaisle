@@ -13,8 +13,8 @@ import {
   type RegistrySkill,
 } from "@agentsaisle/registry-schema";
 
-/** TODO(confirm): GitHub repo that hosts registry/official. */
-const OFFICIAL_REPO = process.env.OFFICIAL_REPO ?? "agentsaisle/agent-aisle";
+/** GitHub repo that hosts registry/official. */
+const OFFICIAL_REPO = process.env.OFFICIAL_REPO ?? "HazemSalah29/agentsaisle";
 const OFFICIAL_AUTHOR = "agentsaisle";
 
 /** Returns the raw SKILL.md text for a repo path at a commit SHA. */
