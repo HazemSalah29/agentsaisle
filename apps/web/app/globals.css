@@ -1,1 +1,190 @@
 @import "tailwindcss";
+
+/*
+ * Agent Aisle design tokens.
+ * Light is the base palette on :root; dark redefines only the tokens that change.
+ * Label stock, receipt paper and the sticker are physical objects and stay light in both themes,
+ * so they carry their own text colors (label-ink, thermal-ink, on-sticker).
+ */
+:root {
+  color-scheme: light;
+  --bag: #e4dcc8; /* kraft bag paper: page ground */
+  --ink: #1e1a12;
+  --ink-soft: #564e3f;
+  --label: #fbf8ee; /* label stock */
+  --label-ink: #1e1a12;
+  --label-ink-soft: #564e3f;
+  --label-rule: #1e1a12;
+  --edge: #1e1a12; /* hard offset shadow behind labels */
+  --sticker: #ffc21f; /* price sticker: the one accent */
+  --on-sticker: #1e1a12;
+  --thermal: #f6f5f0; /* receipt paper */
+  --thermal-ink: #25211a;
+  --thermal-ink-soft: #5c564a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bag: #1b1810;
+    --ink: #efe9d8;
+    --ink-soft: #b9b09a;
+    --edge: #080604;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bag: #1b1810;
+  --ink: #efe9d8;
+  --ink-soft: #b9b09a;
+  --edge: #080604;
+}
+
+@theme inline {
+  --color-bag: var(--bag);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-label: var(--label);
+  --color-edge: var(--edge);
+  --color-label-rule: var(--label-rule);
+  --color-label-ink: var(--label-ink);
+  --color-label-ink-soft: var(--label-ink-soft);
+  --color-sticker: var(--sticker);
+  --color-on-sticker: var(--on-sticker);
+  --color-thermal: var(--thermal);
+  --color-thermal-ink: var(--thermal-ink);
+  --color-thermal-ink-soft: var(--thermal-ink-soft);
+
+  --font-display: var(--f-display), "Arial Narrow", sans-serif;
+  --font-body: var(--f-body), Georgia, serif;
+  --font-mono: var(--f-mono), ui-monospace, monospace;
+
+  /* Type scale: 1.25 ratio, fluid at the top end */
+  --text-xs: 0.875rem;
+  --text-sm: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: clamp(1.75rem, 1.4rem + 1.2vw, 1.9375rem);
+  --text-2xl: clamp(2rem, 1.5rem + 2vw, 2.4375rem);
+  --text-3xl: clamp(2.5rem, 1.6rem + 3.4vw, 3.0625rem);
+  --text-4xl: clamp(3rem, 1.8rem + 5vw, 3.8125rem);
+
+  /* Spacing: 4px base, used as p-1 ... p-24 via the default scale */
+  --spacing: 0.25rem;
+
+  --radius-label: 2px;
+  --radius-sticker: 999px;
+
+  --shadow-label: 3px 3px 0 var(--edge);
+  --shadow-label-sm: 2px 2px 0 var(--edge);
+}
+
+@layer base {
+  html {
+    background: var(--bag);
+  }
+  body {
+    background: var(--bag);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: 0.005em;
+    text-wrap: balance;
+  }
+  p {
+    max-width: 68ch;
+  }
+  :focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--sticker);
+  }
+  ::selection {
+    background: var(--sticker);
+    color: var(--on-sticker);
+  }
+}
+
+/* Motion: only on user action, and never when reduced motion is requested. */
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.9) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.94) rotate(-6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-6deg);
+  }
+}
+@keyframes slide-on {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-stamp {
+  animation: stamp 300ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.animate-slide-on {
+  animation: slide-on 260ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-stamp,
+  .animate-slide-on {
+    animation: none;
+  }
+}
+
+/* Receipt's torn edge */
+.torn-edge {
+  --tooth: 10px;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--tooth)),
+    95% 100%,
+    90% calc(100% - var(--tooth)),
+    85% 100%,
+    80% calc(100% - var(--tooth)),
+    75% 100%,
+    70% calc(100% - var(--tooth)),
+    65% 100%,
+    60% calc(100% - var(--tooth)),
+    55% 100%,
+    50% calc(100% - var(--tooth)),
+    45% 100%,
+    40% calc(100% - var(--tooth)),
+    35% 100%,
+    30% calc(100% - var(--tooth)),
+    25% 100%,
+    20% calc(100% - var(--tooth)),
+    15% 100%,
+    10% calc(100% - var(--tooth)),
+    5% 100%,
+    0 calc(100% - var(--tooth))
+  );
+}
+
+/* Hazard stripe for the "runs scripts" tag */
+.hazard {
+  background-image: repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 6px 12px);
+}
