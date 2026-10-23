@@ -4,3 +4,5 @@ dist
 pnpm-lock.yaml
 BUILD_BRIEF.md
 V2_BRIEF.md
+registry/official/**/SKILL.md
+registry/official/**/SKILL.src.md
