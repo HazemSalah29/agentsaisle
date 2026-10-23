@@ -8,13 +8,14 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && pnpm skills:check && pnpm lint:skills",
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
     "registry:build": "tsx registry/build.ts",
     "registry:validate": "tsx registry/validate-pr.ts",
     "skills:build": "tsx registry/compile-skills.ts",
-    "skills:check": "tsx registry/compile-skills.ts --check"
+    "skills:check": "tsx registry/compile-skills.ts --check",
+    "lint:skills": "tsx registry/run-lint-skills.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
