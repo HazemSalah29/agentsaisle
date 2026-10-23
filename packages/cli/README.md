@@ -24,6 +24,8 @@ Requires Node.js 20 or newer. Works on macOS, Linux and Windows.
 | `aisle remove <name>`                   | Delete a skill and its lockfile entry              |
 | `aisle list`                            | Show installed skills and whether updates exist    |
 | `aisle info <name>`                     | Description, author, versions, clients, warnings   |
+| `aisle search <query>`                  | Search the registry by name, aisle or description  |
+| `aisle update [name]`                   | Update one or all skills to the latest version     |
 | `aisle init [--profile <id>]`           | Pick a profile and install its starter bundle      |
 
 ```sh
@@ -31,11 +33,13 @@ aisle add explore@1.0.0              # a specific version
 aisle add plan implement review      # several at once
 aisle init --profile code            # a starter bundle, no questions asked
 aisle add explore --dry-run          # see what would happen
+aisle search git                     # find skills
+aisle update                         # move installed skills to their latest versions
 ```
 
 ### Flags
 
-For `add`, `remove` and `list` (`--profile` is for `init`):
+For `add`, `remove`, `list`, `init` and `update` (`--profile` is for `init`):
 
 - `--global`, `-g`: use the user-level skills folder instead of the project.
 - `--agent <claude-code|codex|cursor>`: choose the target folder. By default the CLI detects it from your project and falls back to `claude-code`.
@@ -51,6 +55,8 @@ For `add`, `remove` and `list` (`--profile` is for `init`):
 | Cursor      | `.cursor/skills/<name>/` | `~/.cursor/skills/<name>/` |
 
 The Codex and Cursor folders follow each tool's convention at the time of writing; check their current docs if a skill isn't picked up.
+
+`aisle update` only moves forward: it updates a skill when the registry has a newer version, never downgrades, and leaves skills installed straight from GitHub alone.
 
 Installs are recorded in `aisle-lock.json` in your project root (your home folder with `--global`): name, version, repository, path, commit and install time.
 

@@ -35,7 +35,7 @@ aisle init --profile code    # a starter bundle
 | `aisle info <name>`                     | Description, author, versions and warnings         |
 | `aisle init [--profile <id>]`           | Install a starter bundle                           |
 
-Flags for `add`, `remove` and `list`: `--global` (user-level folder), `--agent <claude-code|codex|cursor>`, `--yes` (skip prompts), `--dry-run`. Skills land in `.claude/skills/<name>/` for Claude Code, and installs are recorded in `aisle-lock.json`.
+Flags for `add`, `remove`, `list`, `init` and `update`: `--global` (user-level folder), `--agent <claude-code|codex|cursor>`, `--yes` (skip prompts), `--dry-run`. Skills land in `.claude/skills/<name>/` for Claude Code, and installs are recorded in `aisle-lock.json`.
 
 ### Why not `npm install`?
 

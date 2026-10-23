@@ -3,14 +3,14 @@ import { createRequire } from "node:module";
 import { removeSkill, listSkills, showInfo } from "./commands.js";
 import { createContext, type CommonOptions } from "./context.js";
 import { initProfile } from "./init.js";
+import { searchRegistry } from "./search.js";
+import { updateSkills } from "./update.js";
 import { installMany } from "./install.js";
 
 // Read from package.json so the number can't drift. The path is the same from src/ and from dist/.
 export const VERSION: string = (
   createRequire(import.meta.url)("../package.json") as { version: string }
 ).version;
-
-const NOT_IMPLEMENTED = "Not implemented yet.";
 
 export function createProgram(): Command {
   const program = new Command("aisle")
@@ -63,16 +63,19 @@ export function createProgram(): Command {
     .description("Show details for a skill")
     .action((name: string) => showInfo(name, createContext({})));
 
-  const stub = (name: string, args: string, description: string) =>
+  program
+    .command("search <query...>")
+    .description("Search the registry by name, aisle, author or description")
+    .action((words: string[]) => searchRegistry(words.join(" "), createContext({})));
+  withFlags(
     program
-      .command(`${name} ${args}`.trim())
-      .description(description)
-      .action(() => {
-        console.error(NOT_IMPLEMENTED);
-        process.exitCode = 1;
-      });
-  stub("search", "<query>", "Search the registry");
-  stub("update", "[name]", "Update one or all skills");
+      .command("update [name]")
+      .description("Update one or all installed skills to the latest version")
+      .action((name: string | undefined, opts: CommonOptions) =>
+        updateSkills(name, createContext(opts)),
+      ),
+    ["global", "agent", "yes", "dry-run"],
+  );
 
   return program;
 }

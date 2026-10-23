@@ -26,8 +26,16 @@ const commands: Array<[string, string, boolean]> = [
     true,
   ],
   ["aisle info <name>", "Description, author, versions, clients and any scripts warning.", true],
-  ["aisle search <query>", "Search the registry from the terminal.", false],
-  ["aisle update [name]", "Update one or all skills to the latest version.", false],
+  [
+    "aisle search <query>",
+    "Search the registry by name, aisle, author or description, best match first.",
+    true,
+  ],
+  [
+    "aisle update [name]",
+    "Update one or all installed skills to the latest version. Skills installed from GitHub are skipped.",
+    true,
+  ],
   [
     "aisle init [--profile <id>]",
     "Pick a profile and install its starter bundle. With --profile it never asks which.",
@@ -112,7 +120,7 @@ export default function DocsPage() {
             ))}
           </Table>
           <div>
-            <h3 className="mb-3 text-lg">Flags for add, remove and list</h3>
+            <h3 className="mb-3 text-lg">Flags for add, remove, list, init and update</h3>
             <Table head={["Flag", "What it does"]}>
               {flags.map(([flag, what]) => (
                 <tr key={flag} className="border-t border-line align-top">

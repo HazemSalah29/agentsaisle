@@ -25,7 +25,11 @@ export function searchSkills<T extends Searchable>(skills: T[], query: string): 
   return skills
     .map((skill, index) => {
       const scores = tokens.map((t) => scoreToken(skill, t));
-      return { skill, index, total: scores.every((s) => s > 0) ? scores.reduce((a, b) => a + b, 0) : 0 };
+      return {
+        skill,
+        index,
+        total: scores.every((s) => s > 0) ? scores.reduce((a, b) => a + b, 0) : 0,
+      };
     })
     .filter((r) => r.total > 0)
     .sort((a, b) => b.total - a.total || a.index - b.index)

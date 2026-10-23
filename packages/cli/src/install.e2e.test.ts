@@ -17,6 +17,7 @@ const exploreMd = path.resolve(here, "../../../registry/official/explore/SKILL.m
 
 let server: Awaited<ReturnType<typeof serveTarball>>;
 let registryFile: string;
+let newerRegistryFile: string;
 
 const skill = (name: string, skillPath: string, runsScripts = false, verified = true) => ({
   name,
@@ -60,19 +61,29 @@ beforeAll(async () => {
       skill("mismatch", "skills/mismatch"),
     ],
   };
+  const newer: RegistryIndex = {
+    ...index,
+    skills: index.skills.map((sk) =>
+      sk.name === "explore"
+        ? { ...sk, latest: "1.1.0", versions: [{ version: "1.1.0", sha: SHA }, ...sk.versions] }
+        : sk,
+    ),
+  };
+  newerRegistryFile = path.join(await tmpDir(), "registry.json");
+  await writeFile(newerRegistryFile, JSON.stringify(newer));
   registryFile = path.join(await tmpDir(), "registry.json");
   await writeFile(registryFile, JSON.stringify(index));
 });
 
 afterAll(() => server.close());
 
-async function aisle(cwd: string, args: string[], home?: string) {
+async function aisle(cwd: string, args: string[], home?: string, registry = registryFile) {
   try {
     const { stdout, stderr } = await run(process.execPath, ["--import", tsx, entry, ...args], {
       cwd,
       env: {
         ...process.env,
-        AISLE_REGISTRY: registryFile,
+        AISLE_REGISTRY: registry,
         AISLE_CODELOAD_URL: server.url,
         ...(home ? { HOME: home, USERPROFILE: home } : {}),
       },
@@ -215,5 +226,68 @@ describe("aisle CLI (end to end, no network)", () => {
     expect(noProfile.code).toBe(1);
     expect(noProfile.stderr).toContain("Pass --profile <id>");
     expect(noProfile.stderr).toContain("starter, mixed");
+  });
+
+  it("search ranks matches, lists trust labels and suggests an install", async () => {
+    const project = await tmpDir();
+    const res = await aisle(project, ["search", "explore"]);
+    expect(res.code, res.stderr).toBe(0);
+    expect(res.stdout).toContain("explore  v1.0.0  official");
+    expect(res.stdout).toContain("Install one with: aisle add explore");
+
+    const all = await aisle(project, ["search", "test", "skill"]);
+    expect(all.stdout).toContain("risky  v1.0.0  official");
+    expect(all.stdout).toContain("mismatch  v1.0.0  official");
+
+    const none = await aisle(project, ["search", "zzz-nothing"]);
+    expect(none.code).toBe(0);
+    expect(none.stdout).toContain('No skills match "zzz-nothing"');
+  });
+
+  it("update moves an installed skill to the latest version", async () => {
+    const project = await tmpDir();
+    await aisle(project, ["add", "explore@1.0.0"], undefined, newerRegistryFile);
+    expect((await lock(project)).skills.explore.version).toBe("1.0.0");
+
+    const dry = await aisle(project, ["update", "--dry-run"], undefined, newerRegistryFile);
+    expect(dry.code, dry.stderr).toBe(0);
+    expect(dry.stdout).toContain("explore  1.0.0 -> 1.1.0");
+    expect(dry.stdout).toContain("[dry-run] would update 1 skill");
+    expect((await lock(project)).skills.explore.version).toBe("1.0.0");
+
+    const noTty = await aisle(project, ["update"], undefined, newerRegistryFile);
+    expect(noTty.code).toBe(1);
+    expect(noTty.stderr).toContain("--yes");
+
+    const done = await aisle(project, ["update", "--yes"], undefined, newerRegistryFile);
+    expect(done.code, done.stderr).toBe(0);
+    expect(done.stdout).toContain("Installed explore@1.1.0");
+    expect((await lock(project)).skills.explore.version).toBe("1.1.0");
+    expect(existsSync(path.join(project, ".claude", "skills", "explore", "SKILL.md"))).toBe(true);
+
+    const again = await aisle(project, ["update"], undefined, newerRegistryFile);
+    expect(again.code).toBe(0);
+    expect(again.stdout).toContain("Everything is up to date.");
+    const one = await aisle(project, ["update", "explore"], undefined, newerRegistryFile);
+    expect(one.stdout).toContain("explore is already up to date.");
+  });
+
+  it("update fails clearly for a skill that isn't installed, and says so when nothing is installed", async () => {
+    const project = await tmpDir();
+    expect((await aisle(project, ["update"])).stdout).toContain("No skills installed.");
+    await aisle(project, ["add", "explore"]);
+    const missing = await aisle(project, ["update", "commit"]);
+    expect(missing.code).toBe(1);
+    expect(missing.stderr).toContain('"commit" is not installed.');
+  });
+
+  it("update --global works on the home folder's lockfile", async () => {
+    const project = await tmpDir();
+    const home = await tmpDir();
+    await aisle(project, ["add", "explore@1.0.0", "--global"], home, newerRegistryFile);
+    const done = await aisle(project, ["update", "--global", "--yes"], home, newerRegistryFile);
+    expect(done.code, done.stderr).toBe(0);
+    expect((await lock(home)).skills.explore.version).toBe("1.1.0");
+    expect(existsSync(path.join(project, ".claude"))).toBe(false);
   });
 });

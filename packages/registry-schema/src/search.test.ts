@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { searchSkills } from "./search";
 
-const s = (name: string, extra: Partial<{ category: string[]; author: string; description: string }> = {}) => ({
+const s = (
+  name: string,
+  extra: Partial<{ category: string[]; author: string; description: string }> = {},
+) => ({
   name,
   category: ["code"],
   author: "someone",
@@ -14,7 +17,11 @@ describe("searchSkills", () => {
   const all = [
     s("explore", { description: "Map a codebase." }),
     s("commit", { category: ["code", "git"], description: "Write a git commit." }),
-    s("reel-scriptwriter", { category: ["video"], author: "reel-lab", description: "Write video scripts." }),
+    s("reel-scriptwriter", {
+      category: ["video"],
+      author: "reel-lab",
+      description: "Write video scripts.",
+    }),
   ];
   it("returns everything for an empty query", () => {
     expect(searchSkills(all, "  ")).toBe(all);
