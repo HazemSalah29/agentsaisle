@@ -1,0 +1,4 @@
+version: 1.0.0
+category: [code]
+clients: [claude-code, codex, cursor]
+runs_scripts: false

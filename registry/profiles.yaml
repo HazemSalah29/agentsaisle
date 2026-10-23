@@ -1,0 +1,56 @@
+# Starter bundles (aisle init) and the questions behind the profile picker on the website.
+# Every skill named here must exist in the registry; the build fails otherwise.
+profiles:
+  - id: code
+    name: Code
+    description: Plan, build, check and commit changes in a software project.
+    skills: [plan, implement, explore, review, commit]
+  - id: writing
+    name: Writing
+    description: Edit prose and keep documents on-brand.
+    skills: [edit, brand-guidelines]
+  - id: media
+    name: Media
+    description: Design and brand work. This bundle grows as video and image skills are added.
+    skills: [brand-guidelines]
+
+questions:
+  - id: focus
+    prompt: What do you mostly make with your agent?
+    options:
+      - label: Software
+        adds: [explore, implement, commit]
+      - label: Video, images and design
+        adds: [brand-guidelines]
+      - label: Articles and docs
+        adds: [edit]
+      - label: A bit of everything
+        adds: [explore, edit]
+  - id: start
+    prompt: How do you like to start a task?
+    options:
+      - label: Plan first, then build
+        adds: [plan]
+      - label: Just start
+        adds: []
+  - id: codebase
+    prompt: Do you often work in a codebase you did not write?
+    options:
+      - label: Yes
+        adds: [explore]
+      - label: No
+        adds: []
+  - id: second-pair
+    prompt: Do you want a second pair of eyes on finished work?
+    options:
+      - label: Yes, review it
+        adds: [review]
+      - label: No, I will check it myself
+        adds: []
+  - id: commits
+    prompt: Should your agent write your git commits?
+    options:
+      - label: Yes
+        adds: [commit]
+      - label: No
+        adds: []
