@@ -81,6 +81,23 @@ export const RegistryIndex = z.object({
 });
 export type RegistryIndex = z.infer<typeof RegistryIndex>;
 
+export const LockEntry = z.object({
+  name: SkillName,
+  version: z.string().min(1),
+  repo: z.string(),
+  path: z.string(),
+  sha: CommitSha,
+  installedAt: z.string(),
+});
+export type LockEntry = z.infer<typeof LockEntry>;
+
+/** aisle-lock.json in the project root */
+export const LockFile = z.object({
+  lockfileVersion: z.literal(1),
+  skills: z.record(SkillName, LockEntry),
+});
+export type LockFile = z.infer<typeof LockFile>;
+
 /** Parse "a: b" style frontmatter-delimited markdown into [frontmatterText, body]. */
 export function splitFrontmatter(md: string): { frontmatter: string; body: string } | null {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(md);
