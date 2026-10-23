@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
     "registry:build": "tsx registry/build.ts",
-    "registry:validate": "tsx registry/validate-pr.ts"
+    "registry:validate": "tsx registry/validate-pr.ts",
+    "skills:build": "tsx registry/compile-skills.ts",
+    "skills:check": "tsx registry/compile-skills.ts --check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

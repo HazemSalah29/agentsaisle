@@ -1,0 +1,4 @@
+- Search first (grep, glob, symbol search). Read line ranges, not whole files.
+- Read at most 8 files per step. If you need more, write down what you learned and narrow the question.
+- Do not re-read a file you just wrote or edited.
+- Prefer the smallest command output that answers the question: head, tail, quiet flags, filtered lists.
