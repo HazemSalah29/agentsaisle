@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +7,7 @@ import { parse as parseYaml } from "yaml";
 import {
   CommunityEntry,
   OfficialMeta,
+  ProfilesFile,
   RegistryIndex,
   SkillFrontmatter,
   compareSemver,
@@ -80,6 +82,32 @@ async function readYaml<T>(
   const res = schema.safeParse(parseYaml(await readFile(file, "utf8")));
   if (!res.success) throw new Error(`${label}: ${formatIssues(res.error.issues)}`);
   return res.data;
+}
+
+/** profiles.yaml is optional; when present every skill it names must exist. */
+async function readProfiles(rootDir: string, names: Set<string>): Promise<Partial<ProfilesFile>> {
+  const file = path.join(rootDir, "profiles.yaml");
+  if (!existsSync(file)) return {};
+  const label = "registry/profiles.yaml";
+  const data = await readYaml(file, ProfilesFile, label).catch((e: Error) => {
+    throw new Error(`Registry validation failed:\n- ${e.message}`);
+  });
+  const problems: string[] = [];
+  const check = (skill: string, where: string) => {
+    if (!names.has(skill)) problems.push(`${label}: ${where} references unknown skill "${skill}"`);
+  };
+  for (const p of data.profiles) p.skills.forEach((s) => check(s, `profile "${p.id}"`));
+  for (const q of data.questions) {
+    q.options.forEach((o) =>
+      o.adds.forEach((s) => check(s, `question "${q.id}" option "${o.label}"`)),
+    );
+  }
+  const ids = data.profiles.map((p) => p.id);
+  ids
+    .filter((id, i) => ids.indexOf(id) !== i)
+    .forEach((id) => problems.push(`${label}: duplicate profile id "${id}"`));
+  if (problems.length) throw new Error(`Registry validation failed:\n- ${problems.join("\n- ")}`);
+  return data;
 }
 
 export interface BuildOptions {
@@ -165,7 +193,13 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   if (errors.length) throw new Error(`Registry validation failed:\n- ${errors.join("\n- ")}`);
 
   skills.sort((a, b) => a.name.localeCompare(b.name));
-  return RegistryIndex.parse({ generatedAt: (opts.now ?? new Date()).toISOString(), skills });
+
+  const profiles = await readProfiles(rootDir, new Set(skills.map((s) => s.name)));
+  return RegistryIndex.parse({
+    generatedAt: (opts.now ?? new Date()).toISOString(),
+    skills,
+    ...profiles,
+  });
 }
 
 async function main() {

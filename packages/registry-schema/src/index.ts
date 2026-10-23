@@ -75,9 +75,36 @@ export const RegistrySkill = z.object({
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 
+/** A starter bundle, installed by `aisle init --profile <id>`. */
+export const Profile = z.object({
+  id: SkillName,
+  name: z.string().min(1),
+  description: z.string().min(1),
+  skills: z.array(SkillName).min(1),
+});
+export type Profile = z.infer<typeof Profile>;
+
+/** One question of the profile picker. Each answer adds skills to the bundle. */
+export const Question = z.object({
+  id: SkillName,
+  prompt: z.string().min(1),
+  options: z.array(z.object({ label: z.string().min(1), adds: z.array(SkillName) })).min(2),
+});
+export type Question = z.infer<typeof Question>;
+
+/** registry/profiles.yaml */
+export const ProfilesFile = z.object({
+  profiles: z.array(Profile).min(1),
+  questions: z.array(Question).min(1),
+});
+export type ProfilesFile = z.infer<typeof ProfilesFile>;
+
 export const RegistryIndex = z.object({
   generatedAt: z.string(),
   skills: z.array(RegistrySkill),
+  // Defaults keep older cached registry.json files (without profiles) valid.
+  profiles: z.array(Profile).default([]),
+  questions: z.array(Question).default([]),
 });
 export type RegistryIndex = z.infer<typeof RegistryIndex>;
 

@@ -76,4 +76,46 @@ describe("buildRegistry", () => {
       buildRegistry({ rootDir: root, fetchSkill: async () => skillMd("other"), resolveSha }),
     ).rejects.toThrow(/must match entry name "one"/);
   });
+
+  describe("profiles.yaml", () => {
+    const profilesYaml = (skill: string, extra = "") =>
+      `profiles:\n  - {id: starter, name: Starter, description: Basics, skills: [${skill}]}\n${extra}questions:\n  - id: kind\n    prompt: What?\n    options:\n      - {label: Code, adds: [${skill}]}\n      - {label: Other, adds: []}\n`;
+
+    it("is optional", async () => {
+      await official("explore");
+      const idx = await build();
+      expect(idx.profiles).toEqual([]);
+      expect(idx.questions).toEqual([]);
+    });
+
+    it("is included in the index when valid", async () => {
+      await official("explore");
+      await writeFile(path.join(root, "profiles.yaml"), profilesYaml("explore"));
+      const idx = await build();
+      expect(idx.profiles[0]).toMatchObject({ id: "starter", skills: ["explore"] });
+      expect(idx.questions[0]!.options).toHaveLength(2);
+    });
+
+    it("fails when a profile or answer names an unknown skill", async () => {
+      await official("explore");
+      await writeFile(path.join(root, "profiles.yaml"), profilesYaml("ghost"));
+      await expect(build()).rejects.toThrow(
+        /profile "starter" references unknown skill "ghost"[\s\S]*option "Code" references unknown skill "ghost"/,
+      );
+    });
+
+    it("fails on duplicate profile ids and malformed files", async () => {
+      await official("explore");
+      await writeFile(
+        path.join(root, "profiles.yaml"),
+        profilesYaml(
+          "explore",
+          "  - {id: starter, name: Again, description: Dup, skills: [explore]}\n",
+        ),
+      );
+      await expect(build()).rejects.toThrow(/duplicate profile id "starter"/);
+      await writeFile(path.join(root, "profiles.yaml"), "profiles: []\nquestions: []\n");
+      await expect(build()).rejects.toThrow(/registry\/profiles\.yaml/);
+    });
+  });
 });
