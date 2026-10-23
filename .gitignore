@@ -8,3 +8,4 @@ coverage
 *.tsbuildinfo
 .DS_Store
 apps/web/public/registry.json
+next-env.d.ts
