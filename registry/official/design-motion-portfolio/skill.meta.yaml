@@ -1,0 +1,13 @@
+version: 0.1.0
+category: [design, web]
+clients: [claude-code, codex, cursor]
+runs_scripts: true
+niche: design
+kind: quality
+tier: specialty
+permissions:
+  tools: [Read, Grep, Glob, Edit, Write, Bash]
+  writes_files: true
+  runs_scripts: true
+  network: false
+  needs_api_keys: []

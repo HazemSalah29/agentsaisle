@@ -1,0 +1,112 @@
+/*
+ * Motion portfolio design tokens. Dark only, one vivid accent, an 8 px spacing scale.
+ * Colors are solid hex so the contrast test can read them. Use these through Tailwind
+ * (bg-ground, text-ink, text-accent, ...) or var(--...). Never write a raw color, a raw
+ * duration or a one-off pixel value in a page.
+ */
+@theme {
+  --color-ground: #0d0c0b; /* page background */
+  --color-raised: #171513; /* cards and panels */
+  --color-ink: #ede8de; /* main text, warm off-white */
+  --color-muted: #9b958a; /* secondary text */
+  --color-line: #36322d; /* hairlines and borders */
+  --color-accent: #8b6cff; /* the one vivid color */
+  --color-on-accent: #0d0c0b; /* text on accent fills */
+
+  /* 8 px scale: p-1 = 8 px, p-15 = 120 px, p-25 = 200 px. */
+  --spacing: 0.5rem;
+  /* Section padding: 120 to 200 px on desktop, tighter on a phone. */
+  --spacing-section: clamp(72px, 10vw, 200px);
+  --spacing-gutter: clamp(16px, 3vw, 48px);
+  --container-page: 1560px;
+
+  --text-display: clamp(3.5rem, 11vw, 11.25rem); /* 56 to 180 px */
+  --text-display--line-height: 0.88;
+  --text-display--letter-spacing: -0.02em;
+  --text-title: clamp(2rem, 5.5vw, 5rem);
+  --text-title--line-height: 0.95;
+  --text-lead: clamp(1.125rem, 1.6vw, 1.5rem);
+  --text-lead--line-height: 1.45;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* Width of the display face (it has a width axis). Narrow on a phone so long words fit. */
+@utility stretch-narrow {
+  font-stretch: 70%;
+}
+@utility stretch-normal {
+  font-stretch: 100%;
+}
+@utility stretch-wide {
+  font-stretch: 130%;
+}
+
+/* next/font sets --f-display and --f-body on <html>. */
+@theme inline {
+  --font-display: var(--f-display), "Arial Narrow", sans-serif;
+  --font-body: var(--f-body), system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+
+  --duration-fast: 200ms;
+  --duration-base: 450ms;
+  --duration-slow: 900ms;
+  --duration-epic: 1400ms;
+  --stagger-word: 40ms;
+  --stagger-item: 80ms;
+}
+
+html {
+  background: var(--color-ground);
+}
+
+body {
+  margin: 0;
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Lenis smooth scroll (from its documented base styles). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/*
+ * Reduced motion: every kit animation starts from an inline style, so this wins with
+ * !important. Content is fully visible and nothing moves, even before JavaScript runs.
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-kit-motion] {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  /* Curtains only exist to be wiped away. */
+  [data-kit-curtain] {
+    display: none !important;
+  }
+}
