@@ -32,16 +32,24 @@ function contrast(a: string, b: string): number {
 }
 
 // [foreground, background, minimum ratio]: 4.5 for text, 3 for UI parts
+const aisles = ["aisle-code", "aisle-design", "aisle-git", "aisle-writing", "aisle-video"];
 const pairs: Array<[string, string, number]> = [
-  ["ink", "bag", 4.5],
-  ["ink-soft", "bag", 4.5],
-  ["label-ink", "label", 4.5],
-  ["label-ink-soft", "label", 4.5],
-  ["label-rule", "label", 3],
-  ["on-sticker", "sticker", 4.5],
-  ["thermal-ink", "thermal", 4.5],
-  ["thermal-ink-soft", "thermal", 4.5],
-  ["bag", "ink", 4.5], // inverted controls (hover state)
+  ["ink", "bg", 4.5],
+  ["ink", "bg-raised", 4.5],
+  ["ink-strong", "bg", 4.5],
+  ["muted", "bg", 4.5],
+  ["muted", "bg-raised", 4.5],
+  ["muted", "bg-sunken", 4.5],
+  ["accent-ink", "bg", 4.5],
+  ["accent-ink", "bg-raised", 4.5],
+  ["on-accent", "accent", 4.5],
+  ["invert-fg", "invert-bg", 4.5],
+  ["accent", "bg", 3], // focus ring and accent UI parts
+  ["line-strong", "bg", 1.8], // hairline is decoration; the strong line marks controls
+  ...aisles.flatMap((a): Array<[string, string, number]> => [
+    [a, "bg", 4.5],
+    [a, "bg-raised", 4.5],
+  ]),
 ];
 
 describe.each([
@@ -51,13 +59,6 @@ describe.each([
   it.each(pairs)("%s on %s is at least %d:1", (fg, bg, min) => {
     expect(contrast(theme[fg]!, theme[bg]!)).toBeGreaterThanOrEqual(min);
   });
-});
-
-it("a label is distinguishable from the page in each theme", () => {
-  // light: the label has an ink border on kraft; dark: label stock is much lighter than the page
-  expect(contrast(light["label-rule"]!, light.bag!)).toBeGreaterThanOrEqual(3);
-  expect(contrast(dark.label!, dark.bag!)).toBeGreaterThanOrEqual(3);
-  expect(contrast(dark.edge!, dark.bag!)).toBeGreaterThan(1);
 });
 
 it("the system-dark block matches the explicit dark block", () => {

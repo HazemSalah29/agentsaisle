@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Big_Shoulders, DM_Mono, Source_Serif_4 } from "next/font/google";
+import { Archivo, Geist_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-const display = Big_Shoulders({
+const display = Archivo({ subsets: ["latin"], variable: "--f-display" });
+const serif = Instrument_Serif({
   subsets: ["latin"],
-  weight: ["700", "800", "900"],
-  variable: "--f-display",
-});
-const body = Source_Serif_4({
-  subsets: ["latin"],
-  variable: "--f-body",
+  weight: "400",
   style: ["normal", "italic"],
+  variable: "--f-serif",
 });
-const mono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--f-mono" });
+const body = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--f-body",
+});
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--f-mono" });
 
 export const metadata: Metadata = {
   title: "Agent Aisle",
@@ -26,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
+      className={`${display.variable} ${serif.variable} ${body.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <head>

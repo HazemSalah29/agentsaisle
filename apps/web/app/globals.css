@@ -1,95 +1,130 @@
 @import "tailwindcss";
 
 /*
- * Agent Aisle design tokens.
- * Light is the base palette on :root; dark redefines only the tokens that change.
- * Label stock, receipt paper and the sticker are physical objects and stay light in both themes,
- * so they carry their own text colors (label-ink, thermal-ink, on-sticker).
+ * Agent Aisle design tokens ("HUD" system): hairline grid, sharp corners, mono labels.
+ * Light is the base palette; dark redefines only what changes. All values are solid hex so the
+ * contrast test (tokens.test.ts) can read them.
  */
 :root,
 [data-theme="light"] {
   color-scheme: light;
-  --bag: #e4dcc8; /* kraft bag paper: page ground */
-  --ink: #1e1a12;
-  --ink-soft: #564e3f;
-  --label: #fbf8ee; /* label stock */
-  --label-ink: #1e1a12;
-  --label-ink-soft: #564e3f;
-  --label-rule: #1e1a12;
-  --edge: #1e1a12; /* hard offset shadow behind labels */
-  --sticker: #ffc21f; /* price sticker: the one accent */
-  --on-sticker: #1e1a12;
-  --thermal: #f6f5f0; /* receipt paper */
-  --thermal-ink: #25211a;
-  --thermal-ink-soft: #5c564a;
+  --bg: #f2f1ee;
+  --bg-raised: #faf9f7;
+  --bg-sunken: #e9e8e4;
+  --ink: #101014;
+  --ink-strong: #000000;
+  --muted: #5e5e62;
+  --line: #cecdca; /* hairline */
+  --line-strong: #989793;
+  --accent: #ee4f12; /* signal orange: the one base accent */
+  --accent-ink: #b83700; /* accent as text on bg */
+  --on-accent: #101014;
+  --invert-bg: #101014;
+  --invert-fg: #f2f1ee;
+  --scanline: #10101408;
+  /* Per-aisle accent inks (text-safe on bg and bg-raised) */
+  --aisle-code: #1659c4;
+  --aisle-design: #b0166b;
+  --aisle-git: #0f7a4a;
+  --aisle-writing: #8a5a00;
+  --aisle-video: #6b3fd1;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bag: #1b1810;
-    --ink: #efe9d8;
-    --ink-soft: #b9b09a;
-    --edge: #080604;
+    --bg: #14130f;
+    --bg-raised: #100f0b;
+    --bg-sunken: #080806;
+    --ink: #f2f1ee;
+    --ink-strong: #ffffff;
+    --muted: #a3a199;
+    --line: #34332d;
+    --line-strong: #6a6860;
+    --accent: #ff5a1f;
+    --accent-ink: #ff8a5c;
+    --invert-bg: #ffffff;
+    --invert-fg: #0b0b0c;
+    --scanline: #ffffff06;
+    --aisle-code: #74aaff;
+    --aisle-design: #ff7ac0;
+    --aisle-git: #4fd39a;
+    --aisle-writing: #f0b84a;
+    --aisle-video: #a98bff;
   }
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bag: #1b1810;
-  --ink: #efe9d8;
-  --ink-soft: #b9b09a;
-  --edge: #080604;
+  --bg: #14130f;
+  --bg-raised: #100f0b;
+  --bg-sunken: #080806;
+  --ink: #f2f1ee;
+  --ink-strong: #ffffff;
+  --muted: #a3a199;
+  --line: #34332d;
+  --line-strong: #6a6860;
+  --accent: #ff5a1f;
+  --accent-ink: #ff8a5c;
+  --invert-bg: #ffffff;
+  --invert-fg: #0b0b0c;
+  --scanline: #ffffff06;
+  --aisle-code: #74aaff;
+  --aisle-design: #ff7ac0;
+  --aisle-git: #4fd39a;
+  --aisle-writing: #f0b84a;
+  --aisle-video: #a98bff;
 }
 
 @theme inline {
-  --color-bag: var(--bag);
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
   --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
-  --color-label: var(--label);
-  --color-edge: var(--edge);
-  --color-label-rule: var(--label-rule);
-  --color-label-ink: var(--label-ink);
-  --color-label-ink-soft: var(--label-ink-soft);
-  --color-sticker: var(--sticker);
-  --color-on-sticker: var(--on-sticker);
-  --color-thermal: var(--thermal);
-  --color-thermal-ink: var(--thermal-ink);
-  --color-thermal-ink-soft: var(--thermal-ink-soft);
+  --color-ink-strong: var(--ink-strong);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
+  --color-invert-bg: var(--invert-bg);
+  --color-invert-fg: var(--invert-fg);
+  --color-aisle-code: var(--aisle-code);
+  --color-aisle-design: var(--aisle-design);
+  --color-aisle-git: var(--aisle-git);
+  --color-aisle-writing: var(--aisle-writing);
+  --color-aisle-video: var(--aisle-video);
 
-  --font-display: var(--f-display), "Arial Narrow", sans-serif;
-  --font-body: var(--f-body), Georgia, serif;
+  --font-display: var(--f-display), "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--f-serif), Georgia, serif;
+  --font-body: var(--f-body), system-ui, sans-serif;
   --font-mono: var(--f-mono), ui-monospace, monospace;
 
   /* Type scale: 1.25 ratio, fluid at the top end */
-  --text-xs: 0.875rem;
-  --text-sm: 1rem;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
   --text-md: 1.25rem;
   --text-lg: 1.5625rem;
   --text-xl: clamp(1.75rem, 1.4rem + 1.2vw, 1.9375rem);
   --text-2xl: clamp(2rem, 1.5rem + 2vw, 2.4375rem);
   --text-3xl: clamp(2.5rem, 1.6rem + 3.4vw, 3.0625rem);
-  --text-4xl: clamp(3rem, 1.8rem + 5vw, 3.8125rem);
+  --text-4xl: clamp(2.75rem, 1.4rem + 6vw, 4.75rem);
 
-  /* Spacing: 4px base, used as p-1 ... p-24 via the default scale */
   --spacing: 0.25rem;
-
-  --radius-label: 2px;
-  --radius-sticker: 999px;
-
-  --shadow-label: 3px 3px 0 var(--edge);
-  --shadow-label-sm: 2px 2px 0 var(--edge);
 }
 
 @layer base {
   html {
-    background: var(--bag);
+    background: var(--bg);
   }
   body {
-    background: var(--bag);
+    background-color: var(--bg);
+    background-image: repeating-linear-gradient(0deg, var(--scanline) 0 1px, transparent 1px 3px);
     color: var(--ink);
     font-family: var(--font-body);
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
@@ -98,94 +133,48 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: 0.005em;
+    font-weight: 500;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    color: var(--ink-strong);
     text-wrap: balance;
   }
   p {
     max-width: 68ch;
   }
   :focus-visible {
-    outline: 3px solid var(--ink);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
-    box-shadow: 0 0 0 6px var(--sticker);
   }
   ::selection {
-    background: var(--sticker);
-    color: var(--on-sticker);
+    background: var(--accent);
+    color: var(--on-accent);
   }
 }
 
-/* Motion: only on user action, and never when reduced motion is requested. */
-@keyframes stamp {
-  0% {
-    opacity: 0;
-    transform: scale(1.9) rotate(-14deg);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(0.94) rotate(-6deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(-6deg);
-  }
+/* Small uppercase mono label: nav, badges, section numbers. Never used for headings or body. */
+.hud-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
-@keyframes slide-on {
+
+/* Motion: only on user action, never when reduced motion is requested. */
+@keyframes flash-in {
   from {
-    opacity: 0;
-    transform: translateY(-0.75rem);
+    background-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    background-color: transparent;
   }
 }
-.animate-stamp {
-  animation: stamp 300ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
-}
-.animate-slide-on {
-  animation: slide-on 260ms ease-out both;
+.animate-flash-in {
+  animation: flash-in 700ms ease-out both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .animate-stamp,
-  .animate-slide-on {
+  .animate-flash-in {
     animation: none;
   }
-}
-
-/* Receipt's torn edge */
-.torn-edge {
-  --tooth: 10px;
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(100% - var(--tooth)),
-    95% 100%,
-    90% calc(100% - var(--tooth)),
-    85% 100%,
-    80% calc(100% - var(--tooth)),
-    75% 100%,
-    70% calc(100% - var(--tooth)),
-    65% 100%,
-    60% calc(100% - var(--tooth)),
-    55% 100%,
-    50% calc(100% - var(--tooth)),
-    45% 100%,
-    40% calc(100% - var(--tooth)),
-    35% 100%,
-    30% calc(100% - var(--tooth)),
-    25% 100%,
-    20% calc(100% - var(--tooth)),
-    15% 100%,
-    10% calc(100% - var(--tooth)),
-    5% 100%,
-    0 calc(100% - var(--tooth))
-  );
-}
-
-/* Hazard stripe for the "runs scripts" tag */
-.hazard {
-  background-image: repeating-linear-gradient(-45deg, var(--ink) 0 6px, transparent 6px 12px);
 }
