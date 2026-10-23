@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { parseFilters, serializeFilters } from "../lib/filter-url";
 import { defaultFilters, type Filters } from "../lib/filters";
@@ -10,16 +9,23 @@ import { SkillCard } from "./SkillCard";
 
 /** Search, filter and sort over the whole (small) index in the browser. State lives in the URL. */
 export function Catalog({ skills }: { skills: CatalogSkill[] }) {
-  const params = useSearchParams();
-  const [filters, setFilters] = useState<Filters>(() => parseFilters(params));
+  // Server-render the full list (no layout shift), then apply filters from the URL once mounted.
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [ready, setReady] = useState(false);
   const options = useMemo(() => filterOptions(skills), [skills]);
   const results = useMemo(() => applyFilters(skills, filters), [skills, filters]);
 
+  useEffect(() => {
+    setFilters(parseFilters(new URLSearchParams(window.location.search)));
+    setReady(true);
+  }, []);
+
   // Keep the address bar shareable without adding a history entry per keystroke.
   useEffect(() => {
+    if (!ready) return;
     const qs = serializeFilters(filters);
     window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
-  }, [filters]);
+  }, [filters, ready]);
 
   return (
     <div className="space-y-6 px-4 pb-14 sm:px-8">
@@ -48,7 +54,7 @@ export function Catalog({ skills }: { skills: CatalogSkill[] }) {
         <ul className="grid pl-px pt-px sm:grid-cols-2 xl:grid-cols-3">
           {results.map((s) => (
             <li key={s.name} className="-ml-px -mt-px border border-line-strong bg-bg-raised">
-              <SkillCard skill={s} href={`/skills/${s.name}`} stars={s.stars} />
+              <SkillCard skill={s} href={`/skills/${s.name}`} stars={s.stars} headingAs="h2" />
             </li>
           ))}
         </ul>

@@ -161,19 +161,15 @@ Note: we deliberately do **not** use `npm install <skill>`. `npm install` instal
 
 ## 7. Design direction (read before any UI work)
 
-The frontend-design skill does its best work with a specific brief. Use this one.
+**Updated after the owner chose a new direction in Milestone 3.** The original concept (a grocery aisle: paper, labels, receipt) was replaced by a technical "HUD" system modeled on the structure of getartcraft.com/apps, changed up so it is its own thing. Do not copy that site's assets, logo or copy.
 
-**Concept: a well-stocked aisle in a neighborhood store, for agent skills.** The product is literally a "grocery store for skills," so mine that world for the visual identity instead of defaulting to a generic SaaS look:
+- **Structure.** A sticky 48px header made of hairline-divided cells with an inverted hover. Sharp corners and 1px hairlines everywhere; no shadows or rounded cards. Numbered sections written as "Aisle 01", a nod to the product name. Content sits in a 1200px column with hairline side borders.
+- **Color.** Warm-gray light theme and a warm near-black dark theme. One base accent, signal orange (`#EE4F12` light, `#FF5A1F` dark), used for the official badge, the copy confirmation, focus rings and key links. Each aisle (code, design, git, writing, video) has its own text-safe ink color. Tokens live in `apps/web/app/globals.css`; `tokens.test.ts` enforces WCAG AA for every pair in both themes.
+- **Type.** Archivo for headings (weight 500, tight tracking), Instrument Serif italic for a single headline phrase, IBM Plex Sans for body text, Geist Mono for commands and small uppercase labels (labels, nav and badges only, never headings or body).
+- **Components.** Header and footer, Section, SkillCard (generated preview plate, glyph, name, description, trust badges, client tags), Badge (Official, Verified, Unverified, Runs scripts; each differs in shape or fill, not just color), InstallCommand (terminal bar with version selector and copy button), FilterBar, and Receipt (the bundle shown as a mono ledger with the install command as its total). `/design` shows all of them.
+- **Motion.** Only on user action: the copy button changes to "Copied", a newly added bundle line flashes. Both are disabled by `prefers-reduced-motion`.
 
-- **Shelves and labels.** Skill cards read like product labels: name in a strong display face, a short "contents" line (the description), small printed details (version, author, clients) like a nutrition panel. Categories are aisles.
-- **The receipt.** When a user builds a bundle on `/profiles`, the result appears as a printed receipt listing the skills, with the install command at the bottom like a total.
-- **Material.** Warm paper tones, ink-dark text, one confident accent color used sparingly (like a price sticker). Subtle grain or paper texture is fine; glossy gradients are not.
-- **Type.** One distinctive display face for headings and a highly readable face for body; a monospace for commands. Do not use Inter, Roboto or Arial as the primary face.
-- **Motion.** Small and purposeful: a label "stamp" when a command is copied, items sliding onto the receipt. Respect `prefers-reduced-motion`.
-
-**Avoid:** purple-to-blue gradients, glassmorphism everywhere, generic hero with three feature cards, emoji as icons, stock illustrations, centered-everything layouts.
-
-Before building pages, produce a small design system first: color tokens (light and dark), type scale, spacing, and the core components (SkillCard, InstallCommand, Receipt, FilterBar, Badge). Show me one page built with it before doing the rest.
+**Avoid:** purple-to-blue gradients, glassmorphism, generic three-feature-card heroes, emoji as icons, stock illustrations, centered-everything layouts.
 
 ## 8. Community submissions and safety
 

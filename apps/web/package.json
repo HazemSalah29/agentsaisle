@@ -11,7 +11,8 @@
     "test": "vitest run",
     "predev": "tsx scripts/copy-registry.mts",
     "pretypecheck": "tsx scripts/copy-registry.mts",
-    "pretest": "tsx scripts/copy-registry.mts"
+    "pretest": "tsx scripts/copy-registry.mts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "next": "^16.4.2",

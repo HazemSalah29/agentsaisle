@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Catalog } from "../../components/Catalog";
 import { getCatalog } from "../../lib/catalog";
 
@@ -23,11 +22,7 @@ export default async function SkillsPage() {
           command is one line.
         </p>
       </div>
-      <Suspense
-        fallback={<p className="hud-label px-4 pb-14 text-muted sm:px-8">Loading skills</p>}
-      >
-        <Catalog skills={skills} />
-      </Suspense>
+      <Catalog skills={skills} />
     </>
   );
 }

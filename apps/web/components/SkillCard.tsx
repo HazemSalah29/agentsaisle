@@ -45,11 +45,14 @@ export function SkillCard({
   index,
   href,
   stars,
+  headingAs: Heading = "h3",
 }: {
   skill: RegistrySkill;
   index?: number;
   href?: string;
   stars?: number;
+  /** Heading level for the card title; use h2 when the card sits directly under the page's h1. */
+  headingAs?: "h2" | "h3";
 }) {
   const color = aisleColor(skill.category);
   return (
@@ -74,7 +77,7 @@ export function SkillCard({
           >
             {skill.name[0]}
           </span>
-          <h3 className="text-lg">
+          <Heading className="text-lg">
             {href ? (
               <a href={href} className="after:absolute after:inset-0">
                 {skill.name}
@@ -82,7 +85,7 @@ export function SkillCard({
             ) : (
               skill.name
             )}
-          </h3>
+          </Heading>
         </div>
         <p className="line-clamp-3 text-sm text-muted">{skill.description}</p>
         <div className="flex flex-wrap gap-1.5">

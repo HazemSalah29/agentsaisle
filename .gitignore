@@ -9,3 +9,5 @@ coverage
 .DS_Store
 apps/web/public/registry.json
 next-env.d.ts
+test-results
+playwright-report

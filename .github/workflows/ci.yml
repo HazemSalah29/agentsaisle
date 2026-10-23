@@ -27,3 +27,9 @@ jobs:
       - run: pnpm build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Playwright browser
+        run: pnpm --filter @agentsaisle/web exec playwright install --with-deps chromium
+      - name: Smoke tests
+        run: pnpm --filter @agentsaisle/web test:e2e
+        env:
+          CI: "true"
