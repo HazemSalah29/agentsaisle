@@ -3,3 +3,4 @@ dist
 .next
 pnpm-lock.yaml
 BUILD_BRIEF.md
+V2_BRIEF.md

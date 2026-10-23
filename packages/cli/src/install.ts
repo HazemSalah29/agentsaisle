@@ -57,10 +57,16 @@ async function moveDir(from: string, to: string): Promise<void> {
   }
 }
 
+export interface InstallOptions {
+  /** Replace an existing folder without asking (used by `aisle update`). */
+  overwrite?: boolean;
+}
+
 export async function installOne(
   input: string,
   ctx: Context,
   getIndex: () => Promise<RegistryIndex>,
+  options: InstallOptions = {},
 ): Promise<void> {
   const p = await plan(input, getIndex);
   const opts = { agent: ctx.agent, global: ctx.global, cwd: ctx.cwd };
@@ -107,7 +113,7 @@ export async function installOne(
     const dest = targetDir(name, opts);
     let backup: string | undefined;
     if (existsSync(dest)) {
-      if (!(await ctx.confirm(`${dest} already exists. Overwrite?`))) {
+      if (!options.overwrite && !(await ctx.confirm(`${dest} already exists. Overwrite?`))) {
         ctx.log(`Skipped ${name}.`);
         return;
       }
@@ -138,13 +144,17 @@ export async function installOne(
   }
 }
 
-export async function installMany(inputs: string[], ctx: Context): Promise<void> {
+export async function installMany(
+  inputs: string[],
+  ctx: Context,
+  options: InstallOptions = {},
+): Promise<void> {
   let index: Promise<RegistryIndex> | undefined;
   const getIndex = () => (index ??= loadRegistry());
   const failures: string[] = [];
   for (const input of inputs) {
     try {
-      await installOne(input, ctx, getIndex);
+      await installOne(input, ctx, getIndex, options);
     } catch (e) {
       if (!(e instanceof CliError)) throw e;
       console.error(`Error (${input}): ${e.message}`);
