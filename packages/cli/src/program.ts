@@ -1,10 +1,14 @@
 import { Command } from "commander";
+import { createRequire } from "node:module";
 import { removeSkill, listSkills, showInfo } from "./commands.js";
 import { createContext, type CommonOptions } from "./context.js";
 import { initProfile } from "./init.js";
 import { installMany } from "./install.js";
 
-export const VERSION = "0.0.0";
+// Read from package.json so the number can't drift. The path is the same from src/ and from dist/.
+export const VERSION: string = (
+  createRequire(import.meta.url)("../package.json") as { version: string }
+).version;
 
 const NOT_IMPLEMENTED = "Not implemented yet.";
 

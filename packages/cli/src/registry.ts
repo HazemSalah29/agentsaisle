@@ -5,8 +5,11 @@ import path from "node:path";
 import { CliError } from "./errors.js";
 import { closestMatches } from "./spec.js";
 
-/** TODO(M6): point at the deployed site once the domain is final. */
-export const DEFAULT_REGISTRY_URL = "https://agentsaisle.dev/registry.json";
+/**
+ * The live registry. This is the project's .vercel.app address, which keeps working after a custom
+ * domain is added, so published CLI versions never break. Override with AISLE_REGISTRY.
+ */
+export const DEFAULT_REGISTRY_URL = "https://agentsaisle-vercel.vercel.app/registry.json";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 export function cacheDir(): string {

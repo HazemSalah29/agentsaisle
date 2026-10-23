@@ -3,11 +3,23 @@ import { reportUrl, resolveSiteUrl } from "./site";
 
 describe("resolveSiteUrl", () => {
   it("prefers SITE_URL and trims a trailing slash", () => {
-    expect(resolveSiteUrl({ SITE_URL: "https://example.dev/", VERCEL_PROJECT_PRODUCTION_URL: "x.vercel.app" })).toBe("https://example.dev");
+    expect(
+      resolveSiteUrl({
+        SITE_URL: "https://example.dev/",
+        VERCEL_PROJECT_PRODUCTION_URL: "x.vercel.app",
+      }),
+    ).toBe("https://example.dev");
   });
   it("uses the Vercel production address when SITE_URL is missing or empty", () => {
-    expect(resolveSiteUrl({ VERCEL_PROJECT_PRODUCTION_URL: "agentsaisle-vercel.vercel.app" })).toBe("https://agentsaisle-vercel.vercel.app");
-    expect(resolveSiteUrl({ SITE_URL: "", VERCEL_PROJECT_PRODUCTION_URL: "agentsaisle-vercel.vercel.app" })).toBe("https://agentsaisle-vercel.vercel.app");
+    expect(resolveSiteUrl({ VERCEL_PROJECT_PRODUCTION_URL: "agentsaisle-vercel.vercel.app" })).toBe(
+      "https://agentsaisle-vercel.vercel.app",
+    );
+    expect(
+      resolveSiteUrl({
+        SITE_URL: "",
+        VERCEL_PROJECT_PRODUCTION_URL: "agentsaisle-vercel.vercel.app",
+      }),
+    ).toBe("https://agentsaisle-vercel.vercel.app");
   });
   it("falls back to localhost for development", () => {
     expect(resolveSiteUrl({})).toBe("http://localhost:3000");

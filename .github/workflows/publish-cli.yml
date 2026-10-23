@@ -1,0 +1,40 @@
+name: Publish CLI
+
+# Publishes @agentsaisle/cli to npm. It does nothing until you add an NPM_TOKEN repository secret
+# (an npm automation token) and push a tag like `cli-v0.1.1` or run the workflow by hand.
+# The first release is meant to be published manually; see the README.
+on:
+  push:
+    tags:
+      - "cli-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @agentsaisle/cli test
+      - run: pnpm --filter @agentsaisle/cli build
+      - name: Check the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/cli-v')
+        run: |
+          want="${GITHUB_REF_NAME#cli-v}"
+          have=$(node -p "require('./packages/cli/package.json').version")
+          if [ "$want" != "$have" ]; then echo "Tag $GITHUB_REF_NAME does not match package version $have"; exit 1; fi
+      - name: Publish
+        working-directory: packages/cli
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

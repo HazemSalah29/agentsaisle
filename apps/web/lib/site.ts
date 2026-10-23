@@ -6,7 +6,9 @@ export const REPO_URL = "https://github.com/HazemSalah29/agentsaisle";
  * localhost for development. Empty values count as unset.
  */
 export function resolveSiteUrl(env: Record<string, string | undefined>): string {
-  const vercel = env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined;
+  const vercel = env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : undefined;
   return (env.SITE_URL || vercel || "http://localhost:3000").replace(/\/$/, "");
 }
 
