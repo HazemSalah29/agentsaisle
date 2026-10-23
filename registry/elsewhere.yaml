@@ -1,0 +1,109 @@
+# Skills by other authors, listed with a link out. We do not copy them and the CLI does not install them.
+# Every entry was checked against the public repository: the folder holds a SKILL.md and the license is
+# stated in the repo (LICENSE file, the skill's own LICENSE.txt, or the SKILL.md frontmatter).
+# `pnpm registry:validate-elsewhere` repeats the check. Descriptions are one short line written by us.
+entries:
+  # anthropics/skills (Apache-2.0, license file inside each skill folder)
+  - name: frontend-design
+    author: Anthropic
+    repo: anthropics/skills
+    path: skills/frontend-design
+    description: Guidance for distinctive visual design when building or reshaping a user interface.
+    license: Apache-2.0
+    aisle: web-design
+  - name: webapp-testing
+    author: Anthropic
+    repo: anthropics/skills
+    path: skills/webapp-testing
+    description: Test and debug local web apps with Playwright, including screenshots and browser logs.
+    license: Apache-2.0
+    aisle: testing
+  - name: skill-creator
+    author: Anthropic
+    repo: anthropics/skills
+    path: skills/skill-creator
+    description: Create, improve and measure other skills.
+    license: Apache-2.0
+    aisle: baseline
+
+  # vercel-labs/agent-skills (MIT, stated in each SKILL.md)
+  - name: react-best-practices
+    author: Vercel
+    repo: vercel-labs/agent-skills
+    path: skills/react-best-practices
+    description: Performance guidelines for React and Next.js code.
+    license: MIT
+    aisle: frontend
+  - name: composition-patterns
+    author: Vercel
+    repo: vercel-labs/agent-skills
+    path: skills/composition-patterns
+    description: React component composition patterns that scale.
+    license: MIT
+    aisle: frontend
+
+  # obra/superpowers (MIT)
+  - name: systematic-debugging
+    author: Jesse Vincent
+    repo: obra/superpowers
+    path: skills/systematic-debugging
+    description: A disciplined process for bugs, test failures and unexpected behavior.
+    license: MIT
+    aisle: testing
+  - name: test-driven-development
+    author: Jesse Vincent
+    repo: obra/superpowers
+    path: skills/test-driven-development
+    description: Write the test first when implementing a feature or fixing a bug.
+    license: MIT
+    aisle: testing
+  - name: brainstorming
+    author: Jesse Vincent
+    repo: obra/superpowers
+    path: skills/brainstorming
+    description: Explore intent and options before starting creative or build work.
+    license: MIT
+    aisle: baseline
+
+  # mattpocock/skills (MIT)
+  - name: handoff
+    author: Matt Pocock
+    repo: mattpocock/skills
+    path: skills/productivity/handoff
+    description: Compact the current conversation into a handoff for another session.
+    license: MIT
+    aisle: baseline
+  - name: grill-me
+    author: Matt Pocock
+    repo: mattpocock/skills
+    path: skills/productivity/grill-me
+    description: An interview that sharpens a plan or design.
+    license: MIT
+    aisle: baseline
+
+  # trailofbits/skills (CC-BY-SA-4.0)
+  - name: differential-review
+    author: Trail of Bits
+    repo: trailofbits/skills
+    path: plugins/differential-review/skills/differential-review
+    description: Security-focused review of a code change.
+    license: CC-BY-SA-4.0
+    aisle: baseline
+
+  # supabase/agent-skills (MIT)
+  - name: supabase-postgres-best-practices
+    author: Supabase
+    repo: supabase/agent-skills
+    path: skills/supabase-postgres-best-practices
+    description: Postgres schema, migration, security and performance practices.
+    license: MIT
+    aisle: database
+
+  # JuliusBrussee/caveman (Apache-2.0)
+  - name: caveman-compress
+    author: Julius Brussee
+    repo: JuliusBrussee/caveman
+    path: plugins/caveman/skills/caveman-compress
+    description: Shrinks a memory file to save input tokens.
+    license: Apache-2.0
+    aisle: baseline
