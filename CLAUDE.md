@@ -34,6 +34,8 @@ registry/build.ts          compiles everything into dist/registry.json
 
 - Web data flow: `apps/web/lib/registry.ts` imports `public/registry.json` (copied from `registry/dist` by `scripts/copy-registry.mts` in predev, prebuild, pretypecheck and pretest). GitHub stars, dates and SKILL.md are fetched at build/ISR time and must never fail the build. Catalog search/filter/sort is pure code in `lib/search.ts`; filter state round-trips through the URL (`lib/filter-url.ts`).
 - Tests: Vitest per package (web uses `vitest.config.ts` for JSX); Playwright smoke tests in `apps/web/e2e` run against `next start` on port 3100 after `pnpm build` (`pnpm --filter @agentsaisle/web test:e2e`).
+- Profiles: `registry/profiles.yaml` holds starter bundles (`aisle init --profile <id>`) and the picker's questions; the build fails if it names a skill that doesn't exist, and both ship inside `registry.json` (`profiles`, `questions`; optional with defaults so old caches parse). The website's `/profiles` picker builds bundles with `lib/bundle.ts`.
+- Community submissions: `/submit` generates the YAML (`lib/yaml-entry.ts`; always quotes `sha`, `version`, `ref`) and links to a prefilled GitHub new-file page. CI (`.github/workflows/validate-registry.yml`, `registry/validate.ts`, `pnpm registry:validate`) checks each changed entry: schema, file name, unique name, repo public, commits exist, SKILL.md frontmatter and name, undeclared `scripts/`, `verified` only by the owner. It also runs on pushes to `m5-test-**` branches. The validator only reads text from GitHub; it never runs submitted code.
 
 ## Rules
 

@@ -1,4 +1,15 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+// Counts come from the same registry the site was built from, so adding skills never breaks the tests.
+const registry = JSON.parse(
+  readFileSync(path.join(__dirname, "..", "public", "registry.json"), "utf8"),
+) as {
+  skills: Array<{ source: string }>;
+};
+const TOTAL = registry.skills.length;
+const OFFICIAL = registry.skills.filter((s) => s.source === "official").length;
 
 test.describe("home", () => {
   test("renders and searches into the catalog", async ({ page }) => {
@@ -29,7 +40,7 @@ test.describe("catalog", () => {
   test("search, filters and clear work together and the URL follows", async ({ page }) => {
     await page.goto("/skills");
     const cards = page.getByRole("article");
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(TOTAL);
 
     await page.getByLabel("Search skills").fill("brand");
     await expect(cards).toHaveCount(1);
@@ -47,13 +58,13 @@ test.describe("catalog", () => {
     await expect(page.getByText("No skills match")).toBeVisible();
 
     await page.getByRole("button", { name: "Clear filters" }).first().click();
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(TOTAL);
     await expect(page).not.toHaveURL(/aisle=|source=|q=/);
   });
 
   test("filters are restored from the URL", async ({ page }) => {
     await page.goto("/skills?source=official&sort=name");
-    await expect(page.getByRole("article")).toHaveCount(2);
+    await expect(page.getByRole("article")).toHaveCount(OFFICIAL);
     await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
   });
 });
