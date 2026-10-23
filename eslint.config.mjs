@@ -15,7 +15,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     // Skill scripts are plain Node ES modules that run in the user's project.
-    files: ["registry/official/**/scripts/**/*.mjs"],
+    files: ["registry/official/**/scripts/**/*.mjs", "demos/*/scripts/**/*.mjs"],
     languageOptions: {
       globals: {
         process: "readonly",
@@ -24,6 +24,9 @@ export default tseslint.config(
         URL: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
+        // Used inside page.evaluate(), which runs in the browser.
+        window: "readonly",
+        document: "readonly",
       },
     },
   },
