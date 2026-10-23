@@ -226,6 +226,30 @@ description: Write a clear git commit for the current changes. Use when asked to
           </li>
         </ul>
       </Section>
+
+      <Section id="aisles" number="06" title="Aisles, kits and Elsewhere">
+        <ul className="list-[square] space-y-3 pl-5 text-sm">
+          <li>
+            <a href="/aisles" className="text-accent-ink underline underline-offset-4">
+              Aisles
+            </a>{" "}
+            group skills by what they are for. Each aisle shelves our own skills first, then
+            community skills.
+          </li>
+          <li>
+            A kit is a bundle of skills that work together, such as the Motion portfolio site.
+            Install one with <code className="font-mono">aisle init --profile &lt;kit-id&gt;</code>.
+          </li>
+          <li>
+            Elsewhere lists skills by other authors. We link to the author&apos;s GitHub page and
+            show their license. We do not host them and the CLI does not install them.
+          </li>
+          <li>
+            <strong>Untested</strong> means an official skill has no measured results yet. Numbers
+            appear on a skill page only after the evaluation harness has run.
+          </li>
+        </ul>
+      </Section>
     </>
   );
 }
