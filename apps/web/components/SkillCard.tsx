@@ -44,10 +44,12 @@ export function SkillCard({
   skill,
   index,
   href,
+  stars,
 }: {
   skill: RegistrySkill;
   index?: number;
   href?: string;
+  stars?: number;
 }) {
   const color = aisleColor(skill.category);
   return (
@@ -100,6 +102,11 @@ export function SkillCard({
         </ul>
         <p className="hud-label flex items-center justify-between border-t border-line pt-3 text-ink group-hover:text-accent-ink">
           <span>View skill</span>
+          {stars !== undefined && (
+            <span className="ml-auto mr-3 text-muted" title="GitHub stars">
+              ★ {stars}
+            </span>
+          )}
           <svg
             width="14"
             height="14"
