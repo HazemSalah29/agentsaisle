@@ -11,3 +11,21 @@ permissions:
   runs_scripts: true
   network: false
   needs_api_keys: []
+demo:
+  screenshots:
+    - 01-hero.jpg
+    - 02-features.jpg
+    - 03-feature-split.jpg
+    - 04-feature-split-reversed.jpg
+    - 05-stats-and-testimonials.jpg
+    - 06-faq-open.jpg
+    - 07-newsletter-and-footer.jpg
+    - 08-pricing-monthly.jpg
+    - 09-pricing-yearly.jpg
+    - 10-about-team.jpg
+    - 11-contact-validation.jpg
+    - 12-contact-sent.jpg
+    - 13-reduced-motion.jpg
+    - 14-phone-hero.jpg
+    - 15-phone-menu.jpg
+    - 16-phone-pricing.jpg
