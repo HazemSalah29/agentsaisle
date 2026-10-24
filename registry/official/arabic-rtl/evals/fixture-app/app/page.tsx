@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <>
       <Sidebar />
-      <main className="ml-64 flex-1 pl-6 pr-4 text-left">
+      <main className="flex-1 md:ml-64 pl-6 pr-4 text-left">
         <h1 className="text-3xl font-bold tracking-wide uppercase">Welcome to the shop</h1>
         <p className="mt-2 text-gray-600">Free delivery on orders over $50.</p>
         <a href="/products" className="mt-4 inline-flex items-center rounded-l-lg bg-black px-4 py-2 text-white">

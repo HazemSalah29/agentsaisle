@@ -2,6 +2,18 @@
   "name": "rtl-fixture-app",
   "private": true,
   "description": "English-only test app for the arabic-rtl skill. Every RTL problem in it is deliberate (see ../seeded.json). It is never built in unit tests.",
-  "dependencies": { "next": "^16.4.2", "react": "^19.0.0", "lucide-react": "^0.400.0", "clsx": "^2.1.0" },
-  "devDependencies": { "tailwindcss": "^4.3.0" }
+  "dependencies": {
+    "next": "^16.4.2",
+    "react": "^19.0.0",
+    "lucide-react": "^0.400.0",
+    "clsx": "^2.1.0"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.3.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
 }

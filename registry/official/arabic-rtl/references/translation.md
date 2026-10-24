@@ -10,7 +10,7 @@
 
 ## Glossary
 
-`assets/glossary.ar.yaml` lists approved terms (`terms:` with `en`/`ar` pairs) and `brands:` that must stay as written. Use it; `translate-check` reports a violation when an English source string contains a glossary term but the Arabic lacks the approved translation, or when a brand name is translated. Never translate brand and product names, code identifiers, or URLs.
+`assets/glossary.ar.yaml` lists approved terms (`terms:` with `en`/`ar` pairs) and `brands:` that must stay as written. Arabic changes a word's form (definite, indefinite, possessive), so one term may list accepted forms separated by `|`. Use it; `translate-check` reports a violation when an English source string contains a glossary term but the Arabic lacks the approved translation, or when a brand name is translated. Never translate brand and product names, code identifiers, or URLs.
 
 ## Placeholders
 

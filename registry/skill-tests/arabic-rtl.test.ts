@@ -217,7 +217,7 @@ describe("rtl-codemod: files", () => {
     expect(await readFile(path.join(dir, "app/page.tsx"), "utf8")).toBe(before);
     run(dir, { write: true });
     const after = await readFile(path.join(dir, "app/page.tsx"), "utf8");
-    expect(after).toContain("ms-64 flex-1 ps-6 pe-4 text-start");
+    expect(after).toContain("flex-1 md:ms-64 ps-6 pe-4 text-start");
     const second = run(dir, { write: true });
     expect(second.files.every((f) => f.changes.length === 0)).toBe(true);
     expect(await readFile(path.join(dir, "app/page.tsx"), "utf8")).toBe(after);

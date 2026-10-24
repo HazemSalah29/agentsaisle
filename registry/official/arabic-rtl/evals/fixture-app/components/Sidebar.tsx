@@ -2,7 +2,7 @@ import clsx from "clsx";
 
 export function Sidebar({ open = true }: { open?: boolean }) {
   return (
-    <aside className={clsx("sidebar-divider fixed left-0 top-0 h-full w-64 border-r bg-gray-50", open && "shadow-lg")}>
+    <aside className={clsx("sidebar-divider fixed left-0 hidden md:block top-0 h-full w-64 border-r bg-gray-50", open && "shadow-lg")}>
       <nav className="space-x-4 p-4">
         <a href="/">Home</a>
         <a href="/orders">Orders</a>

@@ -72,7 +72,7 @@ async function main(argv) {
   mkdirSync(path.resolve(cwd, flags.out ?? ".agent-aisle/rtl-screens"), { recursive: true });
   const browser = await chromium.launch();
   const lines = [];
-  let overflow = 0;
+  const wideAt = new Set();
   try {
     for (const s of shots) {
       const page = await browser.newPage({ viewport: { width: s.width, height: 900 } });
@@ -86,10 +86,7 @@ async function main(argv) {
         const wide = await page.evaluate(
           () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
         );
-        if (wide && s.locale === "ar") {
-          overflow++;
-          lines.push(`OVERFLOW ${s.route} ar @${s.width}px: horizontal scroll`);
-        }
+        if (wide) wideAt.add(`${s.route}|${s.locale}|${s.width}`);
       } catch (e) {
         lines.push(`FAIL ${s.url}: ${String(e.message).split("\n")[0]}`);
       } finally {
@@ -98,6 +95,16 @@ async function main(argv) {
     }
   } finally {
     await browser.close();
+  }
+  // Overflow in ar fails the check. If en overflows at the same size, the layout was already too wide.
+  let overflow = 0;
+  for (const s of shots) {
+    if (s.locale !== "ar" || !wideAt.has(`${s.route}|ar|${s.width}`)) continue;
+    overflow++;
+    const inEn = [...wideAt].some((k) => k === `${s.route}|en|${s.width}`);
+    lines.push(
+      `OVERFLOW ${s.route} ar @${s.width}px: horizontal scroll${inEn ? " (en overflows too: an existing layout problem, not RTL-specific)" : " (en does not: RTL-specific)"}`,
+    );
   }
   const failed = lines.filter((l) => l.startsWith("FAIL")).length;
   console.log(
