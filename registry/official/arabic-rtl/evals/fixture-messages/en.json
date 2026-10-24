@@ -1,0 +1,12 @@
+{
+  "nav": { "home": "Home", "signIn": "Sign in" },
+  "cart": {
+    "items": "{count, plural, one {# item} other {# items}}",
+    "greeting": "Welcome back, {name}!",
+    "total": "Total: {amount}",
+    "checkout": "Checkout with Agent Aisle",
+    "terms": "I agree to the <link>terms</link>"
+  },
+  "errors": { "required": "This field is required", "notFound": "Page not found" },
+  "common": { "save": "Save", "ok": "OK Computer" }
+}

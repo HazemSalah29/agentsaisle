@@ -9,3 +9,6 @@ registry/official/**/SKILL.md
 registry/official/**/SKILL.src.md
 packages/audit/fixtures
 packages/audit/test/__snapshots__
+registry/official/arabic-rtl/evals/fixture-app
+registry/official/arabic-rtl/evals/fixture-messages
+registry/official/arabic-rtl/evals/seeded.json

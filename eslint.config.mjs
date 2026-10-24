@@ -10,6 +10,7 @@ export default tseslint.config(
       "**/next-env.d.ts",
       "demos/*/src/components/kit/**",
       "packages/audit/fixtures/**",
+      "registry/official/arabic-rtl/evals/fixture-app/**",
     ],
   },
   js.configs.recommended,

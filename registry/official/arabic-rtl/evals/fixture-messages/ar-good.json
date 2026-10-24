@@ -1,0 +1,12 @@
+{
+  "nav": { "home": "الرئيسية", "signIn": "تسجيل الدخول" },
+  "cart": {
+    "items": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+    "greeting": "مرحبًا بعودتك، {name}!",
+    "total": "الإجمالي: {amount}",
+    "checkout": "إتمام الشراء عبر Agent Aisle",
+    "terms": "أوافق على <link>الشروط</link>"
+  },
+  "errors": { "required": "هذا الحقل مطلوب", "notFound": "الصفحة غير موجودة" },
+  "common": { "save": "حفظ", "ok": "حسنًا" }
+}
