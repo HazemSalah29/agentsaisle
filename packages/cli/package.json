@@ -47,6 +47,7 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@agentsaisle/audit": "workspace:*",
     "@agentsaisle/registry-schema": "workspace:*",
     "@types/node": "^26.6.5",
     "tsup": "^9.0.0",

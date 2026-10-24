@@ -6,6 +6,6 @@ export default defineConfig({
   target: "node20",
   clean: true,
   // Inline the private workspace package so the published CLI has no unpublished dependency.
-  noExternal: ["@agentsaisle/registry-schema"],
+  noExternal: ["@agentsaisle/registry-schema", "@agentsaisle/audit"],
   banner: { js: "#!/usr/bin/env node" },
 });
