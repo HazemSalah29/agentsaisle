@@ -57,6 +57,9 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
     devDependencies:
+      '@agentsaisle/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
       '@agentsaisle/registry':
         specifier: workspace:*
         version: link:../../registry
@@ -177,6 +180,9 @@ importers:
 
   registry:
     dependencies:
+      '@agentsaisle/audit':
+        specifier: workspace:*
+        version: link:../packages/audit
       '@agentsaisle/registry-schema':
         specifier: workspace:*
         version: link:../packages/registry-schema

@@ -32,3 +32,15 @@ for (const skill of await readdir(officialDir, { withFileTypes: true })) {
   }
 }
 console.log(`web: copied ${copied} preview images to public/previews/`);
+
+// Stored audit reports: registry/dist/audits/<name>@<version>.json is served at /audits/<name>@<version>.json.
+const auditsSrc = path.resolve(here, "../../../registry/dist/audits");
+const auditsOut = path.resolve(here, "../public/audits");
+await rm(auditsOut, { recursive: true, force: true });
+await mkdir(auditsOut, { recursive: true });
+let reports = 0;
+for (const f of (await readdir(auditsSrc).catch(() => [])).filter((n) => n.endsWith(".json"))) {
+  await copyFile(path.join(auditsSrc, f), path.join(auditsOut, f));
+  reports++;
+}
+console.log(`web: copied ${reports} audit reports to public/audits/`);

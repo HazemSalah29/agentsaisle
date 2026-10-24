@@ -2,6 +2,7 @@ import type { RegistrySkill } from "@agentsaisle/registry-schema";
 import { PLATE_COLS, PLATE_ROWS, aisleColor, plateCells } from "../lib/plate";
 import { isUntested } from "../lib/trust";
 import { Badge } from "./Badge";
+import { GradeBadge } from "./GradeBadge";
 
 const clientNames: Record<string, string> = {
   "claude-code": "Claude Code",
@@ -97,6 +98,7 @@ export function SkillCard({
           />
           {isUntested(skill) ? <Badge kind="untested" /> : null}
           {skill.runsScripts ? <Badge kind="scripts" /> : null}
+          {skill.audit ? <GradeBadge grade={skill.audit.grade} /> : null}
         </div>
         <ul className="mt-auto flex flex-wrap gap-1.5" aria-label="Works with">
           {skill.clients.map((c) => (

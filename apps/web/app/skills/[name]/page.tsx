@@ -1,7 +1,9 @@
 import { compareSemver } from "@agentsaisle/registry-schema";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AuditBlock } from "../../../components/AuditBlock";
 import { Badge } from "../../../components/Badge";
+import { GradeBadge } from "../../../components/GradeBadge";
 import { InstallCommand } from "../../../components/InstallCommand";
 import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
@@ -94,6 +96,7 @@ export default async function SkillPage({ params }: Props) {
             />
             {isUntested(skill) ? <Badge kind="untested" /> : null}
             {skill.runsScripts ? <Badge kind="scripts" /> : null}
+            {skill.audit ? <GradeBadge grade={skill.audit.grade} /> : null}
           </div>
           {isUntested(skill) && (
             <p className="mt-4 max-w-prose text-sm text-muted">
@@ -202,6 +205,8 @@ export default async function SkillPage({ params }: Props) {
             </a>
           </section>
         )}
+
+        <AuditBlock name={skill.name} version={skill.latest} />
 
         {!skill.verified && (
           <section

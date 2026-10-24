@@ -37,6 +37,11 @@ const commands: Array<[string, string, boolean]> = [
     true,
   ],
   [
+    "aisle audit <target> [--format pretty|json|sarif|markdown] [--fail-on <level>]",
+    "Scan a skill for risky patterns without running anything in it. Target is a local folder, a registry name or a GitHub repo. See the Audit page.",
+    true,
+  ],
+  [
     "aisle init [--profile <id>] [--no-rules | --rules-only]",
     "Install a starter bundle and add the Agent Aisle house rules to CLAUDE.md (AGENTS.md for Codex and Cursor). With --profile it never asks which bundle.",
     true,
