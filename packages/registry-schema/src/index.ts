@@ -240,6 +240,48 @@ export const LockFile = z.object({
 });
 export type LockFile = z.infer<typeof LockFile>;
 
+/** Audit report (produced by @agentsaisle/audit, read by the CLI, CI and the website). */
+export const AuditSeverity = z.enum(["critical", "high", "medium", "low", "info"]);
+export type AuditSeverity = z.infer<typeof AuditSeverity>;
+export const AuditGrade = z.enum(["A", "B", "C", "D", "F"]);
+export type AuditGrade = z.infer<typeof AuditGrade>;
+
+export const AuditFinding = z.object({
+  rule: z.string().regex(/^AA-[A-Z]\d{2}$/, "must look like AA-X02"),
+  severity: AuditSeverity,
+  title: z.string().min(1),
+  file: z.string(),
+  line: z.number().int().positive().optional(),
+  /** At most 160 characters, secrets masked. */
+  excerpt: z.string().max(160).optional(),
+  why: z.string().min(1),
+  fix: z.string().min(1),
+  source: z.enum(["static", "deep"]),
+  suppressed: z.object({ reason: z.string().min(1) }).optional(),
+});
+export type AuditFinding = z.infer<typeof AuditFinding>;
+
+export const AuditReport = z.object({
+  skill: z.string(),
+  version: z.string().optional(),
+  sha: z.string().optional(),
+  auditedAt: z.string(),
+  auditVersion: z.string(),
+  files: z.number().int().nonnegative(),
+  bytes: z.number().int().nonnegative(),
+  counts: z.object({
+    critical: z.number().int().nonnegative(),
+    high: z.number().int().nonnegative(),
+    medium: z.number().int().nonnegative(),
+    low: z.number().int().nonnegative(),
+    info: z.number().int().nonnegative(),
+  }),
+  grade: AuditGrade,
+  findings: z.array(AuditFinding),
+  disclaimer: z.string().min(1),
+});
+export type AuditReport = z.infer<typeof AuditReport>;
+
 /** Parse "a: b" style frontmatter-delimited markdown into [frontmatterText, body]. */
 export function splitFrontmatter(md: string): { frontmatter: string; body: string } | null {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(md);
