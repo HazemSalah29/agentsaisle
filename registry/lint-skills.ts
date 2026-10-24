@@ -271,6 +271,12 @@ export async function lintAll(
   const entries = (await readdir(officialDir, { withFileTypes: true }).catch(() => []))
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
+    // A folder with neither SKILL.md nor skill.meta.yaml is a skill still being assembled; skip it.
+    .filter(
+      (n) =>
+        existsSync(path.join(officialDir, n, "SKILL.md")) ||
+        existsSync(path.join(officialDir, n, "skill.meta.yaml")),
+    )
     .sort();
   const findings: LintFinding[] = [];
   for (const name of entries) {

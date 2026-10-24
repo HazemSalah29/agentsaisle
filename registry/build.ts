@@ -366,6 +366,9 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
 
   for (const name of await listDirs(path.join(rootDir, "official"))) {
     const dir = path.join(rootDir, "official", name);
+    // A folder with neither SKILL.md nor skill.meta.yaml is a skill still being assembled; skip it.
+    if (!existsSync(path.join(dir, "SKILL.md")) && !existsSync(path.join(dir, "skill.meta.yaml")))
+      continue;
     const label = `registry/official/${name}`;
     try {
       const meta = await readYaml(path.join(dir, "skill.meta.yaml"), OfficialMeta, label);
