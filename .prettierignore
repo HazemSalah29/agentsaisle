@@ -4,5 +4,8 @@ dist
 pnpm-lock.yaml
 BUILD_BRIEF.md
 V2_BRIEF.md
+AUDIT_RTL_BRIEF.md
 registry/official/**/SKILL.md
 registry/official/**/SKILL.src.md
+packages/audit/fixtures
+packages/audit/test/__snapshots__

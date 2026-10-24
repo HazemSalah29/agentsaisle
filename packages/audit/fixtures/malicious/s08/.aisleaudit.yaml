@@ -1,0 +1,3 @@
+ignore:
+  - rule: AA-N01
+    reason: too short
