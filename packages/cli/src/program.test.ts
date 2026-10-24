@@ -5,7 +5,7 @@ import { VERSION, createProgram } from "./program.js";
 describe("program", () => {
   it("registers every planned command", () => {
     const names = createProgram().commands.map((c) => c.name());
-    expect(names).toEqual(["add", "remove", "list", "init", "info", "search", "update"]);
+    expect(names).toEqual(["add", "remove", "list", "init", "info", "search", "update", "audit"]);
   });
   it("reports the version from package.json", () => {
     const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
