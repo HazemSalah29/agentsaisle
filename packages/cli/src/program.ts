@@ -1,5 +1,7 @@
 import { Command } from "commander";
 import { createRequire } from "node:module";
+import { runAudit, type AuditCliOptions } from "./audit.js";
+import { loadRegistry } from "./registry.js";
 import { removeSkill, listSkills, showInfo } from "./commands.js";
 import { createContext, type CommonOptions } from "./context.js";
 import { initProfile } from "./init.js";
@@ -17,13 +19,23 @@ export function createProgram(): Command {
     .description("Install Agent Skills into your project")
     .version(VERSION, "-v, --version");
 
-  const withFlags = (cmd: Command, flags: Array<"global" | "agent" | "yes" | "dry-run">) => {
+  const withFlags = (
+    cmd: Command,
+    flags: Array<"global" | "agent" | "yes" | "dry-run" | "audit">,
+  ) => {
     if (flags.includes("global")) cmd.option("-g, --global", "use the user-level skills folder");
     if (flags.includes("agent"))
       cmd.option("--agent <agent>", "claude-code, codex or cursor (default: detect)");
     if (flags.includes("yes")) cmd.option("-y, --yes", "skip confirmation prompts");
     if (flags.includes("dry-run"))
       cmd.option("--dry-run", "show what would happen without changing anything");
+    if (flags.includes("audit")) {
+      cmd.option(
+        "--force",
+        "install despite critical audit findings (you must also type the skill name)",
+      );
+      cmd.option("--no-audit", "skip the security audit (not recommended)");
+    }
     return cmd;
   };
 
@@ -32,7 +44,7 @@ export function createProgram(): Command {
       .command("add <skills...>")
       .description("Install skills: <name>[@version] or <owner>/<repo>[/path][@ref]")
       .action((skills: string[], opts: CommonOptions) => installMany(skills, createContext(opts))),
-    ["global", "agent", "yes", "dry-run"],
+    ["global", "agent", "yes", "dry-run", "audit"],
   );
   withFlags(
     program
@@ -60,7 +72,7 @@ export function createProgram(): Command {
       .action((opts: CommonOptions & { profile?: string; rules?: boolean; rulesOnly?: boolean }) =>
         initProfile(opts, createContext(opts)),
       ),
-    ["global", "agent", "yes", "dry-run"],
+    ["global", "agent", "yes", "dry-run", "audit"],
   );
   program
     .command("info <name>")
@@ -78,8 +90,26 @@ export function createProgram(): Command {
       .action((name: string | undefined, opts: CommonOptions) =>
         updateSkills(name, createContext(opts)),
       ),
-    ["global", "agent", "yes", "dry-run"],
+    ["global", "agent", "yes", "dry-run", "audit"],
   );
+
+  program
+    .command("audit <target>")
+    .description(
+      "Scan a skill for risky patterns without running anything: ./folder, <name>[@version] or <owner>/<repo>[/path][@ref]",
+    )
+    .option("--format <format>", "pretty or json (sarif and markdown come later)", "pretty")
+    .option(
+      "--fail-on <severity>",
+      "critical, high, medium, low or none (sets the exit code)",
+      "high",
+    )
+    .option("--deep", "AI-assisted review (not available yet)")
+    .option("--output <file>", "write the full report to a file")
+    .option("--quiet", "print a summary line only")
+    .action(async (target: string, opts: AuditCliOptions) => {
+      process.exitCode = await runAudit(target, opts, () => loadRegistry());
+    });
 
   return program;
 }

@@ -27,6 +27,7 @@ Requires Node.js 20 or newer. Works on macOS, Linux and Windows.
 | `aisle search <query>`                  | Search the registry by name, aisle or description  |
 | `aisle update [name]`                   | Update one or all skills to the latest version     |
 | `aisle init [--profile <id>]`           | Install a starter bundle and add the house rules   |
+| `aisle audit <target>`                  | Scan a skill for risky patterns (see below)        |
 
 ```sh
 aisle add explore@1.0.0              # a specific version
@@ -47,6 +48,7 @@ For `add`, `remove`, `list`, `init` and `update` (`--profile` is for `init`):
 - `--agent <claude-code|codex|cursor>`: choose the target folder. By default the CLI detects it from your project and falls back to `claude-code`.
 - `--yes`, `-y`: skip confirmation prompts. Required when there is no terminal, for example in CI.
 - `--dry-run`: show what would be installed or removed without changing anything.
+- `--force`, `--no-audit` (`add`, `init`, `update`): see "Audit" below.
 
 ### Where skills go
 
@@ -67,6 +69,33 @@ Installs are recorded in `aisle-lock.json` in your project root (your home folde
 `aisle init` also writes a short block of working rules into `CLAUDE.md` (`AGENTS.md` for Codex and Cursor; `~/.claude/CLAUDE.md` with `--global` for Claude Code) between `<!-- agent-aisle:start -->` and `<!-- agent-aisle:end -->` markers. Running it again replaces only that block and leaves everything else in the file untouched. A file with damaged markers is left alone and reported.
 
 Development files in a skill (`evals/`, `preview/`, the top-level `README.md`) are not installed.
+
+## Audit
+
+`aisle audit` reads a skill as text and reports risky patterns (prompt injection, data exfiltration, dangerous commands, over-broad permissions, hidden characters). It never runs anything in the skill.
+
+```sh
+aisle audit ./my-skill                 # a local folder (or a folder with several skills)
+aisle audit explore@1.1.0              # a skill from the registry
+aisle audit owner/repo/skills/x@main   # any GitHub repo or folder
+aisle audit ./my-skill --format json --output audit.json
+aisle audit ./my-skill --fail-on critical
+```
+
+Options: `--format pretty|json` (`sarif` and `markdown` come later), `--fail-on critical|high|medium|low|none` (default `high`), `--output <file>`, `--quiet`. `--deep` is not available yet. Local paths must start with `./`, `../`, `/` or `~`.
+
+Exit codes: `0` nothing at or above `--fail-on`, `1` findings at or above it, `2` the audit could not run.
+
+`aisle add`, `init` and `update` audit every skill after download and before installing:
+
+- **critical** findings block the install. Override with `--force` and type the skill name when asked; `--yes` never bypasses this, and without a terminal it cannot be done.
+- **high** findings show a summary and ask for confirmation (`--yes` answers it).
+- Lower findings print one summary line.
+- `--no-audit` skips the audit and prints a warning.
+
+Downloads are limited to 20 MB per archive, 2,000 files and 2 MB per file, and refuse absolute paths, `..` and hardlinks. Symlinks are never installed.
+
+Automated checks found no known risky patterns is not a guarantee of safety: an audit reduces risk, it cannot prove a skill safe.
 
 ## Safety
 

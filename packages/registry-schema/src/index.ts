@@ -107,6 +107,70 @@ export const SkillFrontmatter = z.looseObject({
 });
 export type SkillFrontmatter = z.infer<typeof SkillFrontmatter>;
 
+/** Audit report (produced by @agentsaisle/audit, read by the CLI, CI and the website). */
+export const AuditSeverity = z.enum(["critical", "high", "medium", "low", "info"]);
+export type AuditSeverity = z.infer<typeof AuditSeverity>;
+export const AuditGrade = z.enum(["A", "B", "C", "D", "F"]);
+export type AuditGrade = z.infer<typeof AuditGrade>;
+
+export const AuditFinding = z.object({
+  rule: z.string().regex(/^AA-[A-Z]\d{2}$/, "must look like AA-X02"),
+  severity: AuditSeverity,
+  title: z.string().min(1),
+  file: z.string(),
+  line: z.number().int().positive().optional(),
+  /** At most 160 characters, secrets masked. */
+  excerpt: z.string().max(160).optional(),
+  why: z.string().min(1),
+  fix: z.string().min(1),
+  source: z.enum(["static", "deep"]),
+  suppressed: z.object({ reason: z.string().min(1) }).optional(),
+});
+export type AuditFinding = z.infer<typeof AuditFinding>;
+
+/** What a skill can use, for the permissions block on the website. */
+export const AuditInventory = z.object({
+  tools: z.array(z.string()),
+  scripts: z.array(z.string()),
+  urls: z.array(z.string()),
+  domains: z.array(z.string()),
+});
+export type AuditInventory = z.infer<typeof AuditInventory>;
+
+const AuditCounts = z.object({
+  critical: z.number().int().nonnegative(),
+  high: z.number().int().nonnegative(),
+  medium: z.number().int().nonnegative(),
+  low: z.number().int().nonnegative(),
+  info: z.number().int().nonnegative(),
+});
+
+/** The part of a report the catalog needs (grade badge), stored in registry.json. */
+export const AuditSummary = z.object({
+  grade: AuditGrade,
+  counts: AuditCounts,
+  auditedAt: z.string(),
+  auditVersion: z.string(),
+});
+export type AuditSummary = z.infer<typeof AuditSummary>;
+
+export const AuditReport = z.object({
+  skill: z.string(),
+  version: z.string().optional(),
+  sha: z.string().optional(),
+  auditedAt: z.string(),
+  auditVersion: z.string(),
+  files: z.number().int().nonnegative(),
+  bytes: z.number().int().nonnegative(),
+  counts: AuditCounts,
+  grade: AuditGrade,
+  /** Optional so reports stored before A3 still parse. */
+  inventory: AuditInventory.optional(),
+  findings: z.array(AuditFinding),
+  disclaimer: z.string().min(1),
+});
+export type AuditReport = z.infer<typeof AuditReport>;
+
 export const RegistrySkill = z.object({
   name: SkillName,
   description: z.string(),
@@ -145,6 +209,8 @@ export const RegistrySkill = z.object({
     })
     .optional(),
   demo: z.object({ url: z.string().optional(), screenshots: z.array(z.string()) }).optional(),
+  /** Grade and counts from the stored audit (A3). Absent when the skill has not been audited. */
+  audit: AuditSummary.optional(),
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 

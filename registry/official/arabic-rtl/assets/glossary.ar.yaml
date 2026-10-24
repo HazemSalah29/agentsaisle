@@ -1,0 +1,35 @@
+# Approved Arabic terms for UI text. translate-check reports a violation when an English string contains
+# the term but the Arabic string lacks the approved translation, or when a brand is translated.
+# List accepted forms of one term with "|" (definite, indefinite, possessive: Arabic changes them).
+# Add your product's own terms and brand names before translating.
+brands:
+  - Agent Aisle
+terms:
+  - en: Sign in
+    ar: تسجيل الدخول
+  - en: Sign up
+    ar: إنشاء حساب
+  - en: Log out
+    ar: تسجيل الخروج
+  - en: Email
+    ar: البريد الإلكتروني|بريد إلكتروني|بريدك الإلكتروني|بريدًا إلكترونيًا
+  - en: Password
+    ar: كلمة المرور|كلمة مرور|كلمتا المرور
+  - en: Save
+    ar: حفظ
+  - en: Cancel
+    ar: إلغاء
+  - en: Delete
+    ar: حذف
+  - en: Settings
+    ar: الإعدادات
+  - en: Dashboard
+    ar: لوحة التحكم
+  - en: Profile
+    ar: الملف الشخصي
+  - en: Notifications
+    ar: الإشعارات|إشعارات|إشعار
+  - en: Checkout
+    ar: إتمام الشراء
+  - en: Search
+    ar: بحث

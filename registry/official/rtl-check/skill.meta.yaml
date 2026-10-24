@@ -1,0 +1,13 @@
+version: 0.1.0
+category: [i18n, web]
+clients: [claude-code, codex, cursor]
+runs_scripts: true
+niche: rtl
+kind: quality
+tier: specialty
+permissions:
+  tools: [Read, Grep, Glob, Bash]
+  writes_files: false
+  runs_scripts: true
+  network: false
+  needs_api_keys: []

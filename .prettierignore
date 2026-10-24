@@ -4,5 +4,12 @@ dist
 pnpm-lock.yaml
 BUILD_BRIEF.md
 V2_BRIEF.md
+AUDIT_RTL_BRIEF.md
 registry/official/**/SKILL.md
 registry/official/**/SKILL.src.md
+packages/audit/fixtures
+packages/audit/test/__snapshots__
+registry/official/arabic-rtl/evals/fixture-app
+registry/official/arabic-rtl/evals/fixture-messages
+registry/official/arabic-rtl/evals/seeded.json
+packages/audit/test/schemas

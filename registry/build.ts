@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
+import { createAuditor, writeReports } from "./audits";
 import { compileAll, IncludeError } from "./compile";
 import {
   CommunityEntry,
@@ -13,6 +14,7 @@ import {
   SkillFrontmatter,
   compareSemver,
   splitFrontmatter,
+  type AuditReport,
   type RegistrySkill,
   type OfficialMeta as OfficialMetaType,
   AislesFile,
@@ -335,11 +337,18 @@ async function readHouseRules(rootDir: string): Promise<string | undefined> {
   return existsSync(file) ? (await readFile(file, "utf8")).trim() : undefined;
 }
 
+/** Audits the latest version of a skill. Returns undefined when it could not be audited. */
+export type SkillAuditor = (skill: RegistrySkill) => Promise<AuditReport | undefined>;
+
 export interface BuildOptions {
   rootDir: string;
   fetchSkill: SkillFetcher;
   resolveSha: ShaResolver;
   now?: Date;
+  /** Optional: audit every skill and attach the grade to its registry entry. */
+  audit?: SkillAuditor;
+  /** Filled with each full report, keyed "<name>@<version>", for dist/audits. */
+  reports?: Map<string, AuditReport>;
 }
 
 export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> {
@@ -366,6 +375,9 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
 
   for (const name of await listDirs(path.join(rootDir, "official"))) {
     const dir = path.join(rootDir, "official", name);
+    // A folder with neither SKILL.md nor skill.meta.yaml is a skill still being assembled; skip it.
+    if (!existsSync(path.join(dir, "SKILL.md")) && !existsSync(path.join(dir, "skill.meta.yaml")))
+      continue;
     const label = `registry/official/${name}`;
     try {
       const meta = await readYaml(path.join(dir, "skill.meta.yaml"), OfficialMeta, label);
@@ -428,6 +440,25 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
     }
   }
 
+  if (opts.audit) {
+    for (const skill of skills) {
+      const report = await opts.audit(skill);
+      if (!report) continue;
+      skill.audit = {
+        grade: report.grade,
+        counts: report.counts,
+        auditedAt: report.auditedAt,
+        auditVersion: report.auditVersion,
+      };
+      opts.reports?.set(`${skill.name}@${skill.latest}`, report);
+      // A critical finding in one of our own skills must never ship.
+      if (skill.source === "official" && report.counts.critical > 0)
+        errors.push(
+          `registry/official/${skill.name}: audit found ${report.counts.critical} critical finding(s). Run: aisle audit ./registry/official/${skill.name}`,
+        );
+    }
+  }
+
   const seen = new Set<string>();
   for (const s of skills) {
     if (seen.has(s.name)) errors.push(`duplicate skill name "${s.name}"`);
@@ -463,14 +494,19 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
 
 async function main() {
   const rootDir = path.dirname(fileURLToPath(import.meta.url));
+  const skipAudit = process.argv.includes("--no-audit") || process.env.AISLE_SKIP_AUDIT === "1";
+  const reports = new Map<string, AuditReport>();
   const index = await buildRegistry({
     rootDir,
     fetchSkill: githubFetcher,
     resolveSha: gitShaResolver(rootDir),
+    audit: skipAudit ? undefined : createAuditor({ rootDir }),
+    reports,
   });
   const out = path.join(rootDir, "dist", "registry.json");
   await mkdir(path.dirname(out), { recursive: true });
   await writeFile(out, JSON.stringify(index, null, 2) + "\n");
+  await writeReports(path.join(rootDir, "dist", "audits"), reports);
   console.log(
     `registry: wrote ${index.skills.length} skills to ${path.relative(process.cwd(), out)}`,
   );

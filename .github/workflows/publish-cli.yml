@@ -25,6 +25,8 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+      - name: Build the audit package and its dependencies (the CLI inlines them)
+        run: pnpm --filter "@agentsaisle/audit..." build
       - run: pnpm --filter @agentsaisle/cli test
       - run: pnpm --filter @agentsaisle/cli build
       - name: Check the tag matches the package version

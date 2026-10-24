@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+.promo-banner {
+  margin-left: 16px;
+  text-align: left;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-divider {
+  border-right: 1px solid #ddd;
+  padding-left: 12px;
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  AuditReport,
   CommunityEntry,
   OfficialMeta,
   Profile,
@@ -172,5 +173,41 @@ describe("house standard meta fields", () => {
     expect(
       RegistryIndex.parse({ generatedAt: "x", skills: [], houseRules: "rules" }).houseRules,
     ).toBe("rules");
+  });
+});
+
+describe("AuditReport", () => {
+  const base = {
+    skill: "demo",
+    auditedAt: "2026-10-24T00:00:00.000Z",
+    auditVersion: "1.0.0",
+    files: 1,
+    bytes: 10,
+    counts: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+    grade: "A",
+    findings: [],
+    disclaimer: "Not a guarantee.",
+  };
+  it("accepts a clean report", () => {
+    expect(AuditReport.parse(base).grade).toBe("A");
+  });
+  it("rejects bad rule ids and long excerpts", () => {
+    const finding = {
+      rule: "AA-X02",
+      severity: "high",
+      title: "t",
+      file: "a",
+      why: "w",
+      fix: "f",
+      source: "static",
+    };
+    expect(AuditReport.safeParse({ ...base, findings: [finding] }).success).toBe(true);
+    expect(AuditReport.safeParse({ ...base, findings: [{ ...finding, rule: "X2" }] }).success).toBe(
+      false,
+    );
+    expect(
+      AuditReport.safeParse({ ...base, findings: [{ ...finding, excerpt: "x".repeat(161) }] })
+        .success,
+    ).toBe(false);
   });
 });

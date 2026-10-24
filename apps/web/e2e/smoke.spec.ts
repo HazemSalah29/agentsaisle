@@ -150,6 +150,8 @@ test.describe("mobile and keyboard", () => {
     "/aisles",
     "/aisles/database",
     "/aisles/web-design",
+    "/audit",
+    "/skills/code-quality",
   ]) {
     test(`no horizontal scroll at 360px on ${path}`, async ({ page }) => {
       await page.goto(path);

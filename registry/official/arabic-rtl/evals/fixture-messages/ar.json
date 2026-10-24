@@ -1,0 +1,12 @@
+{
+  "nav": { "home": "الرئيسية", "signIn": "دخول" },
+  "cart": {
+    "items": "{count, plural, one {# عنصر} other {# عناصر}}",
+    "greeting": "مرحبًا بعودتك، {username}!",
+    "total": "الإجمالي: {amount}",
+    "checkout": "إتمام الشراء عبر وكلاء الممر",
+    "terms": "أوافق على الشروط"
+  },
+  "errors": { "required": "This field is required", "unexpected": "حدث خطأ غير متوقع" },
+  "common": { "ok": "حسنًا" }
+}
