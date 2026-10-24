@@ -152,7 +152,7 @@ export const hasDirectionVariant = (tokens) =>
  * Rewrite the tokens of one class string. Returns the new string plus the tokens left for manual review.
  * `left-*`/`right-*` next to translate-x (centering tricks) are not rewritten: the pair must flip together.
  */
-export function rewriteClassString(text) {
+export function rewriteClassString(text, { spaceXLogical = false } = {}) {
   const tokens = text.split(/\s+/).filter(Boolean);
   const hasTranslate = tokens.some((t) => /^-?translate-x-(?!0$)/.test(parseToken(t).base));
   const animated = tokens.some((t) => /^(?:[\w-]+:)*(?:animate|transition)/.test(t));
@@ -163,7 +163,7 @@ export function rewriteClassString(text) {
     if (!c) return tok;
     if (c.kind === "manual") {
       const covered =
-        (c.rule === "space-x" && tokens.includes("rtl:space-x-reverse")) ||
+        (c.rule === "space-x" && (spaceXLogical || tokens.includes("rtl:space-x-reverse"))) ||
         (c.rule === "translate-x" && (animated || hasDirectionVariant(tokens)));
       if (!covered) manual.push(c);
       return tok;

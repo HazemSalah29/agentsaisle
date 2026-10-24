@@ -11,6 +11,7 @@ import {
   lineIndex,
   parseArgs,
   segmentTokens,
+  tailwindVersion,
   stringSegments,
   walk,
 } from "./_lib.mjs";
@@ -53,7 +54,7 @@ const LAYOUT_TAGS =
   /<(div|section|main|nav|header|footer|aside|ul|ol|body|html|article|form)\b[^>]*\bdir=["']ltr["']/;
 
 /** Scan one file's text. `ext` picks the rule set. Returns [{line, rule, severity, message, fix}]. */
-export function scanText(src, ext, { tracking = true } = {}) {
+export function scanText(src, ext, { tracking = true, spaceXLogical = false } = {}) {
   const findings = [];
   const lines = src.split("\n");
   const add = (line, rule, severity, message, fix) => {
@@ -90,7 +91,7 @@ export function scanText(src, ext, { tracking = true } = {}) {
         else if (c?.kind === "map")
           add(line, "physical-class", "error", `Physical class ${token}`, `Use ${c.to}`);
         else if (c?.kind === "manual") {
-          if (c.rule === "space-x" && dirAware) continue;
+          if (c.rule === "space-x" && (dirAware || spaceXLogical)) continue;
           if (c.rule === "translate-x" && (hasAnimation || dirAware)) continue;
           if (c.rule !== "space-x" && c.rule !== "translate-x" && dirAware) continue;
           add(line, c.rule, "warn", `${token}: ${c.why}`, c.fix);
@@ -222,12 +223,18 @@ export function hasArabicTrackingReset(files) {
 }
 
 export function scan(root, { includeKit = false } = {}) {
+  // Tailwind 4 generates space-x with margin-inline-start/end, so it already follows direction.
+  const tw = tailwindVersion(root);
+  const spaceXLogical = Boolean(tw && tw[0] >= 4);
   const files = walk(root, { exts: [...CODE_EXTS, ...CSS_EXTS], includeKit });
   const tracking = !hasArabicTrackingReset(files.filter((f) => CSS_EXTS.includes(path.extname(f))));
   const out = [];
   for (const file of files) {
     const rel = path.relative(root, file) || path.basename(file);
-    for (const f of scanText(readFileSync(file, "utf8"), path.extname(file), { tracking }))
+    for (const f of scanText(readFileSync(file, "utf8"), path.extname(file), {
+      tracking,
+      spaceXLogical,
+    }))
       out.push({ file: rel, ...f });
   }
   return out;

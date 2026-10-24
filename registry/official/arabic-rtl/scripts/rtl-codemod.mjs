@@ -5,25 +5,21 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { rewriteClassString } from "./_classmap.mjs";
-import { capLines, isEntry, lineIndex, parseArgs, stringSegments, walk } from "./_lib.mjs";
+import {
+  capLines,
+  isEntry,
+  lineIndex,
+  parseArgs,
+  stringSegments,
+  tailwindVersion,
+  walk,
+} from "./_lib.mjs";
 
 /** Tailwind added logical utilities (ms-*, start-*, rounded-s-*) in v3.3. */
 export const MIN_TAILWIND = [3, 3];
 
-/** Read the project's Tailwind version range from package.json; null when unknown. */
-export function tailwindVersion(root) {
-  try {
-    const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
-    const range = { ...pkg.devDependencies, ...pkg.dependencies }.tailwindcss;
-    const m = range && /(\d+)\.(\d+)/.exec(range);
-    return m ? [Number(m[1]), Number(m[2])] : null;
-  } catch {
-    return null;
-  }
-}
-
 /** Rewrite one source file's text. Returns { text, changes: [{line, from, to}], manual: [{line, ...}] }. */
-export function transform(src) {
+export function transform(src, opts = {}) {
   const lineOf = lineIndex(src);
   const changes = [];
   const manual = [];
@@ -32,7 +28,7 @@ export function transform(src) {
   for (const seg of stringSegments(src)) {
     if (!/\S/.test(seg.text)) continue;
     // Edge tokens glued to an interpolation are incomplete; protect them from rewriting.
-    const r = rewriteSegment(seg);
+    const r = rewriteSegment(seg, opts);
     if (r.text === seg.text && !r.manual.length) continue;
     out += src.slice(cursor, seg.start) + r.text;
     cursor = seg.end;
@@ -43,7 +39,7 @@ export function transform(src) {
   return { text: out + src.slice(cursor), changes, manual };
 }
 
-function rewriteSegment(seg) {
+function rewriteSegment(seg, opts) {
   const { text, glueStart, glueEnd } = seg;
   // Split off a first/last token that touches an interpolation and leave it as is.
   let head = "";
@@ -63,7 +59,7 @@ function rewriteSegment(seg) {
       mid = mid.slice(0, mid.length - tail.length);
     }
   }
-  const r = rewriteClassString(mid);
+  const r = rewriteClassString(mid, opts);
   return { ...r, text: head + r.text + tail };
 }
 
@@ -78,7 +74,7 @@ export function run(root, { write = false, includeKit = false } = {}) {
   const files = [];
   for (const file of walk(root, { includeKit })) {
     const src = readFileSync(file, "utf8");
-    const r = transform(src);
+    const r = transform(src, { spaceXLogical: Boolean(tw && tw[0] >= 4) });
     if (!r.changes.length && !r.manual.length) continue;
     files.push({ file: path.relative(root, file) || path.basename(file), ...r });
     if (write && r.text !== src) writeFileSync(file, r.text);

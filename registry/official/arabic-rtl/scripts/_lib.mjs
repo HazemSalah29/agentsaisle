@@ -171,3 +171,15 @@ export const isEntry = (metaUrl) =>
   Boolean(process.argv[1]) && metaUrl === pathToFileURL(realpathSync(process.argv[1])).href;
 
 export const readText = (file) => readFileSync(file, "utf8");
+
+/** Read the project's Tailwind version range from package.json; null when unknown. */
+export function tailwindVersion(root) {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
+    const range = { ...pkg.devDependencies, ...pkg.dependencies }.tailwindcss;
+    const m = range && /(\d+)\.(\d+)/.exec(range);
+    return m ? [Number(m[1]), Number(m[2])] : null;
+  } catch {
+    return null;
+  }
+}

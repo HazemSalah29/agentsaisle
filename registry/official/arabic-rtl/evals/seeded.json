@@ -29,6 +29,5 @@
   { "file": "components/ProductCard.tsx", "line": 7, "rule": "locale-format", "severity": "warn" },
   { "file": "components/ProductCard.tsx", "line": 8, "rule": "letter-spacing", "severity": "warn" },
   { "file": "components/Sidebar.tsx", "line": 5, "rule": "physical-class", "severity": "error" },
-  { "file": "components/Sidebar.tsx", "line": 6, "rule": "space-x", "severity": "warn" },
   { "file": "components/Sidebar.tsx", "line": 10, "rule": "physical-class", "severity": "error" }
 ]

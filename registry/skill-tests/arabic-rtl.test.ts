@@ -32,7 +32,7 @@ interface Scan {
   scanText(
     src: string,
     ext: string,
-    o?: { tracking?: boolean },
+    o?: { tracking?: boolean; spaceXLogical?: boolean },
   ): Array<{ line: number; rule: string; severity: string }>;
 }
 interface Cand {
@@ -295,7 +295,6 @@ describe("rtl-scan", () => {
     for (const r of [
       "physical-class",
       "physical-css",
-      "space-x",
       "translate-x",
       "gradient-direction",
       "dir-ltr",
@@ -322,6 +321,21 @@ describe("rtl-scan", () => {
       `<p className={\`mt-2 \${x}\`}>{t("cart.items", { count })}</p>`,
     ].join("\n");
     expect(scanText(ok, ".tsx")).toEqual([]);
+  });
+
+  it("reports space-x on Tailwind 3 but not on Tailwind 4 (logical margins)", async () => {
+    const { scanText } = await loadScript<Scan>(S, "scripts/rtl-scan.mjs");
+    const src = `x("flex space-x-4");`;
+    expect(scanText(src, ".tsx").map((f) => f.rule)).toEqual(["space-x"]);
+    expect(scanText(src, ".tsx", { spaceXLogical: true })).toEqual([]);
+    const dir = await mkdtemp(path.join(os.tmpdir(), "rtl-v3-"));
+    await writeFile(
+      path.join(dir, "package.json"),
+      JSON.stringify({ devDependencies: { tailwindcss: "^3.4.0" } }),
+    );
+    await writeFile(path.join(dir, "a.tsx"), `export const c = "space-x-4";\n`);
+    const { scan } = await loadScript<Scan>(S, "scripts/rtl-scan.mjs");
+    expect(scan(dir).map((f) => f.rule)).toEqual(["space-x"]);
   });
 
   it("accepts a global :lang(ar) letter-spacing reset", async () => {
