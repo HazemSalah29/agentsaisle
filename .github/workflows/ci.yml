@@ -21,6 +21,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build the shared schema (lint:skills imports it)
+        run: pnpm --filter @agentsaisle/registry-schema build
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
