@@ -1,6 +1,6 @@
 import { lstat, open, readdir, readlink, realpath } from "node:fs/promises";
 import path from "node:path";
-import type { FileKind, LoadedSkill, SkillFile, SymlinkInfo } from "./types.js";
+import type { FileKind, LoadedSkill, SkillFile, SkippedFile, SymlinkInfo } from "./types.js";
 
 export const LIMITS = {
   maxFiles: 2000,
@@ -179,6 +179,7 @@ export async function loadSkill(folder: string, options: LoadOptions = {}): Prom
   }
 
   const files: SkillFile[] = [];
+  const skipped: SkippedFile[] = [];
   const symlinks: SymlinkInfo[] = [];
   const hidden: string[] = [];
   let suppressionFile: string | undefined;
@@ -220,6 +221,13 @@ export async function loadSkill(folder: string, options: LoadOptions = {}): Prom
         throw new AuditInputError(`Too many files (limit ${LIMITS.maxFiles}).`);
       }
       if (st.size > LIMITS.maxFileBytes) {
+        // Large images, fonts and the like cannot carry instructions an agent reads; note and move on.
+        // Everything else (text, scripts, executables, unknown types) still aborts.
+        const bigExt = path.extname(entry.name).toLowerCase();
+        if (BINARY_EXT.has(bigExt)) {
+          skipped.push({ path: rel, bytes: st.size });
+          continue;
+        }
         throw new AuditInputError(`${rel} is larger than ${LIMITS.maxFileBytes / 1024 / 1024} MB.`);
       }
       totalBytes += st.size;
@@ -282,5 +290,5 @@ export async function loadSkill(folder: string, options: LoadOptions = {}): Prom
   }
 
   await walk(root);
-  return { root, files, symlinks, hidden, suppressionFile, totalBytes };
+  return { root, files, skipped, symlinks, hidden, suppressionFile, totalBytes };
 }

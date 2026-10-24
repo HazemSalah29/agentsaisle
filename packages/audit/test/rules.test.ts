@@ -26,7 +26,7 @@ describe("malicious fixtures trigger their rule", () => {
   it("covers every rule id in the brief", () => {
     const ids = new Set(MALICIOUS.map((c) => c.rule));
     const all = [
-      ..."12345678".split("").map((n) => `AA-S0${n}`),
+      ..."123456789".split("").map((n) => `AA-S0${n}`),
       ..."123456".split("").map((n) => `AA-P0${n}`),
       ..."123456".split("").map((n) => `AA-I0${n}`),
       ..."12345".split("").map((n) => `AA-X0${n}`),

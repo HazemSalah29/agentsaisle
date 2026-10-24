@@ -1,5 +1,6 @@
 import { SKILL_NAME_RE } from "@agentsaisle/registry-schema";
 import type { AuditFinding } from "@agentsaisle/registry-schema";
+import { LIMITS } from "../load.js";
 import type { Rule } from "../types.js";
 import { finding, isScript } from "../util.js";
 
@@ -180,6 +181,18 @@ const hidden: Rule = (ctx) =>
     }),
   );
 
+const skippedMedia: Rule = (ctx) =>
+  ctx.skill.skipped.map((f) =>
+    finding({
+      rule: "AA-S09",
+      severity: "info",
+      title: "Large media file was not scanned",
+      file: f.path,
+      why: `The file is ${(f.bytes / 1024 / 1024).toFixed(1)} MB, over the ${LIMITS.maxFileBytes / 1024 / 1024} MB scan limit, so its contents were not read.`,
+      fix: "Keep media small, or host large files outside the skill.",
+    }),
+  );
+
 export const structureRules: Rule[] = [
   skillMdMissing,
   nameAndDescription,
@@ -188,4 +201,5 @@ export const structureRules: Rule[] = [
   minified,
   size,
   hidden,
+  skippedMedia,
 ];

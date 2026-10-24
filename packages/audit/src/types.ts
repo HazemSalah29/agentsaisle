@@ -25,9 +25,16 @@ export interface SymlinkInfo {
   escapes: boolean;
 }
 
+/** A non-executable media file over the per-file limit; it is listed but not read. */
+export interface SkippedFile {
+  path: string;
+  bytes: number;
+}
+
 export interface LoadedSkill {
   root: string;
   files: SkillFile[];
+  skipped: SkippedFile[];
   symlinks: SymlinkInfo[];
   hidden: string[];
   /** Raw text of .aisleaudit.yaml, if present. */

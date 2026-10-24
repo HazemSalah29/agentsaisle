@@ -74,6 +74,12 @@ export const MALICIOUS: Case[] = [
     }),
   },
   {
+    id: "s09",
+    rule: "AA-S09",
+    runtime: true,
+    files: one("s09", "Large media test.", { "assets/huge.png": "x".repeat(2 * 1024 * 1024 + 1) }),
+  },
+  {
     id: "p01",
     rule: "AA-P01",
     files: one("p01", "Unrestricted shell test.", {}, "allowed-tools: Read Bash\n"),
@@ -277,6 +283,11 @@ export const NEGATIVE: Case[] = [
       ".aisleaudit.yaml":
         "ignore:\n  - rule: AA-N01\n    reason: Documents an old HTTP-only endpoint; no requests are made.\n",
     }),
+  },
+  {
+    id: "ok-s09",
+    rule: "AA-S09",
+    files: one("ok-s09", "Fine.", { "assets/small.png": "x".repeat(1024) }),
   },
   {
     id: "ok-s05",

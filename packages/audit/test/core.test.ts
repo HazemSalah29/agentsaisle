@@ -146,6 +146,16 @@ describe("loader", () => {
     await expect(auditSkill(dir)).rejects.toThrow(/larger than/);
   });
 
+  it("notes an oversized media file instead of aborting", async () => {
+    const dir = makeSkill("bigmedia", {
+      "SKILL.md": skillMd("bigmedia", "Fine."),
+      "assets/huge.png": "x".repeat(LIMITS.maxFileBytes + 1),
+    });
+    const report = await auditSkill(dir);
+    expect(report.findings.map((f) => f.rule)).toContain("AA-S09");
+    expect(report.grade).toBe("A");
+  });
+
   it("enforces the file count limit", async () => {
     const files: Record<string, string> = { "SKILL.md": skillMd("many", "Fine.") };
     for (let i = 0; i < LIMITS.maxFiles; i++) files[`references/f${i}.md`] = "x";
