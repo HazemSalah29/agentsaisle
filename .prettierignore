@@ -12,3 +12,4 @@ packages/audit/test/__snapshots__
 registry/official/arabic-rtl/evals/fixture-app
 registry/official/arabic-rtl/evals/fixture-messages
 registry/official/arabic-rtl/evals/seeded.json
+packages/audit/test/schemas
