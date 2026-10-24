@@ -249,10 +249,6 @@ description: Write a clear git commit for the current changes. Use when asked to
             Elsewhere lists skills by other authors. We link to the author&apos;s GitHub page and
             show their license. We do not host them and the CLI does not install them.
           </li>
-          <li>
-            <strong>Untested</strong> means an official skill has no measured results yet. Numbers
-            appear on a skill page only after the evaluation harness has run.
-          </li>
         </ul>
       </Section>
     </>

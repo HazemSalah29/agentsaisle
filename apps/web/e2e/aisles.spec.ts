@@ -20,15 +20,12 @@ test.describe("aisles", () => {
     await expect(page.getByRole("heading", { name: "Database", level: 1 })).toBeVisible();
   });
 
-  test("the database aisle shelves its official skills and marks them untested", async ({
-    page,
-  }) => {
+  test("the database aisle shelves its official skills", async ({ page }) => {
     await page.goto("/aisles/database");
     const dbSkills = registry.skills.filter((s) => s.niche === "db");
     expect(dbSkills.length).toBeGreaterThanOrEqual(4);
     for (const s of dbSkills)
       await expect(page.getByRole("heading", { name: s.name, level: 3 })).toBeVisible();
-    await expect(page.getByText("Untested").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Official", level: 2 })).toBeVisible();
   });
 
@@ -69,9 +66,10 @@ test.describe("aisles", () => {
     await expect(page).toHaveURL(/\/aisles$/);
   });
 
-  test("a skill page carries the untested note", async ({ page }) => {
+  test("skill pages carry no Untested label or measured-results note", async ({ page }) => {
     await page.goto("/skills/db-schema");
-    await expect(page.getByText("Untested").first()).toBeVisible();
-    await expect(page.getByText(/No measured results yet/)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "db-schema" })).toBeVisible();
+    await expect(page.getByText(/untested/i)).toHaveCount(0);
+    await expect(page.getByText(/No measured results/)).toHaveCount(0);
   });
 });

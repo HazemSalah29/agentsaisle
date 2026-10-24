@@ -128,7 +128,7 @@ What to look at on a skill page:
 | **Install box**      | The exact command. Click **Copy** and paste it in your terminal.                               |
 | **Official badge**   | The skill is made and maintained by us.                                                        |
 | **Verified badge**   | A maintainer read the whole skill, including scripts. See [safety](#6-how-installs-stay-safe). |
-| **Untested badge**   | No measured results exist for this skill yet. We show numbers only after they are measured.    |
+| **Audit grade**      | A to F from the automated security audit, with the findings and what the skill can use.        |
 | **Runs scripts**     | The skill includes script files. The page lists them and links to the source.                  |
 | **Metadata table**   | Author, latest version, aisle, which agents it works with, source repository and stars.        |
 | **SKILL.md section** | The full text your agent will read. Nothing is hidden.                                         |
@@ -269,10 +269,6 @@ A design skill includes a script that copies its components into your project, p
 
 Great skills exist outside this registry. The **Elsewhere** shelf on an aisle page lists skills by other authors. We link to the author's GitHub page and show their license. We do **not** host or install them.
 
-### What "Untested" means
-
-We only show numbers that come from our evaluation harness. Until a skill has been measured, it carries an **Untested** badge and no performance claims. Untested skills are drafts that live on the `stage` branch; they are not promoted to `main` until they pass measured gates.
-
 ---
 
 ## 6. How installs stay safe
@@ -284,6 +280,14 @@ Installing a skill means copying someone else's text (and sometimes scripts) int
 3. **Scripts are declared.** If a skill has a `scripts/` folder, the CLI lists the files. Community and unverified skills **ask before installing**. Official skills, whose scripts a maintainer read in full, list them without asking.
 4. **Verified means read.** A **Verified** badge means a maintainer read the skill and every script in full. Community skills are unverified until then.
 5. **Everything is readable.** The skill page shows the full `SKILL.md`, and the source link goes to the exact files.
+
+6. **Audited.** `aisle audit` scans a skill as text for risky patterns (prompt injection, data exfiltration, dangerous commands, hidden characters) and gives it a grade from A to F. `aisle add` runs it before installing and blocks critical findings. Every skill page shows its audit. An audit reduces risk; it cannot prove a skill safe.
+
+### For skill authors: the audit Action and badge
+
+- **GitHub Action.** `integrations/aisle-audit-action` is a ready-to-copy Action (publish it as `HazemSalah29/aisle-audit-action`). It runs `aisle audit . --format sarif` and uploads the result so findings appear in your repository's Security tab. It needs a published `@agentsaisle/cli` that includes `aisle audit` (0.2.0 or newer).
+- **Badge.** Each skill has a shields.io endpoint badge at `/badges/<name>.json`; the skill page shows the Markdown to paste into a README.
+- **Formats.** `aisle audit --format pretty|json|sarif|markdown`, with `--fail-on` setting the exit code.
 
 Your agent may run a skill's scripts later, on your machine. So **read the skill page before you install**, especially for unverified skills. See something wrong? Use **Report this skill** on its page or open a GitHub issue.
 
@@ -472,7 +476,6 @@ The site deploys to Vercel from this repository (root directory `apps/web`, sett
 | **Kit / profile** | A bundle of skills installed with one command.                               |
 | **Official**      | Made and maintained by the Agent Aisle team.                                 |
 | **Verified**      | A maintainer read the skill and its scripts in full.                         |
-| **Untested**      | No measured results yet, so no numbers are shown.                            |
 | **Elsewhere**     | Other authors' skills that we link to but do not host.                       |
 | **SHA**           | A 40-character ID of an exact git commit. Pinning to it freezes the content. |
 | **Lockfile**      | `aisle-lock.json`, the record of exactly which versions you installed.       |

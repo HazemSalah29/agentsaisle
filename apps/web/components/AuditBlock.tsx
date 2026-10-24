@@ -1,6 +1,9 @@
 import type { AuditFinding, AuditReport } from "@agentsaisle/registry-schema";
 import { getAuditReport } from "../lib/audit";
 import { AUDIT_RULES_URL, SEVERITIES, severityLabel } from "../lib/audit-labels";
+import { badgeMarkdown } from "../lib/badge";
+import { SITE_URL } from "../lib/site";
+import { CodeBlock } from "./CodeBlock";
 import { GradeBadge } from "./GradeBadge";
 
 const code = "font-mono text-sm";
@@ -131,6 +134,19 @@ export function AuditView({ report }: { report: AuditReport | undefined }) {
   );
 }
 
+/** How a skill's author puts the audit grade in a README. */
+export function BadgeSnippet({ siteUrl, name }: { siteUrl: string; name: string }) {
+  return (
+    <div className="space-y-2">
+      <h3 className="text-lg">Show this grade in a README</h3>
+      <p className="text-sm text-muted">
+        The badge updates when the registry is rebuilt. Paste this Markdown into the README:
+      </p>
+      <CodeBlock label={`Badge Markdown for ${name}`}>{badgeMarkdown(siteUrl, name)}</CodeBlock>
+    </div>
+  );
+}
+
 export function AuditBlock({ name, version }: { name: string; version: string }) {
   return (
     <section aria-labelledby="audit" className="space-y-4">
@@ -138,6 +154,7 @@ export function AuditBlock({ name, version }: { name: string; version: string })
         Audit
       </h2>
       <AuditView report={getAuditReport(name, version)} />
+      <BadgeSnippet siteUrl={SITE_URL} name={name} />
     </section>
   );
 }

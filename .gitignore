@@ -15,3 +15,4 @@ apps/web/public/previews
 registry/.audit-cache
 apps/web/public/audits
 registry/.audit-out
+apps/web/public/badges

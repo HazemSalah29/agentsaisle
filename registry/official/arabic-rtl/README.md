@@ -15,7 +15,7 @@ Adds full Arabic and right-to-left support to a Next.js (App Router) + Tailwind 
 - The Arabic starter strings are a machine-written Modern Standard Arabic draft. A native speaker should review them (and the app's own strings) before production. The skill writes `translation-review.md` for strings it is unsure about.
 - The codemod rewrites Tailwind classes only. Physical CSS properties are reported, not rewritten. It needs Tailwind 3.3 or newer.
 - Unverified details are marked `TODO(verify)` in the references.
-- This skill is untested: no eval numbers exist yet, so the skill page shows screenshots only. The demo was converted by following the steps by hand, not by an unattended agent run.
+- No eval numbers exist, so the skill page shows screenshots only. The demo was converted by following the steps by hand, not by an unattended agent run.
 - A design kit copied into the project (`src/components/kit`) is skipped by default; the scripts print a NOTE with counts and `--include-kit` includes it. The demo needed it: the kit held the layout classes and about 25 UI strings, and its server actions return message keys so errors can be translated.
 - Screenshots scroll the page first so reveal-on-scroll sections are visible.
 

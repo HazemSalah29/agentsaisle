@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest";
 import { Badge } from "./Badge";
 import { ElsewhereCard } from "./ElsewhereCard";
 
-describe("Badge untested", () => {
-  it("says Untested and does not rely on color alone", () => {
-    const html = renderToStaticMarkup(<Badge kind="untested" />);
-    expect(html).toContain("Untested");
+describe("Badge", () => {
+  it("has a label and an icon, so it does not rely on color alone", () => {
+    const html = renderToStaticMarkup(<Badge kind="scripts" />);
+    expect(html).toContain("Runs scripts");
     expect(html).toContain("<svg");
+  });
+  it("no longer has an untested state", () => {
+    expect(renderToStaticMarkup(<Badge kind="official" />)).not.toMatch(/untested/i);
   });
 });
 

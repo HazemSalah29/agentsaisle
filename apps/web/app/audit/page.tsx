@@ -191,7 +191,39 @@ aisle audit . --format markdown --fail-on medium`}
         </div>
       </Section>
 
-      <Section id="limits" number="06" title="What an audit cannot do">
+      <Section id="badge" number="06" title="Badge and GitHub Action" intro="For skill authors.">
+        <div className="space-y-5">
+          <p className="text-sm">
+            Every skill page shows a README badge for its grade. It is a shields.io endpoint badge
+            that reads <code className="font-mono">/badges/&lt;name&gt;.json</code>:
+          </p>
+          <CodeBlock label="Badge Markdown">
+            {`[![aisle audit](https://img.shields.io/endpoint?url=https%3A%2F%2F<site>%2Fbadges%2F<name>.json)](https://<site>/skills/<name>)`}
+          </CodeBlock>
+          <p className="text-sm">
+            To audit your own skill repository on every push and see the findings in GitHub&apos;s
+            Security tab, use the Agent Aisle audit Action. It runs{" "}
+            <code className="font-mono">aisle audit . --format sarif</code> and uploads the result:
+          </p>
+          <CodeBlock label="Workflow example">
+            {`name: Aisle audit
+on: [push, pull_request]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: HazemSalah29/aisle-audit-action@v1
+        with:
+          fail-on: high`}
+          </CodeBlock>
+        </div>
+      </Section>
+
+      <Section id="limits" number="07" title="What an audit cannot do">
         <p className="max-w-prose text-sm">
           An audit reduces risk; it cannot prove a skill safe. It finds patterns it knows about. A
           determined author can write something it misses, and a clean report says nothing about

@@ -1,13 +1,12 @@
 import type { ReactNode } from "react";
 
-export type BadgeKind = "official" | "verified" | "unverified" | "scripts" | "untested";
+export type BadgeKind = "official" | "verified" | "unverified" | "scripts";
 
 const copy: Record<BadgeKind, string> = {
   official: "Official",
   verified: "Verified",
   unverified: "Unverified",
   scripts: "Runs scripts",
-  untested: "Untested",
 };
 
 const icons: Record<BadgeKind, ReactNode> = {
@@ -22,8 +21,6 @@ const icons: Record<BadgeKind, ReactNode> = {
     </>
   ),
   scripts: <path d="M12 3l10 18H2L12 3Zm0 7v5m0 3v.5" />,
-  // A flask: this skill has not been through the measured tests yet.
-  untested: <path d="M9 3h6M10 3v6L5 19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1l-5-10V3" />,
 };
 
 // Each state differs in shape or fill as well as color, so none relies on color alone.
@@ -32,7 +29,6 @@ const styles: Record<BadgeKind, string> = {
   verified: "border-line-strong text-ink",
   unverified: "border-dashed border-line-strong text-muted",
   scripts: "border-invert-bg bg-invert-bg text-invert-fg",
-  untested: "border-line-strong bg-bg-sunken text-muted",
 };
 
 export function Badge({ kind, children }: { kind: BadgeKind; children?: ReactNode }) {

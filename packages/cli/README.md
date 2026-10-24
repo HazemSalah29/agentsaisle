@@ -80,9 +80,11 @@ aisle audit explore@1.1.0              # a skill from the registry
 aisle audit owner/repo/skills/x@main   # any GitHub repo or folder
 aisle audit ./my-skill --format json --output audit.json
 aisle audit ./my-skill --fail-on critical
+aisle audit . --format sarif --output audit.sarif   # for GitHub's Security tab
+aisle audit . --format markdown                     # for a PR comment
 ```
 
-Options: `--format pretty|json` (`sarif` and `markdown` come later), `--fail-on critical|high|medium|low|none` (default `high`), `--output <file>`, `--quiet`. `--deep` is not available yet. Local paths must start with `./`, `../`, `/` or `~`.
+Options: `--format pretty|json|sarif|markdown`, `--fail-on critical|high|medium|low|none` (default `high`), `--output <file>`, `--quiet`. `--deep` is not available yet. Local paths must start with `./`, `../`, `/` or `~`.
 
 Exit codes: `0` nothing at or above `--fail-on`, `1` findings at or above it, `2` the audit could not run.
 
@@ -94,6 +96,8 @@ Exit codes: `0` nothing at or above `--fail-on`, `1` findings at or above it, `2
 - `--no-audit` skips the audit and prints a warning.
 
 Downloads are limited to 20 MB per archive, 2,000 files and 2 MB per file, and refuse absolute paths, `..` and hardlinks. Symlinks are never installed.
+
+To run the audit on every push and see findings in GitHub's Security tab, use the `aisle-audit-action` GitHub Action (`integrations/aisle-audit-action` in the Agent Aisle repository).
 
 Automated checks found no known risky patterns is not a guarantee of safety: an audit reduces risk, it cannot prove a skill safe.
 

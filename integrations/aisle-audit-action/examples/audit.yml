@@ -1,0 +1,20 @@
+name: Aisle audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write # lets the Action upload findings to the Security tab
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: HazemSalah29/aisle-audit-action@v1
+        with:
+          path: .
+          fail-on: high

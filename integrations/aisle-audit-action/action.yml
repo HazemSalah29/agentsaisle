@@ -1,0 +1,101 @@
+name: Agent Aisle audit
+description: >-
+  Audit Agent Skills in your repository for risky patterns (prompt injection, data exfiltration,
+  dangerous commands, hidden characters) and show the findings in GitHub's Security tab. The skills
+  are read as text and never run.
+author: Agent Aisle
+branding:
+  icon: shield
+  color: orange
+
+inputs:
+  path:
+    description: Folder to audit. A skill folder (with SKILL.md) or a folder that holds several skills.
+    required: false
+    default: "."
+  fail-on:
+    description: Fail the job when a finding is at or above this level (critical, high, medium, low, none).
+    required: false
+    default: high
+  category:
+    description: SARIF category, so several audits in one repository stay separate in the Security tab.
+    required: false
+    default: aisle-audit
+  cli-version:
+    description: Version of @agentsaisle/cli to run. Pinned, so the Action never changes under you.
+    required: false
+    default: "0.2.0"
+  upload:
+    description: Upload the SARIF file to code scanning (needs security-events write permission). Use "false" to only fail the job.
+    required: false
+    default: "true"
+
+outputs:
+  grades:
+    description: Comma-separated "skill:grade" pairs from the audit.
+    value: ${{ steps.audit.outputs.grades }}
+  exit-code:
+    description: "0 clean, 1 findings at or above fail-on, 2 the audit could not run."
+    value: ${{ steps.audit.outputs.exit-code }}
+  sarif-file:
+    description: Path of the SARIF report.
+    value: ${{ steps.audit.outputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Audit
+      id: audit
+      shell: bash
+      # Inputs go through the environment, never into the script text, so they cannot inject commands.
+      env:
+        AISLE_PATH: ${{ inputs.path }}
+        AISLE_FAIL_ON: ${{ inputs.fail-on }}
+        AISLE_CLI_VERSION: ${{ inputs.cli-version }}
+      run: |
+        sarif="$RUNNER_TEMP/aisle-audit.sarif"
+        rm -f "$sarif"
+        set +e
+        output=$(npx --yes "@agentsaisle/cli@${AISLE_CLI_VERSION}" audit "$AISLE_PATH" \
+          --format sarif --output "$sarif" --fail-on "$AISLE_FAIL_ON" 2>&1)
+        code=$?
+        set -e
+        echo "$output"
+        grades=$(echo "$output" | sed -n 's/^\(.*\)  grade \([A-F]\).*/\1:\2/p' | paste -sd, -)
+        written=false
+        [ -s "$sarif" ] && written=true
+        {
+          echo "exit-code=$code"
+          echo "sarif-file=$sarif"
+          echo "sarif-written=$written"
+          echo "grades=$grades"
+        } >> "$GITHUB_OUTPUT"
+        {
+          echo "## Agent Aisle audit"
+          echo
+          echo '```'
+          echo "$output"
+          echo '```'
+          echo
+          echo "Automated checks reduce risk. This is not a guarantee of safety."
+        } >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload findings to the Security tab
+      if: always() && inputs.upload == 'true' && steps.audit.outputs.sarif-written == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.audit.outputs.sarif-file }}
+        category: ${{ inputs.category }}
+
+    - name: Fail if the audit found problems or could not run
+      if: steps.audit.outputs.exit-code != '0'
+      shell: bash
+      env:
+        AISLE_EXIT: ${{ steps.audit.outputs.exit-code }}
+      run: |
+        echo "::error title=Agent Aisle audit::Exit code ${AISLE_EXIT} (1 = findings at or above fail-on, 2 = the audit could not run)."
+        exit 1

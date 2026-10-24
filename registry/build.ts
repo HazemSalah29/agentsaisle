@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { createAuditor, writeReports } from "./audits";
+import { writeBadges } from "./badges";
 import { compileAll, IncludeError } from "./compile";
 import {
   CommunityEntry,
@@ -507,6 +508,7 @@ async function main() {
   await mkdir(path.dirname(out), { recursive: true });
   await writeFile(out, JSON.stringify(index, null, 2) + "\n");
   await writeReports(path.join(rootDir, "dist", "audits"), reports);
+  await writeBadges(path.join(rootDir, "dist", "badges"), index.skills);
   console.log(
     `registry: wrote ${index.skills.length} skills to ${path.relative(process.cwd(), out)}`,
   );
