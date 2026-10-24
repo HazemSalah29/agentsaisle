@@ -10,6 +10,14 @@ import { capLines, isEntry, parseArgs } from "./_lib.mjs";
 
 export const WIDTHS = [1440, 390];
 
+/** Scroll offsets that walk a page of `height` px in steps of `step` px, ending at the bottom. */
+export function scrollSteps(height, step) {
+  const out = [];
+  for (let y = 0; y < height; y += step) out.push(y);
+  out.push(Math.max(0, height));
+  return out;
+}
+
 export const slug = (route) => route.replace(/^\/+|\/+$/g, "").replace(/[^\w-]+/g, "-") || "home";
 
 /** URL for a locale and route; `{base}`, `{locale}` and `{route}` are filled into the pattern. */
@@ -82,6 +90,18 @@ async function main(argv) {
           lines.push(`FAIL ${s.url}: HTTP ${res?.status() ?? "no response"}`);
           continue;
         }
+        // Scroll through the page so reveal-on-scroll animations play, then return to the top;
+        // otherwise a full-page screenshot shows the sections below the fold as blank space.
+        const height = await page.evaluate(() => document.documentElement.scrollHeight);
+        for (const y of scrollSteps(
+          height,
+          Math.max(200, Math.floor(s.width <= 600 ? 600 : 800)),
+        )) {
+          await page.evaluate((top) => window.scrollTo(0, top), y);
+          await page.waitForTimeout(150);
+        }
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.waitForTimeout(700);
         await page.screenshot({ path: s.file, fullPage: true });
         const wide = await page.evaluate(
           () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

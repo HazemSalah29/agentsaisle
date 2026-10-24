@@ -1,6 +1,5 @@
 import type { RegistrySkill } from "@agentsaisle/registry-schema";
 import { PLATE_COLS, PLATE_ROWS, aisleColor, plateCells } from "../lib/plate";
-import { isUntested } from "../lib/trust";
 import { Badge } from "./Badge";
 import { GradeBadge } from "./GradeBadge";
 
@@ -96,7 +95,6 @@ export function SkillCard({
               skill.source === "official" ? "official" : skill.verified ? "verified" : "unverified"
             }
           />
-          {isUntested(skill) ? <Badge kind="untested" /> : null}
           {skill.runsScripts ? <Badge kind="scripts" /> : null}
           {skill.audit ? <GradeBadge grade={skill.audit.grade} /> : null}
         </div>

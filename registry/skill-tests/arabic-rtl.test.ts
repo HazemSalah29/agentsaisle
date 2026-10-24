@@ -709,3 +709,130 @@ describe("skill files", () => {
       expect(skill).toContain(`## ${h}`);
   });
 });
+
+describe("strings in props, objects and ternaries", () => {
+  interface Props {
+    findPropStrings(
+      src: string,
+      rel: string,
+    ): Array<{ text: string; element: string; key: string }>;
+  }
+  const find = async (src: string) =>
+    (await loadScript<Props>(S, "scripts/i18n-candidates.mjs"))
+      .findPropStrings(src, "app/page.tsx")
+      .map((c) => c.text);
+
+  it("finds copy passed as props, object values, arrays and ternaries", async () => {
+    const src = [
+      `<Hero headline="Write the day up before you leave" cta={{ label: "Start free", href: "/p" }} />`,
+      `const features = [{ title: "Notes in seconds", description: "Tap a template, add a line." }];`,
+      `<List points={["Reusable templates", "Crew hours"]} />`,
+      `<button aria-label={open ? "Close menu" : "Open menu"}>{price === 0 ? "Free" : "Paid"}</button>`,
+    ].join("\n");
+    expect(await find(src)).toEqual(
+      expect.arrayContaining([
+        "Write the day up before you leave",
+        "Start free",
+        "Notes in seconds",
+        "Tap a template, add a line.",
+        "Reusable templates",
+        "Crew hours",
+        "Close menu",
+        "Open menu",
+        "Free",
+        "Paid",
+      ]),
+    );
+  });
+
+  it("skips class names, links, imports, comparisons and code-like keys", async () => {
+    const src = [
+      `import { Hero } from "@/components/Hero";`,
+      `<div className="mt-4 flex items-center gap-2 text-muted" id="Main Section" />`,
+      `<div className={open ? "bg-ground px-4" : "bg-subtle px-6"} />`,
+      `<a href="/pricing/yearly" target="_blank" rel="noopener noreferrer">x</a>`,
+      `if (e.key === "Escape") close();`,
+      `<Foo variant="primary action" tone="subtle" size="Large" />`,
+      `const url = "https://example.com/Docs";`,
+    ].join("\n");
+    expect(await find(src)).toEqual([]);
+  });
+});
+
+describe("design kit folders", () => {
+  const project = async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "rtl-kit-"));
+    await mkdir(path.join(dir, "src/components/kit"), { recursive: true });
+    await writeFile(
+      path.join(dir, "src/components/kit/Card.tsx"),
+      `export const C = () => <p className="ml-4 text-left">Hello there</p>;\n`,
+    );
+    await writeFile(
+      path.join(dir, "src/page.tsx"),
+      `export const P = () => <p className="mt-2">Plain</p>;\n`,
+    );
+    return dir;
+  };
+  const run = (script: string, ...a: string[]) =>
+    spawnSync(process.execPath, [skillFile(S, `scripts/${script}`), ...a], { encoding: "utf8" });
+
+  it("every script says when it stepped over a kit folder, and counts what is inside", async () => {
+    const dir = await project();
+    const scan = run("rtl-scan.mjs", dir);
+    expect(scan.stdout).toMatch(
+      /NOTE: skipped .*components\/kit.*\(2 error\(s\), 0 warning\(s\) inside\)/,
+    );
+    expect(scan.stdout).toContain("--include-kit");
+    const codemod = run("rtl-codemod.mjs", dir);
+    expect(codemod.stdout).toMatch(/NOTE: skipped .*\(2 class\(es\) inside\)/);
+    const cand = run("i18n-candidates.mjs", dir);
+    expect(cand.stdout).toMatch(/NOTE: skipped .*\(1 string\(s\) inside\)/);
+  });
+
+  it("--include-kit scans and rewrites the kit and drops the note", async () => {
+    const dir = await project();
+    const scan = run("rtl-scan.mjs", dir, "--include-kit");
+    expect(scan.status).toBe(1);
+    expect(scan.stdout).not.toContain("NOTE:");
+    expect(scan.stdout).toContain("Card.tsx");
+    run("rtl-codemod.mjs", dir, "--include-kit", "--write");
+    expect(await readFile(path.join(dir, "src/components/kit/Card.tsx"), "utf8")).toContain(
+      "ms-4 text-start",
+    );
+    expect(run("i18n-candidates.mjs", dir, "--include-kit").stdout).toContain("Hello there");
+  });
+
+  it("gives no note when there is no kit folder", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "rtl-nokit-"));
+    await writeFile(
+      path.join(dir, "a.tsx"),
+      `export const A = () => <p className="mt-2">Plain</p>;\n`,
+    );
+    expect(run("rtl-scan.mjs", dir).stdout).not.toContain("NOTE:");
+  });
+});
+
+describe("candidate false positives", () => {
+  it("ignores code between JSX elements and ALL-CAPS codes", async () => {
+    const { findCandidates } = await loadScript<Cand>(S, "scripts/i18n-candidates.mjs");
+    const src = [
+      `const rows = [feature(1, <A />), feature(2, <B />), feature(3, <C />)];`,
+      `<Hero items={[<A />), x(2, <B />]} />`,
+      `const f = new Intl.NumberFormat("en", { currency: "USD" });`,
+      `<p>Real text for people</p>`,
+    ].join("\n");
+    expect(findCandidates(src, "a.tsx").map((c) => c.text)).toEqual(["Real text for people"]);
+  });
+});
+
+describe("screenshot scrolling", () => {
+  it("walks the page top to bottom in steps", async () => {
+    const { scrollSteps } = await loadScript<{ scrollSteps(h: number, s: number): number[] }>(
+      S,
+      "scripts/screenshot-rtl.mjs",
+    );
+    expect(scrollSteps(2000, 800)).toEqual([0, 800, 1600, 2000]);
+    expect(scrollSteps(0, 800)).toEqual([0]);
+    expect(scrollSteps(500, 800)).toEqual([0, 500]);
+  });
+});

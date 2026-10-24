@@ -120,3 +120,15 @@ describe("getAuditReport", () => {
     expect(getAuditReport("definitely-not-a-skill", "9.9.9")).toBeUndefined();
   });
 });
+
+describe("BadgeSnippet", () => {
+  it("shows the Markdown for the README badge", async () => {
+    const { BadgeSnippet } = await import("./AuditBlock");
+    const html = renderToStaticMarkup(<BadgeSnippet siteUrl="https://example.com" name="demo" />);
+    expect(html).toContain("Show this grade in a README");
+    expect(html).toContain(
+      "img.shields.io/endpoint?url=https%3A%2F%2Fexample.com%2Fbadges%2Fdemo.json",
+    );
+    expect(html).toContain("example.com/skills/demo");
+  });
+});

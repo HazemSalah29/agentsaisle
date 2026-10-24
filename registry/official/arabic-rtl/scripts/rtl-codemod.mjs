@@ -7,6 +7,8 @@ import path from "node:path";
 import { rewriteClassString } from "./_classmap.mjs";
 import {
   capLines,
+  findKitDirs,
+  kitNote,
   isEntry,
   lineIndex,
   parseArgs,
@@ -110,11 +112,23 @@ function main(argv) {
     for (const c of f.changes.slice(0, 3)) lines.push(`  L${c.line} ${c.from} -> ${c.to}`);
     for (const m of f.manual) lines.push(`  MANUAL L${m.line} ${m.from} (${m.rule}): ${m.fix}`);
   }
+  // Say so when a design-kit folder was stepped over, and how many classes are in it.
+  let note = "";
+  const kitDirs = flags["include-kit"] ? [] : findKitDirs(root).map((d) => path.join(root, d));
+  if (kitDirs.length) {
+    let inside = 0;
+    for (const d of kitDirs)
+      inside += run(d, { includeKit: true }).files.reduce((n, f) => n + f.changes.length, 0);
+    note = `\n${kitNote(
+      kitDirs.map((d) => path.relative(process.cwd(), d)),
+      ` (${inside} class(es) inside)`,
+    )}`;
+  }
   const mode = flags.write ? "written" : "dry run, nothing written (use --write)";
   console.log(
     capLines(
       lines,
-      `${changed} class(es) in ${res.files.filter((f) => f.changes.length).length} file(s), ${manualCount} for manual review. ${mode}`,
+      `${changed} class(es) in ${res.files.filter((f) => f.changes.length).length} file(s), ${manualCount} for manual review. ${mode}${note}`,
     ),
   );
 }

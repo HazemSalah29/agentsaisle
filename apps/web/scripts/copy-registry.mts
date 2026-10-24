@@ -44,3 +44,15 @@ for (const f of (await readdir(auditsSrc).catch(() => [])).filter((n) => n.endsW
   reports++;
 }
 console.log(`web: copied ${reports} audit reports to public/audits/`);
+
+// shields.io endpoint badges: registry/dist/badges/<name>.json is served at /badges/<name>.json.
+const badgesSrc = path.resolve(here, "../../../registry/dist/badges");
+const badgesOut = path.resolve(here, "../public/badges");
+await rm(badgesOut, { recursive: true, force: true });
+await mkdir(badgesOut, { recursive: true });
+let badges = 0;
+for (const f of (await readdir(badgesSrc).catch(() => [])).filter((n) => n.endsWith(".json"))) {
+  await copyFile(path.join(badgesSrc, f), path.join(badgesOut, f));
+  badges++;
+}
+console.log(`web: copied ${badges} badges to public/badges/`);

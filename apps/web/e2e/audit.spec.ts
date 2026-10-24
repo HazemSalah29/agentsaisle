@@ -13,7 +13,11 @@ test.describe("audit", () => {
     await expect(page.getByText("not a guarantee of safety").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Grades", level: 2 })).toBeVisible();
     await expect(page.getByText("AA-X02").first()).toBeVisible();
-    await expect(page.getByText("aisle audit . --format sarif")).toBeVisible();
+    await expect(page.getByText("aisle audit . --format sarif").first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Badge and GitHub Action", level: 2 }),
+    ).toBeVisible();
+    await expect(page.getByText("HazemSalah29/aisle-audit-action@v1")).toBeVisible();
   });
 
   test("a skill page shows its real report and the catalog card shows the grade", async ({
@@ -30,5 +34,48 @@ test.describe("audit", () => {
     await expect(block.getByText("not a guarantee of safety")).toBeVisible();
     await page.goto("/skills");
     await expect(page.getByRole("img", { name: /Audit grade/ }).first()).toBeVisible();
+  });
+});
+
+test.describe("arabic-rtl previews", () => {
+  test("the skill page shows English and Arabic screenshots side by side", async ({ page }) => {
+    await page.goto("/skills/arabic-rtl");
+    const preview = page.locator("section[aria-labelledby=preview]");
+    await expect(preview.getByRole("heading", { name: "Preview", level: 2 })).toBeVisible();
+    await expect(preview.getByText("machine-written draft")).toBeVisible();
+    await expect(preview.getByRole("img", { name: "Home, English" })).toBeVisible();
+    await expect(preview.getByRole("img", { name: "Home, Arabic" })).toBeVisible();
+    // every screenshot actually loads (they are lazy, so bring each into view first)
+    const images = preview.locator("img");
+    for (let n = 0; n < (await images.count()); n++) {
+      const img = images.nth(n);
+      await img.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() =>
+          img.evaluate(
+            (i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0,
+          ),
+        )
+        .toBe(true);
+    }
+  });
+});
+
+test.describe("badges", () => {
+  test("each skill has a shields.io endpoint badge and its page shows the Markdown", async ({
+    page,
+    request,
+  }) => {
+    const res = await request.get("/badges/arabic-rtl.json");
+    expect(res.ok()).toBe(true);
+    expect(await res.json()).toEqual({
+      schemaVersion: 1,
+      label: "aisle audit",
+      message: expect.stringMatching(/^[A-F]$/),
+      color: expect.any(String),
+    });
+    await page.goto("/skills/arabic-rtl");
+    await expect(page.getByText("Show this grade in a README")).toBeVisible();
+    await expect(page.getByText(/img\.shields\.io\/endpoint\?url=/)).toBeVisible();
   });
 });
