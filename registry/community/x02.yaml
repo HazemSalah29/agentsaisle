@@ -1,0 +1,12 @@
+# TEST ONLY: throwaway entry for checking the audit workflow. Do NOT merge. Points at an inert fixture.
+name: x02
+author: HazemSalah29
+repo: HazemSalah29/agentsaisle
+path: packages/audit/fixtures/malicious/x02
+versions:
+  - version: 0.0.1
+    ref: "main"
+    sha: "544abca6f3f8499e15a4087133224906c06e7201"
+category: [test]
+clients: [claude-code]
+runs_scripts: true
