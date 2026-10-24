@@ -2,7 +2,7 @@
 // Finds RTL problems in a web project and prints file:line, severity and a suggested fix.
 // Read-only. error = breaks RTL; warn = likely issue. Exit 1 if any error, so it can gate CI.
 // Add "rtl-scan-ignore" in a comment on the same or previous line to silence one finding.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { classify, hasDirectionVariant, parseToken } from "./_classmap.mjs";
 import {
@@ -222,15 +222,28 @@ export function hasArabicTrackingReset(files) {
   );
 }
 
-export function scan(root, { includeKit = false } = {}) {
+export function scan(roots, { includeKit = false } = {}) {
+  const list = Array.isArray(roots) ? roots : [roots];
+  // Project root: the first directory given, else the working directory (when only files are given).
+  const project = list.find((r) => statSync(r).isDirectory()) ?? process.cwd();
   // Tailwind 4 generates space-x with margin-inline-start/end, so it already follows direction.
-  const tw = tailwindVersion(root);
+  const tw = tailwindVersion(project);
   const spaceXLogical = Boolean(tw && tw[0] >= 4);
-  const files = walk(root, { exts: [...CODE_EXTS, ...CSS_EXTS], includeKit });
-  const tracking = !hasArabicTrackingReset(files.filter((f) => CSS_EXTS.includes(path.extname(f))));
+  const exts = [...CODE_EXTS, ...CSS_EXTS];
+  const seen = new Set();
+  const targets = [];
+  for (const r of list)
+    for (const f of walk(r, { exts, includeKit })) {
+      if (seen.has(f)) continue;
+      seen.add(f);
+      targets.push({ file: f, base: statSync(r).isDirectory() ? r : path.dirname(r) });
+    }
+  // The :lang(ar) reset usually lives in a global stylesheet, so look at the whole project's CSS.
+  const css = walk(project, { exts: CSS_EXTS, includeKit });
+  const tracking = !hasArabicTrackingReset(css);
   const out = [];
-  for (const file of files) {
-    const rel = path.relative(root, file) || path.basename(file);
+  for (const { file, base } of targets) {
+    const rel = path.relative(base, file) || path.basename(file);
     for (const f of scanText(readFileSync(file, "utf8"), path.extname(file), {
       tracking,
       spaceXLogical,
@@ -242,12 +255,18 @@ export function scan(root, { includeKit = false } = {}) {
 
 function main(argv) {
   const { flags, positional } = parseArgs(argv, {
-    booleans: ["json", "include-kit"],
+    booleans: ["json", "include-kit", "errors-only"],
     strings: ["rule"],
   });
-  const root = path.resolve(positional[0] ?? ".");
-  let findings = scan(root, { includeKit: Boolean(flags["include-kit"]) });
+  const roots = (positional.length ? positional : ["."]).map((p) => path.resolve(p));
+  for (const r of roots)
+    if (!existsSync(r)) {
+      console.error(`Not found: ${r}`);
+      process.exit(2);
+    }
+  let findings = scan(roots, { includeKit: Boolean(flags["include-kit"]) });
   if (flags.rule) findings = findings.filter((f) => f.rule === flags.rule);
+  if (flags["errors-only"]) findings = findings.filter((f) => f.severity === "error");
   const errors = findings.filter((f) => f.severity === "error").length;
   if (flags.json) console.log(JSON.stringify(findings, null, 2));
   else {

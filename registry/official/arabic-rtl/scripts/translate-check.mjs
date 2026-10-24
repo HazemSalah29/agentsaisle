@@ -215,9 +215,17 @@ export function compare(en, ar, glossary = { brands: [], terms: [] }) {
     for (const b of glossary.brands)
       if (wordRe(b).test(enText) && !arText.includes(b))
         add("error", "glossary", key, `brand "${b}" must stay as written`);
-    for (const t of glossary.terms)
-      if (wordRe(t.en).test(enText) && !arText.includes(t.ar))
-        add("error", "glossary", key, `"${t.en}" should be "${t.ar}"`);
+    // Placeholder names such as {email} are not text, so they must not trigger a term.
+    const enWords = enText.replace(/\{[^}]*\}|<\/?[A-Za-z][\w-]*>/g, " ");
+    for (const t of glossary.terms) {
+      // `ar` may list accepted forms separated by "|" (definite, indefinite, possessive ...).
+      const forms = t.ar
+        .split("|")
+        .map((f) => f.trim())
+        .filter(Boolean);
+      if (wordRe(t.en).test(enWords) && !forms.some((f) => arText.includes(f)))
+        add("error", "glossary", key, `"${t.en}" should be "${forms[0]}"`);
+    }
   }
   return out;
 }

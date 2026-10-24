@@ -546,6 +546,7 @@ describe("scripts stay safe", () => {
       "rtl-codemod",
       "i18n-candidates",
       "translate-check",
+      "i18n-config",
       "_lib",
       "_classmap",
     ]) {
@@ -554,5 +555,157 @@ describe("scripts stay safe", () => {
         /\bfetch\(|node:https?|node:net|child_process|\beval\(|new Function/,
       );
     }
+  });
+});
+
+describe("starter assets", () => {
+  const assets = (rel: string) => skillFile(S, `assets/${rel}`);
+  const readMessages = async (l: string) => {
+    const tc = await loadScript<Tc>(S, "scripts/translate-check.mjs");
+    return tc.flatten(JSON.parse(await readFile(assets(`messages/${l}.json`), "utf8")));
+  };
+
+  it("ships at least 150 UI strings that pass translate-check with the glossary", async () => {
+    const tc = await loadScript<Tc>(S, "scripts/translate-check.mjs");
+    const en = await readMessages("en");
+    const ar = await readMessages("ar");
+    expect(Object.keys(en).length).toBeGreaterThanOrEqual(150);
+    const g = tc.parseGlossary(await readFile(assets("glossary.ar.yaml"), "utf8"));
+    expect(g.terms.length).toBeGreaterThan(5);
+    expect(tc.compare(en, ar, g)).toEqual([]);
+  });
+
+  it("covers all six plural categories in every Arabic plural", async () => {
+    const tc = await loadScript<Tc>(S, "scripts/translate-check.mjs");
+    const ar = await readMessages("ar");
+    const plurals = Object.entries(ar).filter(([, v]) => tc.parseIcu(v).plurals.length > 0);
+    expect(plurals.length).toBeGreaterThanOrEqual(5);
+    for (const [key, v] of plurals)
+      expect(tc.missingArabicCategories(tc.parseIcu(v).plurals[0]?.selectors ?? []), key).toEqual(
+        [],
+      );
+  });
+
+  it("has no RTL problems in its own components", async () => {
+    const { scan } = await loadScript<Scan>(S, "scripts/rtl-scan.mjs");
+    expect(scan(skillFile(S, "assets"))).toEqual([]);
+  });
+
+  it("DirectionalIcon flips only when asked", async () => {
+    const src = await readFile(assets("DirectionalIcon.tsx"), "utf8");
+    expect(src).toContain("rtl:-scale-x-100");
+    expect(src).toMatch(/directional\s*=\s*false/);
+    expect(src).toMatch(/directional \? "rtl:-scale-x-100" : ""/);
+  });
+
+  it("glossary accepts alternative forms and ignores placeholder names", async () => {
+    const tc = await loadScript<Tc>(S, "scripts/translate-check.mjs");
+    const g = tc.parseGlossary("terms:\n  - en: Email\n    ar: البريد الإلكتروني|بريد إلكتروني\n");
+    expect(g.terms[0]?.ar).toBe("البريد الإلكتروني|بريد إلكتروني");
+    const ok = tc.compare({ a: "Your Email" }, { a: "بريد إلكتروني" }, g);
+    expect(ok).toEqual([]);
+    const bad = tc.compare({ a: "Your Email" }, { a: "رسالة" }, g);
+    expect(bad.map((r) => r.rule)).toEqual(["glossary"]);
+    expect(tc.compare({ a: "Sent to {email}" }, { a: "أُرسل إلى {email}" }, g)).toEqual([]);
+  });
+});
+
+describe("i18n-config", () => {
+  interface Cfg {
+    normalize(i: object): { config: Record<string, unknown>; errors: string[] };
+    DEFAULTS: Record<string, unknown>;
+  }
+  const run = (...a: string[]) =>
+    spawnSync(process.execPath, [skillFile(S, "scripts/i18n-config.mjs"), ...a], {
+      encoding: "utf8",
+    });
+
+  it("fills defaults and validates choices", async () => {
+    const { normalize, DEFAULTS } = await loadScript<Cfg>(S, "scripts/i18n-config.mjs");
+    expect(normalize({}).config).toEqual(DEFAULTS);
+    expect(normalize({}).errors).toEqual([]);
+    expect(normalize({ locales: ["en", "fr"] }).errors.join()).toMatch(/Arabic/);
+    expect(normalize({ defaultLocale: "de" }).errors.join()).toMatch(/not in locales/);
+    expect(normalize({ digits: "roman" }).errors.join()).toMatch(/digits must be one of/);
+    expect(normalize({ nope: 1 }).errors.join()).toMatch(/unknown key/);
+  });
+
+  it("writes once, refuses to overwrite, and reads back", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "rtl-cfg-"));
+    expect(run(dir).status).toBe(2); // missing
+    const init = run(dir, "--init", "--locales", "en,ar,fr", "--digits", "arab");
+    expect(init.status).toBe(0);
+    const saved = JSON.parse(await readFile(path.join(dir, "i18n.config.json"), "utf8"));
+    expect(saved.locales).toEqual(["en", "ar", "fr"]);
+    expect(saved.digits).toBe("arab");
+    expect(run(dir, "--init").status).toBe(2);
+    expect(run(dir, "--init", "--force", "--digits", "latn").status).toBe(0);
+    const out = run(dir);
+    expect(out.status).toBe(0);
+    expect(out.stdout).toMatch(/digits: latn/);
+    expect(run(dir, "--init", "--force", "--digits", "x").status).toBe(1);
+  });
+
+  it("reports an invalid file", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "rtl-cfg-bad-"));
+    await writeFile(path.join(dir, "i18n.config.json"), "{ nope");
+    expect(run(dir).status).toBe(1);
+  });
+});
+
+describe("rtl-scan with several paths", () => {
+  it("scans only the given files and supports --errors-only", () => {
+    const run = (...a: string[]) =>
+      spawnSync(process.execPath, [skillFile(S, "scripts/rtl-scan.mjs"), ...a], {
+        encoding: "utf8",
+      });
+    const r = run(
+      path.join(fixture, "components/ProductCard.tsx"),
+      path.join(fixture, "components/ContactForm.tsx"),
+      "--errors-only",
+      "--json",
+    );
+    expect(r.status).toBe(1);
+    const found = JSON.parse(r.stdout) as Finding[];
+    expect(new Set(found.map((f) => f.file))).toEqual(
+      new Set(["ProductCard.tsx", "ContactForm.tsx"]),
+    );
+    expect(found.every((f) => f.severity === "error")).toBe(true);
+    expect(run("/definitely/not/here").status).toBe(2);
+  });
+});
+
+describe("skill files", () => {
+  it("keeps text free of bidi controls and stray zero-width characters", async () => {
+    const { readdir } = await import("node:fs/promises");
+    const root = skillFile(S, "");
+    const walkDir = async (dir: string): Promise<string[]> =>
+      (await readdir(dir, { withFileTypes: true })).flatMap((e) =>
+        e.isDirectory() ? [] : [path.join(dir, e.name)],
+      );
+    const dirs = ["", "references", "assets", "assets/messages", "scripts"].map((d) =>
+      path.join(root, d),
+    );
+    for (const dir of dirs)
+      for (const file of await walkDir(dir)) {
+        if (!/\.(md|ts|tsx|mjs|json|yaml)$/.test(file)) continue;
+        const text = await readFile(file, "utf8");
+        expect(text, file).not.toMatch(
+          new RegExp("[\\u202A-\\u202E\\u2066-\\u2069\\u200B\\u2060\\uFEFF\\u200E\\u200F]"),
+        );
+        expect(text, file).not.toMatch(
+          new RegExp(
+            "(?<![\\u0600-\\u06FF])[\\u200C\\u200D]|[\\u200C\\u200D](?![\\u0600-\\u06FF])",
+          ),
+        );
+      }
+  });
+
+  it("is a manual-only skill with the house sections", async () => {
+    const skill = await readFile(skillFile(S, "SKILL.md"), "utf8");
+    expect(skill).toMatch(/^disable-model-invocation: true$/m);
+    expect(skill.split("\n").length).toBeLessThanOrEqual(150);
+    for (const h of ["Use when", "Don't use when", "Steps", "Budget", "Output", "Done when"])
+      expect(skill).toContain(`## ${h}`);
   });
 });
