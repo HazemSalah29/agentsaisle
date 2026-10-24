@@ -5,6 +5,7 @@ import path from "node:path";
 import { lockfilePath, targetDir } from "./agents.js";
 import type { Context } from "./context.js";
 import { CliError } from "./errors.js";
+import { auditGuard } from "./guard.js";
 import { downloadSkill, resolveRef, type SkillSource } from "./github.js";
 import { upsertLockEntry } from "./lockfile.js";
 import { loadRegistry, resolveSkill } from "./registry.js";
@@ -99,9 +100,15 @@ export async function installOne(
   const tmp = await mkdtemp(path.join(os.tmpdir(), "aisle-"));
   try {
     const staged = path.join(tmp, "skill");
-    await downloadSkill(p.source, staged);
+    await downloadSkill(p.source, staged, process.env, { links: "keep" });
     const fm = await validateSkill(staged, p.name);
     const name = fm.name;
+
+    const proceed = await auditGuard(
+      { dir: staged, name, version: p.version, sha: p.source.sha },
+      ctx,
+    );
+    if (!proceed) return;
 
     const scripts = await findScripts(staged);
     if (scripts.length > 0 || p.runsScripts) {
