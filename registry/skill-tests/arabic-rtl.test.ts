@@ -811,3 +811,28 @@ describe("design kit folders", () => {
     expect(run("rtl-scan.mjs", dir).stdout).not.toContain("NOTE:");
   });
 });
+
+describe("candidate false positives", () => {
+  it("ignores code between JSX elements and ALL-CAPS codes", async () => {
+    const { findCandidates } = await loadScript<Cand>(S, "scripts/i18n-candidates.mjs");
+    const src = [
+      `const rows = [feature(1, <A />), feature(2, <B />), feature(3, <C />)];`,
+      `<Hero items={[<A />), x(2, <B />]} />`,
+      `const f = new Intl.NumberFormat("en", { currency: "USD" });`,
+      `<p>Real text for people</p>`,
+    ].join("\n");
+    expect(findCandidates(src, "a.tsx").map((c) => c.text)).toEqual(["Real text for people"]);
+  });
+});
+
+describe("screenshot scrolling", () => {
+  it("walks the page top to bottom in steps", async () => {
+    const { scrollSteps } = await loadScript<{ scrollSteps(h: number, s: number): number[] }>(
+      S,
+      "scripts/screenshot-rtl.mjs",
+    );
+    expect(scrollSteps(2000, 800)).toEqual([0, 800, 1600, 2000]);
+    expect(scrollSteps(0, 800)).toEqual([0]);
+    expect(scrollSteps(500, 800)).toEqual([0, 500]);
+  });
+});

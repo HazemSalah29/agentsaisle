@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { AuditBlock } from "../../../components/AuditBlock";
 import { Badge } from "../../../components/Badge";
 import { GradeBadge } from "../../../components/GradeBadge";
+import { PreviewPairs } from "../../../components/PreviewPairs";
 import { InstallCommand } from "../../../components/InstallCommand";
 import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
 import { getRegistry, getSkill } from "../../../lib/registry";
-import { previewCaption, previewSrc } from "../../../lib/links";
+import { pairPreviews, previewCaption, previewSrc } from "../../../lib/links";
 import { isUntested } from "../../../lib/trust";
 import { REPO_URL, reportUrl } from "../../../lib/site";
 
@@ -71,6 +72,10 @@ export default async function SkillPage({ params }: Props) {
   const shots = skill.demo?.screenshots ?? [];
   const phoneShots = shots.filter((f) => /phone/i.test(f));
   const desktopShots = shots.filter((f) => !/phone/i.test(f));
+  // English/Arabic pairs ("01-home-en.jpg" and "01-home-ar.jpg") are shown side by side.
+  const desktopPairs = pairPreviews(desktopShots);
+  const phonePairs = pairPreviews(phoneShots);
+  const paired = Boolean(desktopPairs) && (phoneShots.length === 0 || Boolean(phonePairs));
 
   return (
     <article>
@@ -138,8 +143,9 @@ export default async function SkillPage({ params }: Props) {
               Preview
             </h2>
             <p className="text-sm text-muted">
-              Screenshots of a demo site built only from this skill&apos;s kit. They show the style,
-              not a measured result.
+              {paired
+                ? "The same demo site before and after this skill: English on the left, Arabic on the right. The Arabic text is a machine-written draft that no native speaker has reviewed yet. These screenshots show a result, not a measured number."
+                : "Screenshots of a demo site built only from this skill's kit. They show the style, not a measured result."}
               {skill.demo.url && (
                 <>
                   {" "}
@@ -154,18 +160,37 @@ export default async function SkillPage({ params }: Props) {
                 </>
               )}
             </p>
-            {[
-              {
-                shots: desktopShots,
-                list: "grid gap-4 sm:grid-cols-2",
-                img: "aspect-[8/5] object-top",
-              },
-              {
-                shots: phoneShots,
-                list: "grid max-w-xl grid-cols-3 gap-4",
-                img: "aspect-[9/19] object-top",
-              },
-            ].map(({ shots, list, img }) =>
+            {paired && desktopPairs && (
+              <PreviewPairs
+                skill={skill.name}
+                pairs={desktopPairs}
+                className="grid gap-4"
+                imageClass="aspect-[3/4] object-top"
+              />
+            )}
+            {paired && phonePairs && phonePairs.length > 0 && (
+              <PreviewPairs
+                skill={skill.name}
+                pairs={phonePairs}
+                className="grid gap-4 sm:grid-cols-2"
+                imageClass="aspect-[9/16] object-top"
+              />
+            )}
+            {(paired
+              ? []
+              : [
+                  {
+                    shots: desktopShots,
+                    list: "grid gap-4 sm:grid-cols-2",
+                    img: "aspect-[8/5] object-top",
+                  },
+                  {
+                    shots: phoneShots,
+                    list: "grid max-w-xl grid-cols-3 gap-4",
+                    img: "aspect-[9/19] object-top",
+                  },
+                ]
+            ).map(({ shots, list, img }) =>
               shots.length === 0 ? null : (
                 <ul key={list} className={list}>
                   {shots.map((file) => (

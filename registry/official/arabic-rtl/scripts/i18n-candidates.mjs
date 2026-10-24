@@ -49,7 +49,10 @@ export function suggestKey(rel, element, text) {
   return [pageName(rel), element, camel(w.length ? w : ["text"])].join(".");
 }
 
-const looksLikeText = (t) => /[A-Za-z؀-ۿ]{2,}/.test(t) && !/[;]|=>|^[\w.-]+\(.*\)$/.test(t);
+const looksLikeText = (t) =>
+  /[A-Za-z؀-ۿ]{2,}/.test(t) &&
+  // Code between JSX elements ("), feature(2, "), statements and arrows are not text.
+  !/[;]|=>|^[\w.-]+\(.*\)$|^\s*[)\]},]|,\s*\w+\(/.test(t);
 
 // Props and object keys that hold code, not text.
 const NON_TEXT_KEYS = new Set([
@@ -121,7 +124,8 @@ export function findPropStrings(src, rel) {
     if (seg.glueStart || seg.glueEnd) continue;
     const t = seg.text.replace(/\s+/g, " ").trim();
     if (t.length < 3 || t.length > 300 || !/[A-Za-z\u0600-\u06ff]{2,}/.test(t)) continue;
-    if (/:\/\/|^[/#.]|@|\\/.test(t) || looksLikeClasses(t)) continue;
+    // URLs, paths, emails, class names and ALL-CAPS codes (USD, GET) are not copy.
+    if (/:\/\/|^[/#.]|@|\\/.test(t) || looksLikeClasses(t) || /^[A-Z0-9_]{1,6}$/.test(t)) continue;
     const humanish = /\s/.test(t) || /^[A-Z\u0600-\u06ff][A-Za-z\u0600-\u06ff]{2,}$/.test(t);
     if (!humanish) continue;
     const ctx =

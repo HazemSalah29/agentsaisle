@@ -50,3 +50,28 @@ export function elsewhereUrl(entry: { repo: string; path: string }): string {
     ? `https://github.com/${entry.repo}/tree/HEAD/${tail}`
     : `https://github.com/${entry.repo}`;
 }
+
+export interface PreviewPair {
+  /** File name without the language suffix, for the caption: "01-home". */
+  base: string;
+  en: string;
+  ar: string;
+}
+
+/**
+ * Group preview files named "<base>-en.jpg" and "<base>-ar.jpg" into side-by-side pairs, in the
+ * order the `-en` files are listed. Returns undefined unless every file belongs to a complete pair.
+ */
+export function pairPreviews(files: readonly string[]): PreviewPair[] | undefined {
+  const pairs: PreviewPair[] = [];
+  const used = new Set<string>();
+  for (const file of files) {
+    const m = /^(.*)-en(\.[a-z0-9]+)$/i.exec(file);
+    if (!m) continue;
+    const ar = `${m[1]}-ar${m[2]}`;
+    if (!files.includes(ar)) return undefined;
+    pairs.push({ base: m[1]!, en: file, ar });
+    used.add(file).add(ar);
+  }
+  return pairs.length > 0 && files.every((f) => used.has(f)) ? pairs : undefined;
+}

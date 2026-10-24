@@ -1,4 +1,4 @@
-version: 0.1.0
+version: 0.1.1
 category: [i18n, web]
 clients: [claude-code, codex, cursor]
 runs_scripts: true
@@ -11,3 +11,17 @@ permissions:
   runs_scripts: true
   network: false
   needs_api_keys: []
+demo:
+  screenshots:
+    - 01-home-en.jpg
+    - 01-home-ar.jpg
+    - 02-pricing-en.jpg
+    - 02-pricing-ar.jpg
+    - 03-about-en.jpg
+    - 03-about-ar.jpg
+    - 04-contact-en.jpg
+    - 04-contact-ar.jpg
+    - 05-home-phone-en.jpg
+    - 05-home-phone-ar.jpg
+    - 06-pricing-phone-en.jpg
+    - 06-pricing-phone-ar.jpg

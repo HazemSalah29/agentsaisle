@@ -32,3 +32,27 @@ test.describe("audit", () => {
     await expect(page.getByRole("img", { name: /Audit grade/ }).first()).toBeVisible();
   });
 });
+
+test.describe("arabic-rtl previews", () => {
+  test("the skill page shows English and Arabic screenshots side by side", async ({ page }) => {
+    await page.goto("/skills/arabic-rtl");
+    const preview = page.locator("section[aria-labelledby=preview]");
+    await expect(preview.getByRole("heading", { name: "Preview", level: 2 })).toBeVisible();
+    await expect(preview.getByText("machine-written draft")).toBeVisible();
+    await expect(preview.getByRole("img", { name: "Home, English" })).toBeVisible();
+    await expect(preview.getByRole("img", { name: "Home, Arabic" })).toBeVisible();
+    // every screenshot actually loads (they are lazy, so bring each into view first)
+    const images = preview.locator("img");
+    for (let n = 0; n < (await images.count()); n++) {
+      const img = images.nth(n);
+      await img.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() =>
+          img.evaluate(
+            (i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0,
+          ),
+        )
+        .toBe(true);
+    }
+  });
+});
