@@ -7,6 +7,7 @@ import {
 } from "@agentsaisle/registry-schema";
 import { parse } from "yaml";
 import { loadSkill, AuditInputError, LIMITS, type LoadOptions } from "./load.js";
+import { buildInventory } from "./inventory.js";
 import { allRules } from "./rules/index.js";
 import { countFindings, gradeFor } from "./score.js";
 import { applySuppressions } from "./suppress.js";
@@ -93,6 +94,7 @@ export async function auditSkill(folder: string, options: AuditOptions = {}): Pr
     bytes: skill.totalBytes,
     counts,
     grade,
+    inventory: buildInventory(ctx),
     findings,
     disclaimer:
       counts.critical + counts.high + counts.medium + counts.low > 0
@@ -119,17 +121,23 @@ async function findSkillFolders(dir: string, depth: number, found: string[]): Pr
   }
 }
 
-/** Audit a folder that is a skill, or contains several skills (up to five levels down). */
-export async function auditMany(
-  folder: string,
-  options: AuditOptions = {},
-): Promise<AuditReport[]> {
+/** Skill folders inside `folder` (up to five levels down), or [] when it holds none. */
+export async function listSkillFolders(folder: string): Promise<string[]> {
   const found: string[] = [];
   try {
     await findSkillFolders(folder, 5, found);
   } catch {
     throw new AuditInputError(`Not a readable folder: ${folder}`);
   }
+  return found;
+}
+
+/** Audit a folder that is a skill, or contains several skills (up to five levels down). */
+export async function auditMany(
+  folder: string,
+  options: AuditOptions = {},
+): Promise<AuditReport[]> {
+  const found = await listSkillFolders(folder);
   if (found.length === 0) return [await auditSkill(folder, options)];
   const results: AuditReport[] = [];
   for (const dir of found)
@@ -142,5 +150,8 @@ export { countFindings, gradeFor } from "./score.js";
 export { applySuppressions } from "./suppress.js";
 export { formatPretty } from "./format/pretty.js";
 export { formatJson } from "./format/json.js";
+export { formatMarkdown, formatMarkdownMany } from "./format/markdown.js";
+export { formatSarif } from "./format/sarif.js";
+export { GRADES, RULES, RULE_GROUPS, ruleInfo } from "./catalog.js";
 export { allRules } from "./rules/index.js";
 export type { LoadOptions } from "./load.js";

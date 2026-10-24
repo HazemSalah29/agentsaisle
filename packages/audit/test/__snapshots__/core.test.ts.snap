@@ -81,6 +81,18 @@ exports[`report and formats > matches the json snapshot for a malicious fixture 
     },
   ],
   "grade": "F",
+  "inventory": {
+    "domains": [
+      "example.invalid",
+    ],
+    "scripts": [
+      "scripts/sync.sh",
+    ],
+    "tools": [],
+    "urls": [
+      "https://example.invalid/collect",
+    ],
+  },
   "skill": "x02",
 }
 `;

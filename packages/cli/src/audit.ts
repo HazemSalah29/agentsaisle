@@ -2,10 +2,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   AuditInputError,
-  auditMany,
   auditSkill,
   formatJson,
+  formatMarkdownMany,
   formatPretty,
+  formatSarif,
+  listSkillFolders,
   type AuditOptions,
 } from "@agentsaisle/audit";
 import type { AuditReport, AuditSeverity, RegistryIndex } from "@agentsaisle/registry-schema";
@@ -70,17 +72,13 @@ export async function runAudit(
 ): Promise<number> {
   const format = oneOf(opts.format, FORMATS, "pretty", "--format");
   const failOn = oneOf(opts.failOn, FAIL_ON, "high", "--fail-on");
-  if (format === "sarif" || format === "markdown") {
-    throw new CliError(
-      `--format ${format} is not available yet (planned for a later release). Use pretty or json.`,
-      2,
-    );
-  }
   if (opts.deep) {
     throw new CliError("--deep is not available yet (planned for a later release).", 2);
   }
 
   let reports: AuditReport[];
+  // Folder of each audited skill, so SARIF can use repository-relative paths.
+  const folders = new Map<string, string>();
   const target = await resolveAuditTarget(input, getIndex, env).catch((e: unknown) => {
     if (e instanceof CliError) throw new CliError(e.message, 2);
     throw e;
@@ -89,10 +87,18 @@ export async function runAudit(
     const options: AuditOptions = { includeUninstalled: true };
     // A named skill (registry, or a single GitHub folder) is one report with its metadata attached.
     if (target.meta.skill || existsSync(path.join(target.dir, "SKILL.md"))) {
-      reports = [await auditSkill(target.dir, { ...options, ...target.meta })];
+      const r = await auditSkill(target.dir, { ...options, ...target.meta });
+      folders.set(r.skill, target.dir);
+      reports = [r];
     } else {
-      reports = await auditMany(target.dir, options);
-      if (target.meta.sha) for (const r of reports) r.sha = target.meta.sha;
+      const dirs = await listSkillFolders(target.dir);
+      reports = [];
+      for (const dir of dirs.length ? dirs : [target.dir]) {
+        const r = await auditSkill(dir, options);
+        if (target.meta.sha) r.sha = target.meta.sha;
+        folders.set(r.skill, dir);
+        reports.push(r);
+      }
     }
   } catch (e) {
     if (e instanceof AuditInputError) throw new CliError(e.message, 2);
@@ -101,8 +107,21 @@ export async function runAudit(
     await target.cleanup();
   }
 
+  // Repository-relative folders (from the working directory) for SARIF locations.
+  const pathPrefix = Object.fromEntries(
+    [...folders].map(([name, dir]) => [
+      name,
+      path.relative(process.cwd(), dir).split(path.sep).join("/"),
+    ]),
+  );
   const full =
-    format === "json" ? formatJson(reports) : reports.map((r) => formatPretty(r)).join("\n\n");
+    format === "json"
+      ? formatJson(reports)
+      : format === "sarif"
+        ? formatSarif(reports, { pathPrefix }).trimEnd()
+        : format === "markdown"
+          ? formatMarkdownMany(reports).trimEnd()
+          : reports.map((r) => formatPretty(r)).join("\n\n");
   if (opts.output) {
     try {
       await mkdir(path.dirname(path.resolve(opts.output)), { recursive: true });

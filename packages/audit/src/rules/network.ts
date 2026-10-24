@@ -1,15 +1,7 @@
 import type { AuditFinding } from "@agentsaisle/registry-schema";
 import type { LinePattern, Rule } from "../types.js";
-import { finding, isInstruction, isScript, runPatterns } from "../util.js";
-
-const LOOPBACK = /^(?:localhost|127\.\d+\.\d+\.\d+|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?$/i;
-const NAMESPACE_HOSTS =
-  /(?:^|\.)(?:w3\.org|xmlns\.com|schemas\.\w+\.\w+|purl\.org|ns\.adobe\.com|json-schema\.org)$/i;
-
-function host(url: string): string {
-  const m = /^https?:\/\/([^/?#\s]+)/i.exec(url);
-  return (m?.[1] ?? "").replace(/^[^@]*@/, "").toLowerCase();
-}
+import { collectDomains, host, LOOPBACK, NAMESPACE_HOSTS } from "../inventory.js";
+import { finding, runPatterns } from "../util.js";
 
 const patterns: LinePattern[] = [
   {
@@ -39,18 +31,8 @@ const patterns: LinePattern[] = [
   },
 ];
 
-const URL_RE = /https?:\/\/[^\s)>"'`\]]+/gi;
-
 const domains: Rule = (ctx) => {
-  const set = new Set<string>();
-  for (const f of ctx.skill.files) {
-    if (f.text === undefined || !(isScript(f) || isInstruction(f))) continue;
-    for (const m of f.text.matchAll(URL_RE)) {
-      const h = host(m[0].replace(/[.,;:]+$/, "")).replace(/:\d+$/, "");
-      if (h && !LOOPBACK.test(h) && !NAMESPACE_HOSTS.test(h)) set.add(h);
-    }
-  }
-  const list = [...set].sort();
+  const list = collectDomains(ctx);
   const out: AuditFinding[] = [
     finding({
       rule: "AA-N03",

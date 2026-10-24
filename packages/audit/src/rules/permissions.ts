@@ -1,17 +1,9 @@
 import type { AuditFinding } from "@agentsaisle/registry-schema";
 import type { Rule } from "../types.js";
-import { eachLine, excerptAt, finding, isInstruction, isScript } from "../util.js";
+import { collectScripts, collectTools, collectUrls, parseAllowedTools } from "../inventory.js";
 
-/** Split `allowed-tools` into entries; patterns like `Bash(git diff *)` contain spaces. */
-export function parseAllowedTools(value: unknown): string[] {
-  const parts: string[] = [];
-  const items = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
-  for (const item of items) {
-    if (typeof item !== "string") continue;
-    for (const m of item.matchAll(/[A-Za-z_][\w:.-]*(?:\([^)]*\))?/g)) parts.push(m[0]);
-  }
-  return parts;
-}
+export { parseAllowedTools };
+import { eachLine, excerptAt, finding } from "../util.js";
 
 function toolName(entry: string): string {
   return entry.replace(/\(.*$/, "");
@@ -135,17 +127,11 @@ const webPlusFiles: Rule = (ctx) => {
   ];
 };
 
-const URL_RE = /https?:\/\/[^\s)>"'`\]]+/g;
-
 const inventory: Rule = (ctx) => {
   const out: AuditFinding[] = [];
-  const tools = parseAllowedTools(ctx.frontmatter.data?.["allowed-tools"]);
-  const scripts = ctx.skill.files.filter(isScript).map((f) => f.path);
-  const urls = new Set<string>();
-  for (const f of ctx.skill.files) {
-    if (f.text === undefined || !(isScript(f) || isInstruction(f))) continue;
-    for (const m of f.text.matchAll(URL_RE)) urls.add(m[0].replace(/[.,;:]+$/, ""));
-  }
+  const tools = collectTools(ctx);
+  const scripts = collectScripts(ctx);
+  const urls = collectUrls(ctx);
   const mk = (what: string, items: string[]) =>
     finding({
       rule: "AA-P06",
@@ -158,7 +144,7 @@ const inventory: Rule = (ctx) => {
     });
   out.push(mk(tools.length === 1 ? "tool" : "tools", tools));
   out.push(mk(scripts.length === 1 ? "script" : "scripts", scripts));
-  out.push(mk(urls.size === 1 ? "URL" : "URLs", [...urls].sort()));
+  out.push(mk(urls.length === 1 ? "URL" : "URLs", urls));
   return out;
 };
 

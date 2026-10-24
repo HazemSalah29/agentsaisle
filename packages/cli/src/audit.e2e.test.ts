@@ -118,6 +118,32 @@ describe("aisle audit", () => {
     expect(reports[0].grade).toBe("F");
     expect(reports[0].findings.some((f: { rule: string }) => f.rule === "AA-X02")).toBe(true);
   });
+  it("--format sarif prints SARIF 2.1.0 with repository-relative paths", async () => {
+    const res = await aisle(await tmpDir(), [
+      "audit",
+      path.join(fixtures, "malicious/x02"),
+      "--format",
+      "sarif",
+    ]);
+    expect(res.code, res.stderr).toBe(1);
+    const log = JSON.parse(res.stdout);
+    expect(log.version).toBe("2.1.0");
+    const hit = log.runs[0].results.find((r: { ruleId: string }) => r.ruleId === "AA-X02");
+    expect(hit.level).toBe("error");
+    expect(hit.locations[0].physicalLocation.artifactLocation.uri).toMatch(/malicious\/x02\//);
+  });
+  it("--format markdown prints a report a PR comment can use", async () => {
+    const res = await aisle(await tmpDir(), [
+      "audit",
+      path.join(fixtures, "malicious/x02"),
+      "--format",
+      "markdown",
+    ]);
+    expect(res.code).toBe(1);
+    expect(res.stdout).toContain("### Agent Aisle audit:");
+    expect(res.stdout).toContain("grade F");
+    expect(res.stdout).toContain("AA-X02");
+  });
   it("--output writes the full report and --quiet prints one line", async () => {
     const out = path.join(await tmpDir(), "nested", "report.json");
     const res = await aisle(await tmpDir(), [
@@ -137,14 +163,13 @@ describe("aisle audit", () => {
     const cwd = await tmpDir();
     expect((await aisle(cwd, ["audit", "./does-not-exist"])).code).toBe(2);
     expect((await aisle(cwd, ["audit", "nope-not-a-skill"])).code).toBe(2);
-    const sarif = await aisle(cwd, [
+    const bogus = await aisle(cwd, [
       "audit",
       path.join(fixtures, "benign/commit-helper"),
       "--format",
-      "sarif",
+      "yaml",
     ]);
-    expect(sarif.code).toBe(2);
-    expect(sarif.stderr).toContain("not available yet");
+    expect(bogus.code).toBe(2);
     expect(
       (await aisle(cwd, ["audit", path.join(fixtures, "benign/commit-helper"), "--deep"])).code,
     ).toBe(2);
