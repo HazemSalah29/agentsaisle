@@ -17,7 +17,8 @@
     "skills:build": "tsx registry/compile-skills.ts",
     "skills:check": "tsx registry/compile-skills.ts --check",
     "lint:skills": "tsx registry/run-lint-skills.ts",
-    "registry:validate-elsewhere": "tsx registry/validate-elsewhere.ts"
+    "registry:validate-elsewhere": "tsx registry/validate-elsewhere.ts",
+    "registry:audit-pr": "tsx registry/audit-pr.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

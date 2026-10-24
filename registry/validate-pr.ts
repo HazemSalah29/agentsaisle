@@ -5,60 +5,14 @@
  * against BASE_REF (default origin/main). With none changed it exits 0.
  * Maintainers set ALLOW_VERIFIED=1 to permit `verified: true`.
  */
-import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { allCommunityFiles, esc, registryDir, repoRoot, selectCommunityFiles } from "./pr-files";
 import { createGitHubApi, validateEntryFile, type Finding } from "./validate";
 
-const registryDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.dirname(registryDir);
-const COMMUNITY = "registry/community";
-
-const esc = (s: string, prop = false) => {
-  const base = s.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-  return prop ? base.replace(/:/g, "%3A").replace(/,/g, "%2C") : base;
-};
-
-function changedFiles(args: string[]): string[] {
-  if (args.length) return args;
-  if (process.env.CHANGED_FILES?.trim()) return process.env.CHANGED_FILES.trim().split(/\s+/);
-  const base = process.env.BASE_REF ?? "origin/main";
-  try {
-    return execFileSync(
-      "git",
-      ["diff", "--name-only", "--diff-filter=ACMR", `${base}...HEAD`, "--", COMMUNITY],
-      {
-        cwd: repoRoot,
-        encoding: "utf8",
-      },
-    )
-      .split("\n")
-      .filter(Boolean);
-  } catch {
-    console.warn(`Could not diff against ${base}; checking every community entry instead.`);
-    return [];
-  }
-}
-
-async function allCommunityFiles(): Promise<string[]> {
-  const dir = path.join(registryDir, "community");
-  return (await readdir(dir).catch(() => [] as string[])).map((f) => `${COMMUNITY}/${f}`);
-}
-
 async function main() {
-  let files = changedFiles(process.argv.slice(2))
-    .map((f) => path.relative(repoRoot, path.resolve(repoRoot, f)).split(path.sep).join("/"))
-    .filter((f) => f.startsWith(`${COMMUNITY}/`));
-  if (
-    files.length === 0 &&
-    process.argv.length <= 2 &&
-    !process.env.CHANGED_FILES &&
-    !process.env.GITHUB_ACTIONS
-  ) {
-    files = await allCommunityFiles();
-  }
+  const files = await selectCommunityFiles(process.argv.slice(2));
   if (files.length === 0) {
     console.log("No community registry entries changed. Nothing to check.");
     return 0;

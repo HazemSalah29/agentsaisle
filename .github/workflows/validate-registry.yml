@@ -6,6 +6,9 @@ on:
     paths:
       - "registry/community/**"
       - "registry/validate*.ts"
+      - "registry/audit*.ts"
+      - "registry/pr-files.ts"
+      - "packages/audit/**"
 
 permissions:
   contents: read
@@ -25,6 +28,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Only the schema package is needed; this job never builds or runs submitted skills.
       - run: pnpm --filter @agentsaisle/registry-schema build
+      - run: pnpm --filter @agentsaisle/audit build
       - name: Validate changed community entries
         run: pnpm registry:validate
         env:
@@ -32,3 +36,21 @@ jobs:
           BASE_REF: origin/main
           # Only the repository owner may set `verified: true`.
           ALLOW_VERIFIED: ${{ github.actor == github.repository_owner && '1' || '0' }}
+      # Audit the changed entries at their pinned commits. The skills are downloaded as text and read;
+      # nothing in them is run. Fails the PR on a critical finding.
+      - name: Audit changed community entries
+        id: audit
+        run: pnpm registry:audit-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REF: origin/main
+          OUTPUT_DIR: ${{ runner.temp }}/audit-out
+      # The comment is posted by comment-audit.yml, because this token is read-only on fork PRs.
+      - name: Keep the report for the comment workflow
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: ${{ runner.temp }}/audit-out
+          if-no-files-found: ignore
+          retention-days: 7

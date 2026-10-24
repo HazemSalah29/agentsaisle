@@ -14,3 +14,4 @@ playwright-report
 apps/web/public/previews
 registry/.audit-cache
 apps/web/public/audits
+registry/.audit-out
