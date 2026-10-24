@@ -98,7 +98,7 @@ export function createProgram(): Command {
     .description(
       "Scan a skill for risky patterns without running anything: ./folder, <name>[@version] or <owner>/<repo>[/path][@ref]",
     )
-    .option("--format <format>", "pretty or json (sarif and markdown come later)", "pretty")
+    .option("--format <format>", "pretty, json, sarif (GitHub Security tab) or markdown", "pretty")
     .option(
       "--fail-on <severity>",
       "critical, high, medium, low or none (sets the exit code)",
