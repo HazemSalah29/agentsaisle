@@ -21,6 +21,10 @@ aisles:
     name: Testing and debugging
     description: Write tests for what changed, fix failures without weakening tests, and debug with evidence.
     niches: [test, debug]
+  - id: localization
+    name: Localization
+    description: Make an app work in more languages, starting with Arabic and right-to-left layouts.
+    niches: [arabic, rtl]
   - id: media
     name: Media
     description: Images and video. Coming later.
