@@ -7,6 +7,8 @@ import path from "node:path";
 import { classify, hasDirectionVariant, parseToken } from "./_classmap.mjs";
 import {
   capLines,
+  findKitDirs,
+  kitNote,
   isEntry,
   lineIndex,
   parseArgs,
@@ -268,6 +270,19 @@ function main(argv) {
   if (flags.rule) findings = findings.filter((f) => f.rule === flags.rule);
   if (flags["errors-only"]) findings = findings.filter((f) => f.severity === "error");
   const errors = findings.filter((f) => f.severity === "error").length;
+  // Say so when a design-kit folder was stepped over, and how much is in it.
+  const kitDirs = flags["include-kit"]
+    ? []
+    : roots.flatMap((r) => findKitDirs(r).map((d) => path.join(r, d)));
+  let note = "";
+  if (kitDirs.length) {
+    const inside = scan(kitDirs, { includeKit: true });
+    const e = inside.filter((f) => f.severity === "error").length;
+    note = `\n${kitNote(
+      kitDirs.map((d) => path.relative(process.cwd(), d)),
+      ` (${e} error(s), ${inside.length - e} warning(s) inside)`,
+    )}`;
+  }
   if (flags.json) console.log(JSON.stringify(findings, null, 2));
   else {
     findings.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1));
@@ -275,7 +290,9 @@ function main(argv) {
       (f) =>
         `${f.file}:${f.line} ${f.severity} ${f.rule}: ${f.message.replace(/\.$/, "")}. ${f.fix}`,
     );
-    console.log(capLines(lines, `${errors} error(s), ${findings.length - errors} warning(s)`));
+    console.log(
+      capLines(lines, `${errors} error(s), ${findings.length - errors} warning(s)${note}`),
+    );
   }
   process.exit(errors ? 1 : 0);
 }

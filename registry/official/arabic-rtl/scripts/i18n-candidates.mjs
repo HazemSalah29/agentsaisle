@@ -3,7 +3,16 @@
 // message key (page.section.element). Read-only: it never rewrites code; the agent does that file by file.
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { capLines, isEntry, lineIndex, parseArgs, walk } from "./_lib.mjs";
+import {
+  capLines,
+  findKitDirs,
+  isEntry,
+  kitNote,
+  lineIndex,
+  parseArgs,
+  stringSegments,
+  walk,
+} from "./_lib.mjs";
 
 const ATTRS = ["alt", "title", "placeholder", "aria-label", "label", "aria-description"];
 const camel = (words) => words.map((w, i) => (i ? w[0].toUpperCase() + w.slice(1) : w)).join("");
@@ -42,6 +51,108 @@ export function suggestKey(rel, element, text) {
 
 const looksLikeText = (t) => /[A-Za-z؀-ۿ]{2,}/.test(t) && !/[;]|=>|^[\w.-]+\(.*\)$/.test(t);
 
+// Props and object keys that hold code, not text.
+const NON_TEXT_KEYS = new Set([
+  "classname",
+  "class",
+  "href",
+  "src",
+  "srcset",
+  "id",
+  "key",
+  "type",
+  "name",
+  "value",
+  "variant",
+  "tone",
+  "size",
+  "rel",
+  "target",
+  "method",
+  "action",
+  "htmlfor",
+  "role",
+  "style",
+  "as",
+  "lang",
+  "dir",
+  "locale",
+  "width",
+  "height",
+  "icon",
+  "color",
+  "font",
+  "path",
+  "slug",
+  "to",
+  "from",
+  "import",
+  "ref",
+  "fill",
+  "stroke",
+  "viewbox",
+  "d",
+  "points",
+  "cols",
+  "rows",
+  "autocomplete",
+  "inputmode",
+  "pattern",
+  "step",
+]);
+const CLASS_CONTEXT = /(?:className|class)\s*[=:]|\b(?:cn|clsx|cva|twMerge|classNames)\(/;
+const looksLikeClasses = (t) => {
+  const tokens = t.split(/\s+/);
+  return (
+    tokens.every((x) => /^[a-z0-9:/[\]!.%#_()-]+$/.test(x)) &&
+    (tokens.some((x) => /[-:]/.test(x)) || tokens.length === 1)
+  );
+};
+
+/**
+ * Strings in props, object literals, arrays and ternaries that read like user-facing text:
+ * headline="Write the day up", { title: "Notes in seconds" }, ["Reusable templates"], open ? "Close" : "Open".
+ * A heuristic: capitalised words or several words, no class names, no code-like keys.
+ */
+export function findPropStrings(src, rel) {
+  const lineOf = lineIndex(src);
+  const out = [];
+  for (const seg of stringSegments(src)) {
+    if (seg.glueStart || seg.glueEnd) continue;
+    const t = seg.text.replace(/\s+/g, " ").trim();
+    if (t.length < 3 || t.length > 300 || !/[A-Za-z\u0600-\u06ff]{2,}/.test(t)) continue;
+    if (/:\/\/|^[/#.]|@|\\/.test(t) || looksLikeClasses(t)) continue;
+    const humanish = /\s/.test(t) || /^[A-Z\u0600-\u06ff][A-Za-z\u0600-\u06ff]{2,}$/.test(t);
+    if (!humanish) continue;
+    const ctx =
+      src
+        .slice(Math.max(0, seg.start - 120), seg.start - 1)
+        .split("\n")
+        .pop() ?? "";
+    if (
+      /(?:\bimport\b|\bfrom\b|\brequire\()[^\n]*$/.test(ctx) ||
+      CLASS_CONTEXT.test(ctx.slice(-100))
+    )
+      continue;
+    if (/[=!]==?\s*$/.test(ctx) || /\bcase\s*$/.test(ctx)) continue;
+    const prop = /([A-Za-z_][\w-]*)\s*(?:=\s*\{?|:)\s*$/.exec(ctx);
+    const listy = /[[(,?:]\s*$/.test(ctx);
+    if (!prop && !listy) continue;
+    const key = prop?.[1] ?? "text";
+    if (NON_TEXT_KEYS.has(key.toLowerCase())) continue;
+    // A bare capitalised word is only text when it has a text-like key (label, title ...).
+    if (!/\s/.test(t) && !prop && !listy) continue;
+    out.push({
+      line: lineOf(seg.start),
+      element: key.replace(/^aria-/, ""),
+      text: t,
+      key: suggestKey(rel, key.replace(/^aria-/, ""), t),
+      prop: true,
+    });
+  }
+  return out;
+}
+
 /** Candidate strings in one file's text. */
 export function findCandidates(src, rel) {
   const lineOf = lineIndex(src);
@@ -70,12 +181,16 @@ export function findCandidates(src, rel) {
     if (!tag) continue;
     push(m.index + 1, tag[1].toLowerCase().replace(/^.*\./, ""), m[1]);
   }
+  // Strings in props and expressions that the patterns above do not reach.
+  for (const c of findPropStrings(src, rel)) {
+    if (!out.some((o) => o.line === c.line && o.text === c.text)) out.push(c);
+  }
   return out.sort((a, b) => a.line - b.line);
 }
 
-export function candidates(root) {
+export function candidates(root, { includeKit = false } = {}) {
   const res = [];
-  for (const file of walk(root, { exts: [".jsx", ".tsx"] })) {
+  for (const file of walk(root, { exts: [".jsx", ".tsx"], includeKit })) {
     const rel = path.relative(root, file) || path.basename(file);
     for (const c of findCandidates(readFileSync(file, "utf8"), rel)) res.push({ file: rel, ...c });
   }
@@ -83,15 +198,25 @@ export function candidates(root) {
 }
 
 function main(argv) {
-  const { flags, positional } = parseArgs(argv, { booleans: ["json"] });
+  const { flags, positional } = parseArgs(argv, { booleans: ["json", "include-kit"] });
   const root = path.resolve(positional[0] ?? ".");
-  const all = candidates(root);
+  const all = candidates(root, { includeKit: Boolean(flags["include-kit"]) });
   if (flags.json) return console.log(JSON.stringify(all, null, 2));
   const lines = all.map((c) => `${c.file}:${c.line} "${c.text.slice(0, 60)}" -> ${c.key}`);
+  // Say so when a design-kit folder was stepped over, and how many strings are in it.
+  let note = "";
+  const kitDirs = flags["include-kit"] ? [] : findKitDirs(root).map((d) => path.join(root, d));
+  if (kitDirs.length) {
+    const inside = kitDirs.reduce((n, d) => n + candidates(d, { includeKit: true }).length, 0);
+    note = `\n${kitNote(
+      kitDirs.map((d) => path.relative(process.cwd(), d)),
+      ` (${inside} string(s) inside)`,
+    )}`;
+  }
   console.log(
     capLines(
       lines,
-      `${all.length} candidate string(s) in ${new Set(all.map((c) => c.file)).size} file(s)`,
+      `${all.length} candidate string(s) in ${new Set(all.map((c) => c.file)).size} file(s)${note}`,
     ),
   );
 }

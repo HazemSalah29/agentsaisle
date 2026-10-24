@@ -25,8 +25,9 @@ allowed-tools: Read Write Edit Glob Grep Bash(node *) Bash(npx playwright *) Bas
 3. Setup (no i18n yet): follow `references/i18n-nextjs.md`. Set `lang` and `dir` on `<html>`. Copy `assets/fonts.ts`, `assets/LocaleSwitcher.tsx` and `assets/DirectionalIcon.tsx`. Start `messages/` from `assets/messages/*.json` and `assets/glossary.ar.yaml`.
 4. Run `node <skill>/scripts/rtl-codemod.mjs` (dry run). Review the summary, then run it with `--write`. Fix the classes it lists for manual review by hand.
 5. Run `node <skill>/scripts/rtl-scan.mjs`. Fix every `error`; review `warn`s. Fix physical CSS it reports by hand.
+   - If a script prints `NOTE: skipped ... (a design kit folder)`, the layout classes and strings of a kit copied into the project (`src/components/kit`) were not checked. Tell the user in one line, then run steps 4, 5 and 7 again with `--include-kit`.
 6. Mirroring: wrap directional icons in `DirectionalIcon` per `references/mirroring.md`.
-7. Strings: run `node <skill>/scripts/i18n-candidates.mjs`. Move strings to `messages/en.json` file by file, then translate into `messages/ar.json` with the glossary and `references/translation.md`. Write `translation-review.md` for uncertain strings.
+7. Strings: run `node <skill>/scripts/i18n-candidates.mjs` (it also lists copy passed as props, object values and ternaries). Move strings to `messages/en.json` file by file, then translate into `messages/ar.json` with the glossary and `references/translation.md`. Write `translation-review.md` for uncertain strings.
 8. Numbers, dates, currency and plurals per `references/numbers-dates.md`; isolate mixed-direction text per `references/bidi.md`; fix forms per `references/forms.md`.
 9. Run `node <skill>/scripts/translate-check.mjs`, the project's build and checks, then `node <skill>/scripts/screenshot-rtl.mjs` against the running app. View the en and ar shots side by side at both widths and fix what you see (`references/qa-checklist.md`).
 10. Tell the user that `rtl-check` can keep new code RTL-safe, and that a native speaker should review the translations.

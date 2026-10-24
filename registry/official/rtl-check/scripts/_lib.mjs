@@ -24,6 +24,30 @@ const SKIP_DIRS = new Set([
 /** True when `file` sits in another skill's kit folder (src/components/kit). */
 const inKit = (rel) => /(^|\/)components\/kit(\/|$)/.test(rel.split(path.sep).join("/"));
 
+/**
+ * Design-kit folders (src/components/kit) under `root` that a default run skips. They are another
+ * skill's component kit, but once installed they are the project's own copy and usually hold most of
+ * its layout classes, so the scripts say when they stepped over one.
+ */
+export function findKitDirs(root) {
+  if (statSync(root).isFile()) return [];
+  const found = [];
+  const visit = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory() || e.isSymbolicLink() || SKIP_DIRS.has(e.name)) continue;
+      const full = path.join(dir, e.name);
+      if (inKit(path.relative(root, full))) found.push(path.relative(root, full) || e.name);
+      else visit(full);
+    }
+  };
+  visit(root);
+  return found;
+}
+
+/** The one-line note printed when a kit folder was skipped. `what` is "classes", "strings" ... */
+export const kitNote = (dirs, extra = "") =>
+  `NOTE: skipped ${dirs.join(", ")} (a design kit folder${dirs.length > 1 ? "s" : ""})${extra}. It is your project's copy now: run again with --include-kit to include it.`;
+
 /** Walk `root` and return files (absolute) with one of `exts`. Skips build output and kit folders. */
 export function walk(root, { exts = SOURCE_EXTS, includeKit = false } = {}) {
   const out = [];
@@ -158,7 +182,8 @@ export function parseArgs(argv, { booleans = [], strings = [] } = {}) {
 
 /** Cap printed lines at MAX_LINES (summary line included) and say how many were left out. */
 export function capLines(lines, summary, max = MAX_LINES) {
-  const room = max - 1;
+  // The summary may be several lines (a count plus a note); they all count towards the cap.
+  const room = max - summary.split("\n").length;
   if (lines.length <= room) return [...lines, summary].join("\n");
   const shown = lines.slice(0, room - 1);
   return [...shown, `... ${lines.length - shown.length} more (use --json for all)`, summary].join(
