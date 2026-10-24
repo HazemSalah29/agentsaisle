@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
+import { compileAll, IncludeError } from "./compile";
 import {
   CommunityEntry,
   OfficialMeta,
@@ -13,6 +14,11 @@ import {
   compareSemver,
   splitFrontmatter,
   type RegistrySkill,
+  type OfficialMeta as OfficialMetaType,
+  AislesFile,
+  ElsewhereFile,
+  type Aisle,
+  type ElsewhereEntry,
 } from "@agentsaisle/registry-schema";
 
 /** GitHub repo that hosts registry/official. */
@@ -46,6 +52,51 @@ export function localTagSha(cwd: string, tag: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Every lightweight tag of a repository in as few requests as possible (100 tags per request),
+ * as a map from tag name to commit SHA. A build resolves a dozen official skills, and one request
+ * is much less likely to hit GitHub's rate limit on shared build machines than one per skill.
+ * Annotated tags are left out (they point at a tag object, not a commit); callers fall back to
+ * `remoteTagSha` for those. Returns an empty map when GitHub can't be reached.
+ */
+export async function fetchTagIndex(
+  repo: string,
+  opts: { fetch?: typeof fetch; token?: string } = {},
+): Promise<Map<string, string>> {
+  const doFetch = opts.fetch ?? fetch;
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+  if (opts.token) headers.Authorization = `Bearer ${opts.token}`;
+  const index = new Map<string, string>();
+  try {
+    for (let page = 1; page <= 20; page++) {
+      const res = await doFetch(
+        `https://api.github.com/repos/${repo}/git/matching-refs/tags?per_page=100&page=${page}`,
+        { headers },
+      );
+      if (!res.ok) break;
+      const refs = (await res.json()) as Array<{
+        ref?: string;
+        object?: { sha?: string; type?: string };
+      }>;
+      for (const r of refs) {
+        const sha = r.object?.sha;
+        if (
+          r.ref?.startsWith("refs/tags/") &&
+          r.object?.type === "commit" &&
+          sha &&
+          FULL_SHA.test(sha)
+        ) {
+          index.set(r.ref.slice("refs/tags/".length), sha);
+        }
+      }
+      if (refs.length < 100) break;
+    }
+  } catch {
+    // keep whatever was read
+  }
+  return index;
 }
 
 /**
@@ -104,9 +155,17 @@ export function gitShaResolver(
   cwd: string,
   strict = Boolean(process.env.CI || process.env.VERCEL),
 ): ShaResolver {
+  let index: Promise<Map<string, string>> | undefined;
   return createShaResolver({
     local: (tag) => localTagSha(cwd, tag),
-    remote: (tag) => remoteTagSha(OFFICIAL_REPO, tag, { token: process.env.GITHUB_TOKEN }),
+    // One request for all tags, then a per-tag lookup only for any it did not contain.
+    remote: async (tag) => {
+      index ??= fetchTagIndex(OFFICIAL_REPO, { token: process.env.GITHUB_TOKEN });
+      return (
+        (await index).get(tag) ??
+        remoteTagSha(OFFICIAL_REPO, tag, { token: process.env.GITHUB_TOKEN })
+      );
+    },
     head: () =>
       execFileSync("git", ["rev-parse", "HEAD"], {
         cwd,
@@ -177,6 +236,105 @@ async function readProfiles(rootDir: string, names: Set<string>): Promise<Partia
   return data;
 }
 
+/** The house standard fields from skill.meta.yaml, converted to the index's camelCase. Only what is set. */
+export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySkill> {
+  return {
+    ...(meta.niche ? { niche: meta.niche } : {}),
+    ...(meta.kind ? { kind: meta.kind } : {}),
+    ...(meta.tier ? { tier: meta.tier } : {}),
+    ...(meta.tested
+      ? {
+          tested: {
+            model: meta.tested.model,
+            date: meta.tested.date,
+            tasks: meta.tested.tasks,
+            tokenSavingsMedian: meta.tested.token_savings_median,
+            successRate: meta.tested.success_rate,
+            baselineSuccessRate: meta.tested.baseline_success_rate,
+            preferredInBlindTest: meta.tested.preferred_in_blind_test,
+          },
+        }
+      : {}),
+    ...(meta.permissions
+      ? {
+          permissions: {
+            tools: meta.permissions.tools,
+            writesFiles: meta.permissions.writes_files,
+            runsScripts: meta.permissions.runs_scripts,
+            network: meta.permissions.network,
+            needsApiKeys: meta.permissions.needs_api_keys,
+          },
+        }
+      : {}),
+    ...(meta.demo
+      ? {
+          demo: {
+            ...(meta.demo.url ? { url: meta.demo.url } : {}),
+            screenshots: meta.demo.screenshots,
+          },
+        }
+      : {}),
+  };
+}
+
+/** aisles.yaml is optional. When present, ids are unique and each official niche sits in exactly one aisle. */
+async function readAisles(
+  rootDir: string,
+  nicheOf: Map<string, string | undefined>,
+): Promise<Aisle[]> {
+  const file = path.join(rootDir, "aisles.yaml");
+  if (!existsSync(file)) return [];
+  const label = "registry/aisles.yaml";
+  const data = await readYaml(file, AislesFile, label).catch((e: Error) => {
+    throw new Error(`Registry validation failed:\n- ${e.message}`);
+  });
+  const problems: string[] = [];
+  const ids = data.aisles.map((a) => a.id);
+  ids
+    .filter((id, i) => ids.indexOf(id) !== i)
+    .forEach((id) => problems.push(`${label}: duplicate aisle id "${id}"`));
+  const owner = new Map<string, string>();
+  for (const a of data.aisles)
+    for (const n of a.niches) {
+      if (owner.has(n))
+        problems.push(`${label}: niche "${n}" is in both "${owner.get(n)}" and "${a.id}"`);
+      owner.set(n, a.id);
+    }
+  for (const [skill, niche] of nicheOf)
+    if (niche && !owner.has(niche))
+      problems.push(`registry/official/${skill}: niche "${niche}" is not in any aisle (${label})`);
+  if (problems.length) throw new Error(`Registry validation failed:\n- ${problems.join("\n- ")}`);
+  return data.aisles;
+}
+
+/** elsewhere.yaml is optional. Entries must point at a known aisle and be unique by repo and path. */
+async function readElsewhere(rootDir: string, aisleIds: Set<string>): Promise<ElsewhereEntry[]> {
+  const file = path.join(rootDir, "elsewhere.yaml");
+  if (!existsSync(file)) return [];
+  const label = "registry/elsewhere.yaml";
+  const data = await readYaml(file, ElsewhereFile, label).catch((e: Error) => {
+    throw new Error(`Registry validation failed:\n- ${e.message}`);
+  });
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const e of data.entries) {
+    if (!aisleIds.has(e.aisle))
+      problems.push(`${label}: "${e.name}" uses unknown aisle "${e.aisle}"`);
+    const key = `${e.repo}/${e.path}`.toLowerCase();
+    if (seen.has(key))
+      problems.push(`${label}: "${e.name}" duplicates ${e.repo}${e.path ? "/" + e.path : ""}`);
+    seen.add(key);
+  }
+  if (problems.length) throw new Error(`Registry validation failed:\n- ${problems.join("\n- ")}`);
+  return data.entries;
+}
+
+/** The text `aisle init` writes into CLAUDE.md or AGENTS.md, from registry/_shared/house-rules.md. */
+async function readHouseRules(rootDir: string): Promise<string | undefined> {
+  const file = path.join(rootDir, "_shared", "house-rules.md");
+  return existsSync(file) ? (await readFile(file, "utf8")).trim() : undefined;
+}
+
 export interface BuildOptions {
   rootDir: string;
   fetchSkill: SkillFetcher;
@@ -188,6 +346,23 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   const { rootDir, fetchSkill, resolveSha } = opts;
   const skills: RegistrySkill[] = [];
   const errors: string[] = [];
+
+  // Generated SKILL.md files must match their SKILL.src.md, or installs would ship stale text.
+  try {
+    const compiled = await compileAll(
+      path.join(rootDir, "official"),
+      path.join(rootDir, "_shared"),
+      "check",
+    );
+    for (const r of compiled.filter((c) => c.status === "stale")) {
+      errors.push(
+        `registry/official/${r.skill}: SKILL.md is out of date with SKILL.src.md. Run: pnpm skills:build`,
+      );
+    }
+  } catch (e) {
+    if (!(e instanceof IncludeError)) throw e;
+    errors.push(e.message);
+  }
 
   for (const name of await listDirs(path.join(rootDir, "official"))) {
     const dir = path.join(rootDir, "official", name);
@@ -210,6 +385,7 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
         clients: meta.clients,
         runsScripts: meta.runs_scripts || (await hasScriptsDir(dir)),
         verified: true,
+        ...houseStandardFields(meta),
       });
     } catch (e) {
       errors.push((e as Error).message);
@@ -262,10 +438,26 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   skills.sort((a, b) => a.name.localeCompare(b.name));
 
   const profiles = await readProfiles(rootDir, new Set(skills.map((s) => s.name)));
+  const aisles = await readAisles(
+    rootDir,
+    new Map(skills.filter((s) => s.source === "official").map((s) => [s.name, s.niche])),
+  );
+  const elsewhere = await readElsewhere(rootDir, new Set(aisles.map((a) => a.id)));
+  const aisleIds = new Set(aisles.map((a) => a.id));
+  const badKits = (profiles.profiles ?? []).filter((p) => p.aisle && !aisleIds.has(p.aisle));
+  if (badKits.length)
+    throw new Error(
+      `Registry validation failed:\n- ${badKits
+        .map((p) => `registry/profiles.yaml: profile "${p.id}" uses unknown aisle "${p.aisle}"`)
+        .join("\n- ")}`,
+    );
   return RegistryIndex.parse({
     generatedAt: (opts.now ?? new Date()).toISOString(),
     skills,
     ...profiles,
+    aisles,
+    elsewhere,
+    houseRules: await readHouseRules(rootDir),
   });
 }
 

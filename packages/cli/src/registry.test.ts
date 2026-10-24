@@ -10,6 +10,8 @@ const index: RegistryIndex = {
   generatedAt: "2026-01-01T00:00:00.000Z",
   profiles: [],
   questions: [],
+  aisles: [],
+  elsewhere: [],
   skills: [
     {
       name: "explore",

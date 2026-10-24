@@ -23,7 +23,7 @@ npm i -g @agentsaisle/cli
 aisle add explore
 aisle add explore@1.0.0      # a specific version
 aisle add plan implement review
-aisle init --profile code    # a starter bundle
+aisle init --profile code    # a starter bundle plus the house rules in CLAUDE.md
 ```
 
 | Command                                 | What it does                                       |
@@ -33,9 +33,9 @@ aisle init --profile code    # a starter bundle
 | `aisle remove <name>`                   | Delete a skill and its lockfile entry              |
 | `aisle list`                            | Show installed skills and whether updates exist    |
 | `aisle info <name>`                     | Description, author, versions and warnings         |
-| `aisle init [--profile <id>]`           | Install a starter bundle                           |
+| `aisle init [--profile <id>]`           | Install a starter bundle and add the house rules   |
 
-Flags for `add`, `remove`, `list`, `init` and `update`: `--global` (user-level folder), `--agent <claude-code|codex|cursor>`, `--yes` (skip prompts), `--dry-run`. Skills land in `.claude/skills/<name>/` for Claude Code, and installs are recorded in `aisle-lock.json`.
+`init` also takes `--no-rules` and `--rules-only`. Flags for `add`, `remove`, `list`, `init` and `update`: `--global` (user-level folder), `--agent <claude-code|codex|cursor>`, `--yes` (skip prompts), `--dry-run`. Skills land in `.claude/skills/<name>/` for Claude Code, and installs are recorded in `aisle-lock.json`.
 
 ### Why not `npm install`?
 
@@ -45,7 +45,7 @@ Flags for `add`, `remove`, `list`, `init` and `update`: `--global` (user-level f
 
 - Every version is pinned to a full commit SHA, so a later push to the author's repository can't change what you install.
 - The CLI downloads and copies files. It never runs anything from a skill.
-- Skills with a `scripts/` folder show the file list and ask before installing.
+- Skills with a `scripts/` folder show the file list. Community and unverified skills ask before installing; verified official skills, whose scripts a maintainer read in full, list them without asking.
 - **Verified** means a maintainer read the skill and any scripts in full. Community skills are unverified until then and labeled that way.
 
 ## Add your skill

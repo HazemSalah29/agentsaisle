@@ -6,6 +6,8 @@ const index: RegistryIndex = {
   generatedAt: "2026-01-01T00:00:00.000Z",
   skills: [],
   questions: [],
+  aisles: [],
+  elsewhere: [],
   profiles: [
     { id: "code", name: "Code", description: "d", skills: ["explore"] },
     { id: "writing", name: "Writing", description: "d", skills: ["edit"] },

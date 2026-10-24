@@ -6,6 +6,8 @@ import { InstallCommand } from "../../../components/InstallCommand";
 import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
 import { getRegistry, getSkill } from "../../../lib/registry";
+import { previewCaption, previewSrc } from "../../../lib/links";
+import { isUntested } from "../../../lib/trust";
 import { REPO_URL, reportUrl } from "../../../lib/site";
 
 export const revalidate = 3600;
@@ -64,6 +66,10 @@ export default async function SkillPage({ params }: Props) {
     ...(meta ? ([["Stars", meta.stars.toLocaleString("en-US")]] as Array<[string, string]>) : []),
   ];
 
+  const shots = skill.demo?.screenshots ?? [];
+  const phoneShots = shots.filter((f) => /phone/i.test(f));
+  const desktopShots = shots.filter((f) => !/phone/i.test(f));
+
   return (
     <article>
       <header className="grid gap-x-10 gap-y-8 px-4 py-12 sm:px-8 lg:grid-cols-[1fr_20rem]">
@@ -86,8 +92,15 @@ export default async function SkillPage({ params }: Props) {
                     : "unverified"
               }
             />
+            {isUntested(skill) ? <Badge kind="untested" /> : null}
             {skill.runsScripts ? <Badge kind="scripts" /> : null}
           </div>
+          {isUntested(skill) && (
+            <p className="mt-4 max-w-prose text-sm text-muted">
+              No measured results yet. Numbers appear on this page only after the evaluation harness
+              has run, and never before.
+            </p>
+          )}
         </div>
         <dl className="self-start border border-line-strong bg-bg-raised text-sm">
           {facts.map(([k, v]) => (
@@ -116,6 +129,59 @@ export default async function SkillPage({ params }: Props) {
           </p>
         </section>
 
+        {skill.demo && skill.demo.screenshots.length > 0 && (
+          <section aria-labelledby="preview" className="space-y-4">
+            <h2 id="preview" className="text-xl">
+              Preview
+            </h2>
+            <p className="text-sm text-muted">
+              Screenshots of a demo site built only from this skill&apos;s kit. They show the style,
+              not a measured result.
+              {skill.demo.url && (
+                <>
+                  {" "}
+                  <a
+                    href={skill.demo.url}
+                    rel="noopener noreferrer"
+                    className="text-accent-ink underline underline-offset-4"
+                  >
+                    Open the live demo
+                  </a>
+                  .
+                </>
+              )}
+            </p>
+            {[
+              {
+                shots: desktopShots,
+                list: "grid gap-4 sm:grid-cols-2",
+                img: "aspect-[8/5] object-top",
+              },
+              {
+                shots: phoneShots,
+                list: "grid max-w-xl grid-cols-3 gap-4",
+                img: "aspect-[9/19] object-top",
+              },
+            ].map(({ shots, list, img }) =>
+              shots.length === 0 ? null : (
+                <ul key={list} className={list}>
+                  {shots.map((file) => (
+                    <li key={file} className="border border-line-strong bg-bg-raised">
+                      <img
+                        src={previewSrc(skill.name, file)}
+                        alt={previewCaption(file)}
+                        loading="lazy"
+                        className={`block w-full object-cover ${img}`}
+                      />
+                      <p className="hud-label px-3 py-2 text-muted">{previewCaption(file)}</p>
+                    </li>
+                  ))}
+                </ul>
+              ),
+            )}
+          </section>
+        )}
+
         {skill.runsScripts && (
           <section aria-labelledby="scripts" className="border border-invert-bg bg-bg-raised p-5">
             <h2 id="scripts" className="flex items-center gap-3 text-lg">
@@ -123,8 +189,9 @@ export default async function SkillPage({ params }: Props) {
               This skill includes scripts
             </h2>
             <p className="mt-3 text-sm">
-              Your agent may run these scripts on your machine. The CLI lists the files and asks you
-              to confirm before it installs. Read them on GitHub first.
+              {skill.source === "official" && skill.verified
+                ? "Your agent may run these scripts on your machine. A maintainer has read every one in full, and the CLI lists the files when you install. You can read them on GitHub first."
+                : "Your agent may run these scripts on your machine. The CLI lists the files and asks you to confirm before it installs. Read them on GitHub first."}
             </p>
             <a
               href={githubTreeUrl(skill, latest.sha)}

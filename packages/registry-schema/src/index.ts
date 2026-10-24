@@ -40,6 +40,46 @@ export const CommunityEntry = z
   .strict();
 export type CommunityEntry = z.infer<typeof CommunityEntry>;
 
+export const SkillKind = z.enum(["saver", "quality"]);
+export type SkillKind = z.infer<typeof SkillKind>;
+// tier values are an assumption (the V2 brief names the field but not its values).
+export const SkillTier = z.enum(["baseline", "core", "specialty"]);
+export type SkillTier = z.infer<typeof SkillTier>;
+
+const Fraction = z.number().min(0).max(1);
+const DateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be a date like 2026-10-23");
+
+/** Eval results as written in skill.meta.yaml (snake_case). Rates are fractions from 0 to 1. */
+export const MetaTested = z
+  .object({
+    model: z.string().min(1),
+    date: DateOnly,
+    tasks: z.number().int().positive(),
+    // Negative means the skill used more tokens than the baseline.
+    token_savings_median: z.number().min(-1).max(1),
+    success_rate: Fraction,
+    baseline_success_rate: Fraction,
+    preferred_in_blind_test: Fraction,
+  })
+  .strict();
+
+/** What a skill can do on the user's machine, shown on its page before install. */
+export const MetaPermissions = z
+  .object({
+    tools: z.array(z.string().min(1)),
+    writes_files: z.boolean(),
+    runs_scripts: z.boolean(),
+    network: z.boolean(),
+    /** Names of the environment variables the skill needs. Empty means none. */
+    needs_api_keys: z.array(z.string().min(1)),
+  })
+  .strict();
+
+export const SkillDemo = z
+  .object({ url: z.url().optional(), screenshots: z.array(z.string().min(1)).default([]) })
+  .strict();
+export type SkillDemo = z.infer<typeof SkillDemo>;
+
 /** registry/official/<name>/skill.meta.yaml */
 export const OfficialMeta = z
   .object({
@@ -48,6 +88,14 @@ export const OfficialMeta = z
     tokens: z
       .object({ metadata: z.number().int().nonnegative(), body: z.number().int().nonnegative() })
       .optional(),
+    // House standard fields (V2). Optional so V1 skills keep working; the skill linter requires
+    // niche, kind, tier and permissions for every non-legacy skill.
+    niche: SkillName.optional(),
+    kind: SkillKind.optional(),
+    tier: SkillTier.optional(),
+    tested: MetaTested.optional(),
+    permissions: MetaPermissions.optional(),
+    demo: SkillDemo.optional(),
   })
   .strict();
 export type OfficialMeta = z.infer<typeof OfficialMeta>;
@@ -72,6 +120,31 @@ export const RegistrySkill = z.object({
   clients: z.array(Client),
   runsScripts: z.boolean(),
   verified: z.boolean(),
+  // V2 fields, camelCase like the rest of the index. Absent for community skills and V1 skills.
+  niche: SkillName.optional(),
+  kind: SkillKind.optional(),
+  tier: SkillTier.optional(),
+  tested: z
+    .object({
+      model: z.string(),
+      date: z.string(),
+      tasks: z.number().int(),
+      tokenSavingsMedian: z.number(),
+      successRate: z.number(),
+      baselineSuccessRate: z.number(),
+      preferredInBlindTest: z.number(),
+    })
+    .optional(),
+  permissions: z
+    .object({
+      tools: z.array(z.string()),
+      writesFiles: z.boolean(),
+      runsScripts: z.boolean(),
+      network: z.boolean(),
+      needsApiKeys: z.array(z.string()),
+    })
+    .optional(),
+  demo: z.object({ url: z.string().optional(), screenshots: z.array(z.string()) }).optional(),
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 
@@ -81,6 +154,8 @@ export const Profile = z.object({
   name: z.string().min(1),
   description: z.string().min(1),
   skills: z.array(SkillName).min(1),
+  /** Set for a kit: a curated bundle shown on this aisle's page. Must be an id from aisles.yaml. */
+  aisle: SkillName.optional(),
 });
 export type Profile = z.infer<typeof Profile>;
 
@@ -99,12 +174,52 @@ export const ProfilesFile = z.object({
 });
 export type ProfilesFile = z.infer<typeof ProfilesFile>;
 
+/** One aisle (niche group) of the catalog. `niches` are the values of `niche` in skill.meta.yaml. */
+export const Aisle = z.object({
+  id: SkillName,
+  name: z.string().min(1),
+  description: z.string().min(1),
+  niches: z.array(SkillName).min(1),
+});
+export type Aisle = z.infer<typeof Aisle>;
+
+/** registry/aisles.yaml */
+export const AislesFile = z.object({ aisles: z.array(Aisle).min(1) });
+export type AislesFile = z.infer<typeof AislesFile>;
+
+/**
+ * A skill by another author, listed on its own aisle with a link out. We do not copy it and do not
+ * install it. `description` is one short neutral line written by us.
+ */
+export const ElsewhereEntry = z
+  .object({
+    name: z.string().min(1).max(80),
+    author: z.string().min(1),
+    repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/, "must be <owner>/<repo>"),
+    /** Folder inside the repo, or empty for the repo root. */
+    path: z.string().default(""),
+    description: z.string().min(1).max(160),
+    /** SPDX id as reported by GitHub, such as MIT or Apache-2.0. */
+    license: z.string().min(1),
+    aisle: SkillName,
+  })
+  .strict();
+export type ElsewhereEntry = z.infer<typeof ElsewhereEntry>;
+
+/** registry/elsewhere.yaml */
+export const ElsewhereFile = z.object({ entries: z.array(ElsewhereEntry) });
+export type ElsewhereFile = z.infer<typeof ElsewhereFile>;
+
 export const RegistryIndex = z.object({
   generatedAt: z.string(),
   skills: z.array(RegistrySkill),
   // Defaults keep older cached registry.json files (without profiles) valid.
   profiles: z.array(Profile).default([]),
   questions: z.array(Question).default([]),
+  aisles: z.array(Aisle).default([]),
+  elsewhere: z.array(ElsewhereEntry).default([]),
+  /** The block `aisle init` writes into CLAUDE.md or AGENTS.md. Delivered here so a site deploy can change it. */
+  houseRules: z.string().optional(),
 });
 export type RegistryIndex = z.infer<typeof RegistryIndex>;
 

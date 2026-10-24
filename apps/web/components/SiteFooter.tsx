@@ -3,6 +3,7 @@ const columns: Array<{ title: string; links: Array<{ href: string; label: string
     title: "Product",
     links: [
       { href: "/skills", label: "Skills" },
+      { href: "/aisles", label: "Aisles" },
       { href: "/profiles", label: "Profiles" },
       { href: "/submit", label: "Submit a skill" },
     ],

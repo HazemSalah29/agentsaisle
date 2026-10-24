@@ -21,6 +21,8 @@ const index: RegistryIndex = {
   generatedAt: "2026-01-01T00:00:00.000Z",
   profiles: [],
   questions: [],
+  aisles: [],
+  elsewhere: [],
   skills: [skill("explore", "1.10.0"), skill("commit", "1.0.0"), skill("plan", "2.0.0")],
 };
 const entry = (name: string, version: string) => ({

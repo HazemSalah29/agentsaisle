@@ -20,6 +20,8 @@ interface Plan {
   source: SkillSource;
   runsScripts: boolean;
   unverified: boolean;
+  /** Official and verified: a maintainer read every script, so scripts are listed but not asked about. */
+  trusted: boolean;
   label: string;
 }
 
@@ -33,6 +35,7 @@ async function plan(input: string, getIndex: () => Promise<RegistryIndex>): Prom
       source: { repo: skill.repo, sha, path: skill.path },
       runsScripts: skill.runsScripts,
       unverified: !skill.verified,
+      trusted: skill.source === "official" && skill.verified,
       label: `${skill.name}@${version}`,
     };
   }
@@ -41,6 +44,7 @@ async function plan(input: string, getIndex: () => Promise<RegistryIndex>): Prom
     source: { repo: spec.repo, sha, path: spec.path },
     runsScripts: false,
     unverified: true,
+    trusted: false,
     label: `${spec.repo}${spec.path ? "/" + spec.path : ""}@${sha.slice(0, 7)}`,
   };
 }
@@ -101,12 +105,18 @@ export async function installOne(
 
     const scripts = await findScripts(staged);
     if (scripts.length > 0 || p.runsScripts) {
-      ctx.warn(`Warning: "${name}" includes scripts that your agent may run:`);
-      for (const s of scripts) ctx.warn(`  - ${s}`);
-      if (scripts.length === 0) ctx.warn("  (marked as running scripts in the registry)");
-      if (!(await ctx.confirm(`Install "${name}" anyway?`))) {
-        ctx.log(`Skipped ${name}.`);
-        return;
+      if (p.trusted) {
+        // Verified official skills: show what is included, but don't make every install a question.
+        ctx.log(`${name} includes scripts (reviewed by Agent Aisle):`);
+        for (const s of scripts) ctx.log(`  - ${s}`);
+      } else {
+        ctx.warn(`Warning: "${name}" includes scripts that your agent may run:`);
+        for (const s of scripts) ctx.warn(`  - ${s}`);
+        if (scripts.length === 0) ctx.warn("  (marked as running scripts in the registry)");
+        if (!(await ctx.confirm(`Install "${name}" anyway?`))) {
+          ctx.log(`Skipped ${name}.`);
+          return;
+        }
       }
     }
 

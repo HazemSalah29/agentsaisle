@@ -50,3 +50,23 @@ export function targetDir(name: string, opts: TargetOptions): string {
 export function lockfilePath(opts: Pick<TargetOptions, "global" | "cwd" | "home">): string {
   return path.join(opts.global ? (opts.home ?? os.homedir()) : opts.cwd, "aisle-lock.json");
 }
+
+/**
+ * The file that holds always-on rules for an agent: CLAUDE.md for Claude Code, AGENTS.md for the
+ * others. Globally, Claude Code reads ~/.claude/CLAUDE.md.
+ */
+export function rulesFile({ agent, global, cwd, home }: TargetOptions): string {
+  const base = home ?? os.homedir();
+  if (agent === "claude-code") {
+    return global ? path.join(base, ".claude", "CLAUDE.md") : path.join(cwd, "CLAUDE.md");
+  }
+  if (agent === "codex") {
+    // TODO(verify): confirm the user-level Codex instructions file against current docs.
+    return global ? path.join(base, ".codex", "AGENTS.md") : path.join(cwd, "AGENTS.md");
+  }
+  // TODO(verify): confirm Cursor's AGENTS.md support and whether it has a user-level file.
+  if (global) {
+    throw new CliError("Cursor has no user-level rules file. Run aisle init without --global.");
+  }
+  return path.join(cwd, "AGENTS.md");
+}

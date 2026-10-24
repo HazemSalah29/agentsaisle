@@ -1,0 +1,132 @@
+/*
+ * Clean SaaS design tokens. Light only, one brand color (a 50 to 900 scale), neutral greys,
+ * one soft shadow. Colors are solid hex so the contrast test can read them. Use these through
+ * Tailwind (bg-ground, text-ink, bg-brand-700, border-border, ...) or var(--...). Never write a
+ * raw color, a raw duration or a one-off pixel value in a page.
+ */
+@theme {
+  --color-ground: #ffffff; /* page background */
+  --color-subtle: #f6f8f7; /* alternate sections, input fills */
+  --color-ink: #101716; /* main text */
+  --color-muted: #566260; /* secondary text */
+  --color-border: #e1e6e4; /* 1 px borders */
+
+  /* The one brand color. 700 is the default for buttons and links. */
+  --color-brand-50: #effaf8;
+  --color-brand-100: #d3f1ec;
+  --color-brand-200: #a9e3da;
+  --color-brand-300: #77cfc3;
+  --color-brand-400: #46b6a9;
+  --color-brand-500: #289a8d;
+  --color-brand-600: #1d7d73;
+  --color-brand-700: #1a645d;
+  --color-brand-800: #18504b;
+  --color-brand-900: #16423e;
+
+  /* UI states only. Never decoration. */
+  --color-success: #15803d;
+  --color-warning: #b45309;
+
+  /* Type scale: 14 / 16 / 18 / 24 / 32 / 48 / 64 px. Headlines scale down on a phone. */
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.5;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.6;
+  --text-h4: 1.5rem;
+  --text-h4--line-height: 1.3;
+  --text-h3: 2rem;
+  --text-h3--line-height: 1.2;
+  --text-h2: clamp(2rem, 4vw, 3rem);
+  --text-h2--line-height: 1.1;
+  --text-h1: clamp(2.5rem, 6vw, 4rem);
+  --text-h1--line-height: 1.05;
+
+  --radius-lg: 12px;
+  --radius-2xl: 20px;
+
+  --shadow-soft: 0 1px 2px rgb(16 23 22 / 0.04), 0 12px 32px rgb(16 23 22 / 0.07);
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* next/font sets --f-sans on <html>. One family for everything. */
+@theme inline {
+  --font-sans: var(--f-sans), system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --duration-enter: 300ms;
+  --duration-hover: 150ms;
+}
+
+html {
+  background: var(--color-ground);
+}
+
+body {
+  margin: 0;
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 3px;
+}
+
+/* The only enter animation: fade up, 300 ms. */
+@keyframes kit-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* Scroll-triggered: hidden until FadeUp marks it shown. */
+[data-fade] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity var(--duration-enter) var(--ease-standard),
+    transform var(--duration-enter) var(--ease-standard);
+}
+[data-fade][data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Page load: no JavaScript needed. */
+[data-fade-load] {
+  animation: kit-fade-up var(--duration-enter) var(--ease-standard) both;
+}
+
+/* Reduced motion, or no JavaScript at all: everything is visible and still. */
+@media (prefers-reduced-motion: reduce) {
+  [data-fade],
+  [data-fade-load] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: none;
+  }
+}
+@media (scripting: none) {
+  [data-fade] {
+    opacity: 1;
+    transform: none;
+  }
+}

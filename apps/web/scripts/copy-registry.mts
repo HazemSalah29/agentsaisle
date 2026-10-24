@@ -1,5 +1,5 @@
 // Publishes the compiled registry as a static file at /registry.json.
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,3 +14,21 @@ await copyFile(src, dest).catch(() => {
   );
 });
 console.log("web: copied registry.json to public/");
+
+// Screenshots for skill pages: registry/official/<name>/preview/* is served at /previews/<name>/*.
+const officialDir = path.resolve(here, "../../../registry/official");
+const previewsOut = path.resolve(here, "../public/previews");
+await rm(previewsOut, { recursive: true, force: true });
+let copied = 0;
+for (const skill of await readdir(officialDir, { withFileTypes: true })) {
+  if (!skill.isDirectory()) continue;
+  const from = path.join(officialDir, skill.name, "preview");
+  const files = (await readdir(from).catch(() => [])).filter((f) => /\.(png|jpe?g|webp)$/i.test(f));
+  if (files.length === 0) continue;
+  await mkdir(path.join(previewsOut, skill.name), { recursive: true });
+  for (const f of files) {
+    await copyFile(path.join(from, f), path.join(previewsOut, skill.name, f));
+    copied++;
+  }
+}
+console.log(`web: copied ${copied} preview images to public/previews/`);

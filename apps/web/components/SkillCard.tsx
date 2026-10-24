@@ -1,5 +1,6 @@
 import type { RegistrySkill } from "@agentsaisle/registry-schema";
 import { PLATE_COLS, PLATE_ROWS, aisleColor, plateCells } from "../lib/plate";
+import { isUntested } from "../lib/trust";
 import { Badge } from "./Badge";
 
 const clientNames: Record<string, string> = {
@@ -94,6 +95,7 @@ export function SkillCard({
               skill.source === "official" ? "official" : skill.verified ? "verified" : "unverified"
             }
           />
+          {isUntested(skill) ? <Badge kind="untested" /> : null}
           {skill.runsScripts ? <Badge kind="scripts" /> : null}
         </div>
         <ul className="mt-auto flex flex-wrap gap-1.5" aria-label="Works with">

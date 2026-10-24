@@ -6,13 +6,18 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "npm run dev --prefix apps/web",
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && npm run skills:check && npm run lint:skills",
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
     "registry:build": "tsx registry/build.ts",
-    "registry:validate": "tsx registry/validate-pr.ts"
+    "registry:validate": "tsx registry/validate-pr.ts",
+    "skills:build": "tsx registry/compile-skills.ts",
+    "skills:check": "tsx registry/compile-skills.ts --check",
+    "lint:skills": "tsx registry/run-lint-skills.ts",
+    "registry:validate-elsewhere": "tsx registry/validate-elsewhere.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

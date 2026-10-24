@@ -37,8 +37,8 @@ const commands: Array<[string, string, boolean]> = [
     true,
   ],
   [
-    "aisle init [--profile <id>]",
-    "Pick a profile and install its starter bundle. With --profile it never asks which.",
+    "aisle init [--profile <id>] [--no-rules | --rules-only]",
+    "Install a starter bundle and add the Agent Aisle house rules to CLAUDE.md (AGENTS.md for Codex and Cursor). With --profile it never asks which bundle.",
     true,
   ],
 ];
@@ -132,6 +132,19 @@ export default function DocsPage() {
             <p className="mt-3 text-sm text-muted">
               Installs are recorded in <code className="font-mono">aisle-lock.json</code> in your
               project root (or your home folder with <code className="font-mono">--global</code>).
+              Development files in a skill folder (<code className="font-mono">evals/</code>,{" "}
+              <code className="font-mono">preview/</code> and the top-level{" "}
+              <code className="font-mono">README.md</code>) are not installed.
+            </p>
+            <h3 className="mt-8 mb-3 text-lg">House rules</h3>
+            <p className="text-sm text-muted">
+              <code className="font-mono">aisle init</code> writes a short block of working rules
+              (search before reading, change only what the task needs, run the checks before saying
+              done) between <code className="font-mono">&lt;!-- agent-aisle:start --&gt;</code> and{" "}
+              <code className="font-mono">&lt;!-- agent-aisle:end --&gt;</code> markers. Running it
+              again replaces only that block and never touches the rest of the file. Use{" "}
+              <code className="font-mono">--rules-only</code> to skip the skills or{" "}
+              <code className="font-mono">--no-rules</code> to skip the rules.
             </p>
           </div>
         </div>
@@ -194,7 +207,11 @@ description: Write a clear git commit for the current changes. Use when asked to
             repository can&apos;t change what you install.
           </li>
           <li>The CLI downloads and copies files. It never runs anything from a skill.</li>
-          <li>Skills with scripts show the file list and ask before installing.</li>
+          <li>
+            Skills with scripts list the files. Community and unverified skills ask before
+            installing; verified official skills, whose scripts a maintainer has read in full, list
+            them without asking.
+          </li>
           <li>
             <strong>Verified</strong> means a maintainer read the skill and any scripts in full.
             Community skills are <strong>unverified</strong> until then, and labeled that way
@@ -206,6 +223,30 @@ description: Write a clear git commit for the current changes. Use when asked to
               GitHub
             </a>
             .
+          </li>
+        </ul>
+      </Section>
+
+      <Section id="aisles" number="06" title="Aisles, kits and Elsewhere">
+        <ul className="list-[square] space-y-3 pl-5 text-sm">
+          <li>
+            <a href="/aisles" className="text-accent-ink underline underline-offset-4">
+              Aisles
+            </a>{" "}
+            group skills by what they are for. Each aisle shelves our own skills first, then
+            community skills.
+          </li>
+          <li>
+            A kit is a bundle of skills that work together, such as the Motion portfolio site.
+            Install one with <code className="font-mono">aisle init --profile &lt;kit-id&gt;</code>.
+          </li>
+          <li>
+            Elsewhere lists skills by other authors. We link to the author&apos;s GitHub page and
+            show their license. We do not host them and the CLI does not install them.
+          </li>
+          <li>
+            <strong>Untested</strong> means an official skill has no measured results yet. Numbers
+            appear on a skill page only after the evaluation harness has run.
           </li>
         </ul>
       </Section>

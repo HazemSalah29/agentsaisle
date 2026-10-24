@@ -1,4 +1,13 @@
-version: 1.0.0
+version: 1.1.0
 category: [code, git]
 clients: [claude-code, codex, cursor]
 runs_scripts: false
+niche: core
+kind: saver
+tier: core
+permissions:
+  tools: [Read, Bash]
+  writes_files: true
+  runs_scripts: false
+  network: false
+  needs_api_keys: []

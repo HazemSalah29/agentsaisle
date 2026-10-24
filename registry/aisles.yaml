@@ -1,0 +1,27 @@
+# The aisles of the catalog. Each official skill's `niche` must belong to exactly one aisle.
+# An aisle with no skills yet shows as "coming soon" on the website.
+aisles:
+  - id: baseline
+    name: Baseline
+    description: Habits every project benefits from. The core kit and a quality check for every change.
+    niches: [core, code]
+  - id: web-design
+    name: Web design
+    description: Complete visual systems with a component kit, so every page follows one design.
+    niches: [design]
+  - id: frontend
+    name: Frontend
+    description: Keep websites fast and safe while you build them.
+    niches: [web]
+  - id: database
+    name: Database
+    description: Design schemas, migrate them safely, speed up queries and seed test data.
+    niches: [db]
+  - id: testing
+    name: Testing and debugging
+    description: Write tests for what changed, fix failures without weakening tests, and debug with evidence.
+    niches: [test, debug]
+  - id: media
+    name: Media
+    description: Images and video. Coming later.
+    niches: [image, video]

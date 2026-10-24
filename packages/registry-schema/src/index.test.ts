@@ -102,3 +102,75 @@ describe("profiles and questions", () => {
     expect(Question.safeParse({ ...q, options: [q.options[0]] }).success).toBe(false);
   });
 });
+
+describe("house standard meta fields", () => {
+  const base = {
+    version: "1.0.0",
+    category: ["code"],
+    clients: ["claude-code"],
+    runs_scripts: false,
+  };
+  const full = {
+    ...base,
+    niche: "design",
+    kind: "quality",
+    tier: "specialty",
+    tested: {
+      model: "claude-sonnet-5-5",
+      date: "2026-10-23",
+      tasks: 30,
+      token_savings_median: 0.42,
+      success_rate: 0.9,
+      baseline_success_rate: 0.7,
+      preferred_in_blind_test: 0.65,
+    },
+    permissions: {
+      tools: ["Read", "Write"],
+      writes_files: true,
+      runs_scripts: false,
+      network: false,
+      needs_api_keys: [],
+    },
+    demo: { url: "https://demo.example.dev", screenshots: ["preview/home-1440.png"] },
+  };
+
+  it("keeps V1 meta valid with none of the new fields", () => {
+    expect(OfficialMeta.safeParse(base).success).toBe(true);
+  });
+  it("accepts every new field", () => {
+    expect(OfficialMeta.safeParse(full).success).toBe(true);
+  });
+  it("rejects bad values and unknown nested keys", () => {
+    expect(OfficialMeta.safeParse({ ...full, kind: "fast" }).success).toBe(false);
+    expect(OfficialMeta.safeParse({ ...full, tier: "gold" }).success).toBe(false);
+    expect(
+      OfficialMeta.safeParse({ ...full, tested: { ...full.tested, date: "yesterday" } }).success,
+    ).toBe(false);
+    expect(
+      OfficialMeta.safeParse({ ...full, tested: { ...full.tested, success_rate: 1.2 } }).success,
+    ).toBe(false);
+    expect(
+      OfficialMeta.safeParse({ ...full, permissions: { ...full.permissions, shell: true } })
+        .success,
+    ).toBe(false);
+    expect(OfficialMeta.safeParse({ ...full, demo: { url: "not a url" } }).success).toBe(false);
+  });
+  it("allows a skill to use more tokens than the baseline", () => {
+    expect(
+      OfficialMeta.safeParse({ ...full, tested: { ...full.tested, token_savings_median: -0.08 } })
+        .success,
+    ).toBe(true);
+  });
+  it("defaults demo screenshots to an empty list", () => {
+    expect(
+      OfficialMeta.parse({ ...base, demo: { url: "https://demo.example.dev" } }).demo?.screenshots,
+    ).toEqual([]);
+  });
+  it("keeps older registries without houseRules valid", () => {
+    const idx = RegistryIndex.parse({ generatedAt: "2026-01-01T00:00:00.000Z", skills: [] });
+    expect(idx.houseRules).toBeUndefined();
+    expect(
+      RegistryIndex.parse({ generatedAt: "x", skills: [], houseRules: "rules" }).houseRules,
+    ).toBe("rules");
+  });
+});

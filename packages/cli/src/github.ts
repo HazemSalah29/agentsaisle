@@ -18,6 +18,16 @@ export interface SkillSource {
 const normalize = (p: string) => p.split("\\").join("/").replace(/^\.\//, "").replace(/\/+$/, "");
 
 /**
+ * Files that belong to a skill's development, not to the agent: benchmark tasks, generated
+ * previews, the human README (all at the skill's top level) and the include source of SKILL.md.
+ * `inner` is a path relative to the skill folder.
+ */
+export function isDevOnly(inner: string): boolean {
+  const top = inner.split("/")[0];
+  return top === "evals" || top === "preview" || inner === "README.md" || inner === "SKILL.src.md";
+}
+
+/**
  * Download the tarball for `source.sha` and extract only `source.path/` into `destDir`.
  * Files are only written, never executed. Links and unsafe entries are skipped.
  */
@@ -57,8 +67,10 @@ export async function downloadSkill(
       const rel = normalize(entryPath).split("/").slice(1).join("/");
       if (rel.split("/").includes("..") || path.isAbsolute(rel)) return false;
       const inside = prefix === "" || rel === prefix || rel.startsWith(prefix + "/");
-      if (inside && type === "File") extracted++;
-      return inside;
+      if (!inside) return false;
+      if (isDevOnly(prefix ? rel.slice(prefix.length + 1) : rel)) return false;
+      if (type === "File") extracted++;
+      return true;
     },
   });
   try {
