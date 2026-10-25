@@ -25,7 +25,7 @@
 9. [Contributing and development](#9-contributing-and-development)
 10. [Troubleshooting](#10-troubleshooting)
 11. [Glossary](#11-glossary)
-12. [License](#12-license)
+12. [License and brand](#12-license-and-brand)
 
 ---
 
@@ -480,6 +480,15 @@ The site deploys to Vercel from this repository (root directory `apps/web`, sett
 
 ---
 
-## 12. License
+## 12. License and brand
 
-[MIT](LICENSE)
+Two licenses apply, depending on the folder:
+
+| Part                                                                                                                                                   | License                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/cli` (the `aisle` command), `packages/audit` (the scanner), `packages/registry-schema`, `registry/`, `integrations/` and the official skills | [MIT](LICENSE)                                                                                                                     |
+| `apps/web` (the website)                                                                                                                               | [PolyForm Shield 1.0.0](apps/web/LICENSE): free to read, use and modify, but not to build a product that competes with Agent Aisle |
+
+Versions of the website published before this change stay available under the MIT license they were released with.
+
+**Name and logo.** "Agent Aisle", the logo and the site's visual design are not licensed for reuse. Forks are welcome, but they must use a different name and logo and must not suggest they are the official registry, audit grades or reviews.
