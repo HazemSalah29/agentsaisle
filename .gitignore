@@ -16,3 +16,15 @@ registry/.audit-cache
 apps/web/public/audits
 registry/.audit-out
 apps/web/public/badges
+
+# Private working files: specs, standing instructions, local agent setup. Never commit.
+/BUILD_BRIEF.md
+/V2_BRIEF.md
+/AUDIT_RTL_BRIEF.md
+/CLAUDE.md
+/docs/SYSTEM_BOOK_BRIEF.md
+/.claude/
+/aisle-lock.json
+.npmrc
+*.pem
+*.key

@@ -442,8 +442,6 @@ Copy `.env.example` to `.env.local`. Both values are optional:
 - **Original work only:** official skills never copy other authors' code, text or images.
 - **No performance claims without measurements.**
 
-More detail for contributors lives in [`CLAUDE.md`](CLAUDE.md).
-
 ### Deploying
 
 The site deploys to Vercel from this repository (root directory `apps/web`, settings in `apps/web/vercel.json`). A push to `main` redeploys it and republishes `/registry.json`. The CLI is published to npm as `@agentsaisle/cli` from `packages/cli`.
