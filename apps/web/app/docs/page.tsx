@@ -108,6 +108,43 @@ export default function DocsPage() {
             read. The CLI puts the skill folder where your agent looks for it, for example{" "}
             <code className="font-mono">.claude/skills/explore/</code>.
           </p>
+          <div className="space-y-4 border-t border-line pt-5">
+            <h3 className="text-base">If the install fails</h3>
+            <p className="text-sm">
+              <strong>
+                <code className="font-mono">EACCES: permission denied</code> on a global install.
+              </strong>{" "}
+              npm can&apos;t write to a folder owned by root. Use{" "}
+              <code className="font-mono">npx</code> above, or move npm&apos;s global folder into
+              your home directory (no <code className="font-mono">sudo</code> needed):
+            </p>
+            <CodeBlock label="Global installs without sudo">
+              {
+                "mkdir -p ~/.npm-global\nnpm config set prefix ~/.npm-global\necho 'export PATH=\"$HOME/.npm-global/bin:$PATH\"' >> ~/.zshrc\nsource ~/.zshrc\nnpm i -g @agentsaisle/cli"
+              }
+            </CodeBlock>
+            <p className="text-sm text-muted">
+              Use <code className="font-mono">~/.bashrc</code> instead of{" "}
+              <code className="font-mono">~/.zshrc</code> if you use bash. Node installed through
+              nvm or Homebrew usually doesn&apos;t have this problem.
+            </p>
+            <p className="text-sm">
+              <strong>
+                <code className="font-mono">sh: aisle: command not found</code> from npx.
+              </strong>{" "}
+              This happens when you run <code className="font-mono">npx</code> inside a clone of the
+              Agent Aisle repository, because npx finds the local package and can&apos;t run it. Run
+              the command from your own project folder instead, or pin the published version:
+            </p>
+            <CodeBlock label="Use the published package">
+              {"npx @agentsaisle/cli@latest add explore"}
+            </CodeBlock>
+            <p className="text-sm">
+              <strong>Version looks old.</strong> Check{" "}
+              <code className="font-mono">aisle --version</code>. If it prints an older number, run{" "}
+              <code className="font-mono">npm cache clean --force</code> and install again.
+            </p>
+          </div>
         </div>
       </Section>
 
