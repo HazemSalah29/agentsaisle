@@ -23,7 +23,7 @@ const mono = Geist_Mono({ subsets: ["latin"], variable: "--f-mono" });
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Agent Aisle",
-  description: "A store for Agent Skills.",
+  description: "Audit Agent Skills before you trust them, and install audited skills.",
 };
 
 // Applies the saved theme before first paint. Absent or blocked storage means "follow the system".

@@ -2,13 +2,13 @@
 
 # Agent Aisle
 
-**A store for Agent Skills.** Find a skill, install it with one command, and your AI coding agent knows a new job.
+**Audit Agent Skills before you trust them.** `aisle audit` is a free, open-source scanner that reads a skill as text, never runs it, and grades it A to F. Agent Aisle is also a store: find an audited skill, install it with one command, and your AI coding agent knows a new job.
 
-[Website](https://agentsaisle-vercel.vercel.app) · [Docs](https://agentsaisle-vercel.vercel.app/docs) · [Browse skills](https://agentsaisle-vercel.vercel.app/skills) · [Add your skill](https://agentsaisle-vercel.vercel.app/submit)
+[Website](https://agentsaisle-vercel.vercel.app) · [Docs](https://agentsaisle-vercel.vercel.app/docs) · [Audit](https://agentsaisle-vercel.vercel.app/audit) · [Browse skills](https://agentsaisle-vercel.vercel.app/skills) · [Add your skill](https://agentsaisle-vercel.vercel.app/submit)
 
 </div>
 
-![The Agent Aisle home page: a search box, an install command and featured skills](docs/images/home.png)
+![The Agent Aisle home page: the audit, how it works, and the skill store](docs/images/home.png)
 
 ---
 
