@@ -32,7 +32,7 @@ export function SiteFooter() {
         <div className="p-6">
           <p className="font-display text-md font-semibold text-ink-strong">Agent Aisle</p>
           <p className="mt-2 text-sm text-muted">
-            A store for Agent Skills. Browse, read, install with one command.
+            Audit Agent Skills before you trust them. Plus a store of audited skills.
           </p>
         </div>
         {columns.map((c) => (

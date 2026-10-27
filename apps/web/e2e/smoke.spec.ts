@@ -14,7 +14,14 @@ const OFFICIAL = registry.skills.filter((s) => s.source === "official").length;
 test.describe("home", () => {
   test("renders and searches into the catalog", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Find a skill");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Check a skill");
+    await expect(
+      page.getByText("This is not a guarantee of safety.", { exact: false }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Run an audit" }).first()).toHaveAttribute(
+      "href",
+      "/audit#run",
+    );
     await page.getByLabel("Search skills").fill("commit");
     await page.getByRole("button", { name: "Search" }).click();
     await expect(page).toHaveURL(/\/skills\?q=commit/);

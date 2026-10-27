@@ -1,10 +1,10 @@
 import { ThemeToggle } from "./ThemeToggle";
 
 export const NAV = [
+  { href: "/audit", label: "Audit" },
   { href: "/skills", label: "Skills" },
   { href: "/aisles", label: "Aisles" },
   { href: "/profiles", label: "Profiles" },
-  { href: "/audit", label: "Audit" },
   { href: "/submit", label: "Submit" },
   { href: "/docs", label: "Docs" },
   { href: "https://github.com/HazemSalah29/agentsaisle", label: "GitHub" },
@@ -68,10 +68,10 @@ export function SiteHeader() {
           </details>
           <ThemeToggle />
           <a
-            href="/docs#install"
+            href="/audit#run"
             className="hud-label hidden items-center border-l border-line bg-invert-bg px-5 font-bold text-invert-fg hover:opacity-80 sm:flex"
           >
-            Install CLI
+            Run an audit
           </a>
         </div>
       </div>
