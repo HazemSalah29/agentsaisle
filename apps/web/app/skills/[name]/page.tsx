@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AuditBlock } from "../../../components/AuditBlock";
 import { Badge } from "../../../components/Badge";
+import { DemoEmbed } from "../../../components/DemoEmbed";
 import { GradeBadge } from "../../../components/GradeBadge";
 import { PreviewPairs } from "../../../components/PreviewPairs";
 import { InstallCommand } from "../../../components/InstallCommand";
@@ -129,7 +130,16 @@ export default async function SkillPage({ params }: Props) {
           </p>
         </section>
 
-        {skill.demo && skill.demo.screenshots.length > 0 && (
+        {skill.demo?.embed && skill.demo.url && (
+          <DemoEmbed
+            url={skill.demo.url}
+            title={`${skill.name} example: the page it generated for a real project`}
+            caption={skill.demo.caption}
+            steps={skill.demo.steps}
+          />
+        )}
+
+        {skill.demo && !skill.demo.embed && skill.demo.screenshots.length > 0 && (
           <section aria-labelledby="preview" className="space-y-4">
             <h2 id="preview" className="text-xl">
               Preview
