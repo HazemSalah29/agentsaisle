@@ -16,12 +16,19 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
 type Evidence = { file: string; line: number; note?: string };
-type Node = { id: string; role: string; tech: string; tier: string; evidence: Evidence[] };
+type Node = {
+  id: string;
+  label: string;
+  role: string;
+  tech: string;
+  tier: string;
+  evidence: Evidence[];
+};
 type Model = {
   version: 1;
   project: string;
   nodes: Node[];
-  edges: { id: string; from: string; to: string; evidence?: Evidence[] }[];
+  edges: { id: string; from: string; to: string; protocol?: string; evidence?: Evidence[] }[];
   flows: unknown[];
   risks: unknown[];
   inferred?: string[];
@@ -198,7 +205,7 @@ describe("arch-visualize model-check", () => {
   it("accepts a valid model", async () => expect(await problems(() => {})).toEqual([]));
 
   it("catches a dangling edge", async () =>
-    expect((await problems((m) => (m.edges[0].to = "cache"))).join("\n")).toMatch(
+    expect((await problems((m) => (m.edges[0]!.to = "cache"))).join("\n")).toMatch(
       /to "cache" is not a node/,
     ));
 
@@ -206,18 +213,18 @@ describe("arch-visualize model-check", () => {
     expect(
       (
         await problems(
-          (m) => ((m.flows as { steps: { edge: string }[] }[])[0].steps[0].edge = "nope"),
+          (m) => ((m.flows as { steps: { edge: string }[] }[])[0]!.steps[0]!.edge = "nope"),
         )
       ).join("\n"),
     ).toMatch(/edge "nope" does not exist/));
 
   it("catches missing evidence unless the item is inferred", async () => {
-    expect((await problems((m) => (m.nodes[0].evidence = []))).join("\n")).toMatch(
+    expect((await problems((m) => (m.nodes[0]!.evidence = []))).join("\n")).toMatch(
       /needs evidence/,
     );
     expect(
       await problems((m) => {
-        m.nodes[0].evidence = [];
+        m.nodes[0]!.evidence = [];
         m.inferred = ["node:api"];
       }),
     ).toEqual([]);
@@ -229,27 +236,29 @@ describe("arch-visualize model-check", () => {
     ));
 
   it("catches an unknown role and an unknown tech", async () => {
-    expect((await problems((m) => (m.nodes[0].role = "gateway"))).join("\n")).toMatch(/not one of/);
-    expect((await problems((m) => (m.nodes[0].tech = "cobol-db"))).join("\n")).toMatch(
+    expect((await problems((m) => (m.nodes[0]!.role = "gateway"))).join("\n")).toMatch(
+      /not one of/,
+    );
+    expect((await problems((m) => (m.nodes[0]!.tech = "cobol-db"))).join("\n")).toMatch(
       /unknown tech/,
     );
   });
 
   it("catches credential-looking strings without echoing them", async () => {
     const secret = "sk_live_" + "a1b2c3d4e5f6g7h8i9j0";
-    const out = (await problems((m) => (m.nodes[0].label = `Key ${secret}`))).join("\n");
+    const out = (await problems((m) => (m.nodes[0]!.label = `Key ${secret}`))).join("\n");
     expect(out).toMatch(/looks like a credential/);
     expect(out).not.toContain(secret);
     expect(
-      (await problems((m) => (m.edges[0].protocol = "postgres://admin:hunter22@db/x"))).join("\n"),
+      (await problems((m) => (m.edges[0]!.protocol = "postgres://admin:hunter22@db/x"))).join("\n"),
     ).toMatch(/credential/);
   });
 
   it("rejects absolute or parent-relative evidence paths", async () => {
     expect(
-      (await problems((m) => (m.nodes[0].evidence[0].file = "/etc/passwd"))).join("\n"),
+      (await problems((m) => (m.nodes[0]!.evidence[0]!.file = "/etc/passwd"))).join("\n"),
     ).toMatch(/relative/);
-    expect((await problems((m) => (m.nodes[0].evidence[0].file = "../x"))).join("\n")).toMatch(
+    expect((await problems((m) => (m.nodes[0]!.evidence[0]!.file = "../x"))).join("\n")).toMatch(
       /relative/,
     );
   });
@@ -261,7 +270,7 @@ describe("arch-visualize model-check", () => {
 
   it("allows hostile label text (it is escaped by the viewer, not rejected here)", async () =>
     expect(
-      await problems((m) => (m.nodes[0].label = "</script><img src=x onerror=alert(1)>")),
+      await problems((m) => (m.nodes[0]!.label = "</script><img src=x onerror=alert(1)>")),
     ).toEqual([]));
 
   it("keeps the schema enums in step with discover's tier map", async () => {
@@ -318,7 +327,7 @@ const dataBlock = (html: string, id: string) => {
   const m = new RegExp(`<script type="application/json" id="${id}">([\\s\\S]*?)</script>`).exec(
     html,
   );
-  return m ? m[1] : null;
+  return m ? m[1]! : null;
 };
 
 describe("arch-visualize render", () => {
@@ -407,7 +416,7 @@ describe("arch-visualize render", () => {
   it("refuses an invalid model and lists the problems", () => {
     const bad = path.join(tmp(), "bad.json");
     const m = readJson("evals/fixture-model.json");
-    m.edges[0].to = "ghost";
+    m.edges[0]!.to = "ghost";
     writeFileSync(bad, JSON.stringify(m));
     const out = path.join(tmp(), "bad.html");
     const r = renderCli(bad, out);
@@ -528,17 +537,17 @@ describe("arch-visualize flow engine", () => {
 
   it("expands a flow into steps with real directions", () => {
     expect(steps).toHaveLength(7);
-    expect(steps[0]).toMatchObject({ kind: "edge", from: "web", to: "api", reverse: false });
-    expect(steps[2]).toMatchObject({ kind: "event", node: "cache" });
-    expect(steps[4]).toMatchObject({
+    expect(steps[0]!).toMatchObject({ kind: "edge", from: "web", to: "api", reverse: false });
+    expect(steps[2]!).toMatchObject({ kind: "event", node: "cache" });
+    expect(steps[4]!).toMatchObject({
       kind: "edge",
       edge: "api-db",
       reverse: true,
       from: "db",
       to: "api",
     });
-    expect(E.dotAt(steps[0], 0.25)).toBe(0.25);
-    expect(E.dotAt(steps[4], 0.25)).toBe(0.75);
+    expect(E.dotAt(steps[0]!, 0.25)).toBe(0.25);
+    expect(E.dotAt(steps[4]!, 0.25)).toBe(0.75);
   });
 
   it("drops steps that point at nothing", () => {
@@ -548,10 +557,10 @@ describe("arch-visualize flow engine", () => {
   });
 
   it("times each step: 1000 ms per edge and 800 ms per event, scaled by speed", () => {
-    expect(E.stepMs(steps[0], 1)).toBe(1000);
-    expect(E.stepMs(steps[2], 1)).toBe(800);
-    expect(E.stepMs(steps[0], 2)).toBe(500);
-    expect(E.stepMs(steps[0], 0.5)).toBe(2000);
+    expect(E.stepMs(steps[0]!, 1)).toBe(1000);
+    expect(E.stepMs(steps[2]!, 1)).toBe(800);
+    expect(E.stepMs(steps[0]!, 2)).toBe(500);
+    expect(E.stepMs(steps[0]!, 0.5)).toBe(2000);
   });
 
   it("plays through every step in order and stops at the end", () => {
@@ -1333,12 +1342,12 @@ describe("arch-visualize risk-check", () => {
 describe("arch-visualize house standard", () => {
   const dir = skillFile("arch-visualize", ".");
   const skillText = readFileSync(path.join(dir, "SKILL.md"), "utf8");
-  const fm = /^---\n([\s\S]*?)\n---\n/.exec(skillText)![1];
+  const fm = /^---\n([\s\S]*?)\n---\n/.exec(skillText)![1]!;
   const meta = readFileSync(path.join(dir, "skill.meta.yaml"), "utf8");
 
   it("keeps SKILL.md within 150 lines with the six sections in order", () => {
     expect(skillText.replace(/\n$/, "").split("\n").length).toBeLessThanOrEqual(150);
-    const headings = [...skillText.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
+    const headings = [...skillText.matchAll(/^## (.+)$/gm)].map((m) => m[1]!);
     expect(headings).toEqual([
       "Use when",
       "Don't use when",
@@ -1355,7 +1364,7 @@ describe("arch-visualize house standard", () => {
     expect(fm).toMatch(/^disable-model-invocation: true$/m);
     expect(fm).toMatch(/^allowed-tools: Read Write Glob Grep Bash\(node \*\)$/m);
     expect(fm).not.toMatch(/WebFetch|WebSearch|curl|mcp__/);
-    const description = /^description: (.*)$/m.exec(fm)![1];
+    const description = /^description: (.*)$/m.exec(fm)![1]!;
     expect(description).not.toContain(": ");
     expect(description).toMatch(/Don't use/);
     expect(description.length).toBeLessThanOrEqual(1024);
@@ -1372,9 +1381,9 @@ describe("arch-visualize house standard", () => {
 
   it("points at scripts and references that exist, one level deep", () => {
     for (const m of skillText.matchAll(/<skill>\/scripts\/([\w-]+\.mjs)/g))
-      expect(existsSync(path.join(dir, "scripts", m[1])), m[1]).toBe(true);
+      expect(existsSync(path.join(dir, "scripts", m[1]!)), m[1]!).toBe(true);
     for (const m of skillText.matchAll(/references\/([\w-]+\.md)/g))
-      expect(existsSync(path.join(dir, "references", m[1])), m[1]).toBe(true);
+      expect(existsSync(path.join(dir, "references", m[1]!)), m[1]!).toBe(true);
     for (const e of readdirSync(path.join(dir, "references"), { withFileTypes: true }))
       expect(e.isDirectory()).toBe(false);
     for (const f of ["discover", "model-check", "risk-check", "render"])
@@ -1382,7 +1391,7 @@ describe("arch-visualize house standard", () => {
   });
 
   it("lists a preview for every screenshot and each file exists and is small", () => {
-    const shots = [...meta.matchAll(/^\s+- (\S+\.jpg)$/gm)].map((m) => m[1]);
+    const shots = [...meta.matchAll(/^\s+- (\S+\.jpg)$/gm)].map((m) => m[1]!);
     expect(shots.length).toBeGreaterThanOrEqual(6);
     for (const s of shots) {
       expect(existsSync(path.join(dir, "preview", s)), s).toBe(true);
@@ -1391,15 +1400,7 @@ describe("arch-visualize house standard", () => {
   });
 
   it("passes the security audit with no critical or high findings", async () => {
-    const { auditSkill } = (await import("@agentsaisle/audit")) as {
-      auditSkill: (
-        f: string,
-        o: object,
-      ) => Promise<{
-        findings: { severity: string; rule: string; message: string }[];
-        grade: string;
-      }>;
-    };
+    const { auditSkill } = await import("@agentsaisle/audit");
     const report = await auditSkill(dir, {
       skill: "arch-visualize",
       folderName: "arch-visualize",
@@ -1463,7 +1464,7 @@ describe("arch-visualize discovery, found by dogfooding", () => {
     });
     const n = model.nodes.find((x) => x.id === "sandbox")!;
     expect(n).toMatchObject({ role: "backend", tech: "generic-backend", label: "runner" });
-    expect(n.evidence[0].note).toMatch(/image ghcr\.io\/example\/runner:1, ports 2000:2000/);
+    expect(n.evidence[0]!.note).toMatch(/image ghcr\.io\/example\/runner:1, ports 2000:2000/);
     expect(model.edges.map((e) => e.id)).toContain("x-sandbox");
     expect(stdout).toMatch(/unknown image .* shown as a generic component/);
     expect(
@@ -1474,7 +1475,7 @@ describe("arch-visualize discovery, found by dogfooding", () => {
   it("keeps an in-process auth library as evidence on its app, not a box of its own", () => {
     const { model } = discoverProject({ "package.json": pkgJson(["next", "next-auth"]) });
     expect(model.nodes.map((n) => n.role)).toEqual(["frontend"]);
-    expect(model.nodes[0].evidence.some((e) => e.note === "dependency next-auth")).toBe(true);
+    expect(model.nodes[0]!.evidence.some((e) => e.note === "dependency next-auth")).toBe(true);
   });
 
   it("every catalog technology still has an icon and a label", async () => {
@@ -1520,7 +1521,7 @@ describe("arch-visualize layout in a real browser", () => {
       const nodes: Record<string, { x: number; y: number }> = {};
       document.querySelectorAll<SVGGElement>(".node").forEach((g) => {
         const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g.getAttribute("transform") ?? "")!;
-        nodes[g.dataset.node!] = { x: +m[1], y: +m[2] };
+        nodes[g.dataset.node!] = { x: +m[1]!, y: +m[2]! };
       });
       const found: string[] = [];
       document.querySelectorAll<SVGGElement>(".edge").forEach((g) => {
@@ -1592,8 +1593,8 @@ describe("arch-visualize demo text matches the demo model", () => {
     risks: { source: string }[];
   };
   const steps = [...meta.matchAll(/^ {4}- title: (.+)\n {6}text: "(.*)"$/gm)].map((m) => ({
-    title: m[1],
-    text: m[2],
+    title: m[1]!,
+    text: m[2]!,
   }));
 
   it("is embedded, with five steps and a project paragraph", () => {
@@ -1617,7 +1618,7 @@ describe("arch-visualize demo text matches the demo model", () => {
     expect(all).toContain(`found 11 of the ${nodes} components and 2 of the ${edges} connections`);
     expect(all).toContain(`${edges - 2} more connections`);
     expect(all).toContain(`marked ${model.inferred.length} connections as inferred`);
-    expect(steps[2].text).toMatch(new RegExp(`^${model.flows.length} request flows`));
+    expect(steps[2]!.text).toMatch(new RegExp(`^${model.flows.length} request flows`));
     expect(all).toContain(`added ${ruleRisks} possible risks by rule`);
     expect(all).toContain(`added ${agentRisks} from its own reading`);
     expect(model.inferred.every((i) => i.startsWith("edge:"))).toBe(true);
@@ -1629,7 +1630,7 @@ describe("arch-visualize demo text matches the demo model", () => {
     const kb = readFileSync(out).length / 1024;
     expect(kb).toBeGreaterThan(65);
     expect(kb).toBeLessThan(85);
-    expect(steps[4].text).toContain("about 75 KB");
+    expect(steps[4]!.text).toContain("about 75 KB");
   });
 });
 
