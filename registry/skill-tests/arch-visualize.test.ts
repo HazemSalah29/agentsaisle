@@ -1364,3 +1364,80 @@ describe("arch-visualize house standard", () => {
     expect(["A", "B"]).toContain(report.grade);
   });
 });
+
+describe("arch-visualize discovery, found by dogfooding", () => {
+  const discoverProject = (files: Record<string, string>) => {
+    const root = path.join(tmp(), "proj");
+    for (const [f, text] of Object.entries(files)) {
+      mkdirSync(path.dirname(path.join(root, f)), { recursive: true });
+      writeFileSync(path.join(root, f), text);
+    }
+    const out = path.join(tmp(), "d.json");
+    const r = run("discover.mjs", ["--root", root, "--out", out]);
+    return { model: JSON.parse(readFileSync(out, "utf8")) as Model, stdout: r.stdout };
+  };
+  const pkgJson = (deps: string[]) =>
+    JSON.stringify({ name: "x", dependencies: Object.fromEntries(deps.map((d) => [d, "1"])) });
+
+  it("finds AI providers and other common services by dependency", () => {
+    const { model } = discoverProject({
+      "package.json": pkgJson([
+        "next",
+        "@anthropic-ai/sdk",
+        "openai",
+        "@google/genai",
+        "@supabase/supabase-js",
+        "nodemailer",
+      ]),
+    });
+    const by = Object.fromEntries(model.nodes.map((n) => [n.tech, n]));
+    for (const t of ["anthropic", "openai", "gemini", "supabase", "smtp"])
+      expect(by[t], t).toBeDefined();
+    expect(by.anthropic).toMatchObject({ role: "external", tier: "external" });
+    expect(by.supabase).toMatchObject({ role: "database", tier: "data" });
+  });
+
+  it("finds services from env example key names alone, with readable labels", () => {
+    const { model } = discoverProject({
+      ".env.example": "ANTHROPIC_MODEL=\nGITHUB_CLIENT_ID=\nMONGODB_URI=\nSMTP_HOST=\n",
+    });
+    const labels = Object.fromEntries(model.nodes.map((n) => [n.tech, n.label]));
+    expect(labels).toMatchObject({
+      anthropic: "Anthropic API",
+      github: "GitHub API",
+      mongodb: "MongoDB",
+    });
+  });
+
+  it("shows a compose image the catalog does not know as a generic component, and links to it", () => {
+    const { model, stdout } = discoverProject({
+      "docker-compose.yml":
+        'services:\n  app:\n    build: .\n    depends_on:\n      - sandbox\n  sandbox:\n    image: ghcr.io/example/runner:1\n    ports:\n      - "2000:2000"\n',
+      "package.json": pkgJson(["next"]),
+    });
+    const n = model.nodes.find((x) => x.id === "sandbox")!;
+    expect(n).toMatchObject({ role: "backend", tech: "generic-backend", label: "runner" });
+    expect(n.evidence[0].note).toMatch(/image ghcr\.io\/example\/runner:1, ports 2000:2000/);
+    expect(model.edges.map((e) => e.id)).toContain("x-sandbox");
+    expect(stdout).toMatch(/unknown image .* shown as a generic component/);
+    expect(
+      run("model-check.mjs", ["--model", path.join(tmp(), "none.json"), "--draft"]).status,
+    ).toBe(2);
+  });
+
+  it("keeps an in-process auth library as evidence on its app, not a box of its own", () => {
+    const { model } = discoverProject({ "package.json": pkgJson(["next", "next-auth"]) });
+    expect(model.nodes.map((n) => n.role)).toEqual(["frontend"]);
+    expect(model.nodes[0].evidence.some((e) => e.note === "dependency next-auth")).toBe(true);
+  });
+
+  it("every catalog technology still has an icon and a label", async () => {
+    const { iconFor } = await loadScript<Render>("arch-visualize", "scripts/render.mjs");
+    const { knownTech } = await loadScript<{ knownTech: (c: unknown) => Set<string> }>(
+      "arch-visualize",
+      "scripts/model-check.mjs",
+    );
+    for (const t of knownTech(readJson("assets/tech-catalog.json")))
+      expect(iconFor(t, "external").paths.length, t).toBeGreaterThan(0);
+  });
+});
