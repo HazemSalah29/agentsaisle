@@ -413,6 +413,162 @@
           transition: stroke 0.12s;
         }
       }
+      :root {
+        --res: #0f766e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --res: #5eead4;
+        }
+      }
+      :root[data-theme="dark"] {
+        --res: #5eead4;
+      }
+      #center {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      #center #stage {
+        flex: 1 1 0;
+      }
+      #center #list {
+        flex: 1 1 0;
+      }
+      .flowbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 16px;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+      }
+      .flowtabs,
+      .flowctl {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+      }
+      .flowtabs button[aria-selected="true"] {
+        border-color: var(--accent);
+        border-width: 2px;
+        padding: 5px 11px;
+        font-weight: 600;
+      }
+      .flowctl button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .flowctl label {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .flowctl select {
+        font: inherit;
+        color: inherit;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 6px;
+      }
+      .caption {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 14px;
+        align-items: baseline;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-2);
+        min-height: 40px;
+      }
+      .caption .step {
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .caption .label {
+        font-weight: 600;
+      }
+      .caption .dir {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      #dot {
+        pointer-events: none;
+      }
+      .dot.req {
+        fill: var(--accent);
+        stroke: var(--surface);
+        stroke-width: 2;
+      }
+      .dot.res {
+        fill: var(--surface);
+        stroke: var(--res);
+        stroke-width: 4;
+      }
+      .edge.active .line {
+        stroke: var(--accent);
+        stroke-width: 3.2;
+      }
+      .edge.active-res .line {
+        stroke: var(--res);
+        stroke-width: 3.2;
+      }
+      .edge.dim,
+      .node.dim {
+        opacity: 0.4;
+      }
+      .node.flash .box,
+      .node.on-step .box {
+        stroke: var(--accent);
+        stroke-width: 3;
+      }
+      .node.flash .ring {
+        stroke: var(--accent);
+      }
+      .card.on-step {
+        border-color: var(--accent);
+        border-width: 2px;
+      }
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .steps li {
+        padding: 2px 0;
+      }
+      .steps button {
+        display: block;
+        width: 100%;
+        text-align: start;
+        border: 1px solid transparent;
+        background: none;
+        padding: 6px 8px;
+      }
+      .steps button.current {
+        border-color: var(--accent);
+        background: var(--surface-2);
+        font-weight: 600;
+      }
+      .steps .n {
+        color: var(--muted);
+        margin-inline-end: 6px;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        @keyframes pulse {
+          50% {
+            stroke-width: 7;
+          }
+        }
+        .node.flash .ring {
+          animation: pulse 0.6s ease-in-out 2;
+        }
+      }
     </style>
   </head>
   <body>
@@ -426,27 +582,48 @@
       <button type="button" id="theme">Switch theme</button>
     </header>
     <main>
-      <section
-        id="stage"
-        tabindex="0"
-        aria-label="Architecture diagram. Arrow keys pan, plus and minus zoom, zero fits the view."
-      >
-        <svg
-          id="canvas"
-          role="group"
-          aria-label="Components and the connections between them"
-        ></svg>
-        <div id="zoom">
-          <button type="button" id="zin" aria-label="Zoom in">+</button>
-          <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
-          <button type="button" id="zfit">Fit</button>
+      <div id="center">
+        <div id="flowbar" class="flowbar" hidden>
+          <div class="flowtabs" id="flowtabs" role="tablist" aria-label="Request flows"></div>
+          <div class="flowctl">
+            <button type="button" id="fback">Back</button>
+            <button type="button" id="fplay">Play</button>
+            <button type="button" id="fstep">Step</button>
+            <button type="button" id="frestart">Restart</button>
+            <label
+              >Speed
+              <select id="fspeed">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1x</option>
+                <option value="2">2x</option>
+              </select>
+            </label>
+          </div>
         </div>
-      </section>
-      <section id="list" aria-label="Components"></section>
+        <div id="caption" class="caption" aria-live="polite" hidden></div>
+        <section
+          id="stage"
+          tabindex="0"
+          aria-label="Architecture diagram. Arrow keys pan, plus and minus zoom, zero fits the view."
+        >
+          <svg
+            id="canvas"
+            role="group"
+            aria-label="Components and the connections between them"
+          ></svg>
+          <div id="zoom">
+            <button type="button" id="zin" aria-label="Zoom in">+</button>
+            <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
+            <button type="button" id="zfit">Fit</button>
+          </div>
+        </section>
+        <section id="list" aria-label="Components"></section>
+      </div>
       <aside id="panel" aria-live="polite">
         <button type="button" class="close" id="close">Close</button>
         <div class="tabs" role="tablist">
           <button type="button" role="tab" id="tab-details" aria-selected="true">Details</button>
+          <button type="button" role="tab" id="tab-flow" aria-selected="false" hidden>Flow</button>
           <button type="button" role="tab" id="tab-risks" aria-selected="false">Risks</button>
         </div>
         <div id="body"></div>
@@ -1102,8 +1279,10 @@
           var nRisks = (model.risks || []).length;
           $("tab-risks").textContent = "Risks (" + nRisks + ")";
           $("tab-details").setAttribute("aria-selected", tab === "details" ? "true" : "false");
+          $("tab-flow").setAttribute("aria-selected", tab === "flow" ? "true" : "false");
           $("tab-risks").setAttribute("aria-selected", tab === "risks" ? "true" : "false");
           clear(body);
+          if (tab === "flow") return renderFlowPanel();
           if (tab === "risks") {
             body.append(
               h(
@@ -1258,6 +1437,11 @@
           tab = "details";
           renderPanel();
         });
+        $("tab-flow").addEventListener("click", function () {
+          tab = "flow";
+          panel.classList.add("open");
+          renderPanel();
+        });
         $("tab-risks").addEventListener("click", function () {
           tab = "risks";
           panel.classList.add("open");
@@ -1286,6 +1470,375 @@
             (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
           root.setAttribute("data-theme", now === "dark" ? "light" : "dark");
         });
+
+        // <flow-engine>
+        // Pure helpers for the request flows: no DOM, no timers. A state is
+        // { index, t, playing, once }: the current step, how far through it (0 to 1), whether time is
+        // running, and whether to stop after this step. index -1 means not started.
+        var EDGE_MS = 1000,
+          EVENT_MS = 800,
+          MAX_DT = 100;
+        function buildSteps(flow, edgeById, nodeById) {
+          var out = [];
+          ((flow && flow.steps) || []).forEach(function (st) {
+            if (st.edge) {
+              var e = edgeById[st.edge];
+              if (!e) return;
+              var rev = st.reverse === true;
+              out.push({
+                kind: "edge",
+                edge: e.id,
+                reverse: rev,
+                label: st.label || "",
+                from: rev ? e.to : e.from,
+                to: rev ? e.from : e.to,
+              });
+            } else if (st.event && nodeById[st.node]) {
+              out.push({
+                kind: "event",
+                event: st.event,
+                node: st.node,
+                label: st.label || "",
+                from: st.node,
+                to: st.node,
+              });
+            }
+          });
+          return out;
+        }
+        function stepMs(step, speed) {
+          return (step.kind === "edge" ? EDGE_MS : EVENT_MS) / speed;
+        }
+        function newState() {
+          return { index: -1, t: 0, playing: false, once: false };
+        }
+        function copyState(x) {
+          return { index: x.index, t: x.t, playing: x.playing, once: x.once };
+        }
+        function atEnd(x, steps) {
+          return steps.length > 0 && x.index >= steps.length - 1 && x.t >= 1;
+        }
+        function play(x, steps) {
+          var n = copyState(x);
+          if (!steps.length) return n;
+          if (n.index < 0 || atEnd(n, steps)) {
+            n.index = 0;
+            n.t = 0;
+          }
+          n.playing = true;
+          n.once = false;
+          return n;
+        }
+        function pause(x) {
+          var n = copyState(x);
+          n.playing = false;
+          return n;
+        }
+        function stepForward(x, steps, instant) {
+          var n = copyState(x);
+          if (!steps.length) return n;
+          if (n.index >= 0 && n.t < 1) {
+            n.t = 1;
+            n.playing = false;
+            return n;
+          }
+          if (n.index >= steps.length - 1) {
+            n.playing = false;
+            return n;
+          }
+          n.index += 1;
+          n.t = instant ? 1 : 0;
+          n.playing = !instant;
+          n.once = true;
+          return n;
+        }
+        function stepBack(x) {
+          var n = copyState(x);
+          n.playing = false;
+          if (n.index <= 0) {
+            n.index = -1;
+            n.t = 0;
+          } else {
+            n.index -= 1;
+            n.t = 1;
+          }
+          return n;
+        }
+        function jump(x, i, steps) {
+          var n = copyState(x);
+          n.index = Math.max(0, Math.min(i, steps.length - 1));
+          n.t = 1;
+          n.playing = false;
+          return n;
+        }
+        function advance(x, dtMs, steps, speed) {
+          if (!x.playing || !steps.length) return x;
+          var n = copyState(x);
+          if (n.index < 0) {
+            n.index = 0;
+            n.t = 0;
+          }
+          n.t += Math.min(dtMs, MAX_DT) / stepMs(steps[n.index], speed);
+          if (n.t >= 1) {
+            n.t = 1;
+            if (n.once || n.index >= steps.length - 1) n.playing = false;
+            else {
+              n.index += 1;
+              n.t = 0;
+            }
+          }
+          return n;
+        }
+        // Where the dot is along its edge (0 = start of the path): responses travel backwards.
+        function dotAt(step, t) {
+          return step.reverse ? 1 - t : t;
+        }
+        // </flow-engine>
+
+        // ---- request flows
+        var flows = model.flows || [];
+        var reducedMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+        var motionOk = !reducedMq.matches; // pressing Play under reduced motion is a choice to see motion
+        var flowIx = 0,
+          steps = [],
+          st = newState(),
+          speed = 1,
+          raf = 0,
+          lastTs = 0,
+          shownIndex = -2;
+        var flowTabs = [],
+          edgeLen = {};
+        var flowEdges = {},
+          flowNodes = {};
+        var dot = s(
+          "g",
+          { id: "dot", visibility: "hidden" },
+          s("circle", { r: 8, class: "dot req" }),
+        );
+        vp.append(dot);
+        var stepLabel = function (step) {
+          if (step.label) return step.label;
+          if (step.kind === "event") return step.event.replace(/[-_]+/g, " ");
+          return step.reverse ? "Response" : "Request";
+        };
+        var nodeName = function (id) {
+          return nodeById[id] ? nodeById[id].label : id;
+        };
+
+        function selectFlow(i) {
+          flowIx = i;
+          pauseLoop();
+          st = newState();
+          shownIndex = -2;
+          steps = buildSteps(flows[i], edgeById, nodeById);
+          flowEdges = {};
+          flowNodes = {};
+          steps.forEach(function (step) {
+            if (step.kind === "edge") {
+              flowEdges[step.edge] = true;
+              flowNodes[step.from] = true;
+              flowNodes[step.to] = true;
+            } else flowNodes[step.node] = true;
+          });
+          flowTabs.forEach(function (b, k) {
+            b.setAttribute("aria-selected", k === i ? "true" : "false");
+          });
+          Object.keys(edgeEls).forEach(function (k) {
+            edgeEls[k].classList.toggle("dim", !flowEdges[k]);
+          });
+          Object.keys(nodeEls).forEach(function (k) {
+            nodeEls[k].classList.toggle("dim", !flowNodes[k]);
+          });
+          renderFlow();
+        }
+        function pathLen(id) {
+          if (edgeLen[id] === undefined) {
+            try {
+              edgeLen[id] = edgeEls[id].querySelector(".line").getTotalLength();
+            } catch (e) {
+              edgeLen[id] = 0;
+            }
+          }
+          return edgeLen[id];
+        }
+        function renderFlow() {
+          var step = st.index >= 0 ? steps[st.index] : null;
+          Object.keys(edgeEls).forEach(function (k) {
+            var on = !!(step && step.kind === "edge" && step.edge === k);
+            edgeEls[k].classList.toggle("active", on && !step.reverse);
+            edgeEls[k].classList.toggle("active-res", on && step.reverse);
+          });
+          Object.keys(nodeEls).forEach(function (k) {
+            var flash = !!(step && step.kind === "event" && step.node === k);
+            var onStep = !!(step && step.kind === "edge" && (step.from === k || step.to === k));
+            nodeEls[k].classList.toggle("flash", flash);
+            nodeEls[k].classList.toggle("on-step", onStep);
+            cardEls[k].classList.toggle("on-step", flash || onStep);
+          });
+          if (step && step.kind === "edge" && edgeEls[step.edge]) {
+            var len = pathLen(step.edge);
+            var pt = edgeEls[step.edge]
+              .querySelector(".line")
+              .getPointAtLength(len * dotAt(step, st.t));
+            dot.setAttribute("transform", "translate(" + pt.x + " " + pt.y + ")");
+            dot.setAttribute("visibility", "visible");
+            dot.firstChild.setAttribute("class", "dot " + (step.reverse ? "res" : "req"));
+          } else dot.setAttribute("visibility", "hidden");
+          // caption
+          var cap = $("caption");
+          clear(cap);
+          if (!steps.length) cap.append(h("span", { class: "label" }, "This flow has no steps."));
+          else if (!step)
+            cap.append(
+              h(
+                "span",
+                { class: "label" },
+                reducedMq.matches && !motionOk
+                  ? "Reduced motion is on, so nothing moves by itself. Use Step to walk through this request one step at a time."
+                  : "Press Play or Step to follow this request.",
+              ),
+            );
+          else {
+            cap.append(
+              h("span", { class: "step" }, "Step " + (st.index + 1) + " of " + steps.length),
+              h("span", { class: "label" }, stepLabel(step)),
+              h(
+                "span",
+                { class: "dir" },
+                step.kind === "edge"
+                  ? (step.reverse ? "Response: " : "Request: ") +
+                      nodeName(step.from) +
+                      " → " +
+                      nodeName(step.to)
+                  : "Event at " + nodeName(step.node),
+              ),
+            );
+          }
+          // controls
+          var last = steps.length - 1;
+          $("fplay").textContent = st.playing
+            ? "Pause"
+            : reducedMq.matches && !motionOk
+              ? "Play (uses motion)"
+              : atEnd(st, steps)
+                ? "Replay"
+                : "Play";
+          $("fplay").disabled = !steps.length;
+          $("fstep").disabled = !steps.length || (st.index >= last && st.t >= 1);
+          $("fback").disabled = st.index < 0;
+          $("frestart").disabled = st.index < 0;
+          if (tab === "flow" && shownIndex !== st.index) renderFlowPanel();
+          shownIndex = st.index;
+        }
+        function renderFlowPanel() {
+          clear(body);
+          var f = flows[flowIx];
+          body.append(
+            h("h2", {}, f.name),
+            h("p", { class: "meta" }, steps.length + " steps. Select one to jump to it."),
+          );
+          var ol = h("ol", { class: "steps" });
+          steps.forEach(function (step, i) {
+            var b = h(
+              "button",
+              {
+                type: "button",
+                class: i === st.index ? "current" : "",
+                "aria-current": i === st.index ? "step" : false,
+              },
+              h("span", { class: "n" }, String(i + 1) + "."),
+              stepLabel(step),
+              h(
+                "span",
+                { class: "meta" },
+                step.kind === "edge"
+                  ? " (" +
+                      (step.reverse ? "response " : "") +
+                      nodeName(step.from) +
+                      " → " +
+                      nodeName(step.to) +
+                      ")"
+                  : " (event at " + nodeName(step.node) + ")",
+              ),
+            );
+            b.addEventListener("click", function () {
+              pauseLoop();
+              st = jump(st, i, steps);
+              renderFlow();
+            });
+            ol.append(h("li", {}, b));
+          });
+          body.append(ol);
+        }
+        function frame(ts) {
+          raf = 0;
+          st = advance(st, lastTs ? ts - lastTs : 16, steps, speed);
+          lastTs = ts;
+          renderFlow();
+          if (st.playing) raf = requestAnimationFrame(frame);
+          else lastTs = 0;
+        }
+        function kick() {
+          if (st.playing && !raf) {
+            lastTs = 0;
+            raf = requestAnimationFrame(frame);
+          }
+        }
+        function pauseLoop() {
+          if (raf) cancelAnimationFrame(raf);
+          raf = 0;
+          lastTs = 0;
+          st = pause(st);
+        }
+        if (flows.length) {
+          $("flowbar").hidden = false;
+          $("caption").hidden = false;
+          $("tab-flow").hidden = false;
+          flows.forEach(function (f, i) {
+            var b = h("button", { type: "button", role: "tab", "aria-selected": "false" }, f.name);
+            b.addEventListener("click", function () {
+              selectFlow(i);
+            });
+            flowTabs.push(b);
+            $("flowtabs").append(b);
+          });
+          $("fplay").addEventListener("click", function () {
+            if (st.playing) {
+              pauseLoop();
+            } else {
+              if (reducedMq.matches) motionOk = true;
+              st = play(st, steps);
+              kick();
+            }
+            renderFlow();
+          });
+          $("fstep").addEventListener("click", function () {
+            pauseLoop();
+            st = stepForward(st, steps, !motionOk);
+            kick();
+            renderFlow();
+          });
+          $("fback").addEventListener("click", function () {
+            pauseLoop();
+            st = stepBack(st);
+            renderFlow();
+          });
+          $("frestart").addEventListener("click", function () {
+            pauseLoop();
+            st = newState();
+            renderFlow();
+          });
+          $("fspeed").addEventListener("change", function (ev) {
+            speed = parseFloat(ev.target.value) || 1;
+          });
+          var onMotionChange = function () {
+            motionOk = !reducedMq.matches;
+            if (reducedMq.matches) pauseLoop();
+            renderFlow();
+          };
+          if (reducedMq.addEventListener) reducedMq.addEventListener("change", onMotionChange);
+          selectFlow(0);
+        }
 
         fit();
         renderPanel();
