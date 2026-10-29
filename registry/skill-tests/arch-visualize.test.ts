@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
 type Evidence = { file: string; line: number; note?: string };
@@ -858,6 +858,43 @@ describe("arch-visualize risk-check", () => {
     },
     {
       rule: "AV-R03",
+      name: "a Next.js route handler and no limiter",
+      fires: true,
+      files: {
+        "package.json": pkg(["next"]),
+        "app/api/me/route.ts": `export async function GET() {\n  return Response.json({});\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R03",
+      name: "a project helper named checkRateLimit",
+      fires: false,
+      files: {
+        "package.json": pkg(["next"]),
+        "app/api/me/route.ts": `import { checkRateLimit } from "@/lib/limit";\nexport async function GET() {\n  await checkRateLimit("me");\n  return Response.json({});\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R03",
+      name: "a limiter living in a rate-limit folder",
+      fires: false,
+      files: {
+        "package.json": pkg(["next"]),
+        "app/api/me/route.ts": `export async function GET() {\n  return Response.json({});\n}\n`,
+        "lib/rate-limit/limiter.ts": `export const x = 1;\n`,
+      },
+    },
+    {
+      rule: "AV-R03",
+      name: "a generic compose backend that owns no routes",
+      fires: false,
+      files: {
+        "docker-compose.yml": compose("  runner:\n    image: ghcr.io/example/runner:1\n"),
+        "package.json": pkg(["ioredis"]),
+      },
+    },
+    {
+      rule: "AV-R03",
       name: "a backend with no routes",
       fires: false,
       files: { "package.json": express, "src/lib.ts": `export const x = 1;\n` },
@@ -1033,6 +1070,15 @@ describe("arch-visualize risk-check", () => {
       files: {
         "package.json": express,
         "src/server.ts": route(`app.get("/x", (_q, r) => r.send("x"));`),
+      },
+    },
+    {
+      rule: "AV-R08",
+      name: "a Next.js route handler and no health route",
+      fires: true,
+      files: {
+        "package.json": pkg(["next"]),
+        "app/api/me/route.ts": `export async function GET() {\n  return Response.json({});\n}\n`,
       },
     },
     {
@@ -1440,4 +1486,55 @@ describe("arch-visualize discovery, found by dogfooding", () => {
     for (const t of knownTech(readJson("assets/tech-catalog.json")))
       expect(iconFor(t, "external").paths.length, t).toBeGreaterThan(0);
   });
+});
+
+describe("arch-visualize layout in a real browser", () => {
+  // Needs Playwright and Chromium, which the web app already has. Skipped where they are missing.
+  type Browser = { newPage: (o?: object) => Promise<Page>; close: () => Promise<void> };
+  type Page = { goto: (u: string) => Promise<unknown>; evaluate: <T>(f: () => T) => Promise<T> };
+  let browser: Browser | null = null;
+  beforeAll(async () => {
+    try {
+      const { createRequire } = await import("node:module");
+      const req = createRequire(path.join(__dirname, "..", "..", "apps", "web", "package.json"));
+      const mod = await import(req.resolve("@playwright/test"));
+      const chromium = (mod.chromium ?? mod.default?.chromium) as {
+        launch: () => Promise<Browser>;
+      };
+      browser = await chromium.launch();
+    } catch {
+      browser = null;
+    }
+  }, 30_000);
+  afterAll(async () => {
+    await browser?.close();
+  });
+
+  it("no edge passes behind a component that it does not connect", async (ctx) => {
+    if (!browser) return ctx.skip();
+    const out = path.join(tmp(), "fixture.html");
+    expect(renderCli(skillFile("arch-visualize", "evals/fixture-model.json"), out).status).toBe(0);
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`file://${out}`);
+    const bad = await page.evaluate(() => {
+      const nodes: Record<string, { x: number; y: number }> = {};
+      document.querySelectorAll<SVGGElement>(".node").forEach((g) => {
+        const m = /translate\(([-\d.]+) ([-\d.]+)\)/.exec(g.getAttribute("transform") ?? "")!;
+        nodes[g.dataset.node!] = { x: +m[1], y: +m[2] };
+      });
+      const found: string[] = [];
+      document.querySelectorAll<SVGGElement>(".edge").forEach((g) => {
+        const line = g.querySelector<SVGPathElement>(".line")!;
+        const len = line.getTotalLength();
+        for (let i = 4; i < 196; i++) {
+          const pt = line.getPointAtLength((len * i) / 200);
+          for (const [id, n] of Object.entries(nodes))
+            if (pt.x > n.x + 3 && pt.x < n.x + 187 && pt.y > n.y + 3 && pt.y < n.y + 61)
+              found.push(`${g.dataset.edge} crosses ${id}`);
+        }
+      });
+      return [...new Set(found)];
+    });
+    expect(bad).toEqual([]);
+  }, 30_000);
 });
