@@ -14,7 +14,7 @@
 | `vercel.json`, `netlify.toml`, `fly.toml`, `render.yaml`, `wrangler.toml` | A hosting node.                                                                                                                                                                                                                                                                                                                                                    |
 | `requirements.txt`, `pyproject.toml`, `go.mod`                            | Basic framework and client detection only.                                                                                                                                                                                                                                                                                                                         |
 
-Not covered in 0.1.0: Kubernetes manifests, Terraform, and reading Python or Go source for connections.
+Not covered in 0.1.0: Kubernetes manifests, Terraform, and reading Python or Go source for connections. Also not detected: extra processes started from scripts or `server/` folders (a WebSocket server, a cron runner), and compose settings such as a mounted Docker socket. Look for them when you read the entry points, and add them as nodes (with the file and line) or as your own risks.
 
 ## Filling the gaps (read only what you need)
 
