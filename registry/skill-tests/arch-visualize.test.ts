@@ -655,3 +655,631 @@ describe("arch-visualize flow engine", () => {
     expect(viewer).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pulse/);
   });
 });
+
+type Risk = {
+  id: string;
+  title?: string;
+  severity: string;
+  nodes: string[];
+  evidence: { file: string; line: number; note?: string }[];
+  why: string;
+  check: string;
+  source?: string;
+};
+
+describe("arch-visualize risk-check", () => {
+  const riskIds = [
+    "AV-R01",
+    "AV-R02",
+    "AV-R03",
+    "AV-R04",
+    "AV-R05",
+    "AV-R06",
+    "AV-R07",
+    "AV-R08",
+    "AV-R09",
+    "AV-R10",
+  ];
+  const json = (v: unknown) => JSON.stringify(v, null, 2);
+  const pkg = (deps: string[], name = "app") =>
+    json({ name, dependencies: Object.fromEntries(deps.map((d) => [d, "1.0.0"])) });
+
+  /** Write a small project, run discover then risk-check, and return the rule risks. */
+  function check(files: Record<string, string>, opts: { keepAgent?: boolean } = {}) {
+    const root = path.join(tmp(), "proj");
+    for (const [f, text] of Object.entries(files)) {
+      mkdirSync(path.dirname(path.join(root, f)), { recursive: true });
+      writeFileSync(path.join(root, f), text);
+    }
+    const draft = path.join(tmp(), "model.json");
+    expect(run("discover.mjs", ["--root", root, "--out", draft]).status).toBe(0);
+    if (opts.keepAgent) {
+      const m = JSON.parse(readFileSync(draft, "utf8"));
+      m.risks.push({
+        id: "agent-1",
+        severity: "info",
+        nodes: [],
+        why: "w",
+        check: "c",
+        source: "agent",
+        evidence: [{ file: "a", line: 1 }],
+      });
+      writeFileSync(draft, JSON.stringify(m));
+    }
+    const r = run("risk-check.mjs", ["--model", draft, "--root", root]);
+    expect(r.status, r.stderr).toBe(0);
+    const model = JSON.parse(readFileSync(draft, "utf8")) as { risks: Risk[] };
+    return {
+      risks: model.risks.filter((x) => x.source === "rule"),
+      model,
+      stdout: r.stdout,
+      draft,
+      root,
+    };
+  }
+  const ids = (files: Record<string, string>) => check(files).risks.map((r) => r.id);
+
+  const express = pkg(["express"]);
+  const redisApp = pkg(["express", "ioredis"]);
+  const route = (body: string) =>
+    `import express from "express";\nconst app = express();\n${body}\napp.listen(3000);\n`;
+  const redis = (body: string) =>
+    `import Redis from "ioredis";\nconst redis = new Redis();\nexport async function f() {\n${body}\n}\n`;
+  const healthy = route(
+    `app.get("/health", (_q, r) => r.send("ok"));\napp.get("/x", (_q, r) => r.send("x"));`,
+  );
+
+  type Case = { rule: string; name: string; files: Record<string, string>; fires: boolean };
+  const compose = (services: string) => `services:\n${services}`;
+  const cases: Case[] = [
+    // AV-R01
+    {
+      rule: "AV-R01",
+      name: "one postgres service",
+      fires: true,
+      files: { "docker-compose.yml": compose("  db:\n    image: postgres:16\n") },
+    },
+    {
+      rule: "AV-R01",
+      name: "a replica service exists",
+      fires: false,
+      files: {
+        "docker-compose.yml": compose(
+          "  db:\n    image: postgres:16\n  db-replica:\n    image: postgres:16\n",
+        ),
+      },
+    },
+    {
+      rule: "AV-R01",
+      name: "a managed database dependency",
+      fires: false,
+      files: { "package.json": pkg(["pg", "@neondatabase/serverless"]) },
+    },
+    {
+      rule: "AV-R01",
+      name: "two database nodes (postgres and mongo)",
+      fires: false,
+      files: {
+        "docker-compose.yml": compose(
+          "  db:\n    image: postgres:16\n  docs:\n    image: mongo:7\n",
+        ),
+      },
+    },
+    // AV-R02
+    {
+      rule: "AV-R02",
+      name: "set without an expiry",
+      fires: true,
+      files: { "package.json": redisApp, "src/a.ts": redis(`  await redis.set("k", "v");`) },
+    },
+    {
+      rule: "AV-R02",
+      name: "hset without expire",
+      fires: true,
+      files: { "package.json": redisApp, "src/a.ts": redis(`  await redis.hset("h", "a", "1");`) },
+    },
+    {
+      rule: "AV-R02",
+      name: 'set with "EX"',
+      fires: false,
+      files: {
+        "package.json": redisApp,
+        "src/a.ts": redis(`  await redis.set("k", "v", "EX", 60);`),
+      },
+    },
+    {
+      rule: "AV-R02",
+      name: "set with { ex }",
+      fires: false,
+      files: {
+        "package.json": redisApp,
+        "src/a.ts": redis(`  await redis.set("k", "v", { ex: 60 });`),
+      },
+    },
+    {
+      rule: "AV-R02",
+      name: "setex",
+      fires: false,
+      files: { "package.json": redisApp, "src/a.ts": redis(`  await redis.setex("k", 60, "v");`) },
+    },
+    {
+      rule: "AV-R02",
+      name: "hset followed by expire",
+      fires: false,
+      files: {
+        "package.json": redisApp,
+        "src/a.ts": redis(`  await redis.hset("h", "a", "1");\n  await redis.expire("h", 60);`),
+      },
+    },
+    {
+      rule: "AV-R02",
+      name: "a Map set in a redis file",
+      fires: false,
+      files: {
+        "package.json": redisApp,
+        "src/a.ts": redis(`  const m = new Map();\n  m.set("a", 1);`),
+      },
+    },
+    {
+      rule: "AV-R02",
+      name: "set only in a comment",
+      fires: false,
+      files: { "package.json": redisApp, "src/a.ts": redis(`  // await redis.set("k", "v");`) },
+    },
+    // AV-R03
+    {
+      rule: "AV-R03",
+      name: "routes and no limiter",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/server.ts": route(`app.get("/x", (_q, r) => r.send("x"));`),
+      },
+    },
+    {
+      rule: "AV-R03",
+      name: "express-rate-limit dependency",
+      fires: false,
+      files: {
+        "package.json": pkg(["express", "express-rate-limit"]),
+        "src/server.ts": route(`app.get("/x", (_q, r) => r.send("x"));`),
+      },
+    },
+    {
+      rule: "AV-R03",
+      name: "a rateLimit() call",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/server.ts": route(
+          `app.use(rateLimit({ max: 5 }));\napp.get("/x", (_q, r) => r.send("x"));`,
+        ),
+      },
+    },
+    {
+      rule: "AV-R03",
+      name: "a backend with no routes",
+      fires: false,
+      files: { "package.json": express, "src/lib.ts": `export const x = 1;\n` },
+    },
+    // AV-R04
+    {
+      rule: "AV-R04",
+      name: "fetch to an outside host",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export const f = () => fetch("https://api.example.com/v1");\n`,
+      },
+    },
+    {
+      rule: "AV-R04",
+      name: "axios without timeout",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/a.ts": `import axios from "axios";\nexport const f = () => axios.get("https://api.example.com/v1");\n`,
+      },
+    },
+    {
+      rule: "AV-R04",
+      name: "fetch with AbortSignal.timeout",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export const f = () => fetch("https://api.example.com/v1", { signal: AbortSignal.timeout(5000) });\n`,
+      },
+    },
+    {
+      rule: "AV-R04",
+      name: "axios with a timeout",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `import axios from "axios";\nexport const f = () => axios.get("https://api.example.com/v1", { timeout: 3000 });\n`,
+      },
+    },
+    {
+      rule: "AV-R04",
+      name: "internal service and relative urls",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export const f = () => fetch("http://api:4000/me");\nexport const g = () => fetch("/api/me");\nexport const h = () => fetch("https://localhost:3000/x");\n`,
+      },
+    },
+    {
+      rule: "AV-R04",
+      name: "a fetch inside a comment",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `// fetch("https://api.example.com/v1")\nexport const x = 1;\n`,
+      },
+    },
+    // AV-R05
+    {
+      rule: "AV-R05",
+      name: "query inside a for loop",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export async function f(ids: number[]) {\n  for (const id of ids) {\n    await prisma.user.findUnique({ where: { id } });\n  }\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R05",
+      name: "query inside map(async)",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export const f = (ids: number[]) => Promise.all(ids.map(async (id) => {\n  return await prisma.user.findUnique({ where: { id } });\n}));\n`,
+      },
+    },
+    {
+      rule: "AV-R05",
+      name: "sql query inside while",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export async function f() {\n  while (more) {\n    const r = await pool.query("select 1");\n  }\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R05",
+      name: "one batched query",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export async function f(ids: number[]) {\n  const rows = await prisma.user.findMany({ where: { id: { in: ids } } });\n  for (const r of rows) { console.log(r); }\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R05",
+      name: "a loop that awaits something else",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export async function f(ids: number[]) {\n  for (const id of ids) {\n    await sleep(10);\n  }\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R05",
+      name: "a loop and a query only in a comment",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export async function f(ids: number[]) {\n  for (const id of ids) {\n    // await prisma.user.findUnique({ where: { id } });\n  }\n}\n`,
+      },
+    },
+    // AV-R06
+    {
+      rule: "AV-R06",
+      name: "email sent in a route and no queue",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/routes/mail.ts": `export async function send(req, res) {\n  await resend.emails.send({ to: "a@example.com" });\n  res.end();\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R06",
+      name: "the same call with a queue present",
+      fires: false,
+      files: {
+        "package.json": pkg(["express", "bullmq"]),
+        "src/routes/mail.ts": `export async function send(req, res) {\n  await resend.emails.send({ to: "a@example.com" });\n  res.end();\n}\n`,
+      },
+    },
+    {
+      rule: "AV-R06",
+      name: "the call lives in a worker, not a route",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/jobs/mail.ts": `export async function send() {\n  await resend.emails.send({ to: "a@example.com" });\n}\n`,
+      },
+    },
+    // AV-R07
+    {
+      rule: "AV-R07",
+      name: "NEXT_PUBLIC secret key in the env example",
+      fires: true,
+      files: { ".env.example": "NEXT_PUBLIC_STRIPE_SECRET_KEY=\n" },
+    },
+    {
+      rule: "AV-R07",
+      name: "VITE token in code",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/a.ts": `export const t = import.meta.env.VITE_API_TOKEN;\n`,
+      },
+    },
+    {
+      rule: "AV-R07",
+      name: "publishable, anon and plain names",
+      fires: false,
+      files: {
+        ".env.example":
+          "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=\nNEXT_PUBLIC_SUPABASE_ANON_KEY=\nNEXT_PUBLIC_SITE_URL=\nSTRIPE_SECRET_KEY=\n",
+      },
+    },
+    // AV-R08
+    {
+      rule: "AV-R08",
+      name: "routes and no health route",
+      fires: true,
+      files: {
+        "package.json": express,
+        "src/server.ts": route(`app.get("/x", (_q, r) => r.send("x"));`),
+      },
+    },
+    {
+      rule: "AV-R08",
+      name: "a /health route",
+      fires: false,
+      files: { "package.json": express, "src/server.ts": healthy },
+    },
+    {
+      rule: "AV-R08",
+      name: "a healthz file",
+      fires: false,
+      files: {
+        "package.json": express,
+        "src/server.ts": route(`app.get("/x", (_q, r) => r.send("x"));`),
+        "src/routes/healthz.ts": `export const ok = true;\n`,
+      },
+    },
+    // AV-R09
+    {
+      rule: "AV-R09",
+      name: "vercel at the root with pg",
+      fires: true,
+      files: { "vercel.json": "{}", "package.json": pkg(["next", "pg"]) },
+    },
+    {
+      rule: "AV-R09",
+      name: "vercel in a folder with no database client",
+      fires: false,
+      files: {
+        "apps/web/vercel.json": "{}",
+        "apps/web/package.json": pkg(["next"], "web"),
+        "apps/api/package.json": pkg(["pg"], "api"),
+      },
+    },
+    {
+      rule: "AV-R09",
+      name: "a serverless driver",
+      fires: false,
+      files: {
+        "vercel.json": "{}",
+        "package.json": pkg(["next", "pg", "@neondatabase/serverless"]),
+      },
+    },
+    {
+      rule: "AV-R09",
+      name: "a pooled variable name",
+      fires: false,
+      files: {
+        "vercel.json": "{}",
+        "package.json": pkg(["next", "pg"]),
+        ".env.example": "DATABASE_URL_POOLED=\n",
+      },
+    },
+    // AV-R10
+    {
+      rule: "AV-R10",
+      name: "redis published with no password",
+      fires: true,
+      files: {
+        "docker-compose.yml": compose(
+          '  cache:\n    image: redis:7\n    ports:\n      - "6379:6379"\n',
+        ),
+      },
+    },
+    {
+      rule: "AV-R10",
+      name: "postgres published on all interfaces",
+      fires: true,
+      files: {
+        "docker-compose.yml": compose(
+          '  db:\n    image: postgres:16\n    ports:\n      - "5432:5432"\n',
+        ),
+      },
+    },
+    {
+      rule: "AV-R10",
+      name: "redis with a password and no published port",
+      fires: false,
+      files: {
+        "docker-compose.yml": compose(
+          '  cache:\n    image: redis:7\n    command: ["redis-server", "--requirepass", "x"]\n',
+        ),
+      },
+    },
+    {
+      rule: "AV-R10",
+      name: "ports bound to 127.0.0.1",
+      fires: false,
+      files: {
+        "docker-compose.yml": compose(
+          '  db:\n    image: postgres:16\n    ports:\n      - "127.0.0.1:5432:5432"\n',
+        ),
+      },
+    },
+  ];
+
+  it("has a seeded case and a benign case for every rule", () => {
+    for (const id of riskIds) {
+      expect(
+        cases.some((c) => c.rule === id && c.fires),
+        `${id} seeded`,
+      ).toBe(true);
+      expect(
+        cases.some((c) => c.rule === id && !c.fires),
+        `${id} benign`,
+      ).toBe(true);
+    }
+  });
+
+  it.each(cases)("$rule: $name", ({ rule, files, fires }) => {
+    const got = ids(files);
+    if (fires) expect(got).toContain(rule);
+    else expect(got).not.toContain(rule);
+  });
+
+  describe("on the fixture app", () => {
+    const fixtureRoot = skillFile("arch-visualize", "evals/fixture-app");
+    const start = () => {
+      const m = path.join(tmp(), "m.json");
+      writeFileSync(m, JSON.stringify(readJson("evals/fixture-model.json")));
+      return m;
+    };
+    const model = start();
+    const first = run("risk-check.mjs", ["--model", model, "--root", fixtureRoot]);
+    const risks = (JSON.parse(readFileSync(model, "utf8")).risks as Risk[]).filter(
+      (r) => r.source === "rule",
+    );
+    const want = readJson("evals/expected.json").risks;
+
+    it("finds the seeded risks and stays silent on the look-alikes", () => {
+      expect(first.status).toBe(0);
+      expect(risks.map((r) => r.id)).toEqual(Object.keys(want.fire));
+      for (const id of want.silent) expect(risks.map((r) => r.id)).not.toContain(id);
+      for (const r of risks) {
+        const w = want.fire[r.id];
+        expect(r.nodes, r.id).toEqual(w.nodes);
+        for (const e of w.evidence)
+          expect(
+            r.evidence.some((x) => x.file === e.file && x.line === e.line),
+            `${r.id} ${e.file}:${e.line}`,
+          ).toBe(true);
+      }
+    });
+
+    it("reports saveSession but not the Redis set that has EX", () => {
+      const r = risks.find((x) => x.id === "AV-R02")!;
+      expect(r.evidence.map((e) => e.line)).toEqual([10]);
+    });
+
+    it("gives every risk evidence, a check, a why and an allowed severity", () => {
+      for (const r of risks) {
+        expect(["info", "warn"]).toContain(r.severity);
+        expect(r.evidence.length).toBeGreaterThan(0);
+        expect(r.evidence.length).toBeLessThanOrEqual(5);
+        expect(r.check.length).toBeGreaterThan(20);
+        expect(r.title).toBeTruthy();
+        expect(r.source).toBe("rule");
+      }
+      for (const id of ["AV-R02", "AV-R03", "AV-R04", "AV-R05", "AV-R08"])
+        expect(risks.find((r) => r.id === id)!.why).toMatch(/^Heuristic:/);
+    });
+
+    it("keeps the model valid and the agent risk, and prints under 40 lines", () => {
+      const m = JSON.parse(readFileSync(model, "utf8"));
+      expect(m.risks.some((r: Risk) => r.source === "agent")).toBe(true);
+      expect(run("model-check.mjs", ["--model", model]).status).toBe(0);
+      expect(first.stdout.trimEnd().split("\n").length).toBeLessThanOrEqual(40);
+      expect(first.stdout).toMatch(/not verdicts/);
+    });
+
+    it("is idempotent: a second run changes nothing and duplicates nothing", () => {
+      const before = readFileSync(model, "utf8");
+      expect(run("risk-check.mjs", ["--model", model, "--root", fixtureRoot]).status).toBe(0);
+      expect(readFileSync(model, "utf8")).toBe(before);
+    });
+
+    it("is deterministic across separate runs", () => {
+      const other = start();
+      run("risk-check.mjs", ["--model", other, "--root", fixtureRoot]);
+      expect(readFileSync(other, "utf8")).toBe(readFileSync(model, "utf8"));
+    });
+
+    it("the committed fixture model carries the same rule risks", () => {
+      const committed = (readJson("evals/fixture-model.json").risks as Risk[]).filter(
+        (r) => r.source === "rule",
+      );
+      expect(committed.map((r) => r.id)).toEqual(risks.map((r) => r.id));
+    });
+
+    it("rule risks are replaced, not duplicated, and agent risks survive", () => {
+      const r = check(
+        { "docker-compose.yml": compose("  db:\n    image: postgres:16\n") },
+        { keepAgent: true },
+      );
+      expect(r.model.risks.filter((x) => x.source === "agent")).toHaveLength(1);
+      run("risk-check.mjs", ["--model", r.draft, "--root", r.root]);
+      const again = JSON.parse(readFileSync(r.draft, "utf8")) as { risks: Risk[] };
+      expect(again.risks.filter((x) => x.id === "AV-R01")).toHaveLength(1);
+    });
+  });
+
+  it("never opens secret files: the canary appears nowhere", () => {
+    const root = fixtureWithSecrets();
+    const draft = path.join(tmp(), "d.json");
+    run("discover.mjs", ["--root", root, "--out", draft]);
+    const r = run("risk-check.mjs", ["--model", draft, "--root", root]);
+    expect(r.stdout + r.stderr).not.toContain(CANARY);
+    expect(readFileSync(draft, "utf8")).not.toContain(CANARY);
+    expect(r.stdout).toMatch(/5 secret-named file\(s\) never opened/);
+  });
+
+  it("works through a symlinked skill folder and fails cleanly without a model", () => {
+    const link = path.join(tmp(), "skill-link");
+    symlinkSync(skillFile("arch-visualize", "."), link);
+    const m = path.join(tmp(), "m.json");
+    writeFileSync(m, JSON.stringify(readJson("evals/fixture-model.json")));
+    const r = spawnSync(
+      process.execPath,
+      [path.join(link, "scripts/risk-check.mjs"), "--model", m, "--root", FIXTURE],
+      { encoding: "utf8" },
+    );
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/possible risk/);
+    expect(run("risk-check.mjs", ["--model", path.join(tmp(), "none.json")]).status).toBe(2);
+  });
+
+  it("documents every rule, and says which are heuristics", () => {
+    const doc = readFileSync(skillFile("arch-visualize", "references/risks.md"), "utf8");
+    for (const id of riskIds) expect(doc, id).toMatch(new RegExp(`## ${id} `));
+    for (const id of ["AV-R02", "AV-R03", "AV-R04", "AV-R05", "AV-R06", "AV-R08", "AV-R09"])
+      expect(doc, id).toMatch(new RegExp(`## ${id} [^\\n]*_heuristic_`));
+    expect(doc).toMatch(/possible risk to check/i);
+    expect(doc).toMatch(/names only|env \*\*names\*\*/);
+  });
+
+  it("keeps rule texts honest: no verdict words, a check for each", async () => {
+    const { RULES } = await loadScript<{
+      RULES: Record<string, { why: string; check: string; severity: string; title: string }>;
+    }>("arch-visualize", "scripts/risk-check.mjs");
+    expect(Object.keys(RULES).sort()).toEqual(riskIds);
+    for (const r of Object.values(RULES)) {
+      expect(["info", "warn"]).toContain(r.severity);
+      expect(r.why + r.check).not.toMatch(
+        /\b(vulnerable|insecure|broken|bad architecture|must fix|critical)\b/i,
+      );
+      expect(r.check.length).toBeGreaterThan(30);
+    }
+  });
+});
