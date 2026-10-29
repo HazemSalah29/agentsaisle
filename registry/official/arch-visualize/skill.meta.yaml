@@ -12,6 +12,8 @@ permissions:
   network: false
   needs_api_keys: []
 demo:
+  url: /demos/arch-visualize/devpath.html
+  caption: "Screenshots of the page this skill writes for a small fixture app. Open the live demo to explore the page it generated for a real project (DevPath, a Next.js app with MongoDB, Redis, a job queue and three AI providers). It shows how requests would travel according to the code, not live traffic."
   screenshots:
     - 01-overview-light.jpg
     - 02-overview-dark.jpg

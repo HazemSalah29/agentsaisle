@@ -12,6 +12,7 @@ next-env.d.ts
 test-results
 playwright-report
 apps/web/public/previews
+apps/web/public/demos
 registry/.audit-cache
 apps/web/public/audits
 registry/.audit-out

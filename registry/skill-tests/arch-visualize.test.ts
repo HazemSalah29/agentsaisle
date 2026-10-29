@@ -1538,3 +1538,46 @@ describe("arch-visualize layout in a real browser", () => {
     expect(bad).toEqual([]);
   }, 30_000);
 });
+
+describe("arch-visualize live demo (DevPath)", () => {
+  const demoFile = skillFile("arch-visualize", "evals/demo/devpath.architecture.json");
+  const meta = readFileSync(skillFile("arch-visualize", "skill.meta.yaml"), "utf8");
+
+  it("is a valid model with evidence for every item and no secrets", () => {
+    const r = run("model-check.mjs", ["--model", demoFile]);
+    expect(r.status, r.stdout).toBe(0);
+    const text = readFileSync(demoFile, "utf8");
+    const model = JSON.parse(text);
+    expect(model.project).toBe("DevPath");
+    expect(model.flows.length).toBeGreaterThanOrEqual(3);
+    // Only example env files may appear as evidence; real .env files are never cited.
+    const files = new Set<string>();
+    for (const g of [model.nodes, model.edges, model.risks])
+      for (const i of g) for (const e of i.evidence ?? []) files.add(e.file);
+    for (const f of files) {
+      expect(path.isAbsolute(f)).toBe(false);
+      expect(f).not.toMatch(/(^|\/)\.env(\.(local|production|development))?$/);
+    }
+    expect(text).not.toMatch(/mongodb(\+srv)?:\/\/|redis:\/\/|postgres(ql)?:\/\/|sk-|ghp_/);
+  });
+
+  it("renders with the current viewer", () => {
+    const out = path.join(tmp(), "devpath.html");
+    expect(renderCli(demoFile, out).status).toBe(0);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain("arch-visualize viewer v1");
+    expect(html.match(/<\/script/gi)).toHaveLength(3);
+  });
+
+  it("is linked from the skill page by a site path the web build creates", () => {
+    expect(meta).toMatch(/^ {2}url: \/demos\/arch-visualize\/devpath\.html$/m);
+    expect(meta).toMatch(/^ {2}caption: ".*real project.*not live traffic\."$/m);
+    const copy = readFileSync(
+      path.join(__dirname, "..", "..", "apps", "web", "scripts", "copy-registry.mts"),
+      "utf8",
+    );
+    expect(copy).toContain("evals");
+    expect(copy).toContain(".architecture.json");
+    expect(copy).toContain("public/demos");
+  });
+});

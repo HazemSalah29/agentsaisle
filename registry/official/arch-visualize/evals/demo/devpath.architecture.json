@@ -1,0 +1,607 @@
+{
+  "version": 1,
+  "project": "DevPath",
+  "nodes": [
+    {
+      "id": "properlearn",
+      "label": "DevPath web app",
+      "role": "frontend",
+      "tech": "nextjs",
+      "tier": "frontend",
+      "evidence": [
+        {
+          "file": "Dockerfile",
+          "line": 6,
+          "note": "base image node:20-alpine, exposes 3000"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 17,
+          "note": "service app builds ., ports 3000:3000"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 79,
+          "note": "service seed builds ."
+        },
+        {
+          "file": "package.json",
+          "line": 31,
+          "note": "dependency next"
+        },
+        {
+          "file": "package.json",
+          "line": 32,
+          "note": "dependency next-auth"
+        }
+      ]
+    },
+    {
+      "id": "piston",
+      "label": "Piston code runner",
+      "role": "backend",
+      "tech": "generic-backend",
+      "tier": "backend",
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 104,
+          "note": "image ghcr.io/engineer-man/piston, ports 2000:2000"
+        }
+      ]
+    },
+    {
+      "id": "bullmq",
+      "label": "Lab provisioning queue",
+      "role": "queue",
+      "tech": "bullmq",
+      "tier": "async",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 27,
+          "note": "dependency bullmq"
+        }
+      ]
+    },
+    {
+      "id": "mongo",
+      "label": "MongoDB",
+      "role": "database",
+      "tech": "mongodb",
+      "tier": "data",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 1,
+          "note": "env key MONGODB_URI"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 3,
+          "note": "image mongo:7, ports 27017:27017"
+        },
+        {
+          "file": "package.json",
+          "line": 30,
+          "note": "dependency mongoose"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "label": "Redis",
+      "role": "cache",
+      "tech": "redis",
+      "tier": "data",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 2,
+          "note": "env key REDIS_URL"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 10,
+          "note": "image redis:7-alpine, ports 6379:6379"
+        },
+        {
+          "file": "package.json",
+          "line": 29,
+          "note": "dependency ioredis"
+        }
+      ]
+    },
+    {
+      "id": "anthropic",
+      "label": "Anthropic API",
+      "role": "external",
+      "tech": "anthropic",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 10,
+          "note": "email provider key"
+        },
+        {
+          "file": ".env.example",
+          "line": 11,
+          "note": "email provider key"
+        },
+        {
+          "file": ".env.example",
+          "line": 17,
+          "note": "env key ANTHROPIC_GENERATION_MODEL"
+        },
+        {
+          "file": ".env.example",
+          "line": 18,
+          "note": "env key ANTHROPIC_INTERACTION_MODEL"
+        },
+        {
+          "file": "package.json",
+          "line": 19,
+          "note": "dependency @anthropic-ai/sdk"
+        }
+      ]
+    },
+    {
+      "id": "docker",
+      "label": "Docker Engine",
+      "role": "external",
+      "tech": "docker",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 28,
+          "note": "dependency dockerode"
+        }
+      ]
+    },
+    {
+      "id": "gemini",
+      "label": "Google Gemini API",
+      "role": "external",
+      "tech": "gemini",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 21,
+          "note": "env key GEMINI_GENERATION_MODEL"
+        },
+        {
+          "file": ".env.example",
+          "line": 22,
+          "note": "env key GEMINI_INTERACTION_MODEL"
+        },
+        {
+          "file": ".env.example",
+          "line": 23,
+          "note": "env key GEMINI_INTERACTION_ESCALATED_MODEL"
+        },
+        {
+          "file": "package.json",
+          "line": 21,
+          "note": "dependency @google/genai"
+        }
+      ]
+    },
+    {
+      "id": "github",
+      "label": "GitHub sign-in",
+      "role": "external",
+      "tech": "github",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 7,
+          "note": "env key GITHUB_CLIENT_ID"
+        },
+        {
+          "file": ".env.example",
+          "line": 8,
+          "note": "env key GITHUB_CLIENT_SECRET"
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI API",
+      "role": "external",
+      "tech": "openai",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 19,
+          "note": "env key OPENAI_GENERATION_MODEL"
+        },
+        {
+          "file": ".env.example",
+          "line": 20,
+          "note": "env key OPENAI_INTERACTION_MODEL"
+        },
+        {
+          "file": "package.json",
+          "line": 33,
+          "note": "dependency openai"
+        }
+      ]
+    },
+    {
+      "id": "resend",
+      "label": "Resend email",
+      "role": "external",
+      "tech": "resend",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 36,
+          "note": "dependency resend"
+        }
+      ]
+    },
+    {
+      "id": "terminal-ws",
+      "label": "Terminal WebSocket server",
+      "role": "backend",
+      "tech": "generic-backend",
+      "tier": "backend",
+      "evidence": [
+        {
+          "file": "server/infra-terminal-ws-server.ts",
+          "line": 255,
+          "note": "new WebSocketServer"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "properlearn-mongo",
+      "from": "properlearn",
+      "to": "mongo",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 60,
+          "note": "depends_on mongo"
+        },
+        {
+          "file": "lib/db/connection.ts",
+          "line": 31,
+          "note": "mongoose.connect"
+        }
+      ],
+      "protocol": "TCP (MongoDB)"
+    },
+    {
+      "id": "properlearn-redis",
+      "from": "properlearn",
+      "to": "redis",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 61,
+          "note": "depends_on redis"
+        },
+        {
+          "file": "lib/redis/client.ts",
+          "line": 29,
+          "note": "new Redis"
+        }
+      ],
+      "protocol": "TCP (Redis)"
+    },
+    {
+      "id": "properlearn-piston",
+      "from": "properlearn",
+      "to": "piston",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/sandbox/server-execution-runner.ts",
+          "line": 83,
+          "note": "PISTON_API_URL"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-bullmq",
+      "from": "properlearn",
+      "to": "bullmq",
+      "protocol": "Redis",
+      "sync": false,
+      "evidence": [
+        {
+          "file": "lib/sandbox/concurrency-queue.ts",
+          "line": 61,
+          "note": "createQueue"
+        }
+      ]
+    },
+    {
+      "id": "bullmq-redis",
+      "from": "bullmq",
+      "to": "redis",
+      "protocol": "TCP (Redis)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/queue/factory.ts",
+          "line": 5,
+          "note": "connection getRedisClient"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-docker",
+      "from": "properlearn",
+      "to": "docker",
+      "protocol": "Docker socket",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/sandbox/redis-container-provisioner.ts",
+          "line": 60,
+          "note": "new Docker()"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-anthropic",
+      "from": "properlearn",
+      "to": "anthropic",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/ai/providers/anthropic.ts",
+          "line": 9,
+          "note": "new Anthropic"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-openai",
+      "from": "properlearn",
+      "to": "openai",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/ai/providers/openai.ts",
+          "line": 9,
+          "note": "new OpenAI"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-gemini",
+      "from": "properlearn",
+      "to": "gemini",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/ai/providers/gemini.ts",
+          "line": 14,
+          "note": "new GoogleGenAI"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-resend",
+      "from": "properlearn",
+      "to": "resend",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/email/resend-client.ts",
+          "line": 28,
+          "note": "new Resend"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-github",
+      "from": "properlearn",
+      "to": "github",
+      "protocol": "OAuth (HTTPS)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "auth.ts",
+          "line": 38,
+          "note": "GitHub provider"
+        }
+      ]
+    },
+    {
+      "id": "properlearn-terminal-ws",
+      "from": "properlearn",
+      "to": "terminal-ws",
+      "protocol": "WebSocket",
+      "sync": false
+    },
+    {
+      "id": "terminal-ws-docker",
+      "from": "terminal-ws",
+      "to": "docker",
+      "protocol": "Docker socket",
+      "sync": true
+    }
+  ],
+  "flows": [
+    {
+      "id": "run-code",
+      "name": "Run code in a lesson",
+      "steps": [
+        {
+          "edge": "properlearn-redis",
+          "label": "Check rate limit"
+        },
+        {
+          "edge": "properlearn-piston",
+          "label": "POST /api/execute"
+        },
+        {
+          "edge": "properlearn-piston",
+          "label": "stdout and exit code",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "mentor-chat",
+      "name": "Ask the AI mentor",
+      "steps": [
+        {
+          "edge": "properlearn-redis",
+          "label": "Check rate limit"
+        },
+        {
+          "edge": "properlearn-mongo",
+          "label": "Load lesson context"
+        },
+        {
+          "edge": "properlearn-anthropic",
+          "label": "Ask the chosen model"
+        },
+        {
+          "edge": "properlearn-anthropic",
+          "label": "Mentor reply",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "github-signin",
+      "name": "Sign in with GitHub",
+      "steps": [
+        {
+          "edge": "properlearn-github",
+          "label": "Redirect to GitHub"
+        },
+        {
+          "edge": "properlearn-github",
+          "label": "Authorised",
+          "reverse": true
+        },
+        {
+          "edge": "properlearn-mongo",
+          "label": "Link or create user"
+        }
+      ]
+    },
+    {
+      "id": "lab-provision",
+      "name": "Start an infra lab (background)",
+      "steps": [
+        {
+          "edge": "properlearn-bullmq",
+          "label": "Queue provision job"
+        },
+        {
+          "edge": "bullmq-redis",
+          "label": "Job stored"
+        },
+        {
+          "edge": "properlearn-docker",
+          "label": "Create lab container"
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "AV-R01",
+      "title": "Single database with no replica or backup configuration",
+      "severity": "warn",
+      "nodes": ["mongo"],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 3,
+          "note": "image mongo:7, ports 27017:27017"
+        },
+        {
+          "file": "package.json",
+          "line": 30,
+          "note": "dependency mongoose"
+        }
+      ],
+      "why": "The model has one database and none of the files read mention a replica, a standby, a backup tool or a managed database service.",
+      "check": "Confirm where backups are taken and that a restore has been tried. Decide whether a replica or a managed service is worth its cost for this project.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R08",
+      "title": "No health check endpoint found",
+      "severity": "info",
+      "nodes": ["properlearn"],
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 31,
+          "note": "dependency next"
+        }
+      ],
+      "why": "Heuristic: the app defines routes but none of the files read has a /health, /healthz or /ready route.",
+      "check": "Check whether your host, load balancer or orchestrator probes the service another way (a TCP check, the home page). If not, a small health route lets it restart or stop sending traffic to a stuck instance.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R10",
+      "title": "Data service exposed or unprotected in docker-compose",
+      "severity": "warn",
+      "nodes": ["mongo", "redis"],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 4,
+          "note": "mongo: port 27017:27017 published on all interfaces"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 11,
+          "note": "redis: port 6379:6379 published on all interfaces"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 10,
+          "note": "redis: Redis has no requirepass or REDIS_PASSWORD"
+        }
+      ],
+      "why": "A compose service for a data store publishes its port to the host on all interfaces, or Redis has no password (requirepass) configured.",
+      "check": "Check where this compose file is used. For local development it is often fine; on a shared or public machine, bind ports to 127.0.0.1, set a password and keep the service off public networks.",
+      "source": "rule"
+    },
+    {
+      "id": "agent-docker-socket",
+      "title": "The app container can control the host Docker engine",
+      "severity": "warn",
+      "nodes": ["properlearn", "docker"],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 70,
+          "note": "/var/run/docker.sock mounted into the app"
+        }
+      ],
+      "why": "The app container gets the host Docker socket, so a bug or compromise in the app could start or inspect any container on that host.",
+      "check": "Check whether this compose file is used outside local development. Consider a socket proxy that allows only the calls the labs need, or a separate sandbox host.",
+      "source": "agent"
+    }
+  ],
+  "inferred": ["edge:properlearn-terminal-ws", "edge:terminal-ws-docker"]
+}
