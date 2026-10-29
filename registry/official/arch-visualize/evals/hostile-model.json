@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "project": "</script><img src=x onerror=alert(1)>",
+  "nodes": [
+    {
+      "id": "web",
+      "label": "</script><img src=x onerror=alert(1)>",
+      "role": "frontend",
+      "tech": "nextjs",
+      "tier": "frontend",
+      "evidence": [{ "file": "pkg/<b>x</b>.json", "line": 1, "note": "</script><svg onload=alert(2)>" }]
+    },
+    {
+      "id": "api",
+      "label": "Fish &amp; Chips   line",
+      "role": "backend",
+      "tech": "generic-backend",
+      "tier": "backend",
+      "evidence": [{ "file": "a.json", "line": 2, "note": "\"quoted\" & <i>tags</i>" }]
+    }
+  ],
+  "edges": [
+    {
+      "id": "web-api",
+      "from": "web",
+      "to": "api",
+      "protocol": "<script>alert(3)</script>",
+      "evidence": [{ "file": "a.json", "line": 3 }]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f",
+      "name": "<img src=x onerror=alert(4)>",
+      "steps": [{ "edge": "web-api", "label": "</script><b>step</b>" }]
+    }
+  ],
+  "risks": [
+    {
+      "id": "agent-hostile",
+      "severity": "warn",
+      "nodes": ["web"],
+      "why": "</script><img src=x onerror=alert(5)>",
+      "check": "<a href=\"javascript:alert(6)\">x</a>",
+      "source": "agent"
+    }
+  ]
+}

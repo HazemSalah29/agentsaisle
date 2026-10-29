@@ -1,0 +1,496 @@
+{
+  "version": 1,
+  "project": "shop",
+  "nodes": [
+    {
+      "id": "vercel",
+      "label": "Vercel hosting",
+      "role": "edge",
+      "tech": "vercel",
+      "tier": "edge",
+      "evidence": [
+        {
+          "file": "apps/web/vercel.json",
+          "line": 1,
+          "note": "hosting file vercel.json"
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "label": "Storefront",
+      "role": "frontend",
+      "tech": "nextjs",
+      "tier": "frontend",
+      "evidence": [
+        {
+          "file": "apps/web/Dockerfile",
+          "line": 1,
+          "note": "base image node:20-alpine, exposes 3000"
+        },
+        {
+          "file": "apps/web/package.json",
+          "line": 1,
+          "note": "dependency next"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 2,
+          "note": "service web builds ./apps/web, ports 3000:3000"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "label": "Shop API",
+      "role": "backend",
+      "tech": "express",
+      "tier": "backend",
+      "evidence": [
+        {
+          "file": "apps/api/Dockerfile",
+          "line": 1,
+          "note": "base image node:20, exposes 4000"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 6,
+          "note": "dependency express"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 8,
+          "note": "service api builds ./apps/api, ports 4000:4000"
+        }
+      ]
+    },
+    {
+      "id": "bullmq",
+      "label": "Receipt queue",
+      "role": "queue",
+      "tech": "bullmq",
+      "tier": "async",
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 5,
+          "note": "dependency bullmq"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency bullmq"
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "label": "Receipt worker",
+      "role": "worker",
+      "tech": "generic-worker",
+      "tier": "async",
+      "evidence": [
+        {
+          "file": "apps/worker/Dockerfile",
+          "line": 1,
+          "note": "base image node:20"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency bullmq"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 15,
+          "note": "service worker builds ./apps/worker"
+        }
+      ]
+    },
+    {
+      "id": "cache",
+      "label": "Session cache",
+      "role": "cache",
+      "tech": "redis",
+      "tier": "data",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 3,
+          "note": "env key REDIS_URL"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 7,
+          "note": "dependency ioredis"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency ioredis"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 27,
+          "note": "image redis:7, ports 6379:6379"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "label": "Orders database",
+      "role": "database",
+      "tech": "postgresql",
+      "tier": "data",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 2,
+          "note": "env key DATABASE_URL"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 4,
+          "note": "dependency @prisma/client"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 11,
+          "note": "dependency prisma"
+        },
+        {
+          "file": "apps/api/prisma/schema.prisma",
+          "line": 2,
+          "note": "datasource provider postgresql"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency @prisma/client"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 23,
+          "note": "image postgres:16, ports 5432:5432"
+        }
+      ]
+    },
+    {
+      "id": "resend",
+      "label": "Resend email",
+      "role": "external",
+      "tech": "resend",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 5,
+          "note": "email provider key"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 8,
+          "note": "dependency resend"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency resend"
+        }
+      ]
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe payments",
+      "role": "external",
+      "tech": "stripe",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 4,
+          "note": "env key STRIPE_SECRET_KEY"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 9,
+          "note": "dependency stripe"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "api-cache",
+      "from": "api",
+      "to": "cache",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 14,
+          "note": "depends_on cache"
+        }
+      ],
+      "protocol": "TCP (Redis)"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 13,
+          "note": "depends_on db"
+        }
+      ],
+      "protocol": "TCP (SQL)"
+    },
+    {
+      "id": "web-api",
+      "from": "web",
+      "to": "api",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 7,
+          "note": "depends_on api"
+        },
+        {
+          "file": "apps/web/app/page.tsx",
+          "line": 2,
+          "note": "fetch /api/me"
+        }
+      ],
+      "protocol": "HTTP"
+    },
+    {
+      "id": "worker-cache",
+      "from": "worker",
+      "to": "cache",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 18,
+          "note": "depends_on cache"
+        }
+      ],
+      "protocol": "TCP (Redis)"
+    },
+    {
+      "id": "worker-db",
+      "from": "worker",
+      "to": "db",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 20,
+          "note": "depends_on db"
+        }
+      ],
+      "protocol": "TCP (SQL)"
+    },
+    {
+      "id": "api-bullmq",
+      "from": "api",
+      "to": "bullmq",
+      "protocol": "Redis",
+      "sync": false,
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 5,
+          "note": "new Queue receipts"
+        }
+      ]
+    },
+    {
+      "id": "api-stripe",
+      "from": "api",
+      "to": "stripe",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 13,
+          "note": "fetch api.stripe.com"
+        }
+      ]
+    },
+    {
+      "id": "bullmq-worker",
+      "from": "bullmq",
+      "to": "worker",
+      "protocol": "Redis",
+      "sync": false,
+      "evidence": [
+        {
+          "file": "apps/worker/src/worker.ts",
+          "line": 6,
+          "note": "new Worker receipts"
+        }
+      ]
+    },
+    {
+      "id": "worker-resend",
+      "from": "worker",
+      "to": "resend",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "apps/worker/src/worker.ts",
+          "line": 7,
+          "note": "resend.emails.send"
+        }
+      ]
+    },
+    {
+      "id": "bullmq-cache",
+      "from": "bullmq",
+      "to": "cache",
+      "protocol": "TCP (Redis)",
+      "sync": true
+    },
+    {
+      "id": "vercel-web",
+      "from": "vercel",
+      "to": "web",
+      "protocol": "HTTPS",
+      "sync": true
+    }
+  ],
+  "flows": [
+    {
+      "id": "load-profile",
+      "name": "User loads their profile",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "GET /api/me"
+        },
+        {
+          "edge": "api-cache",
+          "label": "Look up session"
+        },
+        {
+          "event": "cache-miss",
+          "node": "cache"
+        },
+        {
+          "edge": "api-db",
+          "label": "SELECT user"
+        },
+        {
+          "edge": "api-db",
+          "label": "Row returned",
+          "reverse": true
+        },
+        {
+          "edge": "api-cache",
+          "label": "Store session"
+        },
+        {
+          "edge": "web-api",
+          "label": "200 OK",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "checkout",
+      "name": "Customer checks out",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "POST /api/checkout"
+        },
+        {
+          "edge": "api-db",
+          "label": "Read prices"
+        },
+        {
+          "edge": "api-db",
+          "label": "Prices returned",
+          "reverse": true
+        },
+        {
+          "edge": "api-stripe",
+          "label": "Charge card"
+        },
+        {
+          "edge": "api-stripe",
+          "label": "Charge result",
+          "reverse": true
+        },
+        {
+          "edge": "api-bullmq",
+          "label": "Queue receipt email"
+        },
+        {
+          "edge": "web-api",
+          "label": "200 OK",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "send-receipt",
+      "name": "Receipt email (background)",
+      "steps": [
+        {
+          "edge": "bullmq-worker",
+          "label": "Job delivered"
+        },
+        {
+          "edge": "worker-resend",
+          "label": "Send email"
+        },
+        {
+          "edge": "worker-resend",
+          "label": "Accepted",
+          "reverse": true
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "agent-single-database",
+      "severity": "warn",
+      "nodes": ["db"],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 23,
+          "note": "image postgres:16"
+        }
+      ],
+      "why": "One PostgreSQL service and no replica or backup configuration in the files read.",
+      "check": "Confirm backups and a restore path exist outside this repository, and decide whether a replica is needed.",
+      "source": "agent"
+    },
+    {
+      "id": "agent-session-no-expiry",
+      "severity": "info",
+      "nodes": ["cache", "api"],
+      "evidence": [
+        {
+          "file": "apps/api/src/lib/session.ts",
+          "line": 10,
+          "note": "redis.set without EX"
+        }
+      ],
+      "why": "Sessions are written to Redis without an expiry, so they stay until evicted.",
+      "check": "Check the Redis eviction policy, or add a TTL when saving a session.",
+      "source": "agent"
+    }
+  ],
+  "inferred": ["edge:bullmq-cache", "edge:vercel-web"]
+}
