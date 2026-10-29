@@ -750,7 +750,7 @@
           GX = 66,
           GY = 28,
           PAD = 28,
-          HEAD = 26;
+          HEAD = 44;
         var present = TIERS.filter(function (t) {
           return model.nodes.some(function (n) {
             return n.tier === t;
@@ -822,7 +822,7 @@
           });
         });
         var contentW = PAD * 2 + cols.length * W + Math.max(0, cols.length - 1) * GX;
-        var contentH = PAD * 2 + HEAD + tallest;
+        var contentH = PAD * 2 + HEAD + tallest + 24;
 
         // edge anchors: spread the ends along the side of a node so edges do not stack
         var anchors = {};
@@ -857,6 +857,64 @@
             anchorY[it.e.id + it.end] = pos[nodeId].y + (H * (i + 1)) / (list.length + 1);
           });
         });
+        // Edges that skip a column are routed through the gaps between nodes (or above and below the
+        // column), so a line never passes behind a box and looks like it connects to it.
+        function gapsOf(c) {
+          var nodes = cols[c];
+          var top = pos[nodes[0].id].y;
+          var bottom = pos[nodes[nodes.length - 1].id].y + H;
+          var gaps = [{ key: c + ":top", y: top - 14, open: true, out: -1 }];
+          for (var i = 0; i < nodes.length - 1; i++)
+            gaps.push({
+              key: c + ":" + i,
+              y: (pos[nodes[i].id].y + H + pos[nodes[i + 1].id].y) / 2,
+              open: false,
+            });
+          gaps.push({ key: c + ":bottom", y: bottom + 14, open: true, out: 1 });
+          return gaps;
+        }
+        var routes = {};
+        (function planRoutes() {
+          var usage = {},
+            plan = {};
+          model.edges.forEach(function (e) {
+            if (!pos[e.from] || !pos[e.to] || e.from === e.to) return;
+            var a = pos[e.from].col,
+              b = pos[e.to].col;
+            if (Math.abs(a - b) < 2) return;
+            var sy = anchorY[e.id + "s"],
+              ty = anchorY[e.id + "t"];
+            var list = [];
+            var step = a < b ? 1 : -1;
+            for (var c = a + step; c !== b; c += step) {
+              var want = sy + ((ty - sy) * (c - a)) / (b - a);
+              var best = null;
+              gapsOf(c).forEach(function (g) {
+                if (!best || Math.abs(g.y - want) < Math.abs(best.y - want)) best = g;
+              });
+              (usage[best.key] = usage[best.key] || []).push(e.id);
+              list.push({ col: c, gap: best, dir: step });
+            }
+            plan[e.id] = list;
+          });
+          Object.keys(plan).forEach(function (id) {
+            var pts = [];
+            plan[id].forEach(function (w) {
+              var ids = usage[w.gap.key].slice().sort();
+              var idx = ids.indexOf(id);
+              // above or below a column the lines fan outwards; between two nodes they share the gap
+              var off = w.gap.open
+                ? idx * 12 * w.gap.out
+                : Math.max(-GY / 2 + 6, Math.min(GY / 2 - 6, (idx - (ids.length - 1) / 2) * 6));
+              var left = PAD + w.col * (W + GX) - 8,
+                right = left + W + 16;
+              var y = w.gap.y + off;
+              // enter on one side of the column, stay level while crossing it, leave on the other
+              pts.push(w.dir > 0 ? [left, y] : [right, y], w.dir > 0 ? [right, y] : [left, y]);
+            });
+            routes[id] = pts;
+          });
+        })();
         function edgePath(e) {
           var a = pos[e.from],
             b = pos[e.to];
@@ -904,6 +962,27 @@
               " " +
               ty
             );
+          }
+          if (routes[e.id]) {
+            var pts = [[sx, sy]].concat(routes[e.id], [[tx, ty]]);
+            var d = "M" + sx + " " + sy;
+            for (var k = 1; k < pts.length; k++) {
+              var mx = (pts[k - 1][0] + pts[k][0]) / 2;
+              d +=
+                " C" +
+                mx +
+                " " +
+                pts[k - 1][1] +
+                " " +
+                mx +
+                " " +
+                pts[k][1] +
+                " " +
+                pts[k][0] +
+                " " +
+                pts[k][1];
+            }
+            return d;
           }
           var dx = (tx - sx) / 2;
           return (
