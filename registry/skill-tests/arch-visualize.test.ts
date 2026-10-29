@@ -479,3 +479,179 @@ describe("arch-visualize icons", () => {
     expect(notice).toMatch(/trademark/i);
   });
 });
+
+type Step = {
+  kind: string;
+  edge?: string;
+  reverse?: boolean;
+  label: string;
+  from: string;
+  to: string;
+  node?: string;
+};
+type State = { index: number; t: number; playing: boolean; once: boolean };
+type Engine = {
+  buildSteps: (
+    flow: unknown,
+    edges: Record<string, unknown>,
+    nodes: Record<string, unknown>,
+  ) => Step[];
+  newState: () => State;
+  play: (s: State, steps: Step[]) => State;
+  pause: (s: State) => State;
+  stepForward: (s: State, steps: Step[], instant: boolean) => State;
+  stepBack: (s: State) => State;
+  jump: (s: State, i: number, steps: Step[]) => State;
+  advance: (s: State, dt: number, steps: Step[], speed: number) => State;
+  dotAt: (step: Step, t: number) => number;
+  atEnd: (s: State, steps: Step[]) => boolean;
+  stepMs: (step: Step, speed: number) => number;
+};
+
+describe("arch-visualize flow engine", () => {
+  const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
+  const block = /\/\/ <flow-engine>([\s\S]*?)\/\/ <\/flow-engine>/.exec(viewer);
+  // The engine is our own code and has no DOM access, so the test can run it on its own.
+  const E = new Function(
+    `${block![1]}; return { buildSteps, newState, play, pause, stepForward, stepBack, jump, advance, dotAt, atEnd, stepMs };`,
+  )() as Engine;
+  const model = readJson("evals/fixture-model.json");
+  const byId = (xs: { id: string }[]) => Object.fromEntries(xs.map((x) => [x.id, x]));
+  const edges = byId(model.edges);
+  const nodes = byId(model.nodes);
+  const steps = E.buildSteps(model.flows[0], edges, nodes);
+  const run = (s: State, ms: number, list = steps, speed = 1) => {
+    let x = s;
+    for (let t = 0; t < ms; t += 16) x = E.advance(x, 16, list, speed);
+    return x;
+  };
+
+  it("expands a flow into steps with real directions", () => {
+    expect(steps).toHaveLength(7);
+    expect(steps[0]).toMatchObject({ kind: "edge", from: "web", to: "api", reverse: false });
+    expect(steps[2]).toMatchObject({ kind: "event", node: "cache" });
+    expect(steps[4]).toMatchObject({
+      kind: "edge",
+      edge: "api-db",
+      reverse: true,
+      from: "db",
+      to: "api",
+    });
+    expect(E.dotAt(steps[0], 0.25)).toBe(0.25);
+    expect(E.dotAt(steps[4], 0.25)).toBe(0.75);
+  });
+
+  it("drops steps that point at nothing", () => {
+    const flow = { steps: [{ edge: "ghost" }, { event: "x", node: "ghost" }, { edge: "web-api" }] };
+    expect(E.buildSteps(flow, edges, nodes)).toHaveLength(1);
+    expect(E.buildSteps(undefined, edges, nodes)).toEqual([]);
+  });
+
+  it("times each step: 1000 ms per edge and 800 ms per event, scaled by speed", () => {
+    expect(E.stepMs(steps[0], 1)).toBe(1000);
+    expect(E.stepMs(steps[2], 1)).toBe(800);
+    expect(E.stepMs(steps[0], 2)).toBe(500);
+    expect(E.stepMs(steps[0], 0.5)).toBe(2000);
+  });
+
+  it("plays through every step in order and stops at the end", () => {
+    let s = E.play(E.newState(), steps);
+    const seen: number[] = [];
+    for (let i = 0; i < 700; i++) {
+      s = E.advance(s, 16, steps, 1);
+      if (seen[seen.length - 1] !== s.index) seen.push(s.index);
+      if (!s.playing) break;
+    }
+    expect(seen).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(s).toMatchObject({ index: 6, t: 1, playing: false });
+    expect(E.atEnd(s, steps)).toBe(true);
+  });
+
+  it("is deterministic and never mutates its input", () => {
+    const a = E.play(E.newState(), steps);
+    const frozen = JSON.stringify(a);
+    expect(JSON.stringify(run(a, 3000))).toBe(JSON.stringify(run(a, 3000)));
+    expect(JSON.stringify(a)).toBe(frozen);
+  });
+
+  it("2x speed finishes in half the time", () => {
+    const ms = (speed: number) => {
+      let s = E.play(E.newState(), steps);
+      let t = 0;
+      while (s.playing) {
+        s = E.advance(s, 10, steps, speed);
+        t += 10;
+      }
+      return t;
+    };
+    expect(ms(2)).toBeLessThan(ms(1) * 0.6);
+    expect(ms(0.5)).toBeGreaterThan(ms(1) * 1.6);
+  });
+
+  it("caps a long frame so a background tab does not jump ahead", () => {
+    const s = E.advance(E.play(E.newState(), steps), 60_000, steps, 1);
+    expect(s.index).toBe(0);
+    expect(s.t).toBeLessThanOrEqual(0.11);
+  });
+
+  it("pause keeps the place and does not advance", () => {
+    const s = E.pause(run(E.play(E.newState(), steps), 1200));
+    expect(s.playing).toBe(false);
+    expect(E.advance(s, 500, steps, 1)).toEqual(s);
+  });
+
+  it("Step runs one step and stops; Step mid-step finishes it", () => {
+    let s = E.stepForward(E.newState(), steps, false);
+    expect(s).toMatchObject({ index: 0, t: 0, playing: true, once: true });
+    s = run(s, 2000);
+    expect(s).toMatchObject({ index: 0, t: 1, playing: false });
+    s = E.stepForward(s, steps, false);
+    s = E.advance(s, 50, steps, 1);
+    s = E.stepForward(s, steps, false);
+    expect(s).toMatchObject({ index: 1, t: 1, playing: false });
+  });
+
+  it("instant Step (reduced motion) never plays", () => {
+    let s = E.newState();
+    for (let i = 0; i < 3; i++) s = E.stepForward(s, steps, true);
+    expect(s).toMatchObject({ index: 2, t: 1, playing: false });
+    expect(E.advance(s, 1000, steps, 1)).toEqual(s);
+  });
+
+  it("Step stays on the last step; Back walks back to not started", () => {
+    let s = E.jump(E.newState(), 99, steps);
+    expect(s.index).toBe(6);
+    expect(E.stepForward(s, steps, false)).toMatchObject({ index: 6, t: 1, playing: false });
+    s = E.stepBack(s);
+    expect(s).toMatchObject({ index: 5, t: 1 });
+    s = E.stepBack(E.jump(E.newState(), 0, steps));
+    expect(s).toMatchObject({ index: -1, t: 0 });
+    expect(E.stepBack(s).index).toBe(-1);
+  });
+
+  it("Play at the end starts again from the first step", () => {
+    const done = E.jump(E.newState(), 6, steps);
+    expect(E.play(done, steps)).toMatchObject({ index: 0, t: 0, playing: true });
+  });
+
+  it("an empty flow does nothing", () => {
+    const s = E.newState();
+    expect(E.play(s, [])).toEqual(s);
+    expect(E.stepForward(s, [], false)).toEqual(s);
+    expect(E.advance({ ...s, playing: true }, 100, [], 1)).toEqual({ ...s, playing: true });
+  });
+
+  it("the engine block touches no DOM, network or timers", () => {
+    expect(block![1]).not.toMatch(
+      /document|window|fetch|setTimeout|requestAnimationFrame|localStorage/,
+    );
+  });
+
+  it("starts nothing on load and honours reduced motion in the page code", () => {
+    expect(viewer).toMatch(/prefers-reduced-motion: reduce/);
+    expect(viewer).toMatch(/Play \(uses motion\)/);
+    // The only place a loop starts is a click handler through kick().
+    expect(viewer.match(/requestAnimationFrame\(/g)).toHaveLength(2);
+    expect(viewer).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pulse/);
+  });
+});
