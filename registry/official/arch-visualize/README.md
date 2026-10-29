@@ -42,3 +42,8 @@ The skill was followed by hand on a project the owner chose, read-only (outputs 
 - AV-R03 and AV-R08 fired on generic compose services and missed a Next.js app's own route handlers; they now look at the app that owns the routes, and AV-R03 recognises a project's own rate-limit helper (`checkRateLimit`, a `rate-limit` folder).
 - Edges that skipped a column were drawn behind other components and looked like connections to them; they are now routed through the gaps, and a browser test checks that no edge passes behind a component.
 - Not covered, found by reading: a separate WebSocket server process, and a compose file that mounts the Docker socket into the app (added to the model as an agent-sourced risk). A rule for the Docker socket is a candidate for a later version.
+
+## Changes
+
+- **0.1.1**: when the generated page is embedded in another page (an iframe), a plain mouse-wheel scroll now scrolls that page instead of zooming the diagram; zoom with Ctrl or Cmd plus the wheel, the + and - buttons, or a pinch. Nothing else in the installed files changed.
+- **0.1.0**: first release.

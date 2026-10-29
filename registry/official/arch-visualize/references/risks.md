@@ -2,7 +2,7 @@
 
 `risk-check.mjs` adds these to the model. Every one is a **possible risk to check**, with the files it is based on. None is a verdict, and none says an architecture is good or bad. Rules marked _heuristic_ read code as text and can be wrong in both directions: they miss risks (code they cannot see) and flag things that are fine (limits set somewhere else).
 
-Scope in 0.1.0: JavaScript and TypeScript source for the code rules; docker-compose, Dockerfiles, Prisma schemas, `package.json`, hosting files and env example **key names** for the rest. Python and Go dependency files make nodes in discovery, but the code rules do not read `.py` or `.go` files yet. Files named `.env`, `.env.local`, `*.pem` and `*.key` are never opened.
+Scope in 0.1: JavaScript and TypeScript source for the code rules; docker-compose, Dockerfiles, Prisma schemas, `package.json`, hosting files and env example **key names** for the rest. Python and Go dependency files make nodes in discovery, but the code rules do not read `.py` or `.go` files yet. Files named `.env`, `.env.local`, `*.pem` and `*.key` are never opened.
 
 Severity is `info` (worth knowing) or `warn` (worth checking soon). The agent may add its own risks with `"source": "agent"`; they need evidence too (see "Adding risks yourself" at the end).
 

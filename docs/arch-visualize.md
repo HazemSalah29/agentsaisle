@@ -1,6 +1,6 @@
 # arch-visualize: how it works
 
-A plain-language guide to the `arch-visualize` skill (version 0.1.0): what it does, how each part works, what it will and will not do, and how to test it yourself.
+A plain-language guide to the `arch-visualize` skill (version 0.1.1): what it does, how each part works, what it will and will not do, and how to test it yourself.
 
 The skill's own files are in `registry/official/arch-visualize/`. This document explains them; it is not installed with the skill.
 
@@ -190,7 +190,7 @@ There are 132 tests for this skill in `registry/skill-tests/arch-visualize.test.
 ```
 registry/official/arch-visualize/
 ├─ SKILL.src.md / SKILL.md   the agent's instructions (SKILL.md is generated; never edit it)
-├─ skill.meta.yaml           version 0.1.0, niche arch, quality skill, permissions, demo link
+├─ skill.meta.yaml           version 0.1.1, niche arch, quality skill, permissions, demo link
 ├─ README.md                 short overview and the dogfooding findings (not installed)
 ├─ references/               model-schema, discovery, flows, risks, viewer
 ├─ scripts/                  _lib, discover, model-check, risk-check, render
@@ -209,7 +209,7 @@ The skill page (`/skills/arch-visualize`) has screenshots of the page the skill 
 
 The skill was followed by hand on a real project (read-only, no `.env` opened). It first showed about half the components. Fixes, each with a test: missing catalog entries (AI providers, GitHub, ~25 more services, env-name detection), unknown compose images now kept as generic components, in-process auth library folded into its app, AV-R03 and AV-R08 judged per app that owns the routes and aware of a project's own rate-limit helper, and connections routed around boxes. Still found only by reading: a separate WebSocket server and a compose file that mounts the Docker socket into the app (added as an agent-written risk in the demo).
 
-## 11. Limits (0.1.0)
+## 11. Limits (0.1.x)
 
 - Shows how requests would travel **according to the code**, not real traffic. Real traces are a planned later version.
 - Code rules read JavaScript and TypeScript only. Python and Go projects get components and the compose rules but not the code rules.
