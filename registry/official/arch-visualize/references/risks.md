@@ -26,7 +26,7 @@ Severity is `info` (worth knowing) or `warn` (worth checking soon). The agent ma
 ## AV-R03 No rate limiting found on a public API (_heuristic_)
 
 - **Means:** the backend defines routes but no rate limiter appears.
-- **Detected by:** a `backend` node with route definitions (`app.get`, `router.post`, Nest decorators, Next route handlers) and no rate-limit dependency (`express-rate-limit`, `rate-limiter-flexible`, `@fastify/rate-limit`, `@upstash/ratelimit`, `@nestjs/throttler`, `hono-rate-limiter`), no `rateLimit(`-style call and no nginx `limit_req`.
+- **Detected by:** an app that owns public routes (a `backend` app with `app.get`, `router.post` or Nest decorators, or a Next.js app with route handlers under `app/api` or `pages/api`) and no rate-limit dependency (`express-rate-limit`, `rate-limiter-flexible`, `@fastify/rate-limit`, `@upstash/ratelimit`, `@nestjs/throttler`, `hono-rate-limiter`), no helper such as `rateLimit(` or `checkRateLimit(`, no `rate-limit` or `throttle` file name and no nginx `limit_req`.
 - **False positives:** limits at a CDN, gateway or load balancer these files do not show.
 - **Check:** proxy and gateway settings; limits on login, signup and expensive routes first.
 - **Trade-offs:** limits can block real users behind a shared address; a shared store (Redis) adds a dependency.
@@ -68,7 +68,7 @@ Severity is `info` (worth knowing) or `warn` (worth checking soon). The agent ma
 ## AV-R08 No health check endpoint found (_heuristic_)
 
 - **Means:** nothing tells a host or load balancer whether the service is alive.
-- **Detected by:** a `backend` node with routes and no `/health`, `/healthz`, `/ready`, `/readyz`, `/livez` or `/healthcheck` route string or file path.
+- **Detected by:** an app that owns routes (as in AV-R03) and no `/health`, `/healthz`, `/ready`, `/readyz`, `/livez` or `/healthcheck` route string or file path.
 - **False positives:** probes that use a TCP check or an existing page.
 - **Check:** how the platform decides to restart or stop routing traffic.
 - **Trade-offs:** a deep check that touches the database can take the service down when the database is slow; keep liveness and readiness separate.

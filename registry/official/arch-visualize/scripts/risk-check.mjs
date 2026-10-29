@@ -44,7 +44,7 @@ export const RULES = {
     title: "No rate limiting found on a public API",
     severity: "warn",
     heuristic: true,
-    why: "Heuristic: the backend defines routes, but no rate-limit package or middleware appears in the dependencies or code read. It may be done at a gateway, CDN or proxy that these files do not show.",
+    why: "Heuristic: the app defines public routes (including Next.js route handlers), but no rate-limit package, middleware or helper appears in the dependencies or code read. It may be done at a gateway, CDN or proxy that these files do not show.",
     check:
       "Look for rate limiting at the proxy, CDN or API gateway. If there is none, consider limits on login, signup and expensive routes first.",
   },
@@ -83,7 +83,7 @@ export const RULES = {
     title: "No health check endpoint found",
     severity: "info",
     heuristic: true,
-    why: "Heuristic: the backend defines routes but none of the files read has a /health, /healthz or /ready route.",
+    why: "Heuristic: the app defines routes but none of the files read has a /health, /healthz or /ready route.",
     check:
       "Check whether your host, load balancer or orchestrator probes the service another way (a TCP check, the home page). If not, a small health route lets it restart or stop sending traffic to a stuck instance.",
   },
@@ -284,20 +284,27 @@ function r02(ctx) {
 
 const RATE_DEPS =
   /^(express-rate-limit|rate-limiter-flexible|@fastify\/rate-limit|@upstash\/ratelimit|@nestjs\/throttler|hono-rate-limiter|express-slow-down|koa-ratelimit|koa2-ratelimit|@hono-rate-limiter\/.*)$/;
+/** The apps that own route files: Express-style routes, Nest controllers and Next route handlers. */
+function routeOwners(ctx) {
+  const files = ctx.source.filter(isRouteFile);
+  const owners = new Map();
+  for (const f of files) {
+    const n = ownerNode(ctx, f.rel);
+    if (n && ["backend", "frontend"].includes(n.role)) owners.set(n.id, n);
+  }
+  return { files, owners: [...owners.values()] };
+}
+
+const LIMITER_CODE =
+  /\b(?:rateLimit\w*|checkRateLimit|rateLimiter|Ratelimit|RateLimiter|ThrottlerModule|throttle\w*|slowDown)\b/;
 function r03(ctx) {
-  const backends = byRole(ctx.model, "backend");
-  if (!backends.length) return [];
-  const routes = ctx.source.filter(isRouteFile);
-  if (!routes.length) return [];
+  const { files, owners } = routeOwners(ctx);
+  if (!owners.length) return [];
   if (ctx.packages.some((p) => p.deps.some((d) => RATE_DEPS.test(d)))) return [];
-  if (
-    ctx.source.some((f) =>
-      /\b(?:rateLimit|rateLimiter|Ratelimit|RateLimiter|ThrottlerModule|slowDown)\b/.test(f.text),
-    )
-  )
+  if (ctx.source.some((f) => LIMITER_CODE.test(f.text) || /rate[-_]?limit|throttl/i.test(f.rel)))
     return [];
   if (ctx.conf.some((c) => /\blimit_req\b/.test(c.text))) return [];
-  const evidence = routes
+  const evidence = files
     .slice(0, 3)
     .map((f) =>
       ev(f.rel, lineOfIndex(f.text, Math.max(0, f.text.search(ROUTE_DEF))), "route defined here"),
@@ -305,7 +312,7 @@ function r03(ctx) {
   return [
     risk(
       "AV-R03",
-      backends.map((n) => n.id),
+      owners.map((n) => n.id),
       evidence,
     ),
   ];
@@ -443,10 +450,10 @@ const HEALTH_ROUTE =
   /["'`]\/(?:api\/)?(?:health|healthz|ready|readyz|livez|healthcheck)(?:["'`/?])/;
 const HEALTH_PATH = /(^|\/)(?:health|healthz|ready|readyz|livez|healthcheck)(\/|\.[cm]?[jt]sx?$)/;
 function r08(ctx) {
-  const backends = byRole(ctx.model, "backend");
-  if (!backends.length || !ctx.source.some(isRouteFile)) return [];
+  const { owners } = routeOwners(ctx);
+  if (!owners.length) return [];
   if (ctx.source.some((f) => HEALTH_ROUTE.test(f.text) || HEALTH_PATH.test(f.rel))) return [];
-  const evidence = backends.flatMap((n) =>
+  const evidence = owners.flatMap((n) =>
     (n.evidence ?? [])
       .filter((e) => /^dependency|^python|^go module/.test(e.note ?? ""))
       .slice(0, 1),
@@ -454,7 +461,7 @@ function r08(ctx) {
   return [
     risk(
       "AV-R08",
-      backends.map((n) => n.id),
+      owners.map((n) => n.id),
       evidence,
     ),
   ];
