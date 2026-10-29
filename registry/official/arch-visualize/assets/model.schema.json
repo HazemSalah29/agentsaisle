@@ -20,8 +20,19 @@
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
     "role": {
       "enum": [
-        "client", "edge", "frontend", "backend", "worker", "queue", "cache", "database",
-        "storage", "search", "auth", "external", "observability"
+        "client",
+        "edge",
+        "frontend",
+        "backend",
+        "worker",
+        "queue",
+        "cache",
+        "database",
+        "storage",
+        "search",
+        "auth",
+        "external",
+        "observability"
       ]
     },
     "tier": { "enum": ["clients", "edge", "frontend", "backend", "async", "data", "external"] },

@@ -19,8 +19,18 @@
     "mongoose": { "tech": "mongodb", "role": "database", "label": "MongoDB" },
     "mongodb": { "tech": "mongodb", "role": "database", "label": "MongoDB" },
     "prisma": { "tech": "prisma", "role": "database", "label": "Database (Prisma)", "weak": true },
-    "@prisma/client": { "tech": "prisma", "role": "database", "label": "Database (Prisma)", "weak": true },
-    "drizzle-orm": { "tech": "drizzle", "role": "database", "label": "Database (Drizzle)", "weak": true },
+    "@prisma/client": {
+      "tech": "prisma",
+      "role": "database",
+      "label": "Database (Prisma)",
+      "weak": true
+    },
+    "drizzle-orm": {
+      "tech": "drizzle",
+      "role": "database",
+      "label": "Database (Drizzle)",
+      "weak": true
+    },
     "bullmq": { "tech": "bullmq", "role": "queue", "label": "Job queue (BullMQ)" },
     "bull": { "tech": "bullmq", "role": "queue", "label": "Job queue (Bull)" },
     "amqplib": { "tech": "rabbitmq", "role": "queue", "label": "RabbitMQ" },
@@ -30,7 +40,11 @@
     "resend": { "tech": "resend", "role": "external", "label": "Resend" },
     "twilio": { "tech": "twilio", "role": "external", "label": "Twilio" },
     "@aws-sdk/client-s3": { "tech": "aws-s3", "role": "storage", "label": "Object storage (S3)" },
-    "@elastic/elasticsearch": { "tech": "elasticsearch", "role": "search", "label": "Elasticsearch" },
+    "@elastic/elasticsearch": {
+      "tech": "elasticsearch",
+      "role": "search",
+      "label": "Elasticsearch"
+    },
     "@sentry/node": { "tech": "sentry", "role": "observability", "label": "Sentry" },
     "@sentry/nextjs": { "tech": "sentry", "role": "observability", "label": "Sentry" },
     "next-auth": { "tech": "nextauth", "role": "auth", "label": "Auth (NextAuth)" },
@@ -62,19 +76,44 @@
     "sqlserver": { "tech": "sqlserver", "label": "SQL Server" }
   },
   "envKeys": [
-    { "pattern": "^DATABASE_URL$", "tech": "database", "role": "database", "note": "env key DATABASE_URL" },
-    { "pattern": "^(REDIS|CACHE)_URL$", "tech": "redis", "role": "cache", "note": "env key REDIS_URL" },
+    {
+      "pattern": "^DATABASE_URL$",
+      "tech": "database",
+      "role": "database",
+      "note": "env key DATABASE_URL"
+    },
+    {
+      "pattern": "^(REDIS|CACHE)_URL$",
+      "tech": "redis",
+      "role": "cache",
+      "note": "env key REDIS_URL"
+    },
     { "pattern": "^STRIPE_", "tech": "stripe", "role": "external", "note": "env key STRIPE_*" },
     { "pattern": "^(S3_|AWS_S3_)", "tech": "aws-s3", "role": "storage", "note": "env key S3_*" },
-    { "pattern": "^(RESEND_|SENDGRID_)", "tech": "email", "role": "external", "note": "email provider key" },
-    { "pattern": "^(RABBITMQ|AMQP)_URL$", "tech": "rabbitmq", "role": "queue", "note": "env key RABBITMQ_URL" }
+    {
+      "pattern": "^(RESEND_|SENDGRID_)",
+      "tech": "email",
+      "role": "external",
+      "note": "email provider key"
+    },
+    {
+      "pattern": "^(RABBITMQ|AMQP)_URL$",
+      "tech": "rabbitmq",
+      "role": "queue",
+      "note": "env key RABBITMQ_URL"
+    }
   ],
   "hosting": {
     "vercel.json": { "tech": "vercel", "role": "edge", "label": "Vercel", "serverless": true },
     "netlify.toml": { "tech": "netlify", "role": "edge", "label": "Netlify", "serverless": true },
     "fly.toml": { "tech": "fly", "role": "edge", "label": "Fly.io" },
     "render.yaml": { "tech": "render", "role": "edge", "label": "Render" },
-    "wrangler.toml": { "tech": "cloudflare", "role": "edge", "label": "Cloudflare Workers", "serverless": true }
+    "wrangler.toml": {
+      "tech": "cloudflare",
+      "role": "edge",
+      "label": "Cloudflare Workers",
+      "serverless": true
+    }
   },
   "pyDeps": {
     "fastapi": { "tech": "fastapi", "role": "backend", "label": "FastAPI" },
@@ -84,7 +123,12 @@
     "psycopg2": { "tech": "postgresql", "role": "database", "label": "PostgreSQL" },
     "psycopg2-binary": { "tech": "postgresql", "role": "database", "label": "PostgreSQL" },
     "psycopg": { "tech": "postgresql", "role": "database", "label": "PostgreSQL" },
-    "sqlalchemy": { "tech": "sqlalchemy", "role": "database", "label": "Database (SQLAlchemy)", "weak": true },
+    "sqlalchemy": {
+      "tech": "sqlalchemy",
+      "role": "database",
+      "label": "Database (SQLAlchemy)",
+      "weak": true
+    },
     "pymongo": { "tech": "mongodb", "role": "database", "label": "MongoDB" },
     "celery": { "tech": "celery", "role": "queue", "label": "Job queue (Celery)" },
     "stripe": { "tech": "stripe", "role": "external", "label": "Stripe" },
