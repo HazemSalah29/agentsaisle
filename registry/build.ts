@@ -274,6 +274,8 @@ export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySki
           demo: {
             ...(meta.demo.url ? { url: meta.demo.url } : {}),
             ...(meta.demo.caption ? { caption: meta.demo.caption } : {}),
+            ...(meta.demo.embed ? { embed: true } : {}),
+            ...(meta.demo.steps?.length ? { steps: meta.demo.steps } : {}),
             screenshots: meta.demo.screenshots,
           },
         }

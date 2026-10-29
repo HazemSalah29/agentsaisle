@@ -173,6 +173,21 @@ describe("house standard meta fields", () => {
     expect(OfficialMeta.parse({ ...base, demo }).demo).toEqual({ ...demo, screenshots: [] });
     expect(OfficialMeta.safeParse({ ...base, demo: { caption: "" } }).success).toBe(false);
   });
+  it("accepts an embedded demo with numbered steps, and limits them", () => {
+    const steps = [{ title: "Discover", text: "A script finds the parts." }];
+    const demo = { url: "/demos/x/y.html", embed: true, steps };
+    expect(OfficialMeta.parse({ ...base, demo }).demo).toMatchObject({ embed: true, steps });
+    const nine = Array.from({ length: 9 }, () => steps[0]);
+    expect(OfficialMeta.safeParse({ ...base, demo: { steps: nine } }).success).toBe(false);
+    expect(
+      OfficialMeta.safeParse({ ...base, demo: { steps: [{ title: "", text: "x" }] } }).success,
+    ).toBe(false);
+    expect(
+      OfficialMeta.safeParse({ ...base, demo: { steps: [{ title: "a", text: "b", extra: 1 }] } })
+        .success,
+    ).toBe(false);
+    expect(OfficialMeta.safeParse({ ...base, demo: { embed: "yes" } }).success).toBe(false);
+  });
   it("defaults demo screenshots to an empty list", () => {
     expect(
       OfficialMeta.parse({ ...base, demo: { url: "https://demo.example.dev" } }).demo?.screenshots,
