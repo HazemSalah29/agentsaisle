@@ -462,34 +462,168 @@
   ],
   "risks": [
     {
-      "id": "agent-single-database",
+      "id": "agent-shared-redis",
+      "title": "Queue jobs and sessions share one Redis",
+      "severity": "info",
+      "nodes": ["bullmq", "cache"],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 27,
+          "note": "one redis service"
+        },
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 5,
+          "note": "queue uses REDIS_URL"
+        }
+      ],
+      "why": "Receipt jobs and user sessions use the same Redis, so a burst of jobs can compete with session lookups for memory and connections.",
+      "check": "Check the memory limit and eviction policy, and whether the queue needs its own Redis instance.",
+      "source": "agent"
+    },
+    {
+      "id": "AV-R01",
+      "title": "Single database with no replica or backup configuration",
       "severity": "warn",
       "nodes": ["db"],
       "evidence": [
         {
           "file": "docker-compose.yml",
           "line": 23,
-          "note": "image postgres:16"
+          "note": "image postgres:16, ports 5432:5432"
+        },
+        {
+          "file": "apps/api/prisma/schema.prisma",
+          "line": 2,
+          "note": "datasource provider postgresql"
         }
       ],
-      "why": "One PostgreSQL service and no replica or backup configuration in the files read.",
-      "check": "Confirm backups and a restore path exist outside this repository, and decide whether a replica is needed.",
-      "source": "agent"
+      "why": "The model has one database and none of the files read mention a replica, a standby, a backup tool or a managed database service.",
+      "check": "Confirm where backups are taken and that a restore has been tried. Decide whether a replica or a managed service is worth its cost for this project.",
+      "source": "rule"
     },
     {
-      "id": "agent-session-no-expiry",
+      "id": "AV-R02",
+      "title": "Cache entries written without an expiry",
       "severity": "info",
-      "nodes": ["cache", "api"],
+      "nodes": ["api", "cache"],
       "evidence": [
         {
           "file": "apps/api/src/lib/session.ts",
           "line": 10,
-          "note": "redis.set without EX"
+          "note": "redis .set() without an expiry"
         }
       ],
-      "why": "Sessions are written to Redis without an expiry, so they stay until evicted.",
-      "check": "Check the Redis eviction policy, or add a TTL when saving a session.",
-      "source": "agent"
+      "why": "Heuristic: a Redis write has no expiry option (EX, PX, ttl) and no expire call close by, so the entry stays until it is evicted or deleted.",
+      "check": "Check the eviction policy and whether these keys should expire. Some data (counters, locks you release yourself) is meant to stay; adding a TTL there can lose data.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R03",
+      "title": "No rate limiting found on a public API",
+      "severity": "warn",
+      "nodes": ["api"],
+      "evidence": [
+        {
+          "file": "apps/api/src/server.ts",
+          "line": 6,
+          "note": "route defined here"
+        }
+      ],
+      "why": "Heuristic: the backend defines routes, but no rate-limit package or middleware appears in the dependencies or code read. It may be done at a gateway, CDN or proxy that these files do not show.",
+      "check": "Look for rate limiting at the proxy, CDN or API gateway. If there is none, consider limits on login, signup and expensive routes first.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R04",
+      "title": "External call without a timeout",
+      "severity": "warn",
+      "nodes": ["api", "stripe"],
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 13,
+          "note": "fetch to api.stripe.com without a timeout"
+        }
+      ],
+      "why": "Heuristic: a call to an outside host has no AbortSignal.timeout, signal or timeout option, so a slow provider can hold the request open.",
+      "check": "Check the client's default timeout. Add an explicit one that is shorter than your own request limit, and decide what the user sees when it fires.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R05",
+      "title": "Database query inside a loop",
+      "severity": "warn",
+      "nodes": ["api"],
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 11,
+          "note": "awaited database call inside a loop"
+        }
+      ],
+      "why": "Heuristic: an awaited database call sits inside a loop or an async map, which often means one query per item (the N+1 pattern).",
+      "check": "Check how many items the loop runs over. A single batched query (findMany with a list, a join, an IN clause) is usually faster, but can be heavier for very large lists.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R07",
+      "title": "Secret-looking variable exposed to the browser",
+      "severity": "warn",
+      "nodes": ["web"],
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 6,
+          "note": "env name NEXT_PUBLIC_ANALYTICS_SECRET_KEY (value not read)"
+        }
+      ],
+      "why": "A variable with a browser-exposed prefix (NEXT_PUBLIC_, VITE_ and similar) has a name containing SECRET, PRIVATE, KEY, TOKEN or PASSWORD. Such variables are copied into the public JavaScript bundle. Only the name was read, never the value.",
+      "check": "Check whether the value is really meant to be public. If it is a secret, move it to the server and rotate it, because it may already be in a deployed bundle.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R08",
+      "title": "No health check endpoint found",
+      "severity": "info",
+      "nodes": ["api"],
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 6,
+          "note": "dependency express"
+        }
+      ],
+      "why": "Heuristic: the backend defines routes but none of the files read has a /health, /healthz or /ready route.",
+      "check": "Check whether your host, load balancer or orchestrator probes the service another way (a TCP check, the home page). If not, a small health route lets it restart or stop sending traffic to a stuck instance.",
+      "source": "rule"
+    },
+    {
+      "id": "AV-R10",
+      "title": "Data service exposed or unprotected in docker-compose",
+      "severity": "warn",
+      "nodes": ["cache", "db"],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 24,
+          "note": "db: port 5432:5432 published on all interfaces"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 28,
+          "note": "cache: port 6379:6379 published on all interfaces"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 27,
+          "note": "cache: Redis has no requirepass or REDIS_PASSWORD"
+        }
+      ],
+      "why": "A compose service for a data store publishes its port to the host on all interfaces, or Redis has no password (requirepass) configured.",
+      "check": "Check where this compose file is used. For local development it is often fine; on a shared or public machine, bind ports to 127.0.0.1, set a password and keep the service off public networks.",
+      "source": "rule"
     }
   ],
   "inferred": ["edge:bullmq-cache", "edge:vercel-web"]

@@ -226,6 +226,10 @@
         letter-spacing: 0.05em;
         text-transform: uppercase;
       }
+      .risk .risk-title {
+        margin: 2px 0 4px;
+        font-size: 1rem;
+      }
       .risk p {
         margin: 4px 0;
       }
@@ -1243,6 +1247,7 @@
             "article",
             { class: "risk" },
             h("p", { class: "tag" }, "Possible risk to check · " + r.severity),
+            r.title ? h("h4", { class: "risk-title" }, r.title) : null,
             h("p", {}, r.why),
             h("p", {}, h("strong", {}, "What to check: "), r.check),
             evidenceList(r.evidence),
