@@ -200,6 +200,60 @@ function skipBlock(rows, n, indent) {
   return k;
 }
 
+/**
+ * Replace comments with spaces (newlines kept, so line numbers stay right) and leave strings alone.
+ * Regex literals are not understood; a stray quote inside one is a known limit.
+ */
+export function maskComments(src) {
+  let out = "";
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const d = src[i + 1];
+    if (c === "/" && d === "/") {
+      while (i < n && src[i] !== "\n") {
+        out += " ";
+        i++;
+      }
+    } else if (c === "/" && d === "*") {
+      const e = src.indexOf("*/", i + 2);
+      const end = e < 0 ? n : e + 2;
+      for (; i < end; i++) out += src[i] === "\n" ? "\n" : " ";
+    } else if (c === '"' || c === "'" || c === "`") {
+      let j = i + 1;
+      while (j < n && src[j] !== c && !(c !== "`" && src[j] === "\n")) j += src[j] === "\\" ? 2 : 1;
+      out += src.slice(i, j + 1);
+      i = j + 1;
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out;
+}
+
+/**
+ * The text between the bracket at `open` and its partner, with the index just after the partner.
+ * Strings are skipped. Returns null when the brackets never balance.
+ */
+export function balanced(src, open) {
+  const pairs = { "(": ")", "{": "}", "[": "]" };
+  const close = pairs[src[open]];
+  if (!close) return null;
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === "`") {
+      i++;
+      while (i < src.length && src[i] !== c && !(c !== "`" && src[i] === "\n"))
+        i += src[i] === "\\" ? 2 : 1;
+    } else if (c === src[open]) depth++;
+    else if (c === close && --depth === 0) return { text: src.slice(open + 1, i), end: i + 1 };
+  }
+  return null;
+}
+
 /** Minimal flag parser: --flag, --key value, --key=value; everything else is positional. */
 export function parseArgs(argv, { booleans = [], strings = [] } = {}) {
   const flags = {};
