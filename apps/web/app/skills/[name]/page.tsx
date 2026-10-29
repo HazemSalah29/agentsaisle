@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AuditBlock } from "../../../components/AuditBlock";
 import { Badge } from "../../../components/Badge";
+import { DemoEmbed } from "../../../components/DemoEmbed";
 import { GradeBadge } from "../../../components/GradeBadge";
 import { PreviewPairs } from "../../../components/PreviewPairs";
 import { InstallCommand } from "../../../components/InstallCommand";
@@ -129,20 +130,32 @@ export default async function SkillPage({ params }: Props) {
           </p>
         </section>
 
-        {skill.demo && skill.demo.screenshots.length > 0 && (
+        {skill.demo?.embed && skill.demo.url && (
+          <DemoEmbed
+            url={skill.demo.url}
+            title={`${skill.name} example: the page it generated for a real project`}
+            caption={skill.demo.caption}
+            steps={skill.demo.steps}
+          />
+        )}
+
+        {skill.demo && !skill.demo.embed && skill.demo.screenshots.length > 0 && (
           <section aria-labelledby="preview" className="space-y-4">
             <h2 id="preview" className="text-xl">
               Preview
             </h2>
             <p className="text-sm text-muted">
-              {paired
-                ? "The same demo site before and after this skill: English on the left, Arabic on the right. The Arabic text is a machine-written draft that no native speaker has reviewed yet. These screenshots show a result, not a measured number."
-                : "Screenshots of a demo site built only from this skill's kit. They show the style, not a measured result."}
+              {skill.demo.caption
+                ? skill.demo.caption
+                : paired
+                  ? "The same demo site before and after this skill: English on the left, Arabic on the right. The Arabic text is a machine-written draft that no native speaker has reviewed yet. These screenshots show a result, not a measured number."
+                  : "Screenshots of a demo site built only from this skill's kit. They show the style, not a measured result."}
               {skill.demo.url && (
                 <>
                   {" "}
                   <a
                     href={skill.demo.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-accent-ink underline underline-offset-4"
                   >

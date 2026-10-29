@@ -1,0 +1,4 @@
+{
+  "name": "worker",
+  "dependencies": { "@prisma/client": "5.0.0", "bullmq": "5.0.0", "ioredis": "5.4.0", "resend": "3.0.0" }
+}

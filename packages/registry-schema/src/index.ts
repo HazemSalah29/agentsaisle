@@ -75,8 +75,28 @@ export const MetaPermissions = z
   })
   .strict();
 
+/** A demo link: a full URL, or a path on this site such as /demos/<skill>/<name>.html. */
+const DemoUrl = z.union([
+  z.url(),
+  z.string().regex(/^\/(?!\/)[\w./-]+$/, "a full URL or a path starting with /"),
+]);
+
 export const SkillDemo = z
-  .object({ url: z.url().optional(), screenshots: z.array(z.string().min(1)).default([]) })
+  .object({
+    url: DemoUrl.optional(),
+    /** One or two sentences that say what the preview shows. Replaces the default text on the skill page. */
+    caption: z.string().min(1).max(900).optional(),
+    /** Show the url as an interactive page on the skill page, instead of the screenshots. */
+    embed: z.boolean().optional(),
+    /** "How it was made", shown as a numbered list under an embedded demo. */
+    steps: z
+      .array(
+        z.object({ title: z.string().min(1).max(80), text: z.string().min(1).max(600) }).strict(),
+      )
+      .max(8)
+      .optional(),
+    screenshots: z.array(z.string().min(1)).default([]),
+  })
   .strict();
 export type SkillDemo = z.infer<typeof SkillDemo>;
 
@@ -208,7 +228,15 @@ export const RegistrySkill = z.object({
       needsApiKeys: z.array(z.string()),
     })
     .optional(),
-  demo: z.object({ url: z.string().optional(), screenshots: z.array(z.string()) }).optional(),
+  demo: z
+    .object({
+      url: z.string().optional(),
+      caption: z.string().optional(),
+      embed: z.boolean().optional(),
+      steps: z.array(z.object({ title: z.string(), text: z.string() })).optional(),
+      screenshots: z.array(z.string()),
+    })
+    .optional(),
   /** Grade and counts from the stored audit (A3). Absent when the skill has not been audited. */
   audit: AuditSummary.optional(),
 });

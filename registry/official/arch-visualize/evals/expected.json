@@ -1,0 +1,234 @@
+{
+  "nodes": [
+    {
+      "id": "vercel",
+      "role": "edge",
+      "tech": "vercel",
+      "evidence": [
+        {
+          "file": "apps/web/vercel.json",
+          "line": 1
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "role": "frontend",
+      "tech": "nextjs",
+      "evidence": [
+        {
+          "file": "apps/web/package.json",
+          "line": 1
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 2
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "role": "backend",
+      "tech": "express",
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 6
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "id": "bullmq",
+      "role": "queue",
+      "tech": "bullmq",
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 5
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "role": "worker",
+      "tech": "generic-worker",
+      "evidence": [
+        {
+          "file": "apps/worker/package.json",
+          "line": 3
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 15
+        }
+      ]
+    },
+    {
+      "id": "cache",
+      "role": "cache",
+      "tech": "redis",
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 27
+        },
+        {
+          "file": ".env.example",
+          "line": 3
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "role": "database",
+      "tech": "postgresql",
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 23
+        },
+        {
+          "file": "apps/api/prisma/schema.prisma",
+          "line": 2
+        }
+      ]
+    },
+    {
+      "id": "resend",
+      "role": "external",
+      "tech": "resend",
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 8
+        }
+      ]
+    },
+    {
+      "id": "stripe",
+      "role": "external",
+      "tech": "stripe",
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 9
+        }
+      ]
+    }
+  ],
+  "edges": [
+    "api-cache",
+    "api-db",
+    "web-api",
+    "worker-cache",
+    "worker-db"
+  ],
+  "risks": {
+    "fire": {
+      "AV-R01": {
+        "nodes": [
+          "db"
+        ],
+        "evidence": [
+          {
+            "file": "docker-compose.yml",
+            "line": 23
+          }
+        ]
+      },
+      "AV-R02": {
+        "nodes": [
+          "api",
+          "cache"
+        ],
+        "evidence": [
+          {
+            "file": "apps/api/src/lib/session.ts",
+            "line": 10
+          }
+        ]
+      },
+      "AV-R03": {
+        "nodes": [
+          "api"
+        ],
+        "evidence": [
+          {
+            "file": "apps/api/src/server.ts",
+            "line": 6
+          }
+        ]
+      },
+      "AV-R04": {
+        "nodes": [
+          "api",
+          "stripe"
+        ],
+        "evidence": [
+          {
+            "file": "apps/api/src/routes/checkout.ts",
+            "line": 13
+          }
+        ]
+      },
+      "AV-R05": {
+        "nodes": [
+          "api"
+        ],
+        "evidence": [
+          {
+            "file": "apps/api/src/routes/checkout.ts",
+            "line": 11
+          }
+        ]
+      },
+      "AV-R07": {
+        "nodes": [
+          "web"
+        ],
+        "evidence": [
+          {
+            "file": ".env.example",
+            "line": 6
+          }
+        ]
+      },
+      "AV-R08": {
+        "nodes": [
+          "api"
+        ],
+        "evidence": [
+          {
+            "file": "apps/api/package.json",
+            "line": 6
+          }
+        ]
+      },
+      "AV-R10": {
+        "nodes": [
+          "cache",
+          "db"
+        ],
+        "evidence": [
+          {
+            "file": "docker-compose.yml",
+            "line": 24
+          },
+          {
+            "file": "docker-compose.yml",
+            "line": 27
+          }
+        ]
+      }
+    },
+    "silent": [
+      "AV-R06",
+      "AV-R09"
+    ],
+    "note": "R06 stays silent because the fixture has a queue (BullMQ); R09 because vercel.json sits in apps/web, which has no Postgres client; saveFlash in session.ts is a Redis set with EX, so R02 reports only saveSession."
+  }
+}

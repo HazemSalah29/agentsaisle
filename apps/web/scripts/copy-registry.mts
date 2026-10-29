@@ -1,7 +1,7 @@
 // Publishes the compiled registry as a static file at /registry.json.
-import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.resolve(here, "../../../registry/dist/registry.json");
@@ -56,3 +56,33 @@ for (const f of (await readdir(badgesSrc).catch(() => [])).filter((n) => n.endsW
   badges++;
 }
 console.log(`web: copied ${badges} badges to public/badges/`);
+
+// Live demos: registry/official/<name>/evals/demo/<id>.architecture.json is rendered with the skill's own
+// render script to /demos/<name>/<id>.html, so a demo always uses the current viewer. A model that does not
+// render fails the build: the models live in this repository, so that is a bug to fix, not to skip.
+const demosOut = path.resolve(here, "../public/demos");
+await rm(demosOut, { recursive: true, force: true });
+let demos = 0;
+for (const skill of await readdir(officialDir, { withFileTypes: true })) {
+  if (!skill.isDirectory()) continue;
+  const demoDir = path.join(officialDir, skill.name, "evals", "demo");
+  const models = (await readdir(demoDir).catch(() => [])).filter((f) =>
+    f.endsWith(".architecture.json"),
+  );
+  if (models.length === 0) continue;
+  const renderFile = path.join(officialDir, skill.name, "scripts", "render.mjs");
+  const { renderPage } = (await import(pathToFileURL(renderFile).href)) as {
+    renderPage: (model: unknown) => string;
+  };
+  await mkdir(path.join(demosOut, skill.name), { recursive: true });
+  for (const f of models) {
+    const model = JSON.parse(await readFile(path.join(demoDir, f), "utf8"));
+    const html = renderPage(model);
+    await writeFile(
+      path.join(demosOut, skill.name, f.replace(/\.architecture\.json$/, ".html")),
+      html,
+    );
+    demos++;
+  }
+}
+console.log(`web: rendered ${demos} live demo page(s) to public/demos/`);

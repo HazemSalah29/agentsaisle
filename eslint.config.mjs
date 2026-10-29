@@ -11,6 +11,7 @@ export default tseslint.config(
       "demos/*/src/components/kit/**",
       "packages/audit/fixtures/**",
       "registry/official/arabic-rtl/evals/fixture-app/**",
+      "registry/official/arch-visualize/evals/fixture-app/**",
     ],
   },
   js.configs.recommended,

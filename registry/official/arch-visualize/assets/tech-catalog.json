@@ -1,0 +1,699 @@
+{
+  "version": 1,
+  "deps": {
+    "next": {
+      "tech": "nextjs",
+      "role": "frontend",
+      "label": "Next.js app"
+    },
+    "react-dom": {
+      "tech": "react",
+      "role": "frontend",
+      "label": "React app",
+      "weak": true
+    },
+    "vue": {
+      "tech": "vue",
+      "role": "frontend",
+      "label": "Vue app",
+      "weak": true
+    },
+    "svelte": {
+      "tech": "svelte",
+      "role": "frontend",
+      "label": "Svelte app",
+      "weak": true
+    },
+    "express": {
+      "tech": "express",
+      "role": "backend",
+      "label": "Express API"
+    },
+    "fastify": {
+      "tech": "fastify",
+      "role": "backend",
+      "label": "Fastify API"
+    },
+    "hono": {
+      "tech": "hono",
+      "role": "backend",
+      "label": "Hono API"
+    },
+    "koa": {
+      "tech": "koa",
+      "role": "backend",
+      "label": "Koa API"
+    },
+    "@nestjs/core": {
+      "tech": "nestjs",
+      "role": "backend",
+      "label": "NestJS API"
+    },
+    "ioredis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis"
+    },
+    "redis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis"
+    },
+    "@upstash/redis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis (Upstash)"
+    },
+    "pg": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "postgres": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "mysql2": {
+      "tech": "mysql",
+      "role": "database",
+      "label": "MySQL"
+    },
+    "mongoose": {
+      "tech": "mongodb",
+      "role": "database",
+      "label": "MongoDB"
+    },
+    "mongodb": {
+      "tech": "mongodb",
+      "role": "database",
+      "label": "MongoDB"
+    },
+    "prisma": {
+      "tech": "prisma",
+      "role": "database",
+      "label": "Database (Prisma)",
+      "weak": true
+    },
+    "@prisma/client": {
+      "tech": "prisma",
+      "role": "database",
+      "label": "Database (Prisma)",
+      "weak": true
+    },
+    "drizzle-orm": {
+      "tech": "drizzle",
+      "role": "database",
+      "label": "Database (Drizzle)",
+      "weak": true
+    },
+    "bullmq": {
+      "tech": "bullmq",
+      "role": "queue",
+      "label": "Job queue (BullMQ)"
+    },
+    "bull": {
+      "tech": "bullmq",
+      "role": "queue",
+      "label": "Job queue (Bull)"
+    },
+    "amqplib": {
+      "tech": "rabbitmq",
+      "role": "queue",
+      "label": "RabbitMQ"
+    },
+    "kafkajs": {
+      "tech": "kafka",
+      "role": "queue",
+      "label": "Kafka"
+    },
+    "stripe": {
+      "tech": "stripe",
+      "role": "external",
+      "label": "Stripe"
+    },
+    "@sendgrid/mail": {
+      "tech": "sendgrid",
+      "role": "external",
+      "label": "SendGrid"
+    },
+    "resend": {
+      "tech": "resend",
+      "role": "external",
+      "label": "Resend"
+    },
+    "twilio": {
+      "tech": "twilio",
+      "role": "external",
+      "label": "Twilio"
+    },
+    "@aws-sdk/client-s3": {
+      "tech": "aws-s3",
+      "role": "storage",
+      "label": "Object storage (S3)"
+    },
+    "@elastic/elasticsearch": {
+      "tech": "elasticsearch",
+      "role": "search",
+      "label": "Elasticsearch"
+    },
+    "@sentry/node": {
+      "tech": "sentry",
+      "role": "observability",
+      "label": "Sentry"
+    },
+    "@sentry/nextjs": {
+      "tech": "sentry",
+      "role": "observability",
+      "label": "Sentry"
+    },
+    "next-auth": {
+      "tech": "nextauth",
+      "role": "auth",
+      "label": "Auth (NextAuth)",
+      "inProcess": true
+    },
+    "@clerk/nextjs": {
+      "tech": "clerk",
+      "role": "auth",
+      "label": "Clerk",
+      "external": true
+    },
+    "@anthropic-ai/sdk": {
+      "tech": "anthropic",
+      "role": "external",
+      "label": "Anthropic API"
+    },
+    "openai": {
+      "tech": "openai",
+      "role": "external",
+      "label": "OpenAI API"
+    },
+    "@google/genai": {
+      "tech": "gemini",
+      "role": "external",
+      "label": "Google Gemini API"
+    },
+    "@google/generative-ai": {
+      "tech": "gemini",
+      "role": "external",
+      "label": "Google Gemini API"
+    },
+    "@mistralai/mistralai": {
+      "tech": "mistral",
+      "role": "external",
+      "label": "Mistral API"
+    },
+    "@octokit/rest": {
+      "tech": "github",
+      "role": "external",
+      "label": "GitHub API"
+    },
+    "octokit": {
+      "tech": "github",
+      "role": "external",
+      "label": "GitHub API"
+    },
+    "@supabase/supabase-js": {
+      "tech": "supabase",
+      "role": "database",
+      "label": "Supabase"
+    },
+    "firebase-admin": {
+      "tech": "firebase",
+      "role": "external",
+      "label": "Firebase"
+    },
+    "firebase": {
+      "tech": "firebase",
+      "role": "external",
+      "label": "Firebase"
+    },
+    "nodemailer": {
+      "tech": "smtp",
+      "role": "external",
+      "label": "Email (SMTP)"
+    },
+    "@aws-sdk/client-ses": {
+      "tech": "aws-ses",
+      "role": "external",
+      "label": "Email (SES)"
+    },
+    "@aws-sdk/client-sqs": {
+      "tech": "aws-sqs",
+      "role": "queue",
+      "label": "Queue (SQS)"
+    },
+    "@neondatabase/serverless": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL (Neon)"
+    },
+    "@vercel/postgres": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL (Vercel)"
+    },
+    "@vercel/kv": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis (Vercel KV)"
+    },
+    "@vercel/blob": {
+      "tech": "vercel-blob",
+      "role": "storage",
+      "label": "Object storage (Vercel Blob)"
+    },
+    "@planetscale/database": {
+      "tech": "mysql",
+      "role": "database",
+      "label": "MySQL (PlanetScale)"
+    },
+    "@libsql/client": {
+      "tech": "sqlite",
+      "role": "database",
+      "label": "SQLite (libSQL)"
+    },
+    "better-sqlite3": {
+      "tech": "sqlite",
+      "role": "database",
+      "label": "SQLite"
+    },
+    "typeorm": {
+      "tech": "typeorm",
+      "role": "database",
+      "label": "Database (TypeORM)",
+      "weak": true
+    },
+    "sequelize": {
+      "tech": "sequelize",
+      "role": "database",
+      "label": "Database (Sequelize)",
+      "weak": true
+    },
+    "knex": {
+      "tech": "knex",
+      "role": "database",
+      "label": "Database (Knex)",
+      "weak": true
+    },
+    "dockerode": {
+      "tech": "docker",
+      "role": "external",
+      "label": "Docker Engine API"
+    },
+    "algoliasearch": {
+      "tech": "algolia",
+      "role": "search",
+      "label": "Algolia"
+    },
+    "meilisearch": {
+      "tech": "meilisearch",
+      "role": "search",
+      "label": "Meilisearch"
+    },
+    "cloudinary": {
+      "tech": "cloudinary",
+      "role": "storage",
+      "label": "Cloudinary"
+    },
+    "posthog-node": {
+      "tech": "posthog",
+      "role": "observability",
+      "label": "PostHog"
+    },
+    "@auth0/nextjs-auth0": {
+      "tech": "auth0",
+      "role": "auth",
+      "label": "Auth0",
+      "external": true
+    },
+    "@auth/core": {
+      "tech": "nextauth",
+      "role": "auth",
+      "label": "Auth (Auth.js)",
+      "inProcess": true
+    },
+    "passport": {
+      "tech": "passport",
+      "role": "auth",
+      "label": "Auth (Passport)",
+      "inProcess": true
+    }
+  },
+  "images": {
+    "redis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis"
+    },
+    "valkey": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Valkey"
+    },
+    "postgres": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "mysql": {
+      "tech": "mysql",
+      "role": "database",
+      "label": "MySQL"
+    },
+    "mariadb": {
+      "tech": "mysql",
+      "role": "database",
+      "label": "MariaDB"
+    },
+    "mongo": {
+      "tech": "mongodb",
+      "role": "database",
+      "label": "MongoDB"
+    },
+    "nginx": {
+      "tech": "nginx",
+      "role": "edge",
+      "label": "Nginx"
+    },
+    "traefik": {
+      "tech": "traefik",
+      "role": "edge",
+      "label": "Traefik"
+    },
+    "rabbitmq": {
+      "tech": "rabbitmq",
+      "role": "queue",
+      "label": "RabbitMQ"
+    },
+    "kafka": {
+      "tech": "kafka",
+      "role": "queue",
+      "label": "Kafka"
+    },
+    "minio": {
+      "tech": "minio",
+      "role": "storage",
+      "label": "Object storage (MinIO)"
+    },
+    "elasticsearch": {
+      "tech": "elasticsearch",
+      "role": "search",
+      "label": "Elasticsearch"
+    },
+    "opensearch": {
+      "tech": "elasticsearch",
+      "role": "search",
+      "label": "OpenSearch"
+    },
+    "grafana": {
+      "tech": "grafana",
+      "role": "observability",
+      "label": "Grafana"
+    },
+    "prometheus": {
+      "tech": "prometheus",
+      "role": "observability",
+      "label": "Prometheus"
+    }
+  },
+  "prismaProviders": {
+    "postgresql": {
+      "tech": "postgresql",
+      "label": "PostgreSQL"
+    },
+    "postgres": {
+      "tech": "postgresql",
+      "label": "PostgreSQL"
+    },
+    "mysql": {
+      "tech": "mysql",
+      "label": "MySQL"
+    },
+    "mongodb": {
+      "tech": "mongodb",
+      "label": "MongoDB"
+    },
+    "sqlite": {
+      "tech": "sqlite",
+      "label": "SQLite"
+    },
+    "sqlserver": {
+      "tech": "sqlserver",
+      "label": "SQL Server"
+    }
+  },
+  "envKeys": [
+    {
+      "pattern": "^DATABASE_URL$",
+      "tech": "database",
+      "role": "database",
+      "note": "env key DATABASE_URL"
+    },
+    {
+      "pattern": "^(REDIS|CACHE)_URL$",
+      "tech": "redis",
+      "role": "cache",
+      "note": "env key REDIS_URL"
+    },
+    {
+      "pattern": "^STRIPE_",
+      "tech": "stripe",
+      "role": "external",
+      "note": "env key STRIPE_*"
+    },
+    {
+      "pattern": "^(S3_|AWS_S3_)",
+      "tech": "aws-s3",
+      "role": "storage",
+      "note": "env key S3_*"
+    },
+    {
+      "pattern": "^(RESEND_|SENDGRID_)",
+      "tech": "email",
+      "role": "external",
+      "note": "email provider key"
+    },
+    {
+      "pattern": "^(RABBITMQ|AMQP)_URL$",
+      "tech": "rabbitmq",
+      "role": "queue",
+      "note": "env key RABBITMQ_URL"
+    },
+    {
+      "pattern": "^ANTHROPIC_",
+      "tech": "anthropic",
+      "role": "external",
+      "note": "env key ANTHROPIC_*"
+    },
+    {
+      "pattern": "^OPENAI_",
+      "tech": "openai",
+      "role": "external",
+      "note": "env key OPENAI_*"
+    },
+    {
+      "pattern": "^(GEMINI|GOOGLE_GENERATIVE_AI)_",
+      "tech": "gemini",
+      "role": "external",
+      "note": "env key GEMINI_*"
+    },
+    {
+      "pattern": "^GITHUB_",
+      "tech": "github",
+      "role": "external",
+      "note": "env key GITHUB_*"
+    },
+    {
+      "pattern": "^SUPABASE_",
+      "tech": "supabase",
+      "role": "database",
+      "note": "env key SUPABASE_*"
+    },
+    {
+      "pattern": "^MONGO(DB)?_(URI|URL)$",
+      "tech": "mongodb",
+      "role": "database",
+      "note": "env key MONGODB_URI"
+    },
+    {
+      "pattern": "^(POSTGRES|PG)_(URL|URI)$|^POSTGRES_PRISMA_URL$",
+      "tech": "postgresql",
+      "role": "database",
+      "note": "env key POSTGRES_URL"
+    },
+    {
+      "pattern": "^SENTRY_",
+      "tech": "sentry",
+      "role": "observability",
+      "note": "env key SENTRY_*"
+    },
+    {
+      "pattern": "^SMTP_",
+      "tech": "smtp",
+      "role": "external",
+      "note": "env key SMTP_*"
+    }
+  ],
+  "hosting": {
+    "vercel.json": {
+      "tech": "vercel",
+      "role": "edge",
+      "label": "Vercel",
+      "serverless": true
+    },
+    "netlify.toml": {
+      "tech": "netlify",
+      "role": "edge",
+      "label": "Netlify",
+      "serverless": true
+    },
+    "fly.toml": {
+      "tech": "fly",
+      "role": "edge",
+      "label": "Fly.io"
+    },
+    "render.yaml": {
+      "tech": "render",
+      "role": "edge",
+      "label": "Render"
+    },
+    "wrangler.toml": {
+      "tech": "cloudflare",
+      "role": "edge",
+      "label": "Cloudflare Workers",
+      "serverless": true
+    }
+  },
+  "pyDeps": {
+    "fastapi": {
+      "tech": "fastapi",
+      "role": "backend",
+      "label": "FastAPI"
+    },
+    "flask": {
+      "tech": "flask",
+      "role": "backend",
+      "label": "Flask"
+    },
+    "django": {
+      "tech": "django",
+      "role": "backend",
+      "label": "Django"
+    },
+    "redis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis"
+    },
+    "psycopg2": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "psycopg2-binary": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "psycopg": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "sqlalchemy": {
+      "tech": "sqlalchemy",
+      "role": "database",
+      "label": "Database (SQLAlchemy)",
+      "weak": true
+    },
+    "pymongo": {
+      "tech": "mongodb",
+      "role": "database",
+      "label": "MongoDB"
+    },
+    "celery": {
+      "tech": "celery",
+      "role": "queue",
+      "label": "Job queue (Celery)"
+    },
+    "stripe": {
+      "tech": "stripe",
+      "role": "external",
+      "label": "Stripe"
+    },
+    "boto3": {
+      "tech": "aws-s3",
+      "role": "storage",
+      "label": "AWS (boto3)"
+    },
+    "anthropic": {
+      "tech": "anthropic",
+      "role": "external",
+      "label": "Anthropic API"
+    },
+    "openai": {
+      "tech": "openai",
+      "role": "external",
+      "label": "OpenAI API"
+    },
+    "google-generativeai": {
+      "tech": "gemini",
+      "role": "external",
+      "label": "Google Gemini API"
+    },
+    "google-genai": {
+      "tech": "gemini",
+      "role": "external",
+      "label": "Google Gemini API"
+    }
+  },
+  "goModules": {
+    "github.com/gin-gonic/gin": {
+      "tech": "gin",
+      "role": "backend",
+      "label": "Gin API"
+    },
+    "github.com/labstack/echo": {
+      "tech": "echo",
+      "role": "backend",
+      "label": "Echo API"
+    },
+    "github.com/go-chi/chi": {
+      "tech": "chi",
+      "role": "backend",
+      "label": "chi API"
+    },
+    "github.com/redis/go-redis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis"
+    },
+    "github.com/go-redis/redis": {
+      "tech": "redis",
+      "role": "cache",
+      "label": "Redis"
+    },
+    "github.com/lib/pq": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "github.com/jackc/pgx": {
+      "tech": "postgresql",
+      "role": "database",
+      "label": "PostgreSQL"
+    },
+    "go.mongodb.org/mongo-driver": {
+      "tech": "mongodb",
+      "role": "database",
+      "label": "MongoDB"
+    },
+    "github.com/stripe/stripe-go": {
+      "tech": "stripe",
+      "role": "external",
+      "label": "Stripe"
+    }
+  }
+}

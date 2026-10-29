@@ -12,6 +12,7 @@ next-env.d.ts
 test-results
 playwright-report
 apps/web/public/previews
+apps/web/public/demos
 registry/.audit-cache
 apps/web/public/audits
 registry/.audit-out
@@ -21,6 +22,7 @@ apps/web/public/badges
 /BUILD_BRIEF.md
 /V2_BRIEF.md
 /AUDIT_RTL_BRIEF.md
+/ARCH_VISUALIZE_BRIEF.md
 /CLAUDE.md
 /docs/SYSTEM_BOOK_BRIEF.md
 /.claude/

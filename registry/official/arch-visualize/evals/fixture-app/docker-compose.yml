@@ -1,0 +1,29 @@
+services:
+  web:
+    build: ./apps/web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+  api:
+    build: ./apps/api
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+      - cache
+  worker:
+    build: ./apps/worker
+    depends_on:
+      cache:
+        condition: service_started
+      db:
+        condition: service_started
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+  cache:
+    image: redis:7
+    ports:
+      - "6379:6379"
