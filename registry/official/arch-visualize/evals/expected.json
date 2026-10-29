@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    { "id": "vercel", "role": "edge", "tech": "vercel", "evidence": [{ "file": "apps/web/vercel.json", "line": 1 }] },
+    { "id": "web", "role": "frontend", "tech": "nextjs", "evidence": [{ "file": "apps/web/package.json", "line": 1 }, { "file": "docker-compose.yml", "line": 2 }] },
+    { "id": "api", "role": "backend", "tech": "express", "evidence": [{ "file": "apps/api/package.json", "line": 6 }, { "file": "docker-compose.yml", "line": 8 }] },
+    { "id": "bullmq", "role": "queue", "tech": "bullmq", "evidence": [{ "file": "apps/api/package.json", "line": 5 }] },
+    { "id": "worker", "role": "worker", "tech": "generic-worker", "evidence": [{ "file": "apps/worker/package.json", "line": 3 }, { "file": "docker-compose.yml", "line": 15 }] },
+    { "id": "cache", "role": "cache", "tech": "redis", "evidence": [{ "file": "docker-compose.yml", "line": 27 }, { "file": ".env.example", "line": 3 }] },
+    { "id": "db", "role": "database", "tech": "postgresql", "evidence": [{ "file": "docker-compose.yml", "line": 23 }, { "file": "apps/api/prisma/schema.prisma", "line": 2 }] },
+    { "id": "resend", "role": "external", "tech": "resend", "evidence": [{ "file": "apps/api/package.json", "line": 8 }] },
+    { "id": "stripe", "role": "external", "tech": "stripe", "evidence": [{ "file": "apps/api/package.json", "line": 9 }] }
+  ],
+  "edges": ["api-cache", "api-db", "web-api", "worker-cache", "worker-db"],
+  "risks": {
+    "note": "Filled in milestone 4: the AV-R rules the fixture is seeded to trigger (R01, R02, R03, R04, R05, R07, R08, R10) and the benign look-alikes (R06, R09 and the Redis set with EX)."
+  }
+}

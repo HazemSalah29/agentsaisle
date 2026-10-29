@@ -15,3 +15,4 @@ registry/official/arabic-rtl/evals/seeded.json
 packages/audit/test/schemas
 registry/official/arch-visualize/evals/fixture-app
 registry/official/arch-visualize/evals/expected.json
+registry/official/arch-visualize/evals/hostile-model.json
