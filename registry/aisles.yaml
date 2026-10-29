@@ -25,6 +25,10 @@ aisles:
     name: Localization
     description: Make an app work in more languages, starting with Arabic and right-to-left layouts.
     niches: [arabic, rtl]
+  - id: architecture
+    name: Architecture
+    description: Map how a system fits together from its code, with animated request flows and possible risks.
+    niches: [arch]
   - id: media
     name: Media
     description: Images and video. Coming later.
