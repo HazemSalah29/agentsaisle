@@ -7,7 +7,7 @@
   CC0 does not cover trademarks: every logo belongs to its owner, and the skill shows a logo only
   to identify a technology found in the user's own project. It does not imply any endorsement.
   Follow each brand's own usage guidelines before using a logo anywhere else.
-- BullMQ, SendGrid and Twilio have no Simple Icons entry in this version, so they use the generic
+- BullMQ, SendGrid, Twilio, OpenAI, SQS, SES, Nodemailer and the other technologies without a Simple Icons entry in this version use the generic
   icon for their role.
 - The files are copied, not installed as a dependency. TODO(verify): re-check the license and
   the brand list when updating the version.

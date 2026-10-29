@@ -46,6 +46,14 @@ const slug = (s) =>
 const loadCatalog = () =>
   JSON.parse(readFileSync(path.join(skillDir(), "assets", "tech-catalog.json"), "utf8"));
 
+/** A readable name for a technology id, from any section of the catalog. */
+function techLabels(catalog) {
+  const out = {};
+  for (const k of ["deps", "images", "hosting", "pyDeps", "goModules", "prismaProviders"])
+    for (const v of Object.values(catalog[k] ?? {})) out[v.tech] ??= v.label;
+  return out;
+}
+
 /** Match an image reference such as "bitnami/redis:7" to a catalog entry. */
 function matchImage(catalog, image) {
   const name = image.split("@")[0].split(":")[0].split("/").pop().toLowerCase();
@@ -69,6 +77,7 @@ export function discover(root, catalog = loadCatalog()) {
     isExampleEnv(n) ||
     Boolean(catalog.hosting[n]);
   const { files, stats } = listFiles(root, want);
+  const labels = techLabels(catalog);
   const notes = [];
   const read = [];
   const claims = []; // { exclusive?, tech, role, label, weak, external, evidence, appDir? }
@@ -81,6 +90,7 @@ export function discover(root, catalog = loadCatalog()) {
   };
   const dirOf = (rel) => (path.posix.dirname(rel) === "." ? "" : path.posix.dirname(rel));
   const appNodes = []; // { dir, role, tech, label, evidence }
+  const inProcess = []; // libraries that run inside an app: { dir, claim }
   const composeServices = []; // { svc, deps, rel }
   const composeEvidence = []; // { svc, buildDir, ev }
   const dockerEvidence = []; // { dir, ev }
@@ -119,7 +129,8 @@ export function discover(root, catalog = loadCatalog()) {
         if (f.role === "frontend" || f.role === "backend") {
           if (f.weak && hasStrongApp) continue;
           appNodes.push({ dir, role: f.role, tech: f.tech, label: f.label, evidence: [ev] });
-        } else addClaim({ ...f, evidence: [ev] });
+        } else if (f.inProcess) inProcess.push({ dir, claim: { ...f, evidence: [ev] } });
+        else addClaim({ ...f, evidence: [ev] });
       }
       if (looksWorker && found.some((f) => f.role === "queue" || f.role === "cache")) {
         const q = found.find((f) => f.role === "queue") ?? found[0];
@@ -212,12 +223,21 @@ export function discover(root, catalog = loadCatalog()) {
         }));
         if (typeof def.image === "string") {
           const img = matchImage(catalog, def.image);
-          if (!img) {
-            notes.push(`unknown image ${def.image} (service ${svc})`);
-            continue;
-          }
           const note = `image ${def.image}${ports ? `, ports ${ports}` : ""}`;
           composeServices.push({ svc, deps, rel });
+          if (!img) {
+            // Not in the catalog: still a component. Show it generically; the agent can refine it.
+            notes.push(`unknown image ${def.image} (service ${svc}) shown as a generic component`);
+            addClaim({
+              tech: "generic-backend",
+              role: "backend",
+              label: def.image.split("@")[0].split(":")[0].split("/").pop(),
+              exclusive: slug(svc),
+              svc,
+              evidence: [sev(note, `services.${svc}.image`)],
+            });
+            continue;
+          }
           addClaim({
             ...img,
             exclusive: slug(svc),
@@ -249,7 +269,7 @@ export function discover(root, catalog = loadCatalog()) {
             addClaim({
               tech: k.tech,
               role: k.role,
-              label: k.tech,
+              label: labels[k.tech] ?? k.tech,
               env: true,
               evidence: [{ file: rel, line, note: k.note.replace(/[A-Z_*]+$/, key) }],
             });
@@ -306,6 +326,12 @@ export function discover(root, catalog = loadCatalog()) {
     const id = uniqueId(new Set(sameDir).size > 1 ? `${base}-${a.role}` : base);
     const label = dupLabels[a.label] > 1 && a.dir ? `${a.label} (${a.dir})` : a.label;
     appKey.set(k, mkNode(id, label, a.role, a.tech, a.evidence));
+  }
+  // 1b. libraries that run inside an app (an auth library) are evidence on that app, not a box of their own
+  for (const ip of inProcess) {
+    const target = [...appKey.values()].find((n) => dirOf(n.evidence[0].file) === ip.dir);
+    if (target) for (const ev of ip.claim.evidence) addEv(target, ev);
+    else addClaim(ip.claim);
   }
   // 2. compose services give exclusive infra nodes, or evidence for app nodes
   const svcNode = new Map();
