@@ -1283,3 +1283,84 @@ describe("arch-visualize risk-check", () => {
     }
   });
 });
+
+describe("arch-visualize house standard", () => {
+  const dir = skillFile("arch-visualize", ".");
+  const skillText = readFileSync(path.join(dir, "SKILL.md"), "utf8");
+  const fm = /^---\n([\s\S]*?)\n---\n/.exec(skillText)![1];
+  const meta = readFileSync(path.join(dir, "skill.meta.yaml"), "utf8");
+
+  it("keeps SKILL.md within 150 lines with the six sections in order", () => {
+    expect(skillText.replace(/\n$/, "").split("\n").length).toBeLessThanOrEqual(150);
+    const headings = [...skillText.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
+    expect(headings).toEqual([
+      "Use when",
+      "Don't use when",
+      "Steps",
+      "Budget",
+      "Output",
+      "Done when",
+    ]);
+    expect(skillText).not.toContain("<!-- include:");
+  });
+
+  it("is started on purpose, is read and write only, and has no network tools", () => {
+    expect(fm).toMatch(/^name: arch-visualize$/m);
+    expect(fm).toMatch(/^disable-model-invocation: true$/m);
+    expect(fm).toMatch(/^allowed-tools: Read Write Glob Grep Bash\(node \*\)$/m);
+    expect(fm).not.toMatch(/WebFetch|WebSearch|curl|mcp__/);
+    const description = /^description: (.*)$/m.exec(fm)![1];
+    expect(description).not.toContain(": ");
+    expect(description).toMatch(/Don't use/);
+    expect(description.length).toBeLessThanOrEqual(1024);
+  });
+
+  it("declares what it does in skill.meta.yaml", () => {
+    expect(meta).toMatch(/^niche: arch$/m);
+    expect(meta).toMatch(/^kind: quality$/m);
+    expect(meta).toMatch(/^tier: specialty$/m);
+    expect(meta).toMatch(/network: false/);
+    expect(meta).toMatch(/writes_files: true/);
+    expect(meta).toMatch(/runs_scripts: true/);
+  });
+
+  it("points at scripts and references that exist, one level deep", () => {
+    for (const m of skillText.matchAll(/<skill>\/scripts\/([\w-]+\.mjs)/g))
+      expect(existsSync(path.join(dir, "scripts", m[1])), m[1]).toBe(true);
+    for (const m of skillText.matchAll(/references\/([\w-]+\.md)/g))
+      expect(existsSync(path.join(dir, "references", m[1])), m[1]).toBe(true);
+    for (const e of readdirSync(path.join(dir, "references"), { withFileTypes: true }))
+      expect(e.isDirectory()).toBe(false);
+    for (const f of ["discover", "model-check", "risk-check", "render"])
+      expect(skillText).toContain(`scripts/${f}.mjs`);
+  });
+
+  it("lists a preview for every screenshot and each file exists and is small", () => {
+    const shots = [...meta.matchAll(/^\s+- (\S+\.jpg)$/gm)].map((m) => m[1]);
+    expect(shots.length).toBeGreaterThanOrEqual(6);
+    for (const s of shots) {
+      expect(existsSync(path.join(dir, "preview", s)), s).toBe(true);
+      expect(statSync(path.join(dir, "preview", s)).size, s).toBeLessThan(250_000);
+    }
+  });
+
+  it("passes the security audit with no critical or high findings", async () => {
+    const { auditSkill } = (await import("@agentsaisle/audit")) as {
+      auditSkill: (
+        f: string,
+        o: object,
+      ) => Promise<{
+        findings: { severity: string; rule: string; message: string }[];
+        grade: string;
+      }>;
+    };
+    const report = await auditSkill(dir, {
+      skill: "arch-visualize",
+      folderName: "arch-visualize",
+      includeUninstalled: true,
+    });
+    const bad = report.findings.filter((f) => f.severity === "critical" || f.severity === "high");
+    expect(bad, JSON.stringify(bad)).toEqual([]);
+    expect(["A", "B"]).toContain(report.grade);
+  });
+});
