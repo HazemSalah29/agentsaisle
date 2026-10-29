@@ -13,7 +13,19 @@ permissions:
   needs_api_keys: []
 demo:
   url: /demos/arch-visualize/devpath.html
-  caption: "Screenshots of the page this skill writes for a small fixture app. Open the live demo to explore the page it generated for a real project (DevPath, a Next.js app with MongoDB, Redis, a job queue and three AI providers). It shows how requests would travel according to the code, not live traffic."
+  embed: true
+  caption: "DevPath is a Next.js learning platform with MongoDB, Redis and a job queue, three AI providers (Anthropic, OpenAI and Gemini), a code-execution sandbox and Docker-based practice labs. The page below is exactly what /arch-visualize generated for it, not a mock-up. It shows how requests would travel according to the code, not live traffic, and every risk is something to check, not a verdict."
+  steps:
+    - title: Discover (a script)
+      text: "discover.mjs read 4 files (package.json, docker-compose.yml, the Dockerfile and the .env.example variable names) and found 11 of the 12 components and 2 of the 13 connections. It counted .env.local as skipped and never opened it."
+    - title: Read (the agent)
+      text: "The agent searched for where each service is created and read only those lines. It added the WebSocket server the scripts cannot see, 11 more connections each with a file and line, and marked 2 connections as inferred (dashed) because no file shows them."
+    - title: Write the flows (the agent)
+      text: "4 request flows, each following the real code: run code in a lesson, ask the AI mentor, sign in with GitHub, and start an infra lab in the background. Press Play on each to watch it."
+    - title: Check (scripts)
+      text: "model-check confirmed that every item has evidence or is marked inferred and that nothing looks like a secret. risk-check then added 3 possible risks by rule (a single database, no health check, data ports published to the host). The agent added 1 from its own reading: the Docker socket mounted into the app, with its file and line."
+    - title: Render (a script)
+      text: "render.mjs wrote one offline HTML file of about 75 KB. It makes no network requests, which is why it can sit inside this page."
   screenshots:
     - 01-overview-light.jpg
     - 02-overview-dark.jpg

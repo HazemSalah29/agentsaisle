@@ -1149,9 +1149,18 @@
           var r = stage.getBoundingClientRect();
           return [r.width / 2, r.height / 2];
         }
+        var framed = false;
+        try {
+          framed = window.self !== window.top;
+        } catch (e) {
+          framed = true;
+        }
         stage.addEventListener(
           "wheel",
           function (ev) {
+            // Inside another page (an embedded demo) a plain scroll belongs to that page; zoom needs
+            // ctrl or cmd, the + and - buttons, or a pinch.
+            if (framed && !ev.ctrlKey && !ev.metaKey) return;
             ev.preventDefault();
             var r = stage.getBoundingClientRect();
             zoomAt(

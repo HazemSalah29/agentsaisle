@@ -1571,7 +1571,7 @@ describe("arch-visualize live demo (DevPath)", () => {
 
   it("is linked from the skill page by a site path the web build creates", () => {
     expect(meta).toMatch(/^ {2}url: \/demos\/arch-visualize\/devpath\.html$/m);
-    expect(meta).toMatch(/^ {2}caption: ".*real project.*not live traffic\."$/m);
+    expect(meta).toMatch(/^ {2}caption: ".*not live traffic/m);
     const copy = readFileSync(
       path.join(__dirname, "..", "..", "apps", "web", "scripts", "copy-registry.mts"),
       "utf8",
@@ -1579,5 +1579,64 @@ describe("arch-visualize live demo (DevPath)", () => {
     expect(copy).toContain("evals");
     expect(copy).toContain(".architecture.json");
     expect(copy).toContain("public/demos");
+  });
+});
+
+describe("arch-visualize demo text matches the demo model", () => {
+  const meta = readFileSync(skillFile("arch-visualize", "skill.meta.yaml"), "utf8");
+  const model = readJson("evals/demo/devpath.architecture.json") as {
+    nodes: unknown[];
+    edges: unknown[];
+    flows: unknown[];
+    inferred: string[];
+    risks: { source: string }[];
+  };
+  const steps = [...meta.matchAll(/^ {4}- title: (.+)\n {6}text: "(.*)"$/gm)].map((m) => ({
+    title: m[1],
+    text: m[2],
+  }));
+
+  it("is embedded, with five steps and a project paragraph", () => {
+    expect(meta).toMatch(/^ {2}embed: true$/m);
+    expect(steps.map((s) => s.title.replace(/ \(.*\)/, ""))).toEqual([
+      "Discover",
+      "Read",
+      "Write the flows",
+      "Check",
+      "Render",
+    ]);
+    expect(meta).toMatch(/caption: "DevPath is a Next\.js learning platform/);
+  });
+
+  it("states numbers that are true of the committed model", () => {
+    const all = steps.map((s) => s.text).join(" ");
+    const nodes = model.nodes.length;
+    const edges = model.edges.length;
+    const ruleRisks = model.risks.filter((r) => r.source === "rule").length;
+    const agentRisks = model.risks.filter((r) => r.source === "agent").length;
+    expect(all).toContain(`found 11 of the ${nodes} components and 2 of the ${edges} connections`);
+    expect(all).toContain(`${edges - 2} more connections`);
+    expect(all).toContain(`marked ${model.inferred.length} connections as inferred`);
+    expect(steps[2].text).toMatch(new RegExp(`^${model.flows.length} request flows`));
+    expect(all).toContain(`added ${ruleRisks} possible risks by rule`);
+    expect(all).toContain(`added ${agentRisks} from its own reading`);
+    expect(model.inferred.every((i) => i.startsWith("edge:"))).toBe(true);
+  });
+
+  it("describes the demo page size honestly", () => {
+    const out = path.join(tmp(), "d.html");
+    renderCli(skillFile("arch-visualize", "evals/demo/devpath.architecture.json"), out);
+    const kb = readFileSync(out).length / 1024;
+    expect(kb).toBeGreaterThan(65);
+    expect(kb).toBeLessThan(85);
+    expect(steps[4].text).toContain("about 75 KB");
+  });
+});
+
+describe("arch-visualize viewer inside a frame", () => {
+  it("leaves plain scrolling to the page that embeds it", () => {
+    const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
+    expect(viewer).toMatch(/framed = window\.self !== window\.top/);
+    expect(viewer).toMatch(/if \(framed && !ev\.ctrlKey && !ev\.metaKey\) return;/);
   });
 });
