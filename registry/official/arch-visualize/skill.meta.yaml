@@ -1,0 +1,23 @@
+version: 0.1.0
+category: [architecture, web]
+clients: [claude-code, codex, cursor]
+runs_scripts: true
+niche: arch
+kind: quality
+tier: specialty
+permissions:
+  tools: [Read, Grep, Glob, Write, Bash]
+  writes_files: true
+  runs_scripts: true
+  network: false
+  needs_api_keys: []
+demo:
+  screenshots:
+    - 01-overview-light.jpg
+    - 02-overview-dark.jpg
+    - 03-request-flow.jpg
+    - 04-response-flow.jpg
+    - 05-node-evidence.jpg
+    - 06-risks.jpg
+    - 07-checkout-flow.jpg
+    - 08-phone-list.jpg
