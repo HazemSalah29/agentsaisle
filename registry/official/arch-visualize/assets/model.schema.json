@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "arch-visualize model",
+  "type": "object",
+  "required": ["version", "project", "nodes", "edges", "flows", "risks"],
+  "properties": {
+    "version": { "const": 1 },
+    "project": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "flows": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/flow" } },
+    "risks": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
+    "inferred": {
+      "type": "array",
+      "description": "Items without evidence, as node:<id> or edge:<id>.",
+      "items": { "type": "string", "pattern": "^(node|edge):[a-z0-9][a-z0-9-]*$" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+    "role": {
+      "enum": [
+        "client", "edge", "frontend", "backend", "worker", "queue", "cache", "database",
+        "storage", "search", "auth", "external", "observability"
+      ]
+    },
+    "tier": { "enum": ["clients", "edge", "frontend", "backend", "async", "data", "external"] },
+    "evidence": {
+      "type": "object",
+      "required": ["file"],
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "note": { "type": "string" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "label", "role", "tech", "tier"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "role": { "$ref": "#/$defs/role" },
+        "tech": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "tier": { "$ref": "#/$defs/tier" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "from", "to"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": { "$ref": "#/$defs/id" },
+        "to": { "$ref": "#/$defs/id" },
+        "protocol": { "type": "string" },
+        "sync": { "type": "boolean" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "flowStep": {
+      "type": "object",
+      "properties": {
+        "edge": { "$ref": "#/$defs/id" },
+        "reverse": { "type": "boolean" },
+        "label": { "type": "string", "maxLength": 80 },
+        "event": { "type": "string", "maxLength": 40 },
+        "node": { "$ref": "#/$defs/id" }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "required": ["id", "name", "steps"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/flowStep" } }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "required": ["id", "severity", "nodes", "why", "check"],
+      "properties": {
+        "id": { "type": "string" },
+        "severity": { "enum": ["info", "warn"] },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "why": { "type": "string" },
+        "check": { "type": "string" },
+        "source": { "enum": ["rule", "agent"] }
+      }
+    }
+  }
+}
