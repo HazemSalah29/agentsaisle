@@ -1,0 +1,1295 @@
+<!doctype html>
+<!-- arch-visualize viewer v1 -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Architecture</title>
+    <style>
+      :root {
+        --bg: #f6f5f1;
+        --surface: #ffffff;
+        --surface-2: #efeee9;
+        --text: #1b1a18;
+        --muted: #5a5750;
+        --line: #cfccc4;
+        --edge: #6f6b62;
+        --accent: #b8420a;
+        --accent-text: #ffffff;
+        --warn: #b45309;
+        --warn-text: #ffffff;
+        --warn-bg: #fff4e5;
+        --focus: #1d4ed8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #131312;
+          --surface: #1d1c1a;
+          --surface-2: #272624;
+          --text: #ecebe6;
+          --muted: #aaa69d;
+          --line: #3d3b37;
+          --edge: #9a968c;
+          --accent: #ff8a4c;
+          --accent-text: #1b1a18;
+          --warn: #fbbf24;
+          --warn-text: #1b1a18;
+          --warn-bg: #33290f;
+          --focus: #7aa2ff;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #131312;
+        --surface: #1d1c1a;
+        --surface-2: #272624;
+        --text: #ecebe6;
+        --muted: #aaa69d;
+        --line: #3d3b37;
+        --edge: #9a968c;
+        --accent: #ff8a4c;
+        --accent-text: #1b1a18;
+        --warn: #fbbf24;
+        --warn-text: #1b1a18;
+        --warn-bg: #33290f;
+        --focus: #7aa2ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.86em;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      :focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 16px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+      }
+      header h1 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+        flex: 1 1 260px;
+      }
+      main {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+      }
+      #stage {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+      }
+      #stage.dragging {
+        cursor: grabbing;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #zoom {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        display: flex;
+        gap: 6px;
+      }
+      #panel {
+        border-left: 1px solid var(--line);
+        background: var(--surface);
+        overflow: auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+      }
+      .tabs button {
+        flex: 1;
+        border: 0;
+        border-radius: 0;
+        border-bottom: 3px solid transparent;
+        padding: 10px;
+        background: none;
+      }
+      .tabs button[aria-selected="true"] {
+        border-bottom-color: var(--accent);
+        font-weight: 600;
+      }
+      #body {
+        padding: 14px 16px 24px;
+      }
+      #body h2 {
+        margin: 0 0 4px;
+        font-size: 1.15rem;
+      }
+      #body h3 {
+        margin: 18px 0 6px;
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      #body ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      #body li {
+        padding: 4px 0;
+        overflow-wrap: anywhere;
+      }
+      .meta {
+        color: var(--muted);
+        margin: 0;
+      }
+      .note {
+        background: var(--surface-2);
+        border-radius: 6px;
+        padding: 8px 10px;
+        margin: 10px 0 0;
+        font-size: 0.9rem;
+      }
+      .link {
+        border: 0;
+        padding: 0;
+        background: none;
+        color: var(--accent);
+        text-decoration: underline;
+        text-align: start;
+      }
+      .risk {
+        border: 1px solid var(--warn);
+        background: var(--warn-bg);
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin: 8px 0;
+      }
+      .risk .tag {
+        margin: 0 0 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .risk p {
+        margin: 4px 0;
+      }
+      .risk .src {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .legend svg {
+        vertical-align: middle;
+      }
+      /* diagram */
+      .tier-label {
+        fill: var(--muted);
+        font:
+          600 11px system-ui,
+          sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .edge .hit {
+        fill: none;
+        stroke: transparent;
+        stroke-width: 14;
+        cursor: pointer;
+      }
+      .edge .line {
+        fill: none;
+        stroke: var(--edge);
+        stroke-width: 1.6;
+      }
+      .edge.inferred .line {
+        stroke-dasharray: 6 4;
+      }
+      .edge:hover .line,
+      .edge.selected .line {
+        stroke: var(--accent);
+        stroke-width: 2.6;
+      }
+      .node {
+        cursor: pointer;
+      }
+      .node:focus {
+        outline: none;
+      }
+      .node .box {
+        fill: var(--surface);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+      .node.inferred .box {
+        stroke-dasharray: 6 4;
+        stroke: var(--edge);
+      }
+      .node:hover .box,
+      .node.selected .box {
+        stroke: var(--accent);
+        stroke-width: 2.5;
+      }
+      .node .ring {
+        fill: none;
+        stroke: transparent;
+        stroke-width: 3;
+      }
+      .node:focus-visible .ring {
+        stroke: var(--focus);
+      }
+      .node .icon {
+        fill: var(--text);
+      }
+      .node .name {
+        fill: var(--text);
+        font:
+          600 13px system-ui,
+          sans-serif;
+      }
+      .node .sub {
+        fill: var(--muted);
+        font:
+          11.5px ui-monospace,
+          Menlo,
+          Consolas,
+          monospace;
+      }
+      .node .badge circle {
+        fill: var(--warn);
+      }
+      .node .badge text {
+        fill: var(--warn-text);
+        font:
+          700 12px system-ui,
+          sans-serif;
+        text-anchor: middle;
+      }
+      .arrow {
+        fill: var(--edge);
+      }
+      /* phone layout: a list instead of a diagram */
+      #list {
+        display: none;
+        overflow: auto;
+        padding: 12px 16px 24px;
+      }
+      #list h2 {
+        margin: 18px 0 6px;
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .card {
+        display: block;
+        width: 100%;
+        text-align: start;
+        margin: 0 0 8px;
+        padding: 10px 12px;
+      }
+      .card.inferred {
+        border-style: dashed;
+      }
+      .card.selected {
+        border-color: var(--accent);
+        border-width: 2px;
+      }
+      .card .row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .card .t {
+        font-weight: 600;
+      }
+      .card .s,
+      .card .c {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .close,
+      .phone-only {
+        display: none;
+      }
+      @media (max-width: 700px) {
+        main {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr;
+        }
+        #stage {
+          display: none;
+        }
+        #list {
+          display: block;
+        }
+        #panel {
+          display: none;
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          max-height: 72vh;
+          border-left: 0;
+          border-top: 2px solid var(--accent);
+          box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+        }
+        #panel.open {
+          display: flex;
+        }
+        .phone-only {
+          display: inline-block;
+        }
+        .close {
+          display: block;
+          margin: 10px 16px 0;
+          align-self: flex-end;
+        }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .node .box,
+        .edge .line {
+          transition: stroke 0.12s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 id="title">Architecture</h1>
+      <p>
+        Generated from code; not live traffic. It shows how requests would travel, based on the
+        files read.
+      </p>
+      <button type="button" id="open-risks" class="phone-only">Risks</button>
+      <button type="button" id="theme">Switch theme</button>
+    </header>
+    <main>
+      <section
+        id="stage"
+        tabindex="0"
+        aria-label="Architecture diagram. Arrow keys pan, plus and minus zoom, zero fits the view."
+      >
+        <svg
+          id="canvas"
+          role="group"
+          aria-label="Components and the connections between them"
+        ></svg>
+        <div id="zoom">
+          <button type="button" id="zin" aria-label="Zoom in">+</button>
+          <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
+          <button type="button" id="zfit">Fit</button>
+        </div>
+      </section>
+      <section id="list" aria-label="Components"></section>
+      <aside id="panel" aria-live="polite">
+        <button type="button" class="close" id="close">Close</button>
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tab-details" aria-selected="true">Details</button>
+          <button type="button" role="tab" id="tab-risks" aria-selected="false">Risks</button>
+        </div>
+        <div id="body"></div>
+      </aside>
+    </main>
+    <script type="application/json" id="model">
+      __MODEL_JSON__
+    </script>
+    <script type="application/json" id="icons">
+      __ICONS_JSON__
+    </script>
+    <script>
+      (function () {
+        "use strict";
+        var NS = "http://www.w3.org/2000/svg";
+        var $ = function (id) {
+          return document.getElementById(id);
+        };
+
+        // ---- tiny DOM helpers. Model text only ever goes in as text nodes or attribute values.
+        function setAttrs(el, attrs) {
+          for (var k in attrs || {}) {
+            var v = attrs[k];
+            if (v === false || v === null || v === undefined) continue;
+            el.setAttribute(k, String(v));
+          }
+        }
+        function add(el, kids) {
+          kids.forEach(function (k) {
+            if (Array.isArray(k)) return add(el, k);
+            if (k === null || k === undefined || k === false) return;
+            el.append(k instanceof Node ? k : document.createTextNode(String(k)));
+          });
+        }
+        function h(tag, attrs) {
+          var el = document.createElement(tag);
+          setAttrs(el, attrs);
+          add(el, Array.prototype.slice.call(arguments, 2));
+          return el;
+        }
+        function s(tag, attrs) {
+          var el = document.createElementNS(NS, tag);
+          setAttrs(el, attrs);
+          add(el, Array.prototype.slice.call(arguments, 2));
+          return el;
+        }
+        function clear(el) {
+          el.textContent = "";
+        }
+
+        // ---- data
+        var model, icons;
+        try {
+          model = JSON.parse($("model").textContent);
+          icons = JSON.parse($("icons").textContent);
+        } catch (e) {
+          clear($("body"));
+          $("body").append("This page could not read its data.");
+          return;
+        }
+        document.title = model.project + " architecture";
+        $("title").textContent = model.project;
+
+        var TIERS = ["clients", "edge", "frontend", "backend", "async", "data", "external"];
+        var TIER_NAME = {
+          clients: "Clients",
+          edge: "Edge",
+          frontend: "Frontend",
+          backend: "Backend",
+          async: "Async",
+          data: "Data",
+          external: "External",
+        };
+        var inferred = new Set(model.inferred || []);
+        var nodeById = {};
+        model.nodes.forEach(function (n) {
+          nodeById[n.id] = n;
+        });
+        var edgeById = {};
+        model.edges.forEach(function (e) {
+          edgeById[e.id] = e;
+        });
+        var risksByNode = {};
+        (model.risks || []).forEach(function (r) {
+          r.nodes.forEach(function (id) {
+            (risksByNode[id] = risksByNode[id] || []).push(r);
+          });
+        });
+        var techText = function (n) {
+          return n.tech.indexOf("generic-") === 0 ? n.role : n.tech;
+        };
+        var isInferred = function (kind, id) {
+          return inferred.has(kind + ":" + id);
+        };
+        var clip = function (str, max) {
+          return str.length > max ? str.slice(0, max - 1) + "…" : str;
+        };
+
+        function iconSvg(n, size, cls, x, y) {
+          var ic = icons[n.tech + "|" + n.role];
+          if (!ic) return null;
+          var svg = s("svg", {
+            viewBox: ic.viewBox,
+            width: size,
+            height: size,
+            x: x,
+            y: y,
+            class: cls,
+            "aria-hidden": "true",
+          });
+          ic.paths.forEach(function (d) {
+            svg.append(s("path", { d: d, "fill-rule": "evenodd" }));
+          });
+          return svg;
+        }
+
+        // ---- layout: tiers become columns; rows are ordered by the average row of their neighbours
+        var W = 190,
+          H = 64,
+          GX = 66,
+          GY = 28,
+          PAD = 28,
+          HEAD = 26;
+        var present = TIERS.filter(function (t) {
+          return model.nodes.some(function (n) {
+            return n.tier === t;
+          });
+        });
+        var cols = present.map(function (t) {
+          return model.nodes
+            .filter(function (n) {
+              return n.tier === t;
+            })
+            .sort(function (a, b) {
+              return a.id < b.id ? -1 : 1;
+            });
+        });
+        var rowOf = {};
+        function setRows() {
+          cols.forEach(function (c) {
+            c.forEach(function (n, i) {
+              rowOf[n.id] = i;
+            });
+          });
+        }
+        setRows();
+        for (var pass = 0; pass < 4; pass++) {
+          var idx = cols.map(function (_, i) {
+            return i;
+          });
+          if (pass % 2) idx.reverse();
+          idx.forEach(function (ci) {
+            var score = {};
+            cols[ci].forEach(function (n) {
+              var rows = [];
+              model.edges.forEach(function (e) {
+                var other = e.from === n.id ? e.to : e.to === n.id ? e.from : null;
+                if (other && nodeById[other] && nodeById[other].tier !== n.tier)
+                  rows.push(rowOf[other]);
+              });
+              score[n.id] = rows.length
+                ? rows.reduce(function (a, b) {
+                    return a + b;
+                  }, 0) / rows.length
+                : rowOf[n.id];
+            });
+            cols[ci].sort(function (a, b) {
+              return score[a.id] - score[b.id] || (a.id < b.id ? -1 : 1);
+            });
+            cols[ci].forEach(function (n, i) {
+              rowOf[n.id] = i;
+            });
+          });
+        }
+        var tallest = Math.max.apply(
+          null,
+          cols
+            .map(function (c) {
+              return c.length * H + (c.length - 1) * GY;
+            })
+            .concat([H]),
+        );
+        var pos = {};
+        cols.forEach(function (c, ci) {
+          var colH = c.length * H + (c.length - 1) * GY;
+          c.forEach(function (n, i) {
+            pos[n.id] = {
+              x: PAD + ci * (W + GX),
+              y: PAD + HEAD + (tallest - colH) / 2 + i * (H + GY),
+              col: ci,
+            };
+          });
+        });
+        var contentW = PAD * 2 + cols.length * W + Math.max(0, cols.length - 1) * GX;
+        var contentH = PAD * 2 + HEAD + tallest;
+
+        // edge anchors: spread the ends along the side of a node so edges do not stack
+        var anchors = {};
+        function side(e) {
+          var a = pos[e.from],
+            b = pos[e.to];
+          if (a.col < b.col) return ["r", "l"];
+          if (a.col > b.col) return ["l", "r"];
+          return ["r", "r"];
+        }
+        model.edges.forEach(function (e) {
+          if (!pos[e.from] || !pos[e.to]) return;
+          var sd = side(e);
+          (anchors[e.from + "|" + sd[0]] = anchors[e.from + "|" + sd[0]] || []).push({
+            e: e,
+            end: "s",
+            other: e.to,
+          });
+          (anchors[e.to + "|" + sd[1]] = anchors[e.to + "|" + sd[1]] || []).push({
+            e: e,
+            end: "t",
+            other: e.from,
+          });
+        });
+        var anchorY = {};
+        Object.keys(anchors).forEach(function (key) {
+          var list = anchors[key].sort(function (p, q) {
+            return pos[p.other].y - pos[q.other].y || (p.e.id < q.e.id ? -1 : 1);
+          });
+          var nodeId = key.split("|")[0];
+          list.forEach(function (it, i) {
+            anchorY[it.e.id + it.end] = pos[nodeId].y + (H * (i + 1)) / (list.length + 1);
+          });
+        });
+        function edgePath(e) {
+          var a = pos[e.from],
+            b = pos[e.to];
+          var sd = side(e);
+          var sy = anchorY[e.id + "s"],
+            ty = anchorY[e.id + "t"];
+          var sx = sd[0] === "r" ? a.x + W : a.x;
+          var tx = sd[1] === "l" ? b.x : b.x + W;
+          if (e.from === e.to)
+            return (
+              "M" +
+              sx +
+              " " +
+              (a.y + 16) +
+              " C" +
+              (sx + 40) +
+              " " +
+              (a.y - 8) +
+              " " +
+              (sx + 40) +
+              " " +
+              (a.y + H + 8) +
+              " " +
+              sx +
+              " " +
+              (a.y + H - 16)
+            );
+          if (sd[0] === sd[1]) {
+            var bulge = 34 + Math.abs(a.y - b.y) / 8;
+            return (
+              "M" +
+              sx +
+              " " +
+              sy +
+              " C" +
+              (sx + bulge) +
+              " " +
+              sy +
+              " " +
+              (tx + bulge) +
+              " " +
+              ty +
+              " " +
+              tx +
+              " " +
+              ty
+            );
+          }
+          var dx = (tx - sx) / 2;
+          return (
+            "M" +
+            sx +
+            " " +
+            sy +
+            " C" +
+            (sx + dx) +
+            " " +
+            sy +
+            " " +
+            (tx - dx) +
+            " " +
+            ty +
+            " " +
+            tx +
+            " " +
+            ty
+          );
+        }
+
+        // ---- draw the diagram
+        var canvas = $("canvas");
+        var defs = s(
+          "defs",
+          {},
+          s(
+            "marker",
+            {
+              id: "arrow",
+              viewBox: "0 0 10 10",
+              refX: "9",
+              refY: "5",
+              markerWidth: "8",
+              markerHeight: "8",
+              orient: "auto",
+            },
+            s("path", { d: "M0 1 L10 5 L0 9 z", class: "arrow" }),
+          ),
+        );
+        var vp = s("g", { id: "viewport" });
+        canvas.append(defs, vp);
+        cols.forEach(function (c, ci) {
+          vp.append(
+            s(
+              "text",
+              { x: PAD + ci * (W + GX), y: PAD + 8, class: "tier-label" },
+              TIER_NAME[present[ci]],
+            ),
+          );
+        });
+        var edgeEls = {},
+          nodeEls = {},
+          cardEls = {};
+        var gEdges = s("g", { id: "edges" });
+        var gNodes = s("g", { id: "nodes" });
+        vp.append(gEdges, gNodes);
+        model.edges.forEach(function (e) {
+          if (!pos[e.from] || !pos[e.to]) return;
+          var d = edgePath(e);
+          var g = s("g", {
+            class: "edge" + (isInferred("edge", e.id) ? " inferred" : ""),
+            "data-edge": e.id,
+          });
+          g.append(
+            s("path", { d: d, class: "hit" }),
+            s("path", {
+              d: d,
+              class: "line",
+              id: "edge-" + e.id,
+              "data-edge": e.id,
+              "marker-end": "url(#arrow)",
+            }),
+          );
+          g.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            if (!moved) select("edge", e.id);
+          });
+          edgeEls[e.id] = g;
+          gEdges.append(g);
+        });
+        model.nodes.forEach(function (n) {
+          var p = pos[n.id];
+          var risks = risksByNode[n.id] || [];
+          var label =
+            n.label +
+            ", " +
+            techText(n) +
+            ", " +
+            n.role +
+            (isInferred("node", n.id) ? ", inferred" : "") +
+            (risks.length
+              ? ", " + risks.length + " possible risk" + (risks.length > 1 ? "s" : "") + " to check"
+              : "");
+          var g = s("g", {
+            class: "node" + (isInferred("node", n.id) ? " inferred" : ""),
+            "data-node": n.id,
+            transform: "translate(" + p.x + " " + p.y + ")",
+            tabindex: "0",
+            role: "button",
+            "aria-label": label,
+          });
+          g.append(
+            s("title", {}, label),
+            s("rect", { class: "ring", x: -4, y: -4, width: W + 8, height: H + 8, rx: 10 }),
+            s("rect", { class: "box", width: W, height: H, rx: 7 }),
+          );
+          var ic = iconSvg(n, 32, "icon", 14, 16);
+          if (ic) g.append(ic);
+          g.append(
+            s("text", { class: "name", x: 58, y: 28 }, clip(n.label, 17)),
+            s("text", { class: "sub", x: 58, y: 47 }, clip(techText(n), 20)),
+          );
+          if (risks.length)
+            g.append(
+              s(
+                "g",
+                { class: "badge", transform: "translate(" + (W - 4) + " 4)" },
+                s("circle", { r: 11 }),
+                s("text", { y: 4.5 }, String(risks.length)),
+              ),
+            );
+          g.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            if (!moved) select("node", n.id);
+          });
+          g.addEventListener("keydown", function (ev) {
+            if (ev.key === "Enter" || ev.key === " ") {
+              ev.preventDefault();
+              ev.stopPropagation();
+              select("node", n.id);
+            }
+          });
+          nodeEls[n.id] = g;
+          gNodes.append(g);
+        });
+
+        // ---- pan and zoom
+        var stage = $("stage");
+        var view = { x: 0, y: 0, k: 1 };
+        var moved = false;
+        function applyView() {
+          vp.setAttribute(
+            "transform",
+            "translate(" + view.x + " " + view.y + ") scale(" + view.k + ")",
+          );
+        }
+        function fit() {
+          var r = stage.getBoundingClientRect();
+          if (!r.width || !r.height) return;
+          var k = Math.min(r.width / contentW, r.height / contentH, 1.25);
+          view = { k: k, x: (r.width - contentW * k) / 2, y: (r.height - contentH * k) / 2 };
+          applyView();
+        }
+        function zoomAt(px, py, f) {
+          var k = Math.max(0.2, Math.min(3, view.k * f));
+          view.x = px - ((px - view.x) * k) / view.k;
+          view.y = py - ((py - view.y) * k) / view.k;
+          view.k = k;
+          applyView();
+        }
+        function center() {
+          var r = stage.getBoundingClientRect();
+          return [r.width / 2, r.height / 2];
+        }
+        stage.addEventListener(
+          "wheel",
+          function (ev) {
+            ev.preventDefault();
+            var r = stage.getBoundingClientRect();
+            zoomAt(
+              ev.clientX - r.left,
+              ev.clientY - r.top,
+              Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0018)),
+            );
+          },
+          { passive: false },
+        );
+        var drag = null;
+        stage.addEventListener("pointerdown", function (ev) {
+          if (ev.target.closest && ev.target.closest("#zoom")) return;
+          drag = { x: ev.clientX, y: ev.clientY, vx: view.x, vy: view.y };
+          moved = false;
+        });
+        stage.addEventListener("pointermove", function (ev) {
+          if (!drag) return;
+          var dx = ev.clientX - drag.x,
+            dy = ev.clientY - drag.y;
+          if (!moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+          if (!moved) {
+            moved = true;
+            stage.classList.add("dragging");
+            try {
+              stage.setPointerCapture(ev.pointerId);
+            } catch (e) {
+              /* capture is optional */
+            }
+          }
+          view.x = drag.vx + dx;
+          view.y = drag.vy + dy;
+          applyView();
+        });
+        function endDrag() {
+          drag = null;
+          stage.classList.remove("dragging");
+          setTimeout(function () {
+            moved = false;
+          }, 0);
+        }
+        stage.addEventListener("pointerup", endDrag);
+        stage.addEventListener("pointercancel", endDrag);
+        stage.addEventListener("click", function () {
+          if (!moved) select(null);
+        });
+        stage.addEventListener("keydown", function (ev) {
+          if (ev.target !== stage) return;
+          var c = center(),
+            step = 60,
+            handled = true;
+          if (ev.key === "ArrowLeft") view.x += step;
+          else if (ev.key === "ArrowRight") view.x -= step;
+          else if (ev.key === "ArrowUp") view.y += step;
+          else if (ev.key === "ArrowDown") view.y -= step;
+          else if (ev.key === "+" || ev.key === "=") return zoomAt(c[0], c[1], 1.2);
+          else if (ev.key === "-") return zoomAt(c[0], c[1], 1 / 1.2);
+          else if (ev.key === "0") return fit();
+          else handled = false;
+          if (handled) {
+            ev.preventDefault();
+            applyView();
+          }
+        });
+        $("zin").addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          var c = center();
+          zoomAt(c[0], c[1], 1.25);
+        });
+        $("zout").addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          var c = center();
+          zoomAt(c[0], c[1], 0.8);
+        });
+        $("zfit").addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          fit();
+        });
+        window.addEventListener("resize", fit);
+
+        // ---- the list shown on narrow screens
+        var list = $("list");
+        cols.forEach(function (c, ci) {
+          list.append(h("h2", {}, TIER_NAME[present[ci]]));
+          c.forEach(function (n) {
+            var risks = risksByNode[n.id] || [];
+            var outs = model.edges
+              .filter(function (e) {
+                return e.from === n.id && nodeById[e.to];
+              })
+              .map(function (e) {
+                return nodeById[e.to].label;
+              });
+            var ic = iconSvg(n, 28, "icon", null, null);
+            var card = h(
+              "button",
+              {
+                type: "button",
+                class: "card" + (isInferred("node", n.id) ? " inferred" : ""),
+                "data-node": n.id,
+              },
+              h(
+                "span",
+                { class: "row" },
+                ic ? (ic.setAttribute("fill", "currentColor"), ic) : null,
+                h(
+                  "span",
+                  {},
+                  h("span", { class: "t" }, n.label),
+                  h("br"),
+                  h(
+                    "span",
+                    { class: "s mono" },
+                    (techText(n) === n.role ? n.role : techText(n) + " · " + n.role) +
+                      (isInferred("node", n.id) ? " · inferred" : "") +
+                      (risks.length
+                        ? " · " + risks.length + " possible risk" + (risks.length > 1 ? "s" : "")
+                        : ""),
+                  ),
+                ),
+              ),
+              outs.length ? h("span", { class: "c" }, "Connects to: " + outs.join(", ")) : null,
+            );
+            card.addEventListener("click", function () {
+              select("node", n.id);
+            });
+            cardEls[n.id] = card;
+            list.append(card);
+          });
+        });
+
+        // ---- side panel
+        var sel = null;
+        var tab = "details";
+        var panel = $("panel"),
+          body = $("body");
+        function select(kind, id) {
+          sel = kind ? { kind: kind, id: id } : null;
+          if (sel) tab = "details";
+          Object.keys(nodeEls).forEach(function (k) {
+            var on = sel && sel.kind === "node" && sel.id === k;
+            nodeEls[k].classList.toggle("selected", !!on);
+            nodeEls[k].setAttribute("aria-pressed", on ? "true" : "false");
+            cardEls[k].classList.toggle("selected", !!on);
+          });
+          Object.keys(edgeEls).forEach(function (k) {
+            edgeEls[k].classList.toggle("selected", !!(sel && sel.kind === "edge" && sel.id === k));
+          });
+          panel.classList.toggle("open", !!sel);
+          renderPanel();
+        }
+        function evidenceList(items) {
+          if (!items || !items.length) return null;
+          return h(
+            "ul",
+            {},
+            items.map(function (e) {
+              return h(
+                "li",
+                {},
+                h("code", {}, e.file + (e.line ? ":" + e.line : "")),
+                e.note ? " — " + e.note : "",
+              );
+            }),
+          );
+        }
+        function riskCard(r, withLink) {
+          var nodes = r.nodes.map(function (id) {
+            return nodeById[id] ? nodeById[id].label : id;
+          });
+          return h(
+            "article",
+            { class: "risk" },
+            h("p", { class: "tag" }, "Possible risk to check · " + r.severity),
+            h("p", {}, r.why),
+            h("p", {}, h("strong", {}, "What to check: "), r.check),
+            evidenceList(r.evidence),
+            h(
+              "p",
+              { class: "src" },
+              (r.source === "agent"
+                ? "Added from the agent's reading of the code"
+                : "Rule-based heuristic, so it can be wrong") +
+                " · " +
+                r.id +
+                " · " +
+                nodes.join(", "),
+            ),
+            withLink && r.nodes[0] && nodeById[r.nodes[0]]
+              ? (function () {
+                  var b = h("button", { type: "button", class: "link" }, "Show on the diagram");
+                  b.addEventListener("click", function () {
+                    select("node", r.nodes[0]);
+                  });
+                  return b;
+                })()
+              : null,
+          );
+        }
+        function linkTo(kind, id, text) {
+          var b = h("button", { type: "button", class: "link" }, text);
+          b.addEventListener("click", function () {
+            select(kind, id);
+          });
+          return b;
+        }
+        function renderPanel() {
+          var nRisks = (model.risks || []).length;
+          $("tab-risks").textContent = "Risks (" + nRisks + ")";
+          $("tab-details").setAttribute("aria-selected", tab === "details" ? "true" : "false");
+          $("tab-risks").setAttribute("aria-selected", tab === "risks" ? "true" : "false");
+          clear(body);
+          if (tab === "risks") {
+            body.append(
+              h(
+                "p",
+                { class: "note" },
+                nRisks
+                  ? "These are possible risks, not confirmed problems. Each one says what to check and which files it is based on."
+                  : "No possible risks were recorded.",
+              ),
+            );
+            (model.risks || []).forEach(function (r) {
+              body.append(riskCard(r, true));
+            });
+            return;
+          }
+          if (!sel) {
+            body.append(
+              h("h2", {}, model.project),
+              h(
+                "p",
+                { class: "meta" },
+                model.nodes.length + " components, " + model.edges.length + " connections",
+              ),
+              h(
+                "p",
+                { class: "note" },
+                "Select a component or a connection to see where it comes from in the code. Drag to pan, scroll to zoom.",
+              ),
+              h("h3", {}, "How to read it"),
+              h(
+                "div",
+                { class: "legend" },
+                h("span", {}, legendLine(false), " Backed by files"),
+                h("span", {}, legendLine(true), " Inferred, no direct evidence"),
+              ),
+              h(
+                "p",
+                { class: "note" },
+                "This page shows how requests would travel based on the code and config. It is not live traffic, and it does not say any design is best.",
+              ),
+            );
+            return;
+          }
+          if (sel.kind === "node") {
+            var n = nodeById[sel.id];
+            body.append(
+              h("h2", {}, n.label),
+              h(
+                "p",
+                { class: "meta" },
+                techText(n) + " · " + n.role + " · " + TIER_NAME[n.tier] + " tier",
+              ),
+            );
+            if (isInferred("node", n.id))
+              body.append(
+                h(
+                  "p",
+                  { class: "note" },
+                  "Inferred: no file in the project directly shows this component, so the diagram marks it with a dashed outline.",
+                ),
+              );
+            body.append(
+              h("h3", {}, "Evidence"),
+              evidenceList(n.evidence) || h("p", { class: "meta" }, "None recorded."),
+            );
+            var conns = model.edges.filter(function (e) {
+              return e.from === n.id || e.to === n.id;
+            });
+            body.append(h("h3", {}, "Connections"));
+            body.append(
+              conns.length
+                ? h(
+                    "ul",
+                    {},
+                    conns.map(function (e) {
+                      var out = e.from === n.id;
+                      var other = nodeById[out ? e.to : e.from];
+                      return h(
+                        "li",
+                        {},
+                        out ? "To " : "From ",
+                        linkTo("edge", e.id, other ? other.label : out ? e.to : e.from),
+                        e.protocol ? " (" + e.protocol + ")" : "",
+                      );
+                    }),
+                  )
+                : h("p", { class: "meta" }, "None."),
+            );
+            var rs = risksByNode[n.id] || [];
+            if (rs.length) {
+              body.append(h("h3", {}, "Possible risks"));
+              rs.forEach(function (r) {
+                body.append(riskCard(r, false));
+              });
+            }
+          } else {
+            var e = edgeById[sel.id];
+            var a = nodeById[e.from],
+              b = nodeById[e.to];
+            body.append(h("h2", {}, (a ? a.label : e.from) + " → " + (b ? b.label : e.to)));
+            body.append(
+              h(
+                "p",
+                { class: "meta" },
+                [
+                  e.protocol,
+                  e.sync === true ? "synchronous" : e.sync === false ? "asynchronous" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Connection",
+              ),
+            );
+            if (isInferred("edge", e.id))
+              body.append(
+                h(
+                  "p",
+                  { class: "note" },
+                  "Inferred: no file directly shows this connection, so the diagram draws it dashed.",
+                ),
+              );
+            body.append(
+              h("h3", {}, "Evidence"),
+              evidenceList(e.evidence) || h("p", { class: "meta" }, "None recorded."),
+            );
+            body.append(
+              h("h3", {}, "Ends"),
+              h(
+                "ul",
+                {},
+                h("li", {}, "From ", a ? linkTo("node", a.id, a.label) : e.from),
+                h("li", {}, "To ", b ? linkTo("node", b.id, b.label) : e.to),
+              ),
+            );
+          }
+        }
+        function legendLine(dashed) {
+          return s(
+            "svg",
+            { width: 34, height: 10, "aria-hidden": "true" },
+            s("line", {
+              x1: 1,
+              y1: 5,
+              x2: 33,
+              y2: 5,
+              stroke: "currentColor",
+              "stroke-width": 2,
+              "stroke-dasharray": dashed ? "6 4" : null,
+            }),
+          );
+        }
+        $("tab-details").addEventListener("click", function () {
+          tab = "details";
+          renderPanel();
+        });
+        $("tab-risks").addEventListener("click", function () {
+          tab = "risks";
+          panel.classList.add("open");
+          renderPanel();
+        });
+        $("open-risks").addEventListener("click", function () {
+          tab = "risks";
+          panel.classList.add("open");
+          renderPanel();
+        });
+        $("close").addEventListener("click", function () {
+          select(null);
+        });
+        document.addEventListener("keydown", function (ev) {
+          if (ev.key === "Escape" && (sel || panel.classList.contains("open"))) {
+            select(null);
+            panel.classList.remove("open");
+          }
+        });
+
+        // ---- theme: follows the system until the button is used
+        $("theme").addEventListener("click", function () {
+          var root = document.documentElement;
+          var now =
+            root.getAttribute("data-theme") ||
+            (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          root.setAttribute("data-theme", now === "dark" ? "light" : "dark");
+        });
+
+        fit();
+        renderPanel();
+      })();
+    </script>
+  </body>
+</html>
