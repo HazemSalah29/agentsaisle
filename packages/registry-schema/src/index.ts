@@ -75,8 +75,19 @@ export const MetaPermissions = z
   })
   .strict();
 
+/** A demo link: a full URL, or a path on this site such as /demos/<skill>/<name>.html. */
+const DemoUrl = z.union([
+  z.url(),
+  z.string().regex(/^\/(?!\/)[\w./-]+$/, "a full URL or a path starting with /"),
+]);
+
 export const SkillDemo = z
-  .object({ url: z.url().optional(), screenshots: z.array(z.string().min(1)).default([]) })
+  .object({
+    url: DemoUrl.optional(),
+    /** One or two sentences that say what the preview shows. Replaces the default text on the skill page. */
+    caption: z.string().min(1).max(600).optional(),
+    screenshots: z.array(z.string().min(1)).default([]),
+  })
   .strict();
 export type SkillDemo = z.infer<typeof SkillDemo>;
 
@@ -208,7 +219,13 @@ export const RegistrySkill = z.object({
       needsApiKeys: z.array(z.string()),
     })
     .optional(),
-  demo: z.object({ url: z.string().optional(), screenshots: z.array(z.string()) }).optional(),
+  demo: z
+    .object({
+      url: z.string().optional(),
+      caption: z.string().optional(),
+      screenshots: z.array(z.string()),
+    })
+    .optional(),
   /** Grade and counts from the stored audit (A3). Absent when the skill has not been audited. */
   audit: AuditSummary.optional(),
 });

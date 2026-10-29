@@ -155,12 +155,23 @@ describe("house standard meta fields", () => {
         .success,
     ).toBe(false);
     expect(OfficialMeta.safeParse({ ...full, demo: { url: "not a url" } }).success).toBe(false);
+    expect(OfficialMeta.safeParse({ ...full, demo: { url: "//evil.example/x" } }).success).toBe(
+      false,
+    );
+    expect(OfficialMeta.safeParse({ ...full, demo: { url: "/demos/a b.html" } }).success).toBe(
+      false,
+    );
   });
   it("allows a skill to use more tokens than the baseline", () => {
     expect(
       OfficialMeta.safeParse({ ...full, tested: { ...full.tested, token_savings_median: -0.08 } })
         .success,
     ).toBe(true);
+  });
+  it("accepts a demo path on this site and an optional caption", () => {
+    const demo = { url: "/demos/arch-visualize/devpath.html", caption: "What the preview shows." };
+    expect(OfficialMeta.parse({ ...base, demo }).demo).toEqual({ ...demo, screenshots: [] });
+    expect(OfficialMeta.safeParse({ ...base, demo: { caption: "" } }).success).toBe(false);
   });
   it("defaults demo screenshots to an empty list", () => {
     expect(

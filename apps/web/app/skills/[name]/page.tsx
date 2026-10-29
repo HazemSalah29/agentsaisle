@@ -135,14 +135,17 @@ export default async function SkillPage({ params }: Props) {
               Preview
             </h2>
             <p className="text-sm text-muted">
-              {paired
-                ? "The same demo site before and after this skill: English on the left, Arabic on the right. The Arabic text is a machine-written draft that no native speaker has reviewed yet. These screenshots show a result, not a measured number."
-                : "Screenshots of a demo site built only from this skill's kit. They show the style, not a measured result."}
+              {skill.demo.caption
+                ? skill.demo.caption
+                : paired
+                  ? "The same demo site before and after this skill: English on the left, Arabic on the right. The Arabic text is a machine-written draft that no native speaker has reviewed yet. These screenshots show a result, not a measured number."
+                  : "Screenshots of a demo site built only from this skill's kit. They show the style, not a measured result."}
               {skill.demo.url && (
                 <>
                   {" "}
                   <a
                     href={skill.demo.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-accent-ink underline underline-offset-4"
                   >
