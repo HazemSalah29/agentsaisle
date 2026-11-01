@@ -53,8 +53,23 @@ export function guidance(flags, video) {
   return out;
 }
 
-/** Everything the two output files hold. Returns { ok, problems, credits }. */
-export function buildCredits(video) {
+/** Notes about the voice track, from the voice manifest (provider, model, licence). */
+export function voiceGuidance(manifest) {
+  if (!manifest) return [];
+  if (manifest.provider === "test")
+    return ["The voice track is a test tone, not speech: replace it before publishing."];
+  const out = [
+    `The narration is a computer-generated voice (${manifest.provider}, model ${manifest.model || "unknown"}). Some platforms ask you to say so; check each platform's current rule (TODO(verify)).`,
+  ];
+  if (manifest.provider === "3arab")
+    out.push(
+      "The Arabic voice carries an inaudible watermark added by the model; do not remove it.",
+    );
+  return out;
+}
+
+/** Everything the two output files hold. Returns { ok, problems, credits }. `manifest` is voice/manifest.json. */
+export function buildCredits(video, manifest = null) {
   const problems = [];
   const assets = video.assets ?? [];
   for (const a of assets)
@@ -68,10 +83,24 @@ export function buildCredits(video) {
     problems.push(
       `disclosure.voiceClone is "${declared.voiceClone ?? "none"}" but the assets say "${computed.voiceClone}"`,
     );
+  if (manifest && video.voice?.provider && manifest.provider !== video.voice.provider)
+    problems.push(
+      `video.json says the voice is "${video.voice.provider}" but voice/manifest.json says "${manifest.provider}": run the voice step again`,
+    );
   const credits = {
     version: 1,
     title: video.meta?.title ?? "",
     voice: video.voice?.provider ?? "none",
+    ...(manifest
+      ? {
+          voiceDetails: {
+            provider: manifest.provider,
+            voice: manifest.voice,
+            model: manifest.model ?? "",
+            license: manifest.license ?? "",
+          },
+        }
+      : {}),
     assets: assets.map((a) => ({
       id: a.id,
       path: a.path,
@@ -81,7 +110,7 @@ export function buildCredits(video) {
       aiGenerated: a.aiGenerated === true,
     })),
     disclosure: computed,
-    guidance: guidance(computed, video),
+    guidance: [...guidance(computed, video), ...voiceGuidance(manifest)],
   };
   return { ok: problems.length === 0, problems, credits };
 }
@@ -89,7 +118,12 @@ export function buildCredits(video) {
 /** CREDITS.txt: one block per asset, then the disclosure advice. */
 export function creditsText(c) {
   const lines = [`Credits: ${c.title}`, ""];
-  if (c.voice !== "none") lines.push(`Voice: ${c.voice}`, "");
+  if (c.voiceDetails)
+    lines.push(
+      `Voice: ${c.voiceDetails.provider} (model ${c.voiceDetails.model || "unknown"}; ${c.voiceDetails.license || "licence not recorded"})`,
+      "",
+    );
+  else if (c.voice !== "none") lines.push(`Voice: ${c.voice}`, "");
   if (c.assets.length === 0) lines.push("No third-party or generated assets.", "");
   for (const a of c.assets) {
     lines.push(`${a.path}`);
@@ -116,7 +150,9 @@ function main() {
     console.error("Usage: node credits.mjs <project-dir>  (needs video.json)");
     process.exit(2);
   }
-  const { ok, problems, credits } = buildCredits(JSON.parse(readFileSync(file, "utf8")));
+  const mfile = path.join(dir, "voice", "manifest.json");
+  const manifest = existsSync(mfile) ? JSON.parse(readFileSync(mfile, "utf8")) : null;
+  const { ok, problems, credits } = buildCredits(JSON.parse(readFileSync(file, "utf8")), manifest);
   if (!ok) {
     console.error(capLines(problems, `${problems.length} problem(s); credits not written.`));
     process.exit(1);

@@ -1,6 +1,6 @@
-# Agent Aisle video library: user guide (draft, M1)
+# Agent Aisle video library: user guide (draft, M2)
 
-This is a first draft. In this version you can set up a studio folder, check your tools, and render a video from a `video.json` file. Writing scripts, voices, captions and diagrams come in later versions, so the steps below are by hand for now.
+This is a draft. In this version you can set up a studio folder, write a script and storyboard, make a voice track and captions, and render a video. Animated diagrams, code scenes, QA and publishing come in later versions.
 
 ## 1. Where it runs
 
@@ -27,21 +27,36 @@ Open any empty folder (for example `Documents/AisleVideos`) and type `/video ini
 
 Then type `/video doctor`. It lists what is installed, your hardware tier (not ready, $0 laptop, local GPU) and one install line for anything missing. It only says "found" or "missing" for API keys and never shows them.
 
-## 4. Make a video (by hand, for now)
+## 4. Make a video
 
-1. Make a folder `projects/my-first/` with a `video.json` (see `registry/official/video-core/references/video-json.md` for every field). Five scene kinds work today: `title`, `quote`, `list`, `chart`, `broll`.
-2. `/video-core` checks it: every problem is listed with its place, such as `$.scenes[1].props.items: at least 1 item(s)`.
-3. If scenes take their length from a voice, put one audio file per script line in `voice/` (named `l1.wav`, `l2.wav`, ...) and let timing run. If every scene has a fixed `seconds`, no audio is needed.
-4. Render a draft (540p, fast), look at `out/my-first-draft.mp4`, then render the final.
-5. Credits: `credits.json` and `CREDITS.txt` are written next to the video. They fail if any asset has no licence.
+Each step is a command; each reads the files of the one before, so you can stop and edit between steps. A project is a folder `projects/<slug>/`.
 
-The same `video.json` and assets always give the same video, byte for byte.
+1. **Write** (`/video-write explain "how rate limiting works"`). It writes `brief.json`, `script.md` (one `[id] line` per sentence with a `beat:`), `facts.md` (a source for every technical claim), `hooks.md` (5 openings) and `storyboard.md`. A checker runs and lists errors, such as a claim with no source or a missing beat. Read the storyboard, change what you want, then say go: it writes `video.json`. Only the `explain` and `story` modes exist, and only five scene kinds (`title`, `quote`, `list`, `chart`, `broll`).
+2. **Voice** (`/video-voice`). English uses Kokoro, Arabic uses 3arab-TTS, both on your own computer. `--provider test` makes a plain tone instead of speech, which is enough to check timing. Lines you did not change are kept, so re-running is cheap. Nothing can clone a voice, and a clone request is refused without consent.
+3. **Lengths**: `timing.mjs` sets each scene's length from the audio.
+4. **Word times and captions** (`/video-captions --style karaoke`). With whisper.cpp set up the word times are measured; without it they are estimated, and the tool says so in capital letters. Three styles: `karaoke`, `pop`, `clean`. You also get `captions.srt` and `captions.vtt`.
+5. **Brand** (`/video-brand init`, `/video-brand check`): colours, a font and a logo for every video. Colours that are hard to read are refused. For Arabic put an Arabic font in `brand/fonts/`.
+6. **Render**: a 540p draft first (`--draft`), look at it, then the final. Captions are burned in unless you chose subtitle files only.
+7. **Credits**: `credits.json` and `CREDITS.txt`, with the disclosure advice.
+
+The same project and assets always give the same video, byte for byte.
+
+### Setting up voices and captions (once)
+
+`/video doctor` shows which of these are ready. None are required: without them you can still use the test tone and estimated captions.
+
+- Kokoro (English voice) needs Python 3.10 to 3.12 and about 1.5 GB for the libraries plus 350 MB of weights.
+- whisper.cpp with the `base` model (150 MB) gives measured word times. On one test, 83% of words were within 100 ms of the reference and the median error was 35 ms; estimated times were within 100 ms for 35% of words.
+- 3arab-TTS (Arabic voice) is about 1 GB of model plus libraries and runs slowly on a CPU.
+- The exact steps, versions and the measured numbers are in `registry/official/video-voice/references/engines.md`. Voices are machine voices; Arabic text and speech are a draft that a native speaker should review before you publish.
 
 ## 5. Troubleshooting
 
 - **"FFmpeg not found"**: run `/video doctor`.
 - **"HyperFrames is not installed"**: run the install line it prints.
-- **Arabic letters look wrong or missing**: put an Arabic font (for example Cairo, OFL licence) in `brand/fonts/` and point `meta.brand` at your `brand.json`. Captions for Arabic arrive with the captions skill.
+- **Arabic letters look wrong or missing**: put an Arabic font (for example Cairo, OFL licence) in `brand/fonts/` and point `meta.brand` at your `brand.json`; `/video-brand check --lang ar` tells you if none is there.
+- **Captions drift from the voice**: the word times were estimated. Set up whisper.cpp (see the setup notes above) and run the voice step's alignment again.
+- **"kokoro is not installed"**: run `/video doctor`; use `--provider test` meanwhile.
 - **A render is slow**: use `--draft` while you edit.
 - **Disk is full**: delete `projects/*/out/` and `projects/*/cache/`.
 

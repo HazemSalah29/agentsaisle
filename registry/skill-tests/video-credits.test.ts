@@ -13,7 +13,7 @@ type Credits = {
     aiMusic: boolean;
     voiceClone: string;
   };
-  buildCredits: (v: Loose) => { ok: boolean; problems: string[]; credits: Loose };
+  buildCredits: (v: Loose, m?: Loose | null) => { ok: boolean; problems: string[]; credits: Loose };
   creditsText: (c: Loose) => string;
 };
 const load = () => loadScript<Credits>("video-core", "scripts/credits.mjs");
@@ -126,5 +126,55 @@ describe("video-core credits", () => {
     );
     expect(spawnSync("node", [script, bad]).status).toBe(1);
     expect(existsSync(path.join(bad, "credits.json"))).toBe(false);
+  });
+
+  it("records the voice engine, model and licence from the manifest, with a watermark note for 3arab", async () => {
+    const { buildCredits, creditsText } = await load();
+    const v = project({ voice: { provider: "kokoro" } });
+    const kokoro = buildCredits(v, {
+      provider: "kokoro",
+      voice: "af_heart",
+      model: "hexgrad/Kokoro-82M",
+      license: "Apache-2.0 (Kokoro-82M)",
+    });
+    expect(kokoro.credits.voiceDetails).toEqual({
+      provider: "kokoro",
+      voice: "af_heart",
+      model: "hexgrad/Kokoro-82M",
+      license: "Apache-2.0 (Kokoro-82M)",
+    });
+    expect(kokoro.credits.guidance.join(" ")).toMatch(
+      /computer-generated voice \(kokoro, model hexgrad\/Kokoro-82M\)/,
+    );
+    expect(kokoro.credits.guidance.join(" ")).not.toMatch(/watermark/);
+    expect(creditsText(kokoro.credits)).toMatch(
+      /Voice: kokoro \(model hexgrad\/Kokoro-82M; Apache-2.0 \(Kokoro-82M\)\)/,
+    );
+    const ar = buildCredits(project({ voice: { provider: "3arab" } }), {
+      provider: "3arab",
+      voice: "x",
+      model: "m",
+      license: "l",
+    });
+    expect(ar.credits.guidance.join(" ")).toMatch(/inaudible watermark/);
+  });
+
+  it("says a test tone is not speech, and fails when the manifest and video.json disagree", async () => {
+    const { buildCredits } = await load();
+    const t = buildCredits(project({ voice: { provider: "test" } }), {
+      provider: "test",
+      voice: "tone",
+      model: "test-tone-1",
+      license: "none",
+    });
+    expect(t.credits.guidance.join(" ")).toMatch(/test tone, not speech/);
+    const bad = buildCredits(project({ voice: { provider: "kokoro" } }), {
+      provider: "3arab",
+      voice: "x",
+    });
+    expect(bad.problems.join()).toMatch(
+      /says the voice is "kokoro" but voice\/manifest\.json says "3arab"/,
+    );
+    expect(buildCredits(project()).credits.voiceDetails).toBeUndefined();
   });
 });
