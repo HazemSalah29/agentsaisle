@@ -92,7 +92,7 @@ describe("video-core runner", () => {
     const own = skillFile("video-core", "scripts/x.py");
     expect(() => assertAllowed("python", [own, "--arg"])).not.toThrow();
     expect(() =>
-      assertAllowed("python", [skillFile("video-voice", "providers/kokoro.py")]),
+      assertAllowed("python", [skillFile("video-voice", "providers/tts_kokoro.py")]),
     ).not.toThrow();
     for (const args of [
       ["-c", "print(1)"],

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { skillFile } from "./load";
 
 const hasPython = spawnSync("python3", ["--version"]).status === 0;
-const PROVIDERS = ["kokoro.py"];
+const PROVIDERS = ["tts_kokoro.py"];
 
 describe.each(PROVIDERS)("python provider %s: source", (file) => {
   const src = readFileSync(skillFile("video-voice", `providers/${file}`), "utf8");
@@ -38,7 +38,7 @@ describe.each(PROVIDERS)("python provider %s: source", (file) => {
   });
 });
 
-describe.skipIf(!hasPython)("python provider kokoro.py: arguments", () => {
+describe.skipIf(!hasPython)("python provider tts_kokoro.py: arguments", () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), "video-py-"));
   const text = path.join(dir, "t.txt");
   writeFileSync(text, "Hello");
@@ -46,7 +46,7 @@ describe.skipIf(!hasPython)("python provider kokoro.py: arguments", () => {
     spawnSync(
       "python3",
       [
-        skillFile("video-voice", "providers/kokoro.py"),
+        skillFile("video-voice", "providers/tts_kokoro.py"),
         "--text-file",
         text,
         "--out",
@@ -71,7 +71,7 @@ describe.skipIf(!hasPython)("python provider kokoro.py: arguments", () => {
   });
 
   it("needs its arguments", () => {
-    const r = spawnSync("python3", [skillFile("video-voice", "providers/kokoro.py")], {
+    const r = spawnSync("python3", [skillFile("video-voice", "providers/tts_kokoro.py")], {
       encoding: "utf8",
     });
     expect(r.status).toBe(2);

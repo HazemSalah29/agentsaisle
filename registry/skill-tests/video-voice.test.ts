@@ -85,7 +85,7 @@ describe("video-voice python providers", () => {
     expect(r.model).toBe("kokoro-82m");
     const c = calls[0]!;
     expect(c.cmd).toBe("python");
-    expect(c.args[0]).toBe(skillFile("video-voice", "providers/kokoro.py"));
+    expect(c.args[0]).toBe(skillFile("video-voice", "providers/tts_kokoro.py"));
     expect(c.args.join(" ")).not.toContain("rm -rf");
     expect(c.text).toBe('rm -rf / ; $(x) "quoted"');
     expect(existsSync(c.args[c.args.indexOf("--text-file") + 1]!)).toBe(false); // removed afterwards
@@ -97,6 +97,18 @@ describe("video-voice python providers", () => {
     expect(() =>
       PROVIDERS.kokoro!.synthesize({ text: "x", voice: "v", speed: 1, seed: 1, out: "o", run }),
     ).toThrow(/kokoro failed: .*ImportError: no kokoro/);
+  });
+});
+
+describe("video-voice failure reports", () => {
+  it("shows the adapter's own error line rather than the warnings around it", async () => {
+    const { PROVIDERS } = await loadScript<Providers>("video-voice", "scripts/providers.mjs");
+    const noisy =
+      "FutureWarning: x\nkokoro failed: OSError: model file missing\nWeightNorm.apply(module)\n";
+    const run = () => ({ status: 4, stdout: "", stderr: noisy });
+    expect(() =>
+      PROVIDERS.kokoro!.synthesize({ text: "x", voice: "v", speed: 1, seed: 1, out: "o", run }),
+    ).toThrow(/^kokoro failed: kokoro failed: OSError: model file missing$/);
   });
 });
 

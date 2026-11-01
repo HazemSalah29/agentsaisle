@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Kokoro-82M English voice for video-voice. Called through the runner with a fixed argument list.
+"""Kokoro-82M English voice for video-voice. (The file is not called kokoro.py: Python would import it
+instead of the kokoro package.) Called through the runner with a fixed argument list.
 
-    kokoro.py --text-file T --out O.wav --voice af_heart --speed 1.0 --seed 1
+    tts_kokoro.py --text-file T --out O.wav --voice af_heart --speed 1.0 --seed 1
 
 Writes a 24 kHz mono 16-bit WAV and prints one JSON line {"model": ..., "sampleRate": ...}.
 It never downloads anything: the model must already be in the local Hugging Face cache (the setup step

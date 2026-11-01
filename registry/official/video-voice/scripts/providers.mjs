@@ -65,6 +65,13 @@ const testProvider = {
   },
 };
 
+/** The adapter's own error line (they start "<name> failed:", "... is not installed", "voice must"), else the last 3 lines. */
+export function failureLine(text) {
+  const lines = String(text).trim().split("\n");
+  const own = lines.find((l) => /^\w+ failed:|^\w+ is not installed|^(voice|speed) must/.test(l));
+  return (own ?? lines.slice(-3).join(" | ")).slice(0, 400);
+}
+
 /** Run one of our python provider scripts. The text goes in through a temporary file, never an argument. */
 function pythonProvider(id, file, langs, defaultVoice, license) {
   return {
@@ -90,10 +97,7 @@ function pythonProvider(id, file, langs, defaultVoice, license) {
           "--seed",
           String(seed),
         ]);
-        if (r.status !== 0)
-          throw new Error(
-            `${id} failed: ${(r.stderr || r.stdout).trim().split("\n").slice(-3).join(" | ")}`,
-          );
+        if (r.status !== 0) throw new Error(`${id} failed: ${failureLine(r.stderr || r.stdout)}`);
         const last = r.stdout.trim().split("\n").at(-1) ?? "";
         let info = {};
         try {
@@ -111,10 +115,10 @@ function pythonProvider(id, file, langs, defaultVoice, license) {
 
 export const PROVIDERS = {
   test: testProvider,
-  kokoro: pythonProvider("kokoro", "kokoro.py", ["en"], "af_heart", "Apache-2.0 (Kokoro-82M)"),
+  kokoro: pythonProvider("kokoro", "tts_kokoro.py", ["en"], "af_heart", "Apache-2.0 (Kokoro-82M)"),
   "3arab": pythonProvider(
     "3arab",
-    "arab3.py",
+    "tts_arab3.py",
     ["ar"],
     "calm adult voice, Modern Standard Arabic",
     "Apache-2.0 (3arab-TTS-500M-v2); output carries a SilentCipher watermark",
