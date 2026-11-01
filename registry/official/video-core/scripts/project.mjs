@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { captionProblem, renderCaptions } from "../assets/engine/hyperframes/captions.mjs";
-import { KINDS, esc, renderScene } from "../assets/engine/hyperframes/scenes.mjs";
+import { KINDS, esc, kindCss, renderScene } from "../assets/engine/hyperframes/scenes.mjs";
 import { skillDir } from "./_lib.mjs";
 
 export const SIZES = {
@@ -56,7 +56,7 @@ html,body{margin:0;background:${brand.colors.bg}}
 .scene-broll{padding:0;gap:0}
 .media{position:absolute;inset:0;width:100%;height:100%}
 .media-cap{position:absolute;inset-inline:calc(var(--u)*7);bottom:calc(var(--u)*${vertical ? 16 : 6});margin:0;font-size:calc(var(--u)*3.8);font-weight:700}
-`;
+${kindCss(brand, vertical)}`;
 
 /**
  * Build the project (`captions` is a parsed captions.json to draw, or null). Returns { files: { "index.html": text }, media: [{ from, to }], fonts: [{ from, to }],

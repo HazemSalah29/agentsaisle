@@ -27,9 +27,9 @@ const ctx = (o: Record<string, unknown> = {}) => ({
 const HOSTILE = `<img src=x onerror=alert(1)> "q" 'a' & </script><script>alert(2)</script>`;
 
 describe("video-core scenes", () => {
-  it("builds the five kinds", async () => {
+  it("builds the kinds", async () => {
     const { KINDS } = await load();
-    expect(KINDS).toEqual(["title", "quote", "list", "chart", "broll"]);
+    expect(KINDS).toEqual(["title", "quote", "list", "chart", "broll", "rate-limit"]);
   });
 
   it("shows hostile strings as text in every kind, never as markup", async () => {

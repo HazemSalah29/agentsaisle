@@ -1,23 +1,14 @@
-// The five scene kinds for the HyperFrames engine. Each is a pure function from validated props to
+// The scene kinds for the HyperFrames engine. Each is a pure function from validated props to
 // { html, plan }: markup for one scene and the animations that bring it in. Text is always escaped, so a
 // hostile string in video.json is shown as text and never becomes markup. Nothing here touches the disk.
 
-export const KINDS = ["title", "quote", "list", "chart", "broll"];
+import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
+import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
 
-const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ESC[c]);
+export { esc };
+export const KINDS = ["title", "quote", "list", "chart", "broll", "rate-limit"];
 
-const fadeUp = (first, rise) => [
-  first
-    ? { transform: `translateY(${rise}px)` }
-    : { opacity: 0, transform: `translateY(${rise}px)` },
-  { opacity: 1, transform: "translateY(0)" },
-];
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
-
-/** Seconds the entrance of each element takes, and how far apart staggered items start. */
-const IN = 0.5;
-const STAGGER = 0.18;
 
 function title(s, ctx) {
   const id = `${ctx.prefix}-t`;
@@ -175,7 +166,10 @@ function broll(s, ctx) {
   return { html: media + cap, plan };
 }
 
-const BUILDERS = { title, quote, list, chart, broll };
+const BUILDERS = { title, quote, list, chart, broll, "rate-limit": rateLimit };
+
+/** Styles the kinds above need on top of the base page styles. */
+export const kindCss = (brand, vertical) => rateLimitCss(brand, vertical);
 
 /**
  * Markup and animations for one scene.

@@ -92,55 +92,81 @@ export function arrivals({ seed, count, pattern }) {
 
 const r3 = (n) => Math.round(n * 1000) / 1000;
 
+/**
+ * One algorithm as a function `decide(t, pts)`. It pushes the meter's exact shape into `pts` as [ms, value]
+ * points (straight lines between them; two points at the same time are a jump) and returns the decision.
+ */
 function decider(a) {
-  if (a.algo === "token-bucket") {
-    let tokens = a.capacity;
+  if (a.algo === "token-bucket" || a.algo === "leaky-bucket") {
+    const fill = a.algo === "token-bucket";
+    const rate = fill ? a.refillPerSec : a.leakPerSec;
+    let level = fill ? a.capacity : 0;
     let last = 0;
-    return (t) => {
-      tokens = Math.min(a.capacity, tokens + ((t - last) / 1000) * a.refillPerSec);
+    const decide = (t, pts) => {
+      const to = fill
+        ? Math.min(a.capacity, level + ((t - last) / 1000) * rate)
+        : Math.max(0, level - ((t - last) / 1000) * rate);
+      // The level flattens when it reaches the top (tokens) or the bottom (leaky) before this request.
+      const edge = fill ? a.capacity : 0;
+      if (to === edge && level !== edge)
+        pts.push([Math.round(last + (Math.abs(edge - level) / rate) * 1000), edge]);
+      level = to;
       last = t;
-      const ok = tokens >= 1;
-      if (ok) tokens -= 1;
-      return { ok, level: r3(tokens), max: a.capacity };
-    };
-  }
-  if (a.algo === "leaky-bucket") {
-    let level = 0;
-    let last = 0;
-    return (t) => {
-      level = Math.max(0, level - ((t - last) / 1000) * a.leakPerSec);
-      last = t;
-      const ok = level + 1 <= a.capacity;
-      if (ok) level += 1;
+      pts.push([t, r3(level)]);
+      const ok = fill ? level >= 1 : level + 1 <= a.capacity;
+      if (ok) level += fill ? -1 : 1;
+      pts.push([t, r3(level)]);
       return { ok, level: r3(level), max: a.capacity };
     };
+    decide.start = level;
+    return decide;
   }
   const w = a.windowSec * 1000;
   if (a.algo === "fixed-window") {
     let start = 0;
     let n = 0;
-    return (t) => {
+    const decide = (t, pts) => {
       const s = Math.floor(t / w) * w;
       if (s !== start) {
+        if (n) pts.push([s, n], [s, 0]);
         start = s;
         n = 0;
       }
       const ok = n < a.limit;
-      if (ok) n += 1;
+      if (ok) {
+        n += 1;
+        pts.push([t, n - 1], [t, n]);
+      }
       return { ok, level: n, max: a.limit };
     };
+    decide.start = 0;
+    return decide;
   }
   const kept = [];
-  return (t) => {
-    while (kept.length && kept[0] <= t - w) kept.shift();
+  const decide = (t, pts) => {
+    // Each allowed request leaves the window exactly windowSec after it came in.
+    while (kept.length && kept[0] <= t - w) {
+      const gone = kept.shift();
+      pts.push([gone + w, kept.length + 1], [gone + w, kept.length]);
+    }
     const ok = kept.length < a.limit;
-    if (ok) kept.push(t);
+    if (ok) {
+      pts.push([t, kept.length], [t, kept.length + 1]);
+      kept.push(t);
+    }
     return { ok, level: kept.length, max: a.limit };
   };
+  decide.start = 0;
+  return decide;
+}
+
+/** Meter points in time order, with the starting value taken from the first real point. */
+function tidy(pts) {
+  return pts.slice().sort((x, y) => x[0] - y[0]);
 }
 
 /**
- * Run the spec. Returns { arrivals, runs: [{ algo, params, events, allowed, rejected }], durationMs }.
+ * Run the spec. Returns { arrivals, runs: [{ algo, params, events, meter, allowed, rejected }], durationMs }.
  * An event is { id, t, outcome: "allowed" | "rejected", level, max }: `level` is what the meter shows right after
  * the decision (tokens left, bucket fill, or requests counted in the window).
  */
@@ -152,12 +178,13 @@ export function simulate(spec) {
     const decide = decider(a);
     const { algo, ...params } = a;
     let allowed = 0;
+    const meter = [[0, decide.start]];
     const events = times.map((t, id) => {
-      const d = decide(t);
+      const d = decide(t, meter);
       if (d.ok) allowed += 1;
       return { id, t, outcome: d.ok ? "allowed" : "rejected", level: d.level, max: d.max };
     });
-    return { algo, params, events, allowed, rejected: times.length - allowed };
+    return { algo, params, events, meter: tidy(meter), allowed, rejected: times.length - allowed };
   });
   return { arrivals: times, runs, durationMs: times[times.length - 1] ?? 0 };
 }

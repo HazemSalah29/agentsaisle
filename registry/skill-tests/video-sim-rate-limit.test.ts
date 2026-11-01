@@ -66,6 +66,22 @@ describe("rate-limit simulator", () => {
     expect(outcomes(r)).toBe("AARRAA");
   });
 
+  it("describes the meter exactly: the token level flattens at the top, a window request leaves on time", async () => {
+    const { simulate } = await load();
+    const slow = { type: "steady", ratePerSec: 0.5 }; // t = 0, 2000
+    const tb = simulate(spec({ algo: "token-bucket", capacity: 2, refillPerSec: 1 }, slow, 2));
+    expect(tb.runs[0].meter).toEqual([
+      [0, 2],
+      [0, 2],
+      [0, 1],
+      [1000, 2],
+      [2000, 2],
+      [2000, 1],
+    ]);
+    const sw = simulate(spec({ algo: "sliding-window", limit: 2, windowSec: 1 }, slow, 2));
+    expect(sw.runs[0].meter).toContainEqual([1000, 0]);
+  });
+
   it("gives the same log for the same seed and a different one for another seed", async () => {
     const { simulate } = await load();
     const mk = (seed: number) =>

@@ -4,6 +4,8 @@
 // Usage: node check.mjs <project-dir | path/to/video.json> [--json]
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
+import { specProblems } from "../assets/sim/rate-limit.mjs";
 import { validate } from "./schema-check.mjs";
 import { capLines, isEntry, isInside, parseArgs, skillDir } from "./_lib.mjs";
 
@@ -93,6 +95,7 @@ export function checkProject(video, dir, schema = loadSchema()) {
           problems.push(`${at}.narration: line "${id}" is not in ${video.script}`);
     const propSchema = schema.definitions?.props?.[s.kind];
     if (propSchema) problems.push(...validate(propSchema, s.props ?? {}, schema, `${at}.props`));
+    if (s.kind === "rate-limit") problems.push(...rateLimitProblems(s.props ?? {}, `${at}.props`));
     if (s.kind === "broll" && s.props?.asset && !assetIds.has(s.props.asset))
       problems.push(`${at}.props.asset: "${s.props.asset}" is not listed in assets`);
   });
@@ -101,6 +104,19 @@ export function checkProject(video, dir, schema = loadSchema()) {
     if (SECRET_RES.some((re) => re.test(text)))
       problems.push(`${at}: looks like a credential; remove it`);
   return problems;
+}
+
+/** The rate-limit scene is drawn from the simulator, so its props must be a spec and never a typed-in result. */
+function rateLimitProblems(props, at) {
+  const out = specProblems(props).map((p) => `${at}.${p}`);
+  for (const k of ["log", "events", "results", "allowed", "rejected"])
+    if (k in props)
+      out.push(
+        `${at}.${k}: results are computed from the seed; remove it (the animation is the simulation)`,
+      );
+  if (Number.isInteger(props.count) && props.count > MAX_DRAWN)
+    out.push(`${at}.count: a scene draws at most ${MAX_DRAWN} requests (each is a dot); use fewer`);
+  return out;
 }
 
 /** Resolve the argument to { file, dir }. */
