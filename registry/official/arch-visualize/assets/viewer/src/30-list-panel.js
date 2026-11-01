@@ -1,6 +1,7 @@
 // ---- the list shown on narrow screens
 var list = $("list");
 cols.forEach(function (c, ci) {
+  if (!c.length) return;
   list.append(h("h2", {}, tierName(present[ci])));
   c.forEach(function (n) {
     var risks = risksByNode[n.id] || [];

@@ -54,6 +54,7 @@ const base = (): Model => ({
   ],
   risks: [{ id: "r1" }],
 });
+const nth = <T>(list: T[], i: number): T => list[i] as T;
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
 describe("arch-visualize diff: matching and changes", () => {
@@ -84,11 +85,11 @@ describe("arch-visualize diff: matching and changes", () => {
     ["owner", "data-team"],
   ])("reports a changed component fact: %s", (field, value) => {
     const head = base();
-    head.nodes[1] = { ...head.nodes[1], [field]: value };
+    head.nodes[1] = { ...nth(head.nodes, 1), [field]: value };
     const d = diff(base(), head);
     expect(d.nodes.changed).toHaveLength(1);
-    expect(d.nodes.changed[0].changes.map((c) => c.field)).toEqual([field]);
-    expect(d.nodes.changed[0].changes[0].after).toBe(value);
+    expect(nth(d.nodes.changed, 0).changes.map((c) => c.field)).toEqual([field]);
+    expect(nth(nth(d.nodes.changed, 0).changes, 0).after).toBe(value);
   });
 
   it.each([
@@ -101,33 +102,33 @@ describe("arch-visualize diff: matching and changes", () => {
     ["optional", true],
   ])("reports a changed connection fact: %s", (field, value) => {
     const head = base();
-    head.edges[0] = { ...head.edges[0], [field]: value };
+    head.edges[0] = { ...nth(head.edges, 0), [field]: value };
     const d = diff(base(), head);
     expect(d.edges.changed.map((c) => c.changes.map((x) => x.field))).toEqual([[field]]);
   });
 
   it("compares data and carries as sets, so order is not a change", () => {
     const a = base();
-    a.nodes[1] = { ...a.nodes[1], data: ["pii", "orders"] };
-    a.edges[0] = { ...a.edges[0], carries: ["pii", "orders"] };
+    a.nodes[1] = { ...nth(a.nodes, 1), data: ["pii", "orders"] };
+    a.edges[0] = { ...nth(a.edges, 0), carries: ["pii", "orders"] };
     const b = clone(a);
-    b.nodes[1].data = ["orders", "pii"];
-    b.edges[0].carries = ["orders", "pii"];
+    nth(b.nodes, 1).data = ["orders", "pii"];
+    nth(b.edges, 0).carries = ["orders", "pii"];
     expect(diff(a, b).empty).toBe(true);
-    b.edges[0].carries = ["orders"];
+    nth(b.edges, 0).carries = ["orders"];
     expect(diff(a, b).edges.changed).toHaveLength(1);
   });
 
   it("does not treat a moved evidence line as a change", () => {
     const head = base();
-    head.nodes[0].evidence = [{ file: "api/package.json", line: 99 }];
+    nth(head.nodes, 0).evidence = [{ file: "api/package.json", line: 99 }];
     expect(diff(base(), head).empty).toBe(true);
   });
 
   it("detects a rename by technology and a shared evidence file", () => {
     const head = base();
-    head.nodes[2] = { ...head.nodes[2], id: "redis" };
-    head.edges[1] = { ...head.edges[1], to: "redis" };
+    head.nodes[2] = { ...nth(head.nodes, 2), id: "redis" };
+    head.edges[1] = { ...nth(head.edges, 1), to: "redis" };
     const d = diff(base(), head);
     expect(d.nodes.renamed.map((r) => [r.from, r.to])).toEqual([["cache", "redis"]]);
     expect(d.nodes.added).toHaveLength(0);
@@ -139,7 +140,7 @@ describe("arch-visualize diff: matching and changes", () => {
 
   it("matches a connection whose id changed with its renamed end", () => {
     const head = base();
-    head.nodes[2] = { ...head.nodes[2], id: "redis" };
+    head.nodes[2] = { ...nth(head.nodes, 2), id: "redis" };
     head.edges[1] = { id: "api-redis", from: "api", to: "redis", sync: true };
     const d = diff(base(), head);
     expect(d.edges.added).toHaveLength(0);
@@ -150,8 +151,8 @@ describe("arch-visualize diff: matching and changes", () => {
     const a = base();
     a.nodes.push({ id: "cache2", tech: "redis", role: "cache", evidence: ev("compose.yml") });
     const b = clone(a);
-    b.nodes[2].id = "r1x";
-    b.nodes[3].id = "r2x";
+    nth(b.nodes, 2).id = "r1x";
+    nth(b.nodes, 3).id = "r2x";
     const d = diff(a, b);
     expect(d.nodes.renamed).toHaveLength(0);
     expect(d.nodes.added).toHaveLength(2);
@@ -160,7 +161,7 @@ describe("arch-visualize diff: matching and changes", () => {
 
   it("does not call two different technologies a rename", () => {
     const head = base();
-    head.nodes[2] = { ...head.nodes[2], id: "memcached", tech: "memcached" };
+    head.nodes[2] = { ...nth(head.nodes, 2), id: "memcached", tech: "memcached" };
     const d = diff(base(), head);
     expect(d.nodes.renamed).toHaveLength(0);
   });
@@ -265,7 +266,7 @@ describe("arch-visualize diff.mjs", () => {
   it("strips control codes from labels in the terminal output", () => {
     const dir = tmp();
     const head = JSON.parse(readFileSync(fixture("fixture-model-v2.json"), "utf8")) as Model;
-    head.nodes[0].label = "Hosting\u001b[31m";
+    nth(head.nodes, 0).label = "Hosting\u001b[31m";
     writeFileSync(path.join(dir, "h.json"), JSON.stringify(head));
     const r = run([
       "--base",
@@ -309,5 +310,143 @@ describe("arch-visualize diff.mjs", () => {
       readFileSync(script, "utf8") +
       readFileSync(skillFile("arch-visualize", "assets/lib/diff.js"), "utf8");
     expect(text).not.toMatch(/\bfetch\(|node:(https?|net|child_process)|\beval\(|new Function/);
+  });
+});
+
+describe("arch-visualize Diff lens page", () => {
+  const renderScript = skillFile("arch-visualize", "scripts/render.mjs");
+  const model = fixture("fixture-model-v2.json");
+  const make = (extra: string[] = [], diffFile?: string) => {
+    const dir = tmp();
+    let d = diffFile;
+    if (!d) {
+      d = path.join(dir, "d.json");
+      expect(
+        run(["--base", fixture("fixture-model-base.json"), "--head", model, "--out", d]).status,
+      ).toBe(0);
+    }
+    const out = path.join(dir, "page.html");
+    const r = spawnSync(
+      process.execPath,
+      [renderScript, "--model", model, "--out", out, "--diff", d, ...extra],
+      { encoding: "utf8" },
+    );
+    return { r, out, dir, d };
+  };
+
+  it("embeds the diff and opens on the Diff lens", () => {
+    const { r, out } = make();
+    expect(r.status, r.stderr).toBe(0);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('data-lens="diff"');
+    const block = /<script type="application\/json" id="diff">([\s\S]*?)<\/script>/.exec(html);
+    const embedded = JSON.parse(block![1]!) as Diff;
+    expect(embedded.kind).toBe("arch-diff");
+    expect(embedded.nodes.removed.map((n) => n.id)).toEqual(["legacy-cron"]);
+  });
+
+  it("lets --lens choose another starting lens", () => {
+    const { out } = make(["--lens", "system"]);
+    expect(readFileSync(out, "utf8")).toContain('data-lens="system"');
+  });
+
+  it("embeds nothing without --diff and refuses --lens diff then", () => {
+    const dir = tmp();
+    const out = path.join(dir, "p.html");
+    const plain = spawnSync(process.execPath, [renderScript, "--model", model, "--out", out], {
+      encoding: "utf8",
+    });
+    expect(plain.status).toBe(0);
+    expect(readFileSync(out, "utf8")).toMatch(/id="diff">\s*null\s*</);
+    const bad = spawnSync(
+      process.execPath,
+      [renderScript, "--model", model, "--out", out, "--lens", "diff", "--force"],
+      { encoding: "utf8" },
+    );
+    expect(bad.status).not.toBe(0);
+  });
+
+  it("refuses a diff file that is not what diff.mjs writes", () => {
+    const dir = tmp();
+    for (const [name, content] of [
+      ["notjson.json", "{oops"],
+      ["wrongkind.json", JSON.stringify({ kind: "something", version: 1 })],
+      [
+        "badid.json",
+        JSON.stringify({
+          kind: "arch-diff",
+          version: 1,
+          nodes: { added: [{ id: "</script>" }], removed: [], changed: [], renamed: [] },
+          edges: { added: [], removed: [], changed: [] },
+          risks: { added: [], removed: [] },
+        }),
+      ],
+    ] as const) {
+      const f = path.join(dir, name);
+      writeFileSync(f, content);
+      const { r } = make([], f);
+      expect(r.status, name).toBe(2);
+      expect(r.stderr, name).toContain("--diff");
+    }
+  });
+
+  it("keeps hostile text in a label from leaving the data block", () => {
+    const dir = tmp();
+    const head = JSON.parse(readFileSync(model, "utf8")) as Model;
+    nth(head.nodes, 0).label = "x</script><img src=x onerror=alert(1)>";
+    const headFile = path.join(dir, "head.json");
+    writeFileSync(headFile, JSON.stringify(head));
+    const d = path.join(dir, "d.json");
+    expect(
+      run(["--base", fixture("fixture-model-base.json"), "--head", headFile, "--out", d]).status,
+    ).toBe(0);
+    const out = path.join(dir, "p.html");
+    const r = spawnSync(
+      process.execPath,
+      [renderScript, "--model", headFile, "--out", out, "--diff", d],
+      { encoding: "utf8" },
+    );
+    expect(r.status, r.stderr).toBe(0);
+    expect(readFileSync(out, "utf8").match(/<\/script/gi)).toHaveLength(6);
+  });
+
+  it("builds an Arabic page with a diff", () => {
+    const { r, out } = make(["--lang", "ar"]);
+    expect(r.status, r.stderr).toBe(0);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('dir="rtl"');
+    expect(html).toContain("التغييرات");
+  });
+});
+
+describe("arch-visualize Diff lens viewer code", () => {
+  const src = (f: string) =>
+    readFileSync(skillFile("arch-visualize", `assets/viewer/src/${f}`), "utf8");
+  it("only offers the lens when a diff is embedded", () => {
+    expect(src("57-lenses.js")).toMatch(/name === "diff"\) return !!DIFF/);
+  });
+  it("lays ghosts out with the current model but never adds them to it", () => {
+    const layout = src("10-layout-draw.js");
+    expect(layout).toMatch(/var layoutModel/);
+    expect(layout).toMatch(/Object\.assign\(\{\}, model/);
+    expect(layout).not.toMatch(/model\.nodes\.push|model\.edges\.push/);
+    // the diagram, search, lists and the what-if simulation read `model`, not `layoutModel`
+    expect(src("60-search.js")).not.toMatch(/layoutModel|ghostNodes/);
+    expect(src("57-lenses.js")).not.toMatch(/layoutModel|ghostNodes/);
+  });
+  it("shows ghosts and chips only in the Diff lens, and marks each with a symbol", () => {
+    const css = readFileSync(skillFile("arch-visualize", "assets/viewer/styles.css"), "utf8");
+    expect(css).toMatch(/\.ghost,\s*\.d-chip\s*{\s*display: none;/);
+    expect(css).toMatch(/\[data-lens="diff"\] \.ghost,/);
+    const code = src("58-diff.js");
+    expect(code).toMatch(/"\+" : "~"/);
+    expect(code).toMatch(/\\u2212|\u2212/);
+  });
+  it("lets the address open the Diff lens", () => {
+    const { ArchHash } = loadLib<{
+      ArchHash: { parseHash: (s: string) => unknown; buildHash: (o: unknown) => string };
+    }>("arch-visualize", ["assets/lib/hash.js"]);
+    expect(ArchHash.parseHash("#lens=diff&node=api")).toEqual({ lens: "diff", node: "api" });
+    expect(ArchHash.buildHash({ lens: "diff", node: "api" })).toBe("#lens=diff&node=api");
   });
 });

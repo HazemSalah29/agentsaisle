@@ -26,6 +26,7 @@ function lensAvailable(name) {
     return model.nodes.some(function (n) {
       return n.ai;
     });
+  if (name === "diff") return !!DIFF;
   return false;
 }
 
@@ -222,6 +223,7 @@ function piiPanel() {
 }
 /** What the panel shows when nothing is selected, in the Security, Failure and AI lenses. */
 function lensIntro() {
+  if (lens === "diff") return diffIntro();
   if (lens === "failure" && simResult) return simPanel();
   if (lens === "security") {
     if (piiOn && piiTrace) return piiPanel();
@@ -258,6 +260,7 @@ function lensIntro() {
 /** Extra panel sections for a selected component in the current lens. */
 function lensNodeExtras(n) {
   var out = [];
+  if (lens === "diff") return diffExtras("node", n.id);
   if (lens === "security") {
     out.push(
       kv([
@@ -297,6 +300,7 @@ function lensNodeExtras(n) {
 }
 /** Extra panel sections for a selected connection. */
 function lensEdgeExtras(e) {
+  if (lens === "diff") return diffExtras("edge", e.id);
   if (lens !== "security") return [];
   var a = zoneOf(e.from),
     b = zoneOf(e.to);

@@ -70,7 +70,7 @@ function readModel(file, name) {
   try {
     return JSON.parse(readFileSync(file, "utf8"));
   } catch (e) {
-    throw new Error(`cannot read the ${name} model ${file}: ${e.message}`);
+    throw new Error(`cannot read the ${name} model ${file}: ${e.message}`, { cause: e });
   }
 }
 
@@ -85,7 +85,7 @@ function run(argv) {
   }
   const out = path.resolve(flags.out ?? "docs/architecture.diff.json");
   if (existsSync(out) && !flags.force) {
-    let ours = false;
+    let ours;
     try {
       ours = JSON.parse(readFileSync(out, "utf8")).kind === "arch-diff";
     } catch {

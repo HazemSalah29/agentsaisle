@@ -651,9 +651,9 @@ describe("arch-visualize render", () => {
   });
 
   it("escaping canary: hostile text cannot leave the data block", () => {
-    // Only the five real script tags exist: model, icons, text, the layout library, viewer code.
-    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(5);
-    expect(hostileHtml.match(/<script/gi)).toHaveLength(5);
+    // Only the six real script tags exist: model, diff, icons, text, the libraries, viewer code.
+    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(6);
+    expect(hostileHtml.match(/<script/gi)).toHaveLength(6);
     const data =
       dataBlock(hostileHtml, "model")! +
       dataBlock(hostileHtml, "icons")! +
@@ -1948,7 +1948,7 @@ describe("arch-visualize live demo (DevPath)", () => {
     expect(renderCli(demoFile, out).status).toBe(0);
     const html = readFileSync(out, "utf8");
     expect(html).toContain("arch-visualize viewer v2");
-    expect(html.match(/<\/script/gi)).toHaveLength(5);
+    expect(html.match(/<\/script/gi)).toHaveLength(6);
   });
 
   it("is linked from the skill page by a site path the web build creates", () => {

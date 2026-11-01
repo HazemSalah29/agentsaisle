@@ -1,5 +1,5 @@
 // ---- lenses: the same diagram, read for a different question. System shows the parts; Flows plays a request.
-var LENS_ORDER = ["system", "flows", "security", "failure", "ai"].filter(lensAvailable);
+var LENS_ORDER = ["system", "flows", "security", "failure", "ai", "diff"].filter(lensAvailable);
 function setLens(name) {
   lens = LENS_ORDER.indexOf(name) >= 0 ? name : "system";
   document.documentElement.setAttribute("data-lens", lens);

@@ -270,6 +270,15 @@ describe("arch-visualize colours", () => {
     ["zone-private", "surface", 4.5],
     ["zone-third-party", "surface", 4.5],
     ["zone-user-device", "surface", 4.5],
+    // the Diff lens: added, changed and removed marks are text and lines on cards and the page
+    ...["diff-added", "diff-changed", "diff-removed", "accent-diff"].flatMap(
+      (k): [string, string, number][] => [
+        [k, "surface", 4.5],
+        [k, "surface-2", 4.5],
+        [k, "bg", 3],
+        [k, "band", 3],
+      ],
+    ),
   ];
   for (const [theme, tokens] of Object.entries(themes))
     for (const [fg, bg, min] of pairs)
@@ -360,8 +369,10 @@ describe("arch-visualize lenses", () => {
   });
 
   it("accepts the names of the lenses planned for later and refuses anything else", () => {
-    for (const lens of ["security", "failure", "ai", "diff"])
+    for (const lens of ["security", "failure", "ai"])
       expect(render(fixture, ["--lens", lens]).status, lens).toBe(0);
+    // the Diff lens only exists when there is a diff to show
+    expect(render(fixture, ["--lens", "diff"]).status).not.toBe(0);
     expect(render(fixture, ["--lens", "party"]).status).toBe(2);
   });
 

@@ -76,6 +76,13 @@ try {
   $("body").append(t("data.error"));
   return;
 }
+// a diff file, when the page was built with one: what changed since an earlier model
+var DIFF = null;
+try {
+  DIFF = JSON.parse($("diff").textContent);
+} catch (e) {
+  DIFF = null; // no diff, or an unreadable one: the Diff lens simply is not offered
+}
 document.title = t("doc.title", { project: model.project });
 $("title").textContent = model.project;
 

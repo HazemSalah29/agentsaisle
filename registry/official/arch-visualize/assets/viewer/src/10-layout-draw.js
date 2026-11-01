@@ -1,7 +1,31 @@
 // ---- layout: computed by the shared layout module (assets/lib), so tests run the same code
 var W = 190,
   H = 64;
-var lay = ArchLayout.layout(model, {
+// Components removed since the earlier model are laid out with the current ones so they keep a place (they
+// are drawn as ghosts by the Diff lens). Everything else reads `model`, which never contains them.
+var ghostNodes = [],
+  ghostEdges = [];
+if (DIFF) {
+  ghostNodes = DIFF.nodes.removed.filter(function (n) {
+    return !nodeById[n.id];
+  });
+  var known = {};
+  model.nodes.concat(ghostNodes).forEach(function (n) {
+    known[n.id] = true;
+  });
+  ghostEdges = DIFF.edges.removed.filter(function (e) {
+    return !edgeById[e.id] && known[e.from] && known[e.to];
+  });
+}
+var layoutModel = ghostNodes.length
+  ? Object.assign({}, model, {
+      nodes: model.nodes.concat(ghostNodes),
+      edges: model.edges.concat(ghostEdges),
+    })
+  : ghostEdges.length
+    ? Object.assign({}, model, { edges: model.edges.concat(ghostEdges) })
+    : model;
+var lay = ArchLayout.layout(layoutModel, {
   // a label has to fit the protocol or, in the Security lens, the authentication and encryption text
   labelText: function (e) {
     var a = e.protocol ? clip(e.protocol, 18) : "";
@@ -14,9 +38,13 @@ var present = lay.layers.map(function (l) {
   return l.tier;
 });
 var cols = lay.layers.map(function (l) {
-  return l.nodes.map(function (id) {
-    return nodeById[id];
-  });
+  return l.nodes
+    .filter(function (id) {
+      return nodeById[id];
+    })
+    .map(function (id) {
+      return nodeById[id];
+    });
 });
 var pos = lay.pos;
 var contentW = lay.size.w,

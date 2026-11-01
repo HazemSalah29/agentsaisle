@@ -13,6 +13,10 @@
   --accent-security: #6b3fa0;
   --accent-failure: #b42318;
   --accent-ai: #0f766e;
+  --diff-added: #166534;
+  --diff-changed: #92400e;
+  --diff-removed: #b42318;
+  --accent-diff: #1d4ed8;
   --zone-public: #b54708;
   --zone-dmz: #8a6d00;
   --zone-private: #0f6b4a;
@@ -44,6 +48,10 @@
     --accent-security: #c4a8f0;
     --accent-failure: #ff8f85;
     --accent-ai: #5eead4;
+    --diff-added: #86efac;
+    --diff-changed: #fcd34d;
+    --diff-removed: #ff8f85;
+    --accent-diff: #93b4ff;
     --zone-public: #ffb066;
     --zone-dmz: #e6c84f;
     --zone-private: #6fd8a6;
@@ -72,6 +80,10 @@
   --accent-security: #c4a8f0;
   --accent-failure: #ff8f85;
   --accent-ai: #5eead4;
+  --diff-added: #86efac;
+  --diff-changed: #fcd34d;
+  --diff-removed: #ff8f85;
+  --accent-diff: #93b4ff;
   --zone-public: #ffb066;
   --zone-dmz: #e6c84f;
   --zone-private: #6fd8a6;
@@ -95,6 +107,9 @@
 }
 :root[data-lens="ai"] {
   --accent: var(--accent-ai);
+}
+:root[data-lens="diff"] {
+  --accent: var(--accent-diff);
 }
 [hidden] {
   display: none !important;
@@ -510,7 +525,8 @@ main {
 [data-lod="mid"] .edge-label-bg {
   display: none;
 }
-.edge .hit {
+.edge .hit,
+.ghost-edge .hit {
   fill: none;
   stroke: transparent;
   stroke-width: 14;
@@ -1075,4 +1091,115 @@ svg text {
 }
 .fixes .tradeoff {
   color: var(--muted);
+}
+
+/* ---- Diff lens: added green, changed amber, removed as a dashed red ghost; every mark also has a symbol */
+.ghost,
+.d-chip {
+  display: none;
+}
+[data-lens="diff"] .ghost,
+[data-lens="diff"] .d-chip {
+  display: inline;
+}
+[data-lens="diff"] .node:not(.d-added):not(.d-changed):not(.d-renamed),
+[data-lens="diff"] .edge:not(.d-added):not(.d-changed) {
+  opacity: 0.4;
+}
+[data-lens="diff"] .node.d-added .box,
+[data-lens="diff"] .edge.d-added .line {
+  stroke: var(--diff-added);
+  stroke-width: 3;
+}
+[data-lens="diff"] .node.d-changed .box,
+[data-lens="diff"] .node.d-renamed .box,
+[data-lens="diff"] .edge.d-changed .line {
+  stroke: var(--diff-changed);
+  stroke-width: 3;
+  stroke-dasharray: 8 3;
+}
+.d-chip circle {
+  fill: var(--surface);
+  stroke-width: 2;
+}
+.d-chip text {
+  font:
+    700 var(--fs-m) system-ui,
+    sans-serif;
+  text-anchor: middle;
+}
+.d-added .d-chip circle {
+  stroke: var(--diff-added);
+}
+.d-added .d-chip text {
+  fill: var(--diff-added);
+}
+.d-changed .d-chip circle,
+.d-renamed .d-chip circle {
+  stroke: var(--diff-changed);
+}
+.d-changed .d-chip text,
+.d-renamed .d-chip text {
+  fill: var(--diff-changed);
+}
+.ghost-node .box {
+  fill: var(--surface);
+  stroke: var(--diff-removed);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  opacity: 0.85;
+}
+.ghost-node text.name {
+  fill: var(--text);
+  text-decoration: line-through;
+  font:
+    600 var(--fs-m) system-ui,
+    sans-serif;
+}
+.ghost-node text.sub {
+  fill: var(--muted);
+  font:
+    var(--fs-s) system-ui,
+    sans-serif;
+}
+.ghost-node circle {
+  fill: var(--surface);
+  stroke: var(--diff-removed);
+  stroke-width: 2;
+}
+.ghost-node .d-chip text {
+  fill: var(--diff-removed);
+}
+.ghost-edge .line {
+  fill: none;
+  stroke: var(--diff-removed);
+  stroke-width: 2;
+  stroke-dasharray: 3 5;
+}
+.ghost-node,
+.ghost-edge {
+  cursor: pointer;
+}
+#body .diff-list {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 12px;
+}
+#body .diff-list button {
+  display: block;
+  width: 100%;
+  text-align: start;
+}
+#body .diff-legend span {
+  margin-inline-end: 12px;
+  font-weight: 600;
+}
+#body .diff-legend .k-added {
+  color: var(--diff-added);
+}
+#body .diff-legend .k-changed {
+  color: var(--diff-changed);
+}
+#body .diff-legend .k-removed {
+  color: var(--diff-removed);
 }

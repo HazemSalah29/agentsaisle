@@ -92,6 +92,16 @@
           <button type="button" role="tab" id="lens-ai" data-lens="ai" aria-selected="false" hidden>
             {{lens.ai}}
           </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-diff"
+            data-lens="diff"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.diff}}
+          </button>
         </div>
         <div id="lensbar" class="lensbar" hidden>
           <div id="lb-security" hidden>
@@ -159,6 +169,9 @@
     <section id="print-risks"></section>
     <script type="application/json" id="model">
       __MODEL_JSON__
+    </script>
+    <script type="application/json" id="diff">
+      __DIFF_JSON__
     </script>
     <script type="application/json" id="i18n">
       __I18N_JSON__

@@ -59,13 +59,43 @@ export function loadI18n(lang = "en") {
   return { lang, dir: LANGS[lang], strings: { ...all.en, ...all[lang] } };
 }
 
+const isList = (x) =>
+  Array.isArray(x) && x.every((i) => i && typeof i === "object" && !Array.isArray(i));
+/** A diff file must be what diff.mjs writes: records with ids, lists, counts. Anything else is refused. */
+export function checkDiff(diff) {
+  const bad = (why) => {
+    throw new Error(`the diff file is not valid: ${why}`);
+  };
+  if (!diff || diff.kind !== "arch-diff" || diff.version !== 1) bad('kind must be "arch-diff"');
+  for (const [group, keys] of [
+    ["nodes", ["added", "removed", "changed", "renamed"]],
+    ["edges", ["added", "removed", "changed"]],
+    ["risks", ["added", "removed"]],
+  ])
+    for (const k of keys) if (!isList(diff[group]?.[k])) bad(`${group}.${k} must be a list`);
+  const idOk = (x) => typeof x === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(x);
+  for (const n of [...diff.nodes.added, ...diff.nodes.removed, ...diff.nodes.changed])
+    if (!idOk(n.id)) bad("a component has an invalid id");
+  for (const n of diff.nodes.renamed)
+    if (!idOk(n.from) || !idOk(n.to)) bad("a rename has an invalid id");
+  for (const e of [...diff.edges.added, ...diff.edges.removed, ...diff.edges.changed])
+    if (!idOk(e.id)) bad("a connection has an invalid id");
+  for (const e of [...diff.edges.added, ...diff.edges.removed])
+    if (!idOk(e.from) || !idOk(e.to)) bad("a connection has an invalid end");
+}
+
 /**
  * Build the page for `model`. Throws with the list of problems when the model is invalid.
  * Options: lang ("en" or "ar"), flowDir ("ltr" or "rtl": which way the diagram runs).
  */
-export function renderPage(input, { lang = "en", flowDir = "ltr", lens = "system" } = {}) {
+export function renderPage(
+  input,
+  { lang = "en", flowDir = "ltr", lens = "system", diff = null } = {},
+) {
   if (flowDir !== "ltr" && flowDir !== "rtl") throw new Error('--flow-dir must be "ltr" or "rtl"');
   if (!LENSES.includes(lens)) throw new Error(`--lens must be one of ${LENSES.join(", ")}`);
+  if (lens === "diff" && !diff) throw new Error("--lens diff needs --diff <file>");
+  if (diff) checkDiff(diff);
   const i18n = loadI18n(lang);
   const model = upgradeModel(input);
   const problems = checkModel(model);
@@ -97,6 +127,7 @@ export function renderPage(input, { lang = "en", flowDir = "ltr", lens = "system
     "/*__VIEWER_JS__*/",
     "__MODEL_JSON__",
     "__ICONS_JSON__",
+    "__DIFF_JSON__",
   ];
   for (const hole of holes)
     if (!template.includes(hole)) throw new Error(`viewer/index.html is missing ${hole}`);
@@ -126,12 +157,13 @@ export function renderPage(input, { lang = "en", flowDir = "ltr", lens = "system
     .replace("/*__LIB_JS__*/", () => lib)
     .replace("/*__VIEWER_JS__*/", () => viewer)
     .replace("__MODEL_JSON__", () => safeJson(model))
-    .replace("__ICONS_JSON__", () => safeJson(sorted));
+    .replace("__ICONS_JSON__", () => safeJson(sorted))
+    .replace("__DIFF_JSON__", () => (diff ? safeJson(diff) : "null"));
 }
 
 function run(argv) {
   const { flags } = parseArgs(argv, {
-    strings: ["model", "out", "lang", "flow-dir", "lens"],
+    strings: ["model", "out", "lang", "flow-dir", "lens", "diff"],
     booleans: ["force"],
   });
   const modelFile = path.resolve(flags.model ?? "docs/architecture.json");
@@ -149,9 +181,24 @@ function run(argv) {
     );
     return 2;
   }
+  let diff = null;
+  if (flags.diff) {
+    try {
+      diff = JSON.parse(readFileSync(path.resolve(flags.diff), "utf8"));
+      checkDiff(diff);
+    } catch (e) {
+      console.error(`render: cannot use --diff ${flags.diff}: ${e.message}`);
+      return 2;
+    }
+  }
   let html;
   try {
-    html = renderPage(model, { lang: flags.lang, flowDir: flags["flow-dir"], lens: flags.lens });
+    html = renderPage(model, {
+      lang: flags.lang,
+      flowDir: flags["flow-dir"],
+      lens: flags.lens ?? (diff ? "diff" : undefined),
+      diff,
+    });
   } catch (e) {
     if (e.problems) {
       console.log(
