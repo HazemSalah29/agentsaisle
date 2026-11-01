@@ -24,7 +24,7 @@
       "type": "object",
       "required": ["provider"],
       "properties": {
-        "provider": { "enum": ["kokoro", "chatterbox", "3arab", "elevenlabs", "none"] },
+        "provider": { "enum": ["kokoro", "chatterbox", "3arab", "elevenlabs", "test", "none"] },
         "voiceId": { "type": "string", "maxLength": 80 },
         "speed": { "type": "number", "minimum": 0.5 }
       }
@@ -48,7 +48,8 @@
       "properties": {
         "style": { "enum": ["karaoke", "pop", "clean", "cinematic", "kids"] },
         "maxWordsPerLine": { "type": "integer", "minimum": 1 },
-        "safeZone": { "enum": ["reel", "short", "youtube", "none"] }
+        "safeZone": { "enum": ["reel", "short", "youtube", "none"] },
+        "burn": { "type": "boolean" }
       }
     },
     "assets": {
