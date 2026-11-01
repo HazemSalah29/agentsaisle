@@ -64,3 +64,62 @@ export function fixtureVideo(over: Record<string, unknown> = {}) {
     ...over,
   };
 }
+
+/** A complete, valid explain-mode writer project as file texts. */
+export function writerFiles(): Record<
+  "brief" | "script" | "facts" | "storyboard" | "hooks",
+  string
+> {
+  return {
+    brief: JSON.stringify({
+      title: "Rate limiting",
+      mode: "explain",
+      lang: "en",
+      format: "reel-9x16",
+      audience: "devs",
+      goal: "Explain the token bucket",
+      promise: "You will know why APIs return 429",
+      lengthSeconds: 30,
+      tone: "calm",
+      cta: "Follow for more",
+    }),
+    script: `# Rate limiting
+[l1] Your API needs a speed limit.
+  beat: hook
+[l2] Most people think blocking extra requests is the whole job.
+  beat: misconception
+[l3] It works like a bucket of tokens at a fair.
+  beat: analogy
+[l4] Each request takes one token from the bucket.
+  beat: step
+  fact: f1
+[l5] Tokens refill at a steady rate.
+  beat: step
+  fact: f1
+[l6] An empty bucket means the request gets a 429 error.
+  beat: edge
+  fact: f2
+[l7] Buckets allow bursts but keep the average rate fixed.
+  beat: takeaway
+[l8] Follow for the next one.
+  beat: cta
+`,
+    facts: `- [f1] A token bucket removes one token per request and refills at a fixed rate. Source: https://example.com/token-bucket
+- [f2] HTTP 429 means too many requests. Source: https://example.com/http-429
+`,
+    storyboard: `| scene | kind | narration | visual | seconds | transition | props |
+| --- | --- | --- | --- | --- | --- | --- |
+| intro | title | l1 | big title | | | \`{"text":"Rate limiting"}\` |
+| myth | quote | l2 | the myth | | fade | \`{"text":"Block extra requests."}\` |
+| bucket | list | l3,l4,l5 | three steps | | fade | \`{"heading":"Token bucket","items":["Take a token","Refill slowly","Reject when empty"],"numbered":true}\` |
+| fail | title | l6 | the error | | | \`{"text":"429","subtitle":"Too Many Requests"}\` |
+| wrap | title | l7,l8 | takeaway | 1 | | \`{"text":"Bursts in, average fixed"}\` |
+`,
+    hooks: `1. Your API needs a speed limit.
+2. Most rate limiters are set up wrong.
+3. Why does an API say 429?
+4. A bucket with no tokens.
+5. One number protects your server.
+`,
+  };
+}
