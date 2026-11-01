@@ -37,6 +37,13 @@
         "$ref": "#/$defs/risk"
       }
     },
+    "candidates": {
+      "type": "array",
+      "description": "Connections the draft only suspects. Confirm each as an edge or delete it.",
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
+    },
     "groups": {
       "type": "array",
       "items": {
@@ -71,6 +78,56 @@
     },
     "unknownOr": {
       "enum": ["unknown"]
+    },
+    "candidate": {
+      "type": "object",
+      "required": ["id", "from", "to", "confidence", "evidence"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/id"
+        },
+        "to": {
+          "$ref": "#/$defs/id"
+        },
+        "protocol": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "sync": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "enum": ["high", "medium", "low"]
+        },
+        "why": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "confirms": {
+          "$ref": "#/$defs/id"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
     },
     "group": {
       "type": "object",

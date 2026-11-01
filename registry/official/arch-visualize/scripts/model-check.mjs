@@ -210,6 +210,18 @@ export function checkModel(
     if (!(kind === "node" ? nodeIds : edgeIds).has(id))
       problems.push(`inferred: "${ref}" does not exist`);
   }
+  const cands = model.candidates ?? [];
+  cands.forEach((c, i) => {
+    for (const end of ["from", "to"])
+      if (!nodeIds.has(c[end]))
+        problems.push(`candidates[${i}] ${c.id}: ${end} "${c[end]}" is not a node`);
+    if (c.confirms && !edgeIds.has(c.confirms))
+      problems.push(`candidates[${i}] ${c.id}: confirms "${c.confirms}", which is not an edge`);
+  });
+  if (!draft && cands.length)
+    problems.push(
+      `candidates: ${cands.length} edge candidate(s) left. Confirm each as an edge (with its evidence) or delete it.`,
+    );
   if (!draft && model.flows.length === 0)
     problems.push("flows: add at least one request flow (1 to 5)");
   const flowIds = new Set();
@@ -231,7 +243,13 @@ export function checkModel(
       if (!nodeIds.has(id)) problems.push(`risks[${i}] ${r.id}: node "${id}" does not exist`);
   });
   checkV2(model, nodeIds, root, problems);
-  for (const group of [model.nodes, model.edges, model.risks, model.groups ?? []])
+  for (const group of [
+    model.nodes,
+    model.edges,
+    model.risks,
+    model.groups ?? [],
+    model.candidates ?? [],
+  ])
     for (const item of group)
       for (const ev of item.evidence ?? [])
         if (path.isAbsolute(ev.file) || ev.file.split(/[\\/]/).includes(".."))

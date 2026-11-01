@@ -445,6 +445,48 @@ describe("arch-visualize model v2", () => {
     expect((await problems(risk([{ tradeoff: "no text" }]))).join()).toContain('missing "text"');
   });
 
+  describe("edge candidates", () => {
+    const cand = (extra: Loose = {}) => ({
+      id: "api-cache",
+      from: "api",
+      to: "db",
+      confidence: "medium",
+      why: "imports a client",
+      evidence: [{ file: "src/x.ts", line: 2 }],
+      ...extra,
+    });
+    it("are fine in a draft and must be resolved before the final model", async () => {
+      check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
+      const m = base();
+      m.candidates = [cand()];
+      expect(check.checkModel(m, { draft: true })).toEqual([]);
+      expect(check.checkModel(m).join()).toContain("1 edge candidate(s) left");
+      m.candidates = [];
+      expect(check.checkModel(m)).toEqual([]);
+    });
+    it("need real ends, a known confidence, evidence and a relative path", async () => {
+      expect((await problems((m) => (m.candidates = [cand({ to: "ghost" })]))).join()).toContain(
+        "is not a node",
+      );
+      expect(
+        (await problems((m) => (m.candidates = [cand({ confidence: "sure" })]))).join(),
+      ).toContain("not one of");
+      expect((await problems((m) => (m.candidates = [cand({ evidence: [] })]))).join()).toContain(
+        "at least 1",
+      );
+      expect(
+        (
+          await problems(
+            (m) => (m.candidates = [cand({ evidence: [{ file: "/etc/x", line: 1 }] })]),
+          )
+        ).join(),
+      ).toContain("relative");
+      expect(
+        (await problems((m) => (m.candidates = [cand({ confirms: "nope" })]))).join(),
+      ).toContain("not an edge");
+    });
+  });
+
   it("checks groups, zones, data labels and view focus", async () => {
     expect(await problems((m) => (node(m, "api").group = "nope"))).toEqual([
       expect.stringContaining("not declared"),

@@ -230,5 +230,73 @@
       "AV-R09"
     ],
     "note": "R06 stays silent because the fixture has a queue (BullMQ); R09 because vercel.json sits in apps/web, which has no Postgres client; saveFlash in session.ts is a Redis set with EX, so R02 reports only saveSession."
-  }
+  },
+  "truth": [
+    {
+      "id": "api-bullmq",
+      "from": "api",
+      "to": "bullmq",
+      "fileBacked": true
+    },
+    {
+      "id": "api-cache",
+      "from": "api",
+      "to": "cache",
+      "fileBacked": true
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "fileBacked": true
+    },
+    {
+      "id": "api-stripe",
+      "from": "api",
+      "to": "stripe",
+      "fileBacked": true
+    },
+    {
+      "id": "bullmq-cache",
+      "from": "bullmq",
+      "to": "cache",
+      "fileBacked": false
+    },
+    {
+      "id": "bullmq-worker",
+      "from": "bullmq",
+      "to": "worker",
+      "fileBacked": true
+    },
+    {
+      "id": "vercel-web",
+      "from": "vercel",
+      "to": "web",
+      "fileBacked": false
+    },
+    {
+      "id": "web-api",
+      "from": "web",
+      "to": "api",
+      "fileBacked": true
+    },
+    {
+      "id": "worker-cache",
+      "from": "worker",
+      "to": "cache",
+      "fileBacked": true
+    },
+    {
+      "id": "worker-db",
+      "from": "worker",
+      "to": "db",
+      "fileBacked": true
+    },
+    {
+      "id": "worker-resend",
+      "from": "worker",
+      "to": "resend",
+      "fileBacked": true
+    }
+  ]
 }
