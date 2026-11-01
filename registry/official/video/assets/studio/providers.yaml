@@ -1,0 +1,10 @@
+# Which AI providers may be used, what they cost and a monthly cap. No keys here: keys are read from
+# environment variables (for example KLING_API_KEY) and never written to a file.
+# Prices change often; check each provider's pricing page and fill the numbers in yourself.
+monthlyCapUsd: 0 # 0 means no paid generation is allowed
+providers: []
+# Example entry (copy and edit):
+#   - id: example
+#     kind: video
+#     keyEnv: EXAMPLE_API_KEY
+#     usdPerSecond: 0 # TODO(verify) current price

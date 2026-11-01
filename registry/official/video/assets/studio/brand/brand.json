@@ -1,0 +1,5 @@
+{
+  "colors": { "bg": "#0F1115", "fg": "#F5F5F2", "accent": "#FF5A1F", "muted": "#A3A9B0" },
+  "font": "Inter",
+  "captions": { "style": "clean", "maxWordsPerLine": 4 }
+}
