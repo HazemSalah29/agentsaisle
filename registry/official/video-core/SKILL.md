@@ -26,7 +26,7 @@ The engine under the video library. A project is a folder with a `video.json` (t
 3. If scenes take their length from the voice: put one audio file per script line at `<project>/voice/<line-id>.wav`, then run `node <skill>/scripts/timing.mjs <project>`. If every scene is fixed, skip this step.
 4. Run `node <skill>/scripts/render.mjs <project> --draft` first (540p), then without `--draft` for the final. Output: `<project>/out/<folder-name>.mp4`.
 5. Run `node <skill>/scripts/credits.mjs <project>`. It writes `credits.json` and `CREDITS.txt` and fails if an asset has no licence or `disclosure` says less than the assets imply.
-6. If render says HyperFrames is not installed, show its install line and stop (`references/runner.md`).
+6. If render says HyperFrames is not installed, tell the user to install it (command in `references/runner.md`) and stop (`references/runner.md`).
 
 ## Budget
 

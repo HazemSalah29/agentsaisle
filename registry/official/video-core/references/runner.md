@@ -6,7 +6,7 @@ Every program starts through `scripts/run.mjs`: only `ffmpeg`, `ffprobe` and `no
 
 ## HyperFrames
 
-`render.mjs` looks for an installed HyperFrames (`--hyperframes <package-dir>`, `node_modules` next to the project, the global install beside this Node, the npx cache) and runs its `check` and `render`. It never installs or downloads it. The tested version is 0.8.226; the install line is `npm install --global hyperframes@0.8.226`. HyperFrames itself may fetch Google Fonts and send usage data (`TODO(verify)` how to switch both off); our scripts make no network calls.
+`render.mjs` looks for an installed HyperFrames (`--hyperframes <package-dir>`, `node_modules` next to the project, the global install beside this Node, the npx cache) and runs its `check` and `render`. It never installs or downloads it. The tested version is 0.8.226; install it with `npm install --global hyperframes@0.8.226`. HyperFrames itself may fetch Google Fonts and send usage data (`TODO(verify)` how to switch both off); our scripts make no network calls.
 
 ## Animation
 

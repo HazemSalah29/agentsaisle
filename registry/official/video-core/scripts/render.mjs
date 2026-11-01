@@ -22,7 +22,6 @@ import { buildTiming } from "./timing.mjs";
 import { capLines, isEntry, isInside, parseArgs } from "./_lib.mjs";
 
 export const PINNED_HYPERFRAMES = "0.8.226";
-export const INSTALL_LINE = `npm install --global hyperframes@${PINNED_HYPERFRAMES}`;
 const AUDIO_EXT = [".wav", ".mp3", ".m4a", ".flac"];
 const FONT_EXT = /\.(woff2?|ttf|otf)$/i;
 
@@ -225,7 +224,7 @@ function main() {
   const hf = findHyperframes({ explicit: flags.hyperframes, dir });
   if (!hf)
     fail(
-      `HyperFrames is not installed. Install the tested version, then run again:\n  ${INSTALL_LINE}`,
+      `HyperFrames is not installed. Install the npm package "hyperframes" at version ${PINNED_HYPERFRAMES} (the command is in references/runner.md), then run again.`,
     );
   const notes = [];
   if (hf.version !== PINNED_HYPERFRAMES)
