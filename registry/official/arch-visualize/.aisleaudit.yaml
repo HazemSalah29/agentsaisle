@@ -1,0 +1,7 @@
+ignore:
+  - rule: AA-S07
+    path: evals/fixture-app/.env.example
+    reason: Test data, not a threat. A fake example env file with made-up names, kept hidden because discover.mjs looks for that name. Never installed, never run.
+  - rule: AA-S07
+    path: evals/fixture-app/apps/assistant/.mcp.json
+    reason: Test data, not a threat. A sample MCP config with a placeholder server, kept hidden because discover.mjs looks for that name. Never installed, never run.

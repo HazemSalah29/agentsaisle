@@ -153,6 +153,10 @@ export function AuditBlock({ name, version }: { name: string; version: string })
       <h2 id="audit" className="text-xl">
         Audit
       </h2>
+      <p className="text-sm text-muted">
+        Checked with <code className={code}>aisle audit</code> (version {version}). Run it yourself:{" "}
+        <code className={code}>aisle audit {name}</code>
+      </p>
       <AuditView report={getAuditReport(name, version)} />
       <BadgeSnippet siteUrl={SITE_URL} name={name} />
     </section>
