@@ -1,9 +1,9 @@
 {
   "ok": true,
-  "file": "out/request-flow-draft.mp4",
+  "file": "out/request-flow.mp4",
   "facts": {
-    "width": 304,
-    "height": 540,
+    "width": 1080,
+    "height": 1920,
     "fps": 30,
     "codec": "h264",
     "pixFmt": "yuv420p",
@@ -43,7 +43,7 @@
     {
       "id": "resolution",
       "level": "pass",
-      "text": "304x540"
+      "text": "1080x1920"
     },
     {
       "id": "fps",

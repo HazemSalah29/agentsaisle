@@ -1,6 +1,6 @@
 # Demo videos for the explainer vertical (library 0.1.0)
 
-Two short vertical explainers made by the library itself, with every file kept so anyone can look inside and re-run them. The sources are here; the rendered MP4s are added after the owner has seen the drafts.
+Two short vertical explainers made by the library itself, with every file kept so anyone can look inside and re-run them. Each folder holds the final 1080x1920 MP4 (checked with `video-qa`) next to its sources.
 
 | Demo                            | What it shows                                                                                                                                                                | Built from                                                                                                                                                                                           |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
