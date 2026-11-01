@@ -524,6 +524,22 @@ describe("arch-visualize render", () => {
     expect(fixtureHtml).toContain("<!-- arch-visualize viewer v1 -->");
   });
 
+  it("inlines the layout library once and leaves no placeholder", () => {
+    for (const html of [fixtureHtml, hostileHtml]) {
+      expect(html.match(/root\.ArchLayout = /g)).toHaveLength(1);
+      expect(html.match(/root\.ArchGeometry = /g)).toHaveLength(1);
+      expect(html).not.toContain("__LIB_JS__");
+    }
+  });
+
+  it("keeps the viewer and its libraries within the 300 KB budget", () => {
+    let bytes = statSync(skillFile("arch-visualize", "assets/viewer.html")).size;
+    for (const f of ["geometry.js", "layout.js"])
+      bytes += statSync(skillFile("arch-visualize", `assets/lib/${f}`)).size;
+    expect(bytes).toBeLessThan(300_000);
+    expect(Buffer.byteLength(fixtureHtml)).toBeLessThan(1_500_000);
+  });
+
   it("embeds the model so it parses back unchanged", () => {
     // a v1 model is embedded as v2; nothing else changes
     expect(JSON.parse(dataBlock(fixtureHtml, "model")!)).toEqual({
@@ -537,9 +553,9 @@ describe("arch-visualize render", () => {
   });
 
   it("escaping canary: hostile text cannot leave the data block", () => {
-    // Only the three real script tags exist: model, icons, viewer code.
-    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(3);
-    expect(hostileHtml.match(/<script/gi)).toHaveLength(3);
+    // Only the four real script tags exist: model, icons, the layout library, viewer code.
+    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(4);
+    expect(hostileHtml.match(/<script/gi)).toHaveLength(4);
     const data = dataBlock(hostileHtml, "model")! + dataBlock(hostileHtml, "icons")!;
     expect(data).not.toMatch(new RegExp("[<>&" + String.fromCharCode(0x2028, 0x2029) + "]"));
     expect(hostileHtml).not.toContain("<img src=x");
@@ -1743,7 +1759,7 @@ describe("arch-visualize live demo (DevPath)", () => {
     expect(renderCli(demoFile, out).status).toBe(0);
     const html = readFileSync(out, "utf8");
     expect(html).toContain("arch-visualize viewer v1");
-    expect(html.match(/<\/script/gi)).toHaveLength(3);
+    expect(html.match(/<\/script/gi)).toHaveLength(4);
   });
 
   it("is linked from the skill page by a site path the web build creates", () => {
@@ -1805,7 +1821,9 @@ describe("arch-visualize demo text matches the demo model", () => {
     renderCli(skillFile("arch-visualize", "evals/demo/devpath.architecture.json"), out);
     const kb = readFileSync(out).length / 1024;
     expect(kb).toBeGreaterThan(65);
-    expect(kb).toBeLessThan(85);
+    // The layout library made a fresh render about 97 KB; the page embedded on the skill page is still
+    // the 0.1.1 one (about 75 KB). M8 regenerates the demo and rewrites this text and bound together.
+    expect(kb).toBeLessThan(110);
     expect(steps[4]!.text).toContain("about 75 KB");
   });
 });

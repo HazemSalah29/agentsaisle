@@ -57,9 +57,15 @@ export function renderPage(input) {
       .sort()
       .map((k) => [k, icons[k]]),
   );
+  const lib = ["geometry.js", "layout.js"]
+    .map((f) => readFileSync(path.join(skillDir(), "assets", "lib", f), "utf8"))
+    .join("\n");
+  if (lib.includes("</script") || !template.includes("/*__LIB_JS__*/"))
+    throw new Error("viewer.html is missing its library placeholder");
   if (!template.includes("__MODEL_JSON__") || !template.includes("__ICONS_JSON__"))
     throw new Error("viewer.html is missing its data placeholders");
   return template
+    .replace("/*__LIB_JS__*/", () => lib)
     .replace("__MODEL_JSON__", () => safeJson(model))
     .replace("__ICONS_JSON__", () => safeJson(sorted));
 }
