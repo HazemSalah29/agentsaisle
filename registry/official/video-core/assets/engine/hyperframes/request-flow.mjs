@@ -54,13 +54,41 @@ export function flowProblems(props) {
   return p;
 }
 
-/** Positions: one row per tier present, components spread across the row. */
+/**
+ * Positions: one row per tier present, components spread across the row. When every tier holds a single
+ * component (a plain chain), the components zig-zag between two columns, so the picture uses the width and the
+ * text can be larger.
+ */
 function layout(props) {
   const tiers = TIERS.filter((t) => props.nodes.some((n) => n.tier === t));
   const widest = Math.max(...tiers.map((t) => props.nodes.filter((n) => n.tier === t).length));
+  const pos = new Map();
+  // Hub and spokes: one component on every connection (an app and what it talks to). The hub sits on the left,
+  // the others in a column on the right in tier order, so no line crosses a box.
+  const hub = props.nodes.find(
+    (n) => props.edges.length >= 2 && props.edges.every((e) => e.from === n.id || e.to === n.id),
+  );
+  if (hub && props.nodes.length >= 3) {
+    const spokes = props.nodes
+      .filter((n) => n !== hub)
+      .sort((a, b) => TIERS.indexOf(a.tier) - TIERS.indexOf(b.tier));
+    const pitch = r2(Math.min(20, 100 / spokes.length));
+    spokes.forEach((n, i) =>
+      pos.set(n.id, { x: 74, y: r2(8 + pitch * (i + 0.5)), w: 40, h: NODE_H }),
+    );
+    pos.set(hub.id, { x: 24, y: r2(8 + (pitch * spokes.length) / 2), w: 36, h: NODE_H });
+    return { pos, w: 40, bottom: r2(8 + pitch * spokes.length) };
+  }
+  if (widest === 1 && tiers.length >= 3) {
+    const rowH = 15;
+    tiers.forEach((t, ri) => {
+      const n = props.nodes.find((x) => x.tier === t);
+      pos.set(n.id, { x: ri % 2 ? 73 : 27, y: r2(8 + ri * rowH + NODE_H / 2), w: 40, h: NODE_H });
+    });
+    return { pos, w: 40, bottom: r2(8 + tiers.length * rowH) };
+  }
   const w = r2(Math.min(30, (100 - 4) / widest - 3));
   const rowH = r2(Math.min(26, 120 / tiers.length));
-  const pos = new Map();
   tiers.forEach((t, ri) => {
     const row = props.nodes.filter((n) => n.tier === t);
     row.forEach((n, k) => {

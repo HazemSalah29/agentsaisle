@@ -114,6 +114,33 @@ describe("request-flow scene", () => {
     expect(r.html).toContain("&lt;img");
   });
 
+  it("lays a hub and its connections out as a fan, so no line crosses a box", async () => {
+    const { renderScene } = await scenes();
+    const node = (id: string, tier: string) => ({ id, label: id, role: "backend", tier });
+    const props = {
+      nodes: [
+        node("cli", "clients"),
+        node("site", "edge"),
+        node("audit", "backend"),
+        node("folder", "data"),
+        node("gh", "external"),
+      ],
+      edges: ["site", "audit", "folder", "gh"].map((to) => ({ id: `cli-${to}`, from: "cli", to })),
+      steps: [{ edge: "cli-site" }, { edge: "cli-gh", reverse: true }],
+    };
+    const r = renderScene({ kind: "request-flow", props }, ctx());
+    const boxes = [...r.html.matchAll(/<rect class="nb" x="([\d.]+)" y="([\d.]+)"/g)].map((m) => [
+      Number(m[1]),
+      Number(m[2]),
+    ]);
+    expect(boxes).toHaveLength(5);
+    const hub = boxes[0];
+    const spokes = boxes.slice(1);
+    expect(new Set(spokes.map((b) => b[0])).size).toBe(1); // one column
+    expect(new Set(spokes.map((b) => b[1])).size).toBe(4); // one row each
+    expect(spokes[0][0]).toBeGreaterThan(hub[0] + 20); // to the right of the hub
+  });
+
   it("describes what is wrong with hand-written props", async () => {
     const { flowProblems } = await flow();
     const p = flowProblems({
