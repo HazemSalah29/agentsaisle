@@ -106,10 +106,41 @@ export function voicePlacements(video, timing, dir) {
  * ffmpeg arguments that mux silent video with the mixed audio. `voice` is from voicePlacements, `music` the
  * absolute music path or null. Without any audio the video is only remuxed. `draft` scales down to 540 px high.
  */
+/**
+ * True when a 16-bit PCM WAV holds nothing but zeros. loudnorm cannot work on digital silence (it writes NaN),
+ * so a mix that is only silence skips it. Anything this cannot read counts as sound.
+ */
+export function wavIsSilent(buf) {
+  if (buf.length < 44 || buf.toString("latin1", 0, 4) !== "RIFF") return false;
+  let bits = 0;
+  for (let at = 12; at + 8 <= buf.length;) {
+    const id = buf.toString("latin1", at, at + 4);
+    const size = buf.readUInt32LE(at + 4);
+    if (id === "fmt ") bits = buf.readUInt16LE(at + 22);
+    if (id === "data") {
+      if (bits !== 16) return false;
+      const end = size === 0 || at + 8 + size > buf.length ? buf.length : at + 8 + size;
+      for (let i = at + 8; i < end; i++) if (buf[i] !== 0) return false;
+      return true;
+    }
+    at += 8 + size + (size % 2);
+  }
+  return false;
+}
+
 /** Loudness the mix is brought to: integrated LUFS and true-peak ceiling. A working default shared with video-qa. */
 export const LOUDNESS = Object.freeze({ lufs: -14, truePeak: -1.5 }); // TODO(verify) per platform
 
-export function muxArgs({ silent, out, voice, music, duckDb = -14, seconds, draft }) {
+export function muxArgs({
+  silent,
+  out,
+  voice,
+  music,
+  duckDb = -14,
+  seconds,
+  draft,
+  normalize = true,
+}) {
   const args = ["-y", "-v", "error", "-i", silent];
   voice.forEach((v) => args.push("-i", v.file));
   if (music) args.push("-i", music);
@@ -139,7 +170,7 @@ export function muxArgs({ silent, out, voice, music, duckDb = -14, seconds, draf
       map = "[mix]";
     }
   }
-  if (map) {
+  if (map && normalize) {
     // One last stage so the voice and music land at the target level whatever they were recorded at.
     filters.push(
       `${map}loudnorm=I=${LOUDNESS.lufs}:TP=${LOUDNESS.truePeak}:LRA=11,aresample=48000[final]`,
@@ -306,9 +337,11 @@ function main() {
   const voice = voicePlacements(video, timing, dir);
   const musicAsset = video.music?.asset;
   const music = musicAsset && isInside(musicAsset) ? path.join(dir, musicAsset) : null;
+  const audible = Boolean(music) || voice.some((v) => !wavIsSilent(readFileSync(v.file)));
   const m = run(
     "ffmpeg",
     muxArgs({
+      normalize: audible,
       video,
       silent,
       out,

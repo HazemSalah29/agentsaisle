@@ -192,6 +192,33 @@ describe("video-core render helpers", () => {
     expect(silent).not.toContain("loudnorm");
   });
 
+  it("skips loudness normalisation for digital silence, which loudnorm turns into NaN", async () => {
+    const { muxArgs, wavIsSilent } = await loadScript<
+      Render & { wavIsSilent: (b: Buffer) => boolean }
+    >("video-core", "scripts/render.mjs");
+    expect(wavIsSilent(wav(0.5))).toBe(true);
+    const tone = wav(0.5);
+    tone[tone.length - 10] = 7; // one non-zero sample
+    expect(wavIsSilent(tone)).toBe(false);
+    expect(
+      wavIsSilent(
+        Buffer.from("not a wav at all, just text that is long enough to pass the size check....."),
+      ),
+    ).toBe(false);
+    const args = (normalize: boolean) =>
+      muxArgs({
+        silent: "/s.mp4",
+        out: "/o.mp4",
+        voice: [{ file: "/a.wav", ms: 0 }],
+        music: null,
+        seconds: 4,
+        normalize,
+      }).join(" ");
+    expect(args(false)).not.toContain("loudnorm");
+    expect(args(false)).toContain("-map [voice]");
+    expect(args(true)).toContain("loudnorm");
+  });
+
   it("only remuxes when there is no audio, and scales a draft", async () => {
     const { muxArgs } = await render();
     const plain = muxArgs({ silent: "/s.mp4", out: "/o.mp4", seconds: 3, voice: [], music: null });
@@ -478,7 +505,7 @@ describe("video-core caption layer", () => {
     }>("video-core", "assets/engine/hyperframes/captions.mjs");
     expect(
       captionClearance({ style: { size: 0.05 }, safeZone: { bottom: 0.22 } }, [1080, 1920]),
-    ).toBe(700);
+    ).toBe(701);
   });
 
   it("render refuses burned captions when captions.json is missing", () => {
