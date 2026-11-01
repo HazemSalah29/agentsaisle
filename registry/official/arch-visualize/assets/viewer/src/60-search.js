@@ -101,9 +101,9 @@ function chooseHit(i) {
   if (!hit) return;
   closeResults();
   centerOnNodes(hit.nodes);
-  if (hit.kind === "node") select("node", hit.id);
-  else if (hit.kind === "edge") select("edge", hit.id);
-  else if (hit.nodes[0]) select("node", hit.nodes[0]);
+  if (hit.kind === "node") select("node", hit.id, true);
+  else if (hit.kind === "edge") select("edge", hit.id, true);
+  else if (hit.nodes[0]) select("node", hit.nodes[0], true);
   else {
     tab = "risks";
     panel.classList.add("open");

@@ -42,7 +42,7 @@ cols.forEach(function (c, ci) {
       outs.length ? h("span", { class: "c" }, t("list.connects", { list: outs.join(", ") })) : null,
     );
     card.addEventListener("click", function () {
-      select("node", n.id);
+      select("node", n.id, true);
     });
     cardEls[n.id] = card;
     list.append(card);
@@ -54,7 +54,9 @@ var sel = null;
 var tab = "details";
 var panel = $("panel"),
   body = $("body");
-function select(kind, id) {
+var returnTo = null; // where focus goes back to when the panel is closed with Esc
+/** Select a component or connection. `moveFocus` (keyboard, click, search) puts focus on the panel heading. */
+function select(kind, id, moveFocus) {
   if (traceOn && kind === "node") return tracePick(id);
   sel = kind ? { kind: kind, id: id } : null;
   if (sel) tab = "details";
@@ -70,6 +72,20 @@ function select(kind, id) {
   panel.classList.toggle("open", !!sel);
   renderPanel();
   scheduleLink();
+  if (sel && moveFocus) {
+    var listView = !stage.offsetParent; // narrow screens show the list instead of the diagram
+    returnTo =
+      sel.kind === "node" ? (listView ? cardEls[id] : nodeEls[id]) : listView ? list : stage;
+    var heading = body.querySelector("h2");
+    if (heading) {
+      heading.tabIndex = -1;
+      try {
+        heading.focus({ preventScroll: true });
+      } catch (e) {
+        heading.focus();
+      }
+    }
+  }
 }
 function evidenceList(items) {
   if (!items || !items.length) return null;
@@ -111,7 +127,7 @@ function riskCard(r, withLink) {
       ? (function () {
           var b = h("button", { type: "button", class: "link" }, t("risk.show"));
           b.addEventListener("click", function () {
-            select("node", r.nodes[0]);
+            select("node", r.nodes[0], true);
           });
           return b;
         })()
@@ -121,7 +137,7 @@ function riskCard(r, withLink) {
 function linkTo(kind, id, text) {
   var b = h("button", { type: "button", class: "link" }, text);
   b.addEventListener("click", function () {
-    select(kind, id);
+    select(kind, id, true);
   });
   return b;
 }
@@ -280,8 +296,11 @@ $("close").addEventListener("click", function () {
 });
 document.addEventListener("keydown", function (ev) {
   if (ev.key === "Escape" && (sel || panel.classList.contains("open"))) {
+    var back = returnTo;
     select(null);
     panel.classList.remove("open");
+    if (back && back.focus) back.focus();
+    returnTo = null;
   }
 });
 

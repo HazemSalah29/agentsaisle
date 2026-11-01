@@ -343,3 +343,66 @@ describe("arch-visualize lenses", () => {
     );
   });
 });
+
+describe("arch-visualize keyboard and focus", () => {
+  it("moves focus to the panel heading on selection and back to the origin on Esc", () => {
+    const panelSrc = read("src/30-list-panel.js");
+    expect(panelSrc).toMatch(/function select\(kind, id, moveFocus\)/);
+    expect(panelSrc).toMatch(/heading\.tabIndex = -1/);
+    expect(panelSrc).toMatch(/back\.focus\(\)/);
+  });
+
+  it("selects with focus from clicks, Enter, the list, search and panel links", () => {
+    expect(
+      read("src/10-layout-draw.js").match(/select\("(node|edge)", [\w.]+, true\)/g),
+    ).toHaveLength(3);
+    expect(read("src/60-search.js").match(/, true\)/g)!.length).toBeGreaterThanOrEqual(3);
+    expect(read("src/30-list-panel.js")).toMatch(/select\("node", n\.id, true\)/);
+  });
+
+  it("announces flow steps, search counts and selections in live regions", () => {
+    expect(markup).toMatch(/id="caption" class="caption" aria-live="polite"/);
+    expect(markup).toMatch(/id="find-status" class="sr" aria-live="polite"/);
+    expect(markup).toMatch(/<aside id="panel" aria-live="polite">/);
+  });
+
+  it("keeps reduced motion, and the keys 0.1.0 had", () => {
+    expect(read("styles.css")).toMatch(/prefers-reduced-motion: no-preference/);
+    expect(code).toMatch(/ev\.key === "ArrowLeft"/);
+    expect(code).toMatch(/ev\.key === "0"/);
+    expect(code).toMatch(/ev\.key === "\+"/);
+    expect(code).toMatch(/ev\.key === "Escape"/);
+  });
+
+  it("keeps links and the offline guarantee: no network, storage or cookies in the viewer", () => {
+    expect(code).not.toMatch(
+      /\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|\bimport\s*\(|localStorage|sessionStorage|document\.cookie/,
+    );
+  });
+});
+
+describe("arch-visualize built page is offline", () => {
+  for (const [name, extra] of [
+    ["English", []],
+    ["Arabic", ["--lang", "ar", "--flow-dir", "rtl"]],
+  ] as const)
+    it(`${name}: no request can leave the page`, () => {
+      const html = render(fixture, [...extra]).html;
+      // the embedded data blocks hold the project's own text; everything else is our code
+      const ours = html.replace(
+        /<script type="application\/json" id="(model|icons|i18n)">[\s\S]*?<\/script>/g,
+        "",
+      );
+      // the one address in the code is the SVG namespace, a name that is never fetched
+      const urls = ours.match(/https?:\/\/[^\s"'<>)]+/g) ?? [];
+      expect(urls.every((u) => u === "http://www.w3.org/2000/svg")).toBe(true);
+      expect(ours).not.toMatch(/\/\/cdn|\bfetch\s*\(|XMLHttpRequest|\bimport\s*\(|<link\b/i);
+      expect(ours).not.toMatch(/\s(src|href)\s*=/i);
+    });
+});
+
+describe("arch-visualize hidden parts", () => {
+  it("lets the hidden attribute win over any display rule", () => {
+    expect(read("styles.css")).toMatch(/\[hidden\] \{\s*display: none !important;/);
+  });
+});

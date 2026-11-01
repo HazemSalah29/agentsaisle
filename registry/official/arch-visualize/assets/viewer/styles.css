@@ -60,6 +60,9 @@
 :root[data-lens="flows"] {
   --accent: var(--accent-flows);
 }
+[hidden] {
+  display: none !important;
+}
 * {
   box-sizing: border-box;
 }

@@ -124,7 +124,7 @@ model.edges.forEach(function (e) {
   }
   g.addEventListener("click", function (ev) {
     ev.stopPropagation();
-    if (!moved) select("edge", e.id);
+    if (!moved) select("edge", e.id, true);
   });
   edgeEls[e.id] = g;
   gEdges.append(g);
@@ -167,13 +167,13 @@ model.nodes.forEach(function (n) {
     );
   g.addEventListener("click", function (ev) {
     ev.stopPropagation();
-    if (!moved) select("node", n.id);
+    if (!moved) select("node", n.id, true);
   });
   g.addEventListener("keydown", function (ev) {
     if (ev.key === "Enter" || ev.key === " ") {
       ev.preventDefault();
       ev.stopPropagation();
-      select("node", n.id);
+      select("node", n.id, true);
     }
   });
   nodeEls[n.id] = g;

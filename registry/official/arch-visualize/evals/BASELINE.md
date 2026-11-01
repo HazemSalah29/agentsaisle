@@ -35,6 +35,17 @@ Measured in Chromium at 1440×900: every edge path is sampled at 80 points with 
 
 Straight-line count in Node (no curve sampling): fixture 3, DevPath 6. A random 150-node, 300-edge graph lays out in about 80 ms (366 lane slots for the long edges).
 
+## After M3 (new viewer)
+
+| Measure                                               | 0.1.1  | After M3 |
+| ----------------------------------------------------- | ------ | -------- |
+| Viewer template (parts and libraries together), bytes | 60,768 | 122,405  |
+| Rendered fixture page                                 | 78 KB  | 128 KB   |
+| Rendered DevPath page                                 | 73 KB  | 124 KB   |
+| `render.mjs` wall time (node, cold start)             | 0.03 s | 0.02 s   |
+
+The D6 budget (300 KB for the viewer and its libraries, 1.5 MB for the fixture page) holds. Screenshots of every view that exists are in `evals/m3-viewer/`. The page grew about 50 KB: the layout, search, trace, link and detail modules, the Arabic text table and the new styles.
+
 ## Tokens and tool calls
 
 No eval-run log exists for a full skill run, so there are no numbers. M8 will measure it by running the skill once on the fixture with the old and new version and reading the token and tool-call totals from the session transcript.
