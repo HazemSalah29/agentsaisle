@@ -6,18 +6,35 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
+  colorArgs,
   gifArgs,
   joinArgs,
+  loudnormApplyArgs,
+  loudnormMeasureArgs,
+  parseLoudnorm,
   parseScenes,
   sceneReport,
   scenesArgs,
   speedArgs,
   trimArgs,
 } from "./commands.mjs";
-import { checkOutput, checkPath, ffmpeg, probe } from "./ffwrap.mjs";
+import { checkLut, checkOutput, checkPath, ffmpeg, probe } from "./ffwrap.mjs";
 import { capLines, isEntry, parseArgs } from "./_lib.mjs";
 
-const STRINGS = ["in", "out", "from", "to", "factor", "width", "fps", "threshold"];
+const STRINGS = [
+  "in",
+  "out",
+  "from",
+  "to",
+  "factor",
+  "width",
+  "fps",
+  "threshold",
+  "target",
+  "music",
+  "look",
+  "lut",
+];
 
 /** Run one command. Returns the lines to print. Exported for tests. */
 export function execute(command, flags) {
@@ -71,7 +88,36 @@ export function execute(command, flags) {
       },
       infos[0],
     );
-  else throw new Error(`Unknown command "${command}". Have: trim, join, speed, gif, scenes.`);
+  else if (command === "color")
+    args = colorArgs(
+      {
+        file: files[0],
+        out,
+        look: flags.look,
+        lut: flags.lut ? checkLut(flags.lut) : undefined,
+        autoWb: flags["auto-wb"],
+        best,
+      },
+      infos[0],
+    );
+  else if (command === "audio") {
+    if (!infos[0].audio) throw new Error("This file has no sound to work on.");
+    const music = flags.music ? checkPath(flags.music, "input") : null;
+    const o = {
+      file: files[0],
+      out,
+      denoise: flags.denoise,
+      music,
+      duck: flags.duck,
+      target: flags.target,
+    };
+    const m = parseLoudnorm(ffmpeg(loudnormMeasureArgs(o, infos[0]), { level: "info" }).stderr);
+    if (!m) throw new Error("ffmpeg gave no loudness measurement.");
+    args = loudnormApplyArgs(o, infos[0], m);
+  } else
+    throw new Error(
+      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color.`,
+    );
   ffmpeg(args);
   const after = probe(out);
   return [
@@ -82,7 +128,7 @@ export function execute(command, flags) {
 function main() {
   try {
     const { flags, positional } = parseArgs(process.argv.slice(2), {
-      booleans: ["best", "force"],
+      booleans: ["best", "force", "denoise", "duck", "auto-wb"],
       strings: STRINGS,
     });
     if (!positional[0])

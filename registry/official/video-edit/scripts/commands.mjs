@@ -157,3 +157,147 @@ export function sceneReport(cuts, seconds) {
     cutsPerMinute: seconds ? r3(((edges.length - 2) / seconds) * 60) : 0,
   };
 }
+
+/** The loudness the library brings sound to. The same numbers as video-core/scripts/render.mjs (a test checks). */
+export const LOUDNESS = Object.freeze({ lufs: -14, truePeak: -1.5, range: 11 }); // TODO(verify) per platform
+
+const FILTER_SPECIAL = /([\\':,;[\]])/g;
+/** A file path made safe inside an ffmpeg filter argument (backslash, colon, quote, comma, brackets, semicolon). */
+export const filterPath = (p) => p.replace(/\\/g, "/").replace(FILTER_SPECIAL, "\\$1");
+
+/**
+ * The filter graph that turns the clip's sound (and optional music) into one stream labelled [mix] and the
+ * ffmpeg inputs it needs. `music`: absolute path or null; `duck`: lower the music under speech.
+ */
+export function audioGraph({
+  denoise = false,
+  music = null,
+  duck = false,
+  musicDb = -18,
+  seconds,
+}) {
+  const head = `[0:a]${denoise ? "afftdn=nr=12" : "anull"}`;
+  if (!music) return { graph: `${head}[mix]`, inputs: [] };
+  const bed = `[1:a]aloop=loop=-1:size=2147483647,atrim=0:${r3(seconds)},aresample=48000,volume=${musicDb}dB`;
+  if (!duck)
+    return {
+      graph: `${head}[vo];${bed}[m];[vo][m]amix=inputs=2:normalize=0:dropout_transition=0[mix]`,
+      inputs: [music],
+    };
+  return {
+    graph: [
+      `${head}[v0]`,
+      "[v0]asplit=2[vo][sc]",
+      `${bed}[m]`,
+      "[m][sc]sidechaincompress=threshold=0.05:ratio=8:attack=20:release=400[duck]",
+      "[duck][vo]amix=inputs=2:normalize=0:dropout_transition=0[mix]",
+    ].join(";"),
+    inputs: [music],
+  };
+}
+
+const ln = (target) => `loudnorm=I=${target}:TP=${LOUDNESS.truePeak}:LRA=${LOUDNESS.range}`;
+
+function checkTarget(t) {
+  const n = num(t ?? LOUDNESS.lufs, "target");
+  if (n < -30 || n > -8) throw new Error("--target must be from -30 to -8 LUFS.");
+  return n;
+}
+
+/** Pass 1: measure. The program prints a JSON block on stderr (see parseLoudnorm). */
+export function loudnormMeasureArgs({ file, denoise, music, duck, target }, info) {
+  const g = audioGraph({ denoise, music, duck, seconds: info.seconds });
+  return [
+    ...input(file),
+    ...g.inputs.flatMap((m) => input(m)),
+    "-filter_complex",
+    `${g.graph};[mix]${ln(checkTarget(target))}:print_format=json[a]`,
+    "-map",
+    "[a]",
+    "-f",
+    "null",
+    "-",
+  ];
+}
+
+/** The measurement from pass 1, or null when ffmpeg printed none. Values are numbers; "-inf" stays -Infinity. */
+export function parseLoudnorm(stderr) {
+  const m = stderr.match(/\{[^{}]*"input_i"[^{}]*\}/);
+  if (!m) return null;
+  const j = JSON.parse(m[0]);
+  const n = (v) => (String(v).includes("inf") ? -Infinity : Number(v));
+  return {
+    i: n(j.input_i),
+    tp: n(j.input_tp),
+    lra: n(j.input_lra),
+    thresh: n(j.input_thresh),
+    offset: n(j.target_offset),
+  };
+}
+
+/** Pass 2: apply the measured gain linearly, so dynamics are kept; the picture is copied, not re-encoded. */
+export function loudnormApplyArgs({ file, out, denoise, music, duck, target }, info, m) {
+  if (!Number.isFinite(m.i) || m.i < -60)
+    throw new Error("The sound is silent, so there is nothing to bring to a level.");
+  const g = audioGraph({ denoise, music, duck, seconds: info.seconds });
+  const measured = `measured_I=${m.i}:measured_TP=${m.tp}:measured_LRA=${m.lra}:measured_thresh=${m.thresh}:offset=${m.offset}:linear=true`;
+  return [
+    ...input(file),
+    ...g.inputs.flatMap((x) => input(x)),
+    "-filter_complex",
+    `${g.graph};[mix]${ln(checkTarget(target))}:${measured},aresample=48000[a]`,
+    "-map",
+    "0:v",
+    "-map",
+    "[a]",
+    "-c:v",
+    "copy",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "192k",
+    "-ar",
+    "48000",
+    "-movflags",
+    "+faststart",
+    "-fflags",
+    "+bitexact",
+    "-flags:a",
+    "+bitexact",
+    "-y",
+    out,
+  ];
+}
+
+/** Looks built from ffmpeg's own filters, so there is no third-party LUT file and no licence to track. */
+export const LOOKS = Object.freeze({
+  warm: "colorbalance=rs=0.06:bs=-0.08:rm=0.05:bm=-0.06:rh=0.04:bh=-0.05,eq=saturation=1.05",
+  cool: "colorbalance=rs=-0.06:bs=0.08:rm=-0.05:bm=0.06:rh=-0.04:bh=0.05,eq=saturation=1.02",
+  film: "curves=m='0/0.04 0.5/0.5 1/0.96',colorbalance=rs=0.03:bs=-0.02:rh=0.03:bh=-0.03,eq=contrast=1.05:saturation=0.9",
+});
+
+/** color: a look or a LUT, optionally after an automatic white balance (grayworld). */
+export function colorArgs({ file, out, look, lut, autoWb, best }, info) {
+  if (look && lut) throw new Error("Choose either --look or --lut, not both.");
+  if (!look && !lut && !autoWb)
+    throw new Error("Give --look warm|cool|film, --lut <file.cube>, or --auto-wb.");
+  const chain = [];
+  if (autoWb) chain.push("format=gbrpf32le,grayworld,format=yuv420p");
+  if (look) {
+    if (!LOOKS[look])
+      throw new Error(`Unknown look "${look}". Have: ${Object.keys(LOOKS).join(", ")}.`);
+    chain.push(LOOKS[look]);
+  }
+  if (lut) {
+    if (!/\.(cube|3dl)$/i.test(lut)) throw new Error("--lut must be a .cube or .3dl file.");
+    chain.push(`lut3d=file=${filterPath(lut)}`);
+  }
+  return [
+    ...input(file),
+    "-vf",
+    chain.join(","),
+    ...encode({ best, audio: info.audio ? "copy" : false }),
+    "-y",
+    out,
+  ];
+}

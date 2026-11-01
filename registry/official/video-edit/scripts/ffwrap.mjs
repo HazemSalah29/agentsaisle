@@ -30,6 +30,15 @@ export function checkPath(p, what = "file", { output = false } = {}) {
   return path.resolve(p);
 }
 
+/** A colour look-up table file: a .cube or .3dl path with the same guards as any other file name. */
+export function checkLut(p) {
+  checkPath(String(p).replace(/\.(cube|3dl)$/i, ".mp4"), "LUT");
+  if (!/\.(cube|3dl)$/i.test(p)) throw new Error("--lut must be a .cube or .3dl file.");
+  const abs = path.resolve(p);
+  if (!existsSync(abs)) throw new Error(`LUT file ${path.basename(abs)} does not exist.`);
+  return abs;
+}
+
 /** An output may not be the input, and an existing file is only replaced with --force. */
 export function checkOutput(out, input, force) {
   const o = checkPath(out, "output", { output: true });
@@ -43,10 +52,16 @@ export function checkOutput(out, input, force) {
 /** Input options for one file: only the file protocol may be read. */
 export const input = (file) => ["-protocol_whitelist", "file", "-i", file];
 
-export const HEAD = ["-hide_banner", "-nostats", "-v", "error"];
+export const head = (level = "error") => ["-hide_banner", "-nostats", "-v", level];
 
 /** Encoding defaults: H.264, yuv420p, AAC 48 kHz, fast start, bit-exact (the same input gives the same file). */
 export function encode({ best = false, audio = true } = {}) {
+  const a =
+    audio === "copy"
+      ? ["-c:a", "copy"]
+      : audio
+        ? ["-c:a", "aac", "-b:a", "192k", "-ar", "48000"]
+        : ["-an"];
   return [
     "-c:v",
     "libx264",
@@ -56,7 +71,7 @@ export function encode({ best = false, audio = true } = {}) {
     best ? "16" : "20",
     "-pix_fmt",
     "yuv420p",
-    ...(audio ? ["-c:a", "aac", "-b:a", "192k", "-ar", "48000"] : ["-an"]),
+    ...a,
     "-movflags",
     "+faststart",
     "-fflags",
@@ -100,9 +115,9 @@ export function probe(file, runner = run) {
   };
 }
 
-/** Run ffmpeg with the standard head. Throws with the tail of ffmpeg's message when it fails. */
-export function ffmpeg(args, opts = {}) {
-  const r = run("ffmpeg", [...HEAD, ...args], { timeoutMs: 1_800_000, ...opts });
+/** Run ffmpeg with the standard head (`level` "info" when a filter prints its result in the log, as loudnorm does). Throws with the tail of ffmpeg's message when it fails. */
+export function ffmpeg(args, { level = "error", ...opts } = {}) {
+  const r = run("ffmpeg", [...head(level), ...args], { timeoutMs: 1_800_000, ...opts });
   if (r.error) throw new Error(`ffmpeg could not start: ${r.error.message}`);
   if (r.status !== 0)
     throw new Error(
