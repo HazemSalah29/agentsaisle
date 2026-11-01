@@ -108,6 +108,7 @@ describe("video doctor engines", () => {
     "whisper-cli": "/b/whisper-cli",
     whisperModel: "/m/ggml-base.bin",
     arab3: "/a",
+    arab3Model: "/a/model.safetensors",
   };
 
   it("says everything is missing when nothing is set up", () => {

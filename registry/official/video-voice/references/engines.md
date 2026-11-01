@@ -35,9 +35,13 @@ Apple Silicon Mac, CPU only, 2026-11-01, versions pinned in `docs/video/THIRD_PA
 
   The brief asks for within 100 ms; the DTW method does not reach that on every word (one word was 525 ms off). A larger model (`small`, 466 MiB) may do better; it was not tested.
 
+- **3arab-TTS** (VoiceDesign model, CPU): 4.5 s of Arabic speech in 12.4 s wall time (about 2.7 times real time, model loading included), 48 kHz. The output carries the SilentCipher watermark only when the `sony/silentcipher` model files are in the local cache; without them the model silently skips it. After they were cached, decoding the file gave the payload `73,82,68,84,83`. Whisper `base` aligned that one Arabic line plausibly (9 of 9 words matched), but there is no reference to measure its error against, and one word came out with zero length. Arabic timing accuracy is unmeasured.
+
 ## Setup notes (done once, by the user or by the agent with each step approved)
 
 - Python 3.12 in a venv (no Homebrew needed): `python3 -m pip install --user uv`, then `uv python install 3.12` and `uv venv`. Kokoro needs Python 3.10 to 3.12.
 - `uv pip install kokoro==0.9.4 soundfile`, the spaCy model `en_core_web_sm` 3.8.0 (misaki downloads it at run time otherwise, which the offline adapter forbids), and the Kokoro weights through `huggingface_hub.snapshot_download` (the adapter itself never downloads).
 - whisper.cpp v1.9.5: shallow `git clone` of the tag, cmake from pip, and on Apple Silicon configure with `-DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=armv8.5-a+dotprod+i8mm` (the SVE probe hung the default configure); build the `whisper-cli` target; fetch `ggml-base.bin`.
 - Record the absolute paths in `~/.aisle-video/tools.json`.
+- 3arab-TTS: `git clone` the repo (code is MIT) into `~/.aisle-video/3arab-TTS`; install the inference libraries into the same venv, pinned: `transformers<5`, `huggingface-hub<1.0`, `peft`, `safetensors`, `sentencepiece==0.1.99` (needs `CMAKE_POLICY_VERSION_MINIMUM=3.5` to build on current cmake), `torchaudio`, `torchcodec<0.11`, `dacvae` and `silentcipher` from their git commits (see THIRD_PARTY). Those two run a third party's build step on your machine. Download once, online: the VoiceDesign checkpoint (`model.safetensors`, 1.04 GB; the Hugging Face client stalled, so `curl` was used), and the repos `sherif1313/DACVAE-Arabic-32dim`, `sherif1313/llm-ar` (tokenizer; the repo also holds an unused 305 MB model file) and `sony/silentcipher` into the Hugging Face cache. Set `arab3` and `arab3Model` in `tools.json`.
+- Installing 3arab downgrades `transformers` and `huggingface-hub` for the whole venv; Kokoro was re-tested afterwards and is unchanged.

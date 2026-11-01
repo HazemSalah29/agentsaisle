@@ -143,7 +143,7 @@ export function engineLines(cfg, { run = spawnSync, exists = existsSync } = {}) 
     `  kokoro      ${pyOk && ok(py, ["-c", "import kokoro"]) !== null ? "ready (English voice)" : "not installed (English voice: use --provider test or add audio yourself)"}`,
   );
   lines.push(
-    `  3arab-tts   ${typeof cfg.arab3 === "string" && exists(cfg.arab3) ? "set up (Arabic voice)" : "not set up (Arabic voice)"}`,
+    `  3arab-tts   ${typeof cfg.arab3 === "string" && exists(cfg.arab3) && typeof cfg.arab3Model === "string" && exists(cfg.arab3Model) ? "set up (Arabic voice)" : "not set up (Arabic voice)"}`,
   );
   const wc =
     typeof cfg["whisper-cli"] === "string" && path.isAbsolute(cfg["whisper-cli"])

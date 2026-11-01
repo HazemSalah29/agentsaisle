@@ -23,6 +23,13 @@ const hasWhisper =
   existsSync(cfg["whisper-cli"]) &&
   typeof cfg.whisperModel === "string" &&
   existsSync(cfg.whisperModel);
+const hasArab =
+  hasKokoro &&
+  typeof cfg.arab3 === "string" &&
+  existsSync(cfg.arab3) &&
+  typeof cfg.arab3Model === "string" &&
+  existsSync(cfg.arab3Model) &&
+  spawnSync(cfg.python, ["-c", "import silentcipher, dacvae, peft"]).status === 0;
 const hasFfmpeg = spawnSync("ffmpeg", ["-version"]).status === 0;
 
 const project = (script: string) => {
@@ -94,4 +101,48 @@ describe.skipIf(!(hasKokoro && hasWhisper && hasFfmpeg))("real whisper.cpp align
       expect(line.words[0].start).toBeGreaterThan(0.1); // the voice starts a little after zero
     },
   );
+});
+
+describe.skipIf(!hasArab)("real 3arab-TTS Arabic voice", () => {
+  it(
+    "speaks Arabic at 48 kHz and the output carries the model's watermark",
+    { timeout: 600_000 },
+    () => {
+      const dir = project("[l1] مرحبا بكم في هذا الفيديو القصير.\n  beat: hook\n");
+      writeFileSync(
+        path.join(dir, "video.json"),
+        JSON.stringify({ version: 1, meta: { lang: "ar" }, scenes: [] }),
+      );
+      const r = step("video-voice", "voice.mjs", dir, "--provider", "3arab");
+      expect(r.status, r.stderr).toBe(0);
+      const m = JSON.parse(readFileSync(path.join(dir, "voice", "manifest.json"), "utf8"));
+      expect(m).toMatchObject({
+        provider: "3arab",
+        model: "sherif1313/3arab-TTS-500M-v2-VoiceDesign",
+      });
+      expect(m.lines.l1.seconds).toBeGreaterThan(1.5);
+      const file = path.join(dir, "voice", "l1.wav");
+      expect(readFileSync(file).readUInt32LE(24)).toBe(48000);
+      // decode the watermark back out of the file (offline: the model files are already cached)
+      const code = `import os; os.environ["HF_HUB_OFFLINE"]="1"
+import silentcipher, soundfile as sf
+m = silentcipher.get_model(model_type="44.1k", device="cpu")
+a, sr = sf.read(${JSON.stringify(file)}, dtype="float32")
+r = m.decode_wav(a, sr, phase_shift_decoding=False)
+print("WM", r.get("status"), r.get("messages"))`;
+      const d = spawnSync(cfg.python, ["-c", code], { encoding: "utf8" });
+      expect(d.stdout).toMatch(/WM True \[\[73, 82, 68, 84, 83\]\]/);
+    },
+  );
+
+  it("refuses an English voice description", () => {
+    const dir = project("[l1] مرحبا\n  beat: hook\n");
+    writeFileSync(
+      path.join(dir, "video.json"),
+      JSON.stringify({ version: 1, meta: { lang: "ar" }, scenes: [] }),
+    );
+    const r = step("video-voice", "voice.mjs", dir, "--provider", "3arab", "--voice", "calm woman");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/voice must be described in Arabic/);
+  });
 });
