@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { FF, ffPath, haveFF, makeClip, seconds, tmp } from "./video-edit-fixtures";
+import { FF, ffPath, haveFF, seconds, tmp } from "./video-edit-fixtures";
 import { loadScript, skillFile } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
