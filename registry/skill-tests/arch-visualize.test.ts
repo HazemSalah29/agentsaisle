@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import vm from "node:vm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
@@ -503,6 +504,19 @@ const dataBlock = (html: string, id: string) => {
   return m ? m[1]! : null;
 };
 
+/** The viewer's parts: markup, styles and the numbered scripts, read from the skill folder. */
+const viewerParts = () => {
+  const dir = skillFile("arch-visualize", "assets/viewer");
+  const code = readdirSync(path.join(dir, "src"))
+    .filter((f) => f.endsWith(".js"))
+    .sort()
+    .map((f) => readFileSync(path.join(dir, "src", f), "utf8"))
+    .join("\n");
+  const markup = readFileSync(path.join(dir, "index.html"), "utf8");
+  const styles = readFileSync(path.join(dir, "styles.css"), "utf8");
+  return { code, markup, styles, all: [markup, styles, code].join("\n") };
+};
+
 describe("arch-visualize render", () => {
   const fixtureModel = skillFile("arch-visualize", "evals/fixture-model.json");
   const hostileModel = skillFile("arch-visualize", "evals/hostile-model.json");
@@ -513,15 +527,16 @@ describe("arch-visualize render", () => {
   renderCli(hostileModel, hostileOut);
   const fixtureHtml = readFileSync(fixtureOut, "utf8");
   const hostileHtml = readFileSync(hostileOut, "utf8");
-  const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
-  const viewerCode = /<script>([\s\S]*?)<\/script>/.exec(viewer)![1];
+  const parts = viewerParts();
+  const viewer = parts.all;
+  const viewerCode = parts.code;
 
   it("renders the fixture model and says where the file is", () => {
     expect(first.status).toBe(0);
     expect(first.stdout).toMatch(/Wrote .*fixture\.html .*9 components, 3 flows/);
     expect(first.stdout.trimEnd().split("\n").length).toBeLessThanOrEqual(40);
     expect(fixtureHtml.startsWith("<!doctype html>")).toBe(true);
-    expect(fixtureHtml).toContain("<!-- arch-visualize viewer v1 -->");
+    expect(fixtureHtml).toContain("<!-- arch-visualize viewer v2 -->");
   });
 
   it("inlines the layout library once and leaves no placeholder", () => {
@@ -533,7 +548,7 @@ describe("arch-visualize render", () => {
   });
 
   it("keeps the viewer and its libraries within the 300 KB budget", () => {
-    let bytes = statSync(skillFile("arch-visualize", "assets/viewer.html")).size;
+    let bytes = Buffer.byteLength(viewer);
     for (const f of ["geometry.js", "layout.js"])
       bytes += statSync(skillFile("arch-visualize", `assets/lib/${f}`)).size;
     expect(bytes).toBeLessThan(300_000);
@@ -600,9 +615,27 @@ describe("arch-visualize render", () => {
     expect(renderCli(fixtureModel, foreign).status).toBe(2);
     expect(readFileSync(foreign, "utf8")).toBe("<h1>my own page</h1>");
     expect(renderCli(fixtureModel, foreign, ["--force"]).status).toBe(0);
-    expect(readFileSync(foreign, "utf8")).toContain("arch-visualize viewer v1");
+    expect(readFileSync(foreign, "utf8")).toContain("arch-visualize viewer v2");
     // Its own page can be replaced without --force.
     expect(renderCli(fixtureModel, foreign).status).toBe(0);
+    // So can a page made by an older version of the viewer.
+    const old = path.join(tmp(), "old.html");
+    writeFileSync(old, "<!doctype html>\n<!-- arch-visualize viewer v1 -->\n<p>old</p>");
+    expect(renderCli(fixtureModel, old).status).toBe(0);
+  });
+
+  it("builds the viewer from parts that form one valid script", () => {
+    expect(
+      () => new vm.Script(`(function () {\n"use strict";\n${parts.code}\n})();`),
+    ).not.toThrow();
+    for (const hole of [
+      "__STYLES__",
+      "__LIB_JS__",
+      "__VIEWER_JS__",
+      "__MODEL_JSON__",
+      "__ICONS_JSON__",
+    ])
+      expect(fixtureHtml).not.toContain(hole);
   });
 
   it("refuses an invalid model and lists the problems", () => {
@@ -710,7 +743,7 @@ type Engine = {
 };
 
 describe("arch-visualize flow engine", () => {
-  const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
+  const viewer = viewerParts().all;
   const block = /\/\/ <flow-engine>([\s\S]*?)\/\/ <\/flow-engine>/.exec(viewer);
   // The engine is our own code and has no DOM access, so the test can run it on its own.
   const E = new Function(
@@ -1758,7 +1791,7 @@ describe("arch-visualize live demo (DevPath)", () => {
     const out = path.join(tmp(), "devpath.html");
     expect(renderCli(demoFile, out).status).toBe(0);
     const html = readFileSync(out, "utf8");
-    expect(html).toContain("arch-visualize viewer v1");
+    expect(html).toContain("arch-visualize viewer v2");
     expect(html.match(/<\/script/gi)).toHaveLength(4);
   });
 
@@ -1830,7 +1863,7 @@ describe("arch-visualize demo text matches the demo model", () => {
 
 describe("arch-visualize viewer inside a frame", () => {
   it("leaves plain scrolling to the page that embeds it", () => {
-    const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
+    const viewer = viewerParts().all;
     expect(viewer).toMatch(/framed = window\.self !== window\.top/);
     expect(viewer).toMatch(/if \(framed && !ev\.ctrlKey && !ev\.metaKey\) return;/);
   });

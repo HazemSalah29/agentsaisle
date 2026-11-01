@@ -1,12 +1,14 @@
 // Stage 4: embed a checked model and its icons into the viewer template and write one self-contained,
 // offline HTML file. Model text is data: it is escaped for the HTML data block and the viewer only ever
 // shows it through textContent.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 import { checkModel, upgradeModel } from "./model-check.mjs";
 
-export const MARKER = "<!-- arch-visualize viewer v1 -->";
+export const MARKER = "<!-- arch-visualize viewer v2 -->";
+/** Any version of our page may be replaced without --force. */
+const OURS = /<!-- arch-visualize viewer v\d+ -->/;
 
 /** JSON that is safe inside <script type="application/json">: no "<", ">", "&" or line separators. */
 export const safeJson = (value) =>
@@ -46,7 +48,31 @@ export function renderPage(input) {
   const model = upgradeModel(input);
   const problems = checkModel(model);
   if (problems.length) throw Object.assign(new Error("model has problems"), { problems });
-  const template = readFileSync(path.join(skillDir(), "assets", "viewer.html"), "utf8");
+  const asset = (...p) => readFileSync(path.join(skillDir(), "assets", ...p), "utf8");
+  const template = asset("viewer", "index.html");
+  const styles = asset("viewer", "styles.css");
+  const lib = ["geometry.js", "layout.js"].map((f) => asset("lib", f)).join("\n");
+  const code = readdirSync(path.join(skillDir(), "assets", "viewer", "src"))
+    .filter((f) => f.endsWith(".js"))
+    .sort()
+    .map((f) => asset("viewer", "src", f))
+    .join("\n");
+  const viewer = `(function () {\n"use strict";\n${code}\n})();`;
+  for (const [name, text] of [
+    ["library", lib],
+    ["viewer code", viewer],
+    ["styles", styles],
+  ])
+    if (/<\/(script|style)/i.test(text)) throw new Error(`${name} must not contain a closing tag`);
+  const holes = [
+    "/*__STYLES__*/",
+    "/*__LIB_JS__*/",
+    "/*__VIEWER_JS__*/",
+    "__MODEL_JSON__",
+    "__ICONS_JSON__",
+  ];
+  for (const hole of holes)
+    if (!template.includes(hole)) throw new Error(`viewer/index.html is missing ${hole}`);
   const icons = {};
   for (const n of model.nodes) {
     const key = `${n.tech}|${n.role}`;
@@ -57,15 +83,10 @@ export function renderPage(input) {
       .sort()
       .map((k) => [k, icons[k]]),
   );
-  const lib = ["geometry.js", "layout.js"]
-    .map((f) => readFileSync(path.join(skillDir(), "assets", "lib", f), "utf8"))
-    .join("\n");
-  if (lib.includes("</script") || !template.includes("/*__LIB_JS__*/"))
-    throw new Error("viewer.html is missing its library placeholder");
-  if (!template.includes("__MODEL_JSON__") || !template.includes("__ICONS_JSON__"))
-    throw new Error("viewer.html is missing its data placeholders");
   return template
+    .replace("/*__STYLES__*/", () => styles)
     .replace("/*__LIB_JS__*/", () => lib)
+    .replace("/*__VIEWER_JS__*/", () => viewer)
     .replace("__MODEL_JSON__", () => safeJson(model))
     .replace("__ICONS_JSON__", () => safeJson(sorted));
 }
@@ -81,7 +102,7 @@ function run(argv) {
     console.error(`render: cannot read ${modelFile}: ${e.message}`);
     return 2;
   }
-  if (existsSync(out) && !flags.force && !readFileSync(out, "utf8").includes(MARKER)) {
+  if (existsSync(out) && !flags.force && !OURS.test(readFileSync(out, "utf8"))) {
     console.error(
       `render: ${out} exists and is not an arch-visualize page. Use --out, or --force to replace it.`,
     );

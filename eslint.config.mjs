@@ -12,6 +12,8 @@ export default tseslint.config(
       "packages/audit/fixtures/**",
       "registry/official/arabic-rtl/evals/fixture-app/**",
       "registry/official/arch-visualize/evals/fixture-app/**",
+      // Parts of one browser script: they share variables, so each file alone is not a module.
+      "registry/official/arch-visualize/assets/viewer/src/**",
     ],
   },
   js.configs.recommended,
