@@ -123,6 +123,7 @@ function renderFlow() {
   $("fback").disabled = st.index < 0;
   $("frestart").disabled = st.index < 0;
   if (tab === "flow" && shownIndex !== st.index) renderFlowPanel();
+  if (shownIndex !== st.index) scheduleLink();
   shownIndex = st.index;
 }
 function renderFlowPanel() {
@@ -229,6 +230,3 @@ if (flows.length) {
   if (reducedMq.addEventListener) reducedMq.addEventListener("change", onMotionChange);
   selectFlow(0);
 }
-
-fit();
-renderPanel();

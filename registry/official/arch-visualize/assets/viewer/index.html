@@ -14,6 +14,22 @@
     <header>
       <h1 id="title">Architecture</h1>
       <p>{{header.note}}</p>
+      <div class="find">
+        <input
+          id="q"
+          type="search"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="results"
+          aria-autocomplete="list"
+          autocomplete="off"
+          placeholder="{{search.placeholder}}"
+          aria-label="{{search.label}}"
+        />
+        <ul id="results" role="listbox" hidden></ul>
+      </div>
+      <button type="button" id="trace" aria-pressed="false">{{trace.button}}</button>
+      <div id="find-status" class="sr" aria-live="polite"></div>
       <button type="button" id="open-risks" class="phone-only">{{btn.risks}}</button>
       <button type="button" id="theme">{{btn.theme}}</button>
     </header>

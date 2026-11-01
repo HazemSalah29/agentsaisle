@@ -6,6 +6,7 @@ function applyView() {
   vp.setAttribute("transform", "translate(" + view.x + " " + view.y + ") scale(" + view.k + ")");
   canvas.setAttribute("data-lod", ArchLod.level(view.k));
   drawMinimapView();
+  scheduleLink();
 }
 function panBy(dx, dy) {
   view.x += dx;

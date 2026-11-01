@@ -1859,9 +1859,9 @@ describe("arch-visualize demo text matches the demo model", () => {
     renderCli(skillFile("arch-visualize", "evals/demo/devpath.architecture.json"), out);
     const kb = readFileSync(out).length / 1024;
     expect(kb).toBeGreaterThan(65);
-    // The layout library made a fresh render about 97 KB; the page embedded on the skill page is still
+    // The new viewer makes a fresh render about 120 KB; the page embedded on the skill page is still
     // the 0.1.1 one (about 75 KB). M8 regenerates the demo and rewrites this text and bound together.
-    expect(kb).toBeLessThan(110);
+    expect(kb).toBeLessThan(150);
     expect(steps[4]!.text).toContain("about 75 KB");
   });
 });

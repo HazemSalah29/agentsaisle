@@ -30,7 +30,7 @@ const PLURAL = /\.(zero|one|two|few|many|other)$/;
 const base = (key: string) => key.replace(PLURAL, "");
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
 // Keys that code builds from a prefix and a model value (a tier, a role, a severity).
-const DYNAMIC = ["tier.", "role.", "sev."];
+const DYNAMIC = ["tier.", "role.", "sev.", "search.kind."];
 
 describe("arch-visualize text (i18n)", () => {
   it("has the same keys in English and Arabic, with an .other form for every plural", () => {
@@ -277,5 +277,33 @@ describe("arch-visualize level of detail and minimap", () => {
   it("draws connection labels with text only", () => {
     expect(code).toMatch(/class: "edge-label"/);
     expect(code).not.toMatch(/innerHTML/);
+  });
+});
+
+describe("arch-visualize search, trace and links in the page", () => {
+  it("writes results, paths and link text only as text", () => {
+    for (const f of ["60-search.js", "65-trace.js", "70-links.js"]) {
+      const src = read(`src/${f}`);
+      expect(src, f).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|document\.write/);
+    }
+    expect(read("src/60-search.js")).toMatch(/h\(\s*"li"/);
+  });
+
+  it("only touches the address through the validated link module and tolerates refusal", () => {
+    const src = read("src/70-links.js");
+    expect(src).toMatch(/ArchHash\.buildHash/);
+    expect(src).toMatch(/ArchHash\.parseHash\(location\.hash\)/);
+    expect(src).toMatch(/try \{[\s\S]*history\.replaceState[\s\S]*\} catch/);
+    expect(src).not.toMatch(/location\.hash\s*=/);
+  });
+
+  it("does not write the address before the reader has done something", () => {
+    expect(read("src/70-links.js")).toMatch(/if \(!userTouched\) return;/);
+  });
+
+  it("builds the page with the three finding libraries inlined once", () => {
+    const { html } = render(fixture);
+    for (const name of ["ArchSearch", "ArchPaths", "ArchHash", "ArchLod"])
+      expect(html.match(new RegExp(`root\\.${name} = `, "g")), name).toHaveLength(1);
   });
 });

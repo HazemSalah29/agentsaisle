@@ -55,6 +55,7 @@ var tab = "details";
 var panel = $("panel"),
   body = $("body");
 function select(kind, id) {
+  if (traceOn && kind === "node") return tracePick(id);
   sel = kind ? { kind: kind, id: id } : null;
   if (sel) tab = "details";
   Object.keys(nodeEls).forEach(function (k) {
@@ -68,6 +69,7 @@ function select(kind, id) {
   });
   panel.classList.toggle("open", !!sel);
   renderPanel();
+  scheduleLink();
 }
 function evidenceList(items) {
   if (!items || !items.length) return null;
@@ -130,6 +132,7 @@ function renderPanel() {
   $("tab-flow").setAttribute("aria-selected", tab === "flow" ? "true" : "false");
   $("tab-risks").setAttribute("aria-selected", tab === "risks" ? "true" : "false");
   clear(body);
+  if (traceOn) return renderTracePanel();
   if (tab === "flow") return renderFlowPanel();
   if (tab === "risks") {
     body.append(h("p", { class: "note" }, nRisks ? t("risks.note") : t("risks.none")));

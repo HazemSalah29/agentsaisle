@@ -309,6 +309,89 @@ main {
     600 var(--fs-s) system-ui,
     sans-serif;
 }
+.find {
+  position: relative;
+  flex: 0 1 220px;
+}
+.find input {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+#results {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+#results li {
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+#results li[aria-selected="true"] {
+  background: var(--surface-2);
+  outline: 2px solid var(--accent);
+}
+#results li.none {
+  color: var(--muted);
+  cursor: default;
+}
+#results .kind {
+  color: var(--muted);
+  font-size: var(--fs-s);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+#trace[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.searching .node:not(.match),
+.searching .edge:not(.match) {
+  opacity: 0.3;
+}
+.node.match .box,
+.node.trace-on .box,
+.node.trace-a .box,
+.node.trace-b .box {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.edge.match .line,
+.edge.trace-on .line {
+  stroke: var(--accent);
+  stroke-width: 2.6;
+}
+.edge.trace-async .line {
+  stroke-dasharray: 2 5;
+}
+.tracing .node:not(.trace-on),
+.tracing .edge:not(.trace-on) {
+  opacity: 0.25;
+}
 .edge-label {
   fill: var(--muted);
   font:

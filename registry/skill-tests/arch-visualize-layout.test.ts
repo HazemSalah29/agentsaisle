@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { loadLib, skillFile } from "./load";
 
@@ -379,7 +379,9 @@ describe("arch-visualize mirrored layout", () => {
 
 describe("arch-visualize layout files", () => {
   it("are plain browser scripts with no DOM, network, timers or script tags", () => {
-    for (const f of ["geometry.js", "layout.js"]) {
+    for (const f of readdirSync(skillFile("arch-visualize", "assets/lib")).filter((n) =>
+      n.endsWith(".js"),
+    )) {
       const src = readFileSync(skillFile("arch-visualize", `assets/lib/${f}`), "utf8");
       expect(src, f).not.toMatch(
         /\b(document|window|fetch|XMLHttpRequest|setTimeout|setInterval|requestAnimationFrame|eval|import|require)\b\s*[(.]|<\/script|https?:\/\/|\bnew Function\b/,
