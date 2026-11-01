@@ -464,6 +464,23 @@ describe("video-core caption layer", () => {
     expect(buildProject({ video, timing: t }).files["index.html"]).not.toContain("cap-group");
   });
 
+  it("keeps scenes clear of burned captions: the bottom padding covers the caption zone", async () => {
+    const { buildProject } = await project();
+    const video = fixtureVideo();
+    const t = await timingFor(video);
+    const pad = (html: string) => html.match(/\.scene\{[^}]*padding:[^;}]*? (\d+)px\}/)?.[1];
+    expect(pad(buildProject({ video, timing: t }).files["index.html"]!)).toBe("173"); // 16% of the width
+    const withCaps = buildProject({ video, timing: t, captions: captions() }).files["index.html"]!;
+    // the fixture's captions use the 22% safe zone and 5% text on a 1920 px frame: 422.4 + 240 + 38.4
+    expect(Number(pad(withCaps))).toBeGreaterThan(600);
+    const { captionClearance } = await loadScript<{
+      captionClearance: (c: Loose, s: number[]) => number;
+    }>("video-core", "assets/engine/hyperframes/captions.mjs");
+    expect(
+      captionClearance({ style: { size: 0.05 }, safeZone: { bottom: 0.22 } }, [1080, 1920]),
+    ).toBe(700);
+  });
+
   it("render refuses burned captions when captions.json is missing", () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "video-render-cap-"));
     const v = fixtureVideo({ captions: { burn: true } }) as Loose;

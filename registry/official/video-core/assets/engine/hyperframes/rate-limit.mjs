@@ -43,9 +43,9 @@ const r2 = (n) => Math.round(n * 100) / 100;
 
 /** A number that counts up: a column of 0..n that slides up one row per step. Returns markup and its animation. */
 function counter({ id, x, y, w, rows, steps, d, at, dur, cls }) {
-  const lh = 5;
+  const lh = 6.4;
   let col = "";
-  for (let k = 0; k <= rows; k++) col += `<text x="0" y="${k * lh + 3.6}">${k}</text>`;
+  for (let k = 0; k <= rows; k++) col += `<text x="0" y="${r2(k * lh + lh * 0.78)}">${k}</text>`;
   const frames = [{ offset: 0, transform: "translateY(0px)" }];
   steps.forEach((t, i) => {
     const o = r2(Math.min(1, t / d) * 1e4) / 1e4;
@@ -70,12 +70,12 @@ function panel(run, p, ctx, sweep) {
   const FLY = 0.5;
   const when = (t) => at + (t / d) * dur;
 
-  let svg = `<svg id="${id("")}" class="rl" viewBox="0 0 100 70" role="img" aria-label="${esc(NAMES[run.algo])}" dir="ltr">`;
-  svg += `<text class="algo" x="${X0}" y="5">${esc(NAMES[run.algo])}</text>`;
-  svg += `<text class="par" x="${X0}" y="9">${esc(paramsText({ algo: run.algo, ...run.params }))}</text>`;
+  let svg = `<svg id="${id("")}" class="rl" viewBox="0 0 100 64" role="img" aria-label="${esc(NAMES[run.algo])}" dir="ltr">`;
+  svg += `<text class="algo" x="${X0}" y="5.6">${esc(NAMES[run.algo])}</text>`;
+  svg += `<text class="par" x="${X0}" y="10.4">${esc(paramsText({ algo: run.algo, ...run.params }))}</text>`;
   svg += `<line class="axis" x1="${X0}" x2="${GATE}" y1="17" y2="17"/><rect class="gate" x="${GATE}" y="11.5" width="0.8" height="11"/>`;
   svg += `<rect class="srv" x="66" y="11.5" width="30" height="11"/><text class="par mid" x="81" y="18">server</text>`;
-  svg += `<text id="${id("-429")}" class="no-t" x="${GATE - 2}" y="9" text-anchor="end">429</text>`;
+  svg += `<text id="${id("-429")}" class="no-t" x="${GATE - 2}" y="9.6" text-anchor="end">429</text>`;
 
   // Dots: one per request, placed by its arrival time.
   events.forEach((e, i) => {
@@ -126,9 +126,9 @@ function panel(run, p, ctx, sweep) {
 
   // Meter: the exact shape the algorithm gives, straight lines between its points.
   const max = events[0].max;
-  svg += `<text class="par" x="${X0}" y="27.5">${esc(METER[run.algo])}</text>`;
-  svg += `<rect class="bar-bg" x="${X0}" y="29" width="92" height="3.2"/>`;
-  svg += `<rect id="${id("-m")}" class="bar-fill" x="${X0}" y="29" width="92" height="3.2" style="transform-origin:${X0}px 0px"/>`;
+  svg += `<text class="par" x="${X0}" y="28">${esc(METER[run.algo])}</text>`;
+  svg += `<rect class="bar-bg" x="${X0}" y="29.6" width="92" height="3.4"/>`;
+  svg += `<rect id="${id("-m")}" class="bar-fill" x="${X0}" y="29.6" width="92" height="3.4" style="transform-origin:${X0}px 0px"/>`;
   const level = (v) => `scaleX(${Math.max(0, Math.min(1, v / max))})`;
   const mf = meter
     .filter(([t]) => t <= d)
@@ -138,11 +138,11 @@ function panel(run, p, ctx, sweep) {
 
   // Counters.
   const stepsOf = (kind) => events.filter((e) => e.outcome === kind).map((e) => e.t);
-  svg += `<text class="par" x="${X0}" y="38.2">allowed</text><text class="par" x="52" y="38.2">rejected</text>`;
+  svg += `<text class="par" x="${X0}" y="40.4">allowed</text><text class="par" x="52" y="40.4">rejected</text>`;
   const a = counter({
     id: id("-ca"),
-    x: 20,
-    y: 34,
+    x: 22,
+    y: 34.6,
     w: 24,
     rows: run.allowed,
     steps: stepsOf("allowed"),
@@ -153,8 +153,8 @@ function panel(run, p, ctx, sweep) {
   });
   const b = counter({
     id: id("-cr"),
-    x: 68,
-    y: 34,
+    x: 71,
+    y: 34.6,
     w: 24,
     rows: run.rejected,
     steps: stepsOf("rejected"),
@@ -167,8 +167,8 @@ function panel(run, p, ctx, sweep) {
   plan.push(...a.plan, ...b.plan);
 
   // Live chart: cumulative allowed and rejected against time; a cover shrinks to reveal it left to right.
-  const CT = 49;
-  const CB = 68;
+  const CT = 46;
+  const CB = 62;
   const x = (t) => r2(X0 + (Math.min(t, d) / d) * 92);
   const y = (c) => r2(CB - (c / count) * (CB - CT));
   let ca = 0;
@@ -184,7 +184,6 @@ function panel(run, p, ctx, sweep) {
   svg += `<line class="axis" x1="${X0}" x2="96" y1="${CB}" y2="${CB}"/>`;
   svg += `<polyline class="ln ok-l" points="${pa.join(" ")}"/><polyline class="ln no-l" points="${pr.join(" ")}"/>`;
   svg += `<rect id="${id("-cv")}" class="cover" x="${X0}" y="${CT - 1}" width="92.6" height="${CB - CT + 2.5}" style="transform-origin:96.6px 0px"/>`;
-  svg += `<text class="par" x="${X0}" y="${CT - 3}">requests so far:</text><text class="ok-t" x="30" y="${CT - 3}">allowed</text><text class="no-t" x="46" y="${CT - 3}">rejected</text>`;
   plan.push({
     id: id("-cv"),
     frames: [{ transform: "scaleX(1)" }, { transform: "scaleX(0)" }],
@@ -243,11 +242,11 @@ export function rateLimit(s, ctx) {
 
 /** Styles for this kind; project.mjs adds them to the page. */
 export const rateLimitCss = (brand, vertical = true) => `
-.rl-panels{display:flex;flex-direction:${vertical ? "column" : "row"};gap:calc(var(--u)*2)}
-.rl-panels .rl{flex:1;min-width:0}
+.rl-panels{display:flex;flex-direction:${vertical ? "column" : "row"};gap:calc(var(--u)*2);flex:1 1 0;min-height:0}
+.rl-panels .rl{flex:1 1 0;min-width:0;min-height:0}
 .rl{width:100%;height:auto;font-family:inherit}
-.rl text{fill:${brand.colors.fg};font-size:2.4px}
-.rl .algo{font-size:3.6px;font-weight:700}
+.rl text{fill:${brand.colors.fg};font-size:3.1px}
+.rl .algo{font-size:4.6px;font-weight:700}
 .rl .par{fill:${brand.colors.muted}}
 .rl .mid{text-anchor:middle}
 .rl .axis{stroke:${brand.colors.muted};stroke-width:.25}
@@ -256,7 +255,7 @@ export const rateLimitCss = (brand, vertical = true) => `
 .rl .dot{fill:${brand.colors.fg}}
 .rl .bar-bg{fill:none;stroke:${brand.colors.muted};stroke-width:.3}
 .rl .bar-fill{fill:${brand.colors.accent}}
-.rl .cnt text{font-size:4.2px;font-weight:700}
+.rl .cnt text{font-size:5.4px;font-weight:700}
 .rl .ok-t,.rl .ok-t text{fill:${brand.colors.fg};font-weight:700}
 .rl .no-t,.rl .no-t text{fill:${REJECT};font-weight:700}
 .rl .ln{fill:none;stroke-width:.7;stroke-linejoin:round;stroke-linecap:round}

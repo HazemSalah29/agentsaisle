@@ -38,7 +38,7 @@ describe("rate-limit scene", () => {
     // each counter ends on its last row, and the two rows add up to the request count
     const rows = (id: string) => {
       const f = r.plan.find((p) => p.id.endsWith(id))!.frames;
-      return -parseFloat(f[f.length - 1].transform.match(/-?\d+(\.\d+)?/)[0]) / 5;
+      return Math.round(-parseFloat(f[f.length - 1].transform.match(/-?\d+(\.\d+)?/)[0]) / 6.4);
     };
     expect(rows("-ca") + rows("-cr")).toBe(60);
     expect(r.html).toContain("seed 42 · 60 requests");

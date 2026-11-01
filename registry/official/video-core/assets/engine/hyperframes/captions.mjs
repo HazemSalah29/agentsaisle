@@ -24,6 +24,17 @@ export function captionProblem(c, fps, totalSeconds) {
 }
 
 /**
+ * Pixels from the bottom edge that scenes keep clear while captions are burned in: the platform safe zone,
+ * two lines of captions and a small gap. `size` is [width, height].
+ */
+export function captionClearance(captions, size) {
+  const h = size[1];
+  const px = num(captions.style?.size, 0.05, 0.02, 0.12) * h;
+  const bottom = num(captions.safeZone?.bottom, 0.22, 0, 0.5) * h;
+  return Math.round(bottom + 2 * px * 1.25 + 0.02 * h);
+}
+
+/**
  * { css, html, plan } for the caption layer. `size` is [width, height]; `brand` has cleaned colours.
  * Animations are placed at absolute film times like the scenes' animations.
  */

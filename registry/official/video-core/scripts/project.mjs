@@ -2,7 +2,11 @@
 // tween helper from this skill and returns what to write; render.mjs writes it and copies the media.
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { captionProblem, renderCaptions } from "../assets/engine/hyperframes/captions.mjs";
+import {
+  captionClearance,
+  captionProblem,
+  renderCaptions,
+} from "../assets/engine/hyperframes/captions.mjs";
 import { KINDS, esc, kindCss, renderScene } from "../assets/engine/hyperframes/scenes.mjs";
 import { skillDir } from "./_lib.mjs";
 
@@ -32,10 +36,10 @@ export function cleanBrand(raw) {
   return { colors, font };
 }
 
-const css = ({ w, h, brand, stack, faces, vertical }) => `${faces}
+const css = ({ w, h, brand, stack, faces, vertical, bottomPad }) => `${faces}
 html,body{margin:0;background:${brand.colors.bg}}
 #root{--u:${w / 100}px;position:relative;width:${w}px;height:${h}px;overflow:hidden;background:${brand.colors.bg};color:${brand.colors.fg};font-family:${stack};}
-.scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*3);box-sizing:border-box;padding:calc(var(--u)*6) calc(var(--u)*7) ${vertical ? "calc(var(--u)*16)" : "calc(var(--u)*6)"}}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*3);box-sizing:border-box;padding:${vertical ? "calc(var(--u)*8)" : "calc(var(--u)*6)"} calc(var(--u)*7) ${bottomPad}}
 .title{margin:0;font-size:calc(var(--u)*10.5);line-height:1.08;font-weight:700;letter-spacing:-.01em}
 .sub{margin:0;font-size:calc(var(--u)*3.8);line-height:1.3;color:${brand.colors.muted}}
 .quote{margin:0;padding-inline-start:calc(var(--u)*3);border-inline-start:calc(var(--u)*.8) solid ${brand.colors.accent};font-size:calc(var(--u)*5.4);line-height:1.2;font-weight:700}
@@ -137,6 +141,9 @@ export function buildProject({
     body += `<section id="${prefix}" class="clip scene scene-${s.kind}" data-start="${t.start}" data-duration="${t.seconds}">${r.html}</section>\n`;
   });
 
+  // Scenes keep clear of burned captions: their bottom padding is at least the caption zone.
+  const basePad = (w / 100) * (vertical ? 16 : 6);
+  const bottomPad = `${Math.round(Math.max(basePad, captions ? captionClearance(captions, [w, h]) : 0))}px`;
   let captionCss = "";
   if (captions) {
     const problem = captionProblem(captions, fps, timing.totalSeconds);
@@ -153,7 +160,7 @@ export function buildProject({
 <html lang="${esc(lang)}">
 <head>
 <meta charset="utf-8">
-<style>${css({ w, h, brand, stack, faces, vertical })}${captionCss}</style>
+<style>${css({ w, h, brand, stack, faces, vertical, bottomPad })}${captionCss}</style>
 </head>
 <body>
 <div id="root" dir="${dir}" data-composition-id="main" data-start="0" data-duration="${timing.totalSeconds}" data-width="${w}" data-height="${h}" data-fps="${fps}">
