@@ -29,3 +29,5 @@ One self-contained file. It makes no network requests (no CDN, fonts, icons or a
 The **Risks** tab lists every risk, each labelled "possible risk to check". Rule-based ones say they are heuristics when they are. They are prompts to look, not findings of fault, and the page never claims an architecture is best or correct.
 
 The header says "Generated from code; not live traffic." The page shows how requests would travel according to the files read.
+
+The layout and the edge routes come from `assets/lib/layout.js` (see `layout.md`), which runs both in the page and in the tests.

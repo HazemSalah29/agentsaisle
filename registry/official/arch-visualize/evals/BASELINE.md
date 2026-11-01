@@ -26,7 +26,14 @@ Finding: the fixture is too easy to show the weakness. `expected.json` lists 5 e
 
 ## Layout (crossings)
 
-Not measured: 0.1.1 lays out in the browser only, so there is no Node entry point to count crossings. M2 adds the pure layout module; its crossing counts for the old tier-grid layout will be taken from the 0.1.1 positions read in the browser (Playwright) and added here before the new layout replaces it.
+Measured in Chromium at 1440×900: every edge path is sampled at 80 points with `getPointAtLength` and counted with `ArchGeometry.polylineCrossings` (crossings within 10 px of an edge's start or end are ignored, so edges that meet at one node do not count). The same counter and the same sampling are used before and after.
+
+| Page         | Crossings 0.1.1 | Crossings M2 | Edges through boxes 0.1.1 | M2  |
+| ------------ | --------------- | ------------ | ------------------------- | --- |
+| Fixture      | 9               | 4            | 0                         | 0   |
+| DevPath demo | 26              | 6            | 0                         | 0   |
+
+Straight-line count in Node (no curve sampling): fixture 3, DevPath 6. A random 150-node, 300-edge graph lays out in about 80 ms (366 lane slots for the long edges).
 
 ## Tokens and tool calls
 
