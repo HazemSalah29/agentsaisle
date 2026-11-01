@@ -24,6 +24,10 @@ A switcher above the diagram changes what the page emphasises, never where thing
 - The minimap in the corner shows the whole diagram and the part in view; click or drag it, or focus it and use the arrow keys.
 - The address keeps the view: `#lens=flows&flow=login&step=2&node=redis&x=40&y=30&k=0.8`. Open the file with that address to land on the same view. The address only changes after you do something, and pages that cannot change it (some embedded frames) simply do not.
 
+## Saving
+
+**Export** saves the diagram as SVG or PNG, the model as JSON, or prints it (see `export.md`).
+
 ## Other controls
 
 - Drag to pan, scroll or +/- to zoom, Fit to reset. With the diagram focused: arrow keys pan, `+` and `-` zoom, `0` fits.
