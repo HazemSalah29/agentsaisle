@@ -194,12 +194,15 @@ export function requestFlow(s, ctx) {
       svg += `<circle id="${idc}-p" class="ev" cx="${p.x}" cy="${p.y}" r="${r2(p.h * 0.75)}" style="transform-origin:${p.x}px ${p.y}px"/>`;
       plan.push({
         id: `${idc}-p`,
+        // The ring grows in, stays for the step, and goes when the next step starts.
         frames: [
-          { opacity: 0, transform: "scale(0.6)" },
-          { opacity: 1, transform: "scale(1)" },
+          { offset: 0, opacity: 0, transform: "scale(0.6)" },
+          { offset: 0.15, opacity: 1, transform: "scale(1)" },
+          { offset: 0.85, opacity: 1, transform: "scale(1)" },
+          { offset: 1, opacity: i + 1 < n ? 0 : 1, transform: "scale(1)" },
         ],
         at: t,
-        dur: 0.4,
+        dur: Math.max(0.6, end(i) - t),
         ease: "out",
       });
     }

@@ -6,11 +6,12 @@
 export const MAX_BYTES = 2 * 1024 * 1024;
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const TIERS = ["clients", "edge", "frontend", "backend", "async", "data", "external"];
-// Control codes and bidi marks must not reach the screen or the terminal.
+// Control codes and bidi marks must not reach the screen or the terminal. (Joiners stay: Arabic needs them.)
+// The pattern is a string of escapes, so no bidi character sits in this file.
+const UNSAFE = new RegExp("[\\p{Cc}\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069]", "gu");
 const clean = (t, max) =>
   String(t ?? "")
-    // eslint-disable-next-line no-control-regex -- removing control codes is the point
-    .replace(/[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g, " ")
+    .replace(UNSAFE, " ")
     .trim()
     .slice(0, max);
 

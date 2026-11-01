@@ -55,12 +55,17 @@ describe("arch import", () => {
 
   it("strips control and bidi characters from labels", async () => {
     const { importFlow } = await imp();
+    // Built from char codes so no bidi control character sits in this file.
+    const bad = (t: string) => `${t}${String.fromCharCode(7, 0x202e, 0)}`;
     const m = model();
-    m.nodes[0].label = "Ve\u0007rcel‮";
-    m.flows[0].steps[0].label = "GET\u0000 /x‮";
+    m.nodes[0].label = bad("Vercel");
+    m.flows[0].steps[0].label = bad("GET /x");
     const props = importFlow(m, "load-profile");
-    const text = JSON.stringify(props);
-    expect(text).not.toMatch(/[\u0000-\u001f‪-‮]/);
+    for (const ch of JSON.stringify(props)) {
+      const c = ch.charCodeAt(0);
+      expect(c < 32 || (c >= 0x202a && c <= 0x202e)).toBe(false);
+    }
+    expect(props.steps[0].label).toBe("GET /x");
   });
 });
 
