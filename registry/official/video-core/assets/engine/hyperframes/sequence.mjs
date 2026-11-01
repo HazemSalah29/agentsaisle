@@ -97,7 +97,7 @@ export function sequence(s, ctx) {
   parsed.items.forEach((it, i) => {
     const row = lay.rows[i];
     const t = when(i);
-    let g = "";
+    let g;
     let dir = 1;
     if (it.type === "msg") {
       const x1 = lay.centre.get(it.from);
