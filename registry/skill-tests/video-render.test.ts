@@ -307,3 +307,197 @@ describe.skipIf(!have)("video-core render end to end", () => {
     expect(probe.stdout).toMatch(/h264,1080,1920/);
   });
 });
+
+// ---- captions layer ----
+
+type Cap = {
+  renderCaptions: (o: Loose) => { css: string; html: string; plan: Loose[] };
+  captionProblem: (c: Loose, fps: number, total: number) => string | null;
+};
+const capEngine = () => loadScript<Cap>("video-core", "assets/engine/hyperframes/captions.mjs");
+const brand = { colors: { bg: "#0F1115", fg: "#F5F5F2", accent: "#FF5A1F", muted: "#A3A9B0" } };
+const captions = (over: Loose = {}): Loose => ({
+  version: 1,
+  fps: 30,
+  dir: "ltr",
+  style: {
+    name: "karaoke",
+    size: 0.05,
+    weight: 800,
+    highlight: "word",
+    wordIn: "none",
+    lineIn: "fade",
+    background: "none",
+    stroke: 0.07,
+  },
+  safeZone: { name: "reel", bottom: 0.22, side: 0.08 },
+  groups: [
+    {
+      id: "c1",
+      start: 0.5,
+      end: 1.6,
+      words: [
+        { text: "Hello", start: 0.5, end: 0.9 },
+        { text: "world", start: 1, end: 1.4 },
+      ],
+    },
+    {
+      id: "c2",
+      start: 1.8,
+      end: 2.9,
+      words: [
+        { text: "Again", start: 1.8, end: 2.2 },
+        { text: "now", start: 2.3, end: 2.7 },
+      ],
+    },
+  ],
+  ...over,
+});
+
+describe("video-core caption layer", () => {
+  it("makes one timed clip per caption with whole words as text and the safe zone in the css", async () => {
+    const { renderCaptions } = await capEngine();
+    const r = renderCaptions({ captions: captions(), brand, size: [1080, 1920] });
+    expect(r.html.match(/class="clip cap-group"/g)).toHaveLength(2);
+    expect(r.html).toContain(
+      'id="cap-c1" class="clip cap-group" data-start="0.5" data-duration="1.1"',
+    );
+    expect(r.html).toContain(
+      '<span id="cap-c1-w0" class="cap-w">Hello</span> <span id="cap-c1-w1" class="cap-w">world</span>',
+    );
+    expect(r.css).toContain("bottom:422px"); // 22% of 1920
+    expect(r.css).toContain("inset-inline:86px"); // 8% of 1080
+    expect(r.css).toContain("font-size:96px"); // 5% of 1920
+  });
+
+  it("animates the spoken word for karaoke, pops words for pop, and fades the line when asked", async () => {
+    const { renderCaptions } = await capEngine();
+    const k = renderCaptions({ captions: captions(), brand, size: [1080, 1920] }).plan;
+    expect(k.filter((p) => p.id.includes("-w"))).toHaveLength(4);
+    expect(k[0]).toMatchObject({ id: "cap-c1-w0", at: 0.5 });
+    expect(k[0]!.frames.map((f: Loose) => f.color)).toEqual([
+      "#F5F5F2",
+      "#FF5A1F",
+      "#FF5A1F",
+      "#F5F5F2",
+    ]);
+    expect(k.filter((p) => p.id.endsWith("-l"))).toHaveLength(2);
+    const popStyle = { ...captions().style, highlight: "none", wordIn: "pop", lineIn: "none" };
+    const p = renderCaptions({
+      captions: captions({ style: popStyle }),
+      brand,
+      size: [1080, 1920],
+    }).plan;
+    expect(p).toHaveLength(4);
+    expect(p[0]!.frames[0]).toEqual({ opacity: 0, transform: "scale(0.6)" });
+    const cleanStyle = {
+      ...captions().style,
+      highlight: "none",
+      wordIn: "none",
+      lineIn: "fade",
+      background: "panel",
+      stroke: 0,
+    };
+    const c = renderCaptions({
+      captions: captions({ style: cleanStyle }),
+      brand,
+      size: [1080, 1920],
+    });
+    expect(c.css).toContain("color-mix(in srgb, #0F1115 78%, transparent)");
+    expect(c.css).not.toContain("text-shadow");
+  });
+
+  it("shows hostile words as text and ignores unsafe colours", async () => {
+    const { renderCaptions } = await capEngine();
+    const evil = captions();
+    evil.groups[0].words[0].text = "<img src=x onerror=alert(1)>";
+    const bad = {
+      colors: { bg: "red;}body{display:none", fg: "url(//x)", accent: "#FF5A1F", muted: "#fff" },
+    };
+    const r = renderCaptions({ captions: evil, brand: bad, size: [1080, 1920] });
+    expect(r.html).not.toContain("<img");
+    expect(r.html).toContain("&lt;img");
+    expect(r.css).not.toContain("display:none");
+    expect(r.css).not.toContain("url(//x)");
+  });
+
+  it("explains why captions cannot be drawn", async () => {
+    const { captionProblem } = await capEngine();
+    expect(captionProblem(captions(), 30, 5)).toBeNull();
+    expect(captionProblem(captions(), 25, 5)).toMatch(/30 fps, the film is 25 fps/);
+    expect(captionProblem(captions(), 30, 2)).toMatch(/caption c2 does not fit the film/);
+    expect(captionProblem({}, 30, 5)).toMatch(/no groups/);
+  });
+
+  it("is added to the page by buildProject, and a mismatch stops the build", async () => {
+    const { buildProject } = await project();
+    const video = fixtureVideo();
+    const t = await timingFor(video);
+    const html = buildProject({ video, timing: t, captions: captions() }).files["index.html"]!;
+    expect(html).toContain('class="clip cap-group"');
+    expect(html).toContain(".cap-group{position:absolute");
+    expect(html.match(/<script/g)).toHaveLength(2);
+    expect(() => buildProject({ video, timing: t, captions: captions({ fps: 24 }) })).toThrow(
+      /Captions cannot be drawn.*captions.mjs/,
+    );
+    expect(buildProject({ video, timing: t }).files["index.html"]).not.toContain("cap-group");
+  });
+
+  it("render refuses burned captions when captions.json is missing", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "video-render-cap-"));
+    const v = fixtureVideo({ captions: { burn: true } }) as Loose;
+    v.scenes = v.scenes.slice(1); // the two fixed-length scenes, so no voice files are needed
+    delete v.script;
+    writeFileSync(path.join(dir, "video.json"), JSON.stringify(v));
+    const r = spawnSync("node", [skillFile("video-core", "scripts/render.mjs"), dir], {
+      encoding: "utf8",
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/captions\.json is missing: run captions\.mjs/);
+  });
+});
+
+describe.skipIf(!have || process.platform !== "darwin")(
+  "video-core Arabic captions end to end",
+  () => {
+    it(
+      "renders joined Arabic letters: the whole word differs from the same letters set one by one",
+      { timeout: 300_000 },
+      async () => {
+        const { buildProject } = await project();
+        const { findHyperframes } = await render();
+        const hf = findHyperframes({ dir: process.cwd() })!;
+        const ar = "الكتاب";
+        const video: Loose = fixtureVideo();
+        video.meta.lang = "ar";
+        video.scenes = [
+          { id: "a", kind: "title", durationFrom: "fixed", seconds: 1, props: { text: ar } },
+        ];
+        const t = await timingFor(video);
+        const made = buildProject({ video, timing: t }).files["index.html"]!;
+        const letters = [...ar]
+          .map((c) => `<span style="display:inline-block">${c}</span>`)
+          .join("");
+        const frame = (html: string) => {
+          const dir = mkdtempSync(path.join(os.tmpdir(), "video-ar-"));
+          writeFileSync(path.join(dir, "index.html"), html);
+          const out = path.join(dir, "o.mp4");
+          const r = spawnSync("node", [hf.bin, "render", dir, "-o", out, "-q", "draft"], {
+            encoding: "utf8",
+          });
+          expect(r.status, r.stderr).toBe(0);
+          const f = spawnSync(
+            "ffmpeg",
+            ["-v", "error", "-y", "-ss", "0.5", "-i", out, "-frames:v", "1", "-f", "md5", "-"],
+            { encoding: "utf8" },
+          );
+          return f.stdout.trim();
+        };
+        const whole = frame(made);
+        const split = frame(made.replace(`>${ar}<`, `>${letters}<`));
+        expect(whole).toMatch(/^MD5=/);
+        expect(split).not.toBe(whole);
+      },
+    );
+  },
+);

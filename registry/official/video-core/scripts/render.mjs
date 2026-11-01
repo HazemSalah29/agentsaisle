@@ -221,12 +221,22 @@ function main() {
     writeFileSync(tfile, `${JSON.stringify(timing, null, 2)}\n`);
   } else fail("No timing.json: run timing.mjs after the voice step.");
 
+  const notes = [];
+  let captions = null;
+  if (video.captions?.burn === true) {
+    const cfile = path.join(dir, "captions.json");
+    if (!existsSync(cfile))
+      fail("video.json asks for burned captions but captions.json is missing: run captions.mjs.");
+    captions = readJson(cfile);
+    if (captions.approximate)
+      notes.push("caption times are estimated, not measured, so they may drift from the voice");
+  }
+
   const hf = findHyperframes({ explicit: flags.hyperframes, dir });
   if (!hf)
     fail(
       `HyperFrames is not installed. Install the npm package "hyperframes" at version ${PINNED_HYPERFRAMES} (the command is in references/runner.md), then run again.`,
     );
-  const notes = [];
   if (hf.version !== PINNED_HYPERFRAMES)
     notes.push(`HyperFrames ${hf.version} found; this skill was tested with ${PINNED_HYPERFRAMES}`);
 
@@ -241,7 +251,12 @@ function main() {
       .map((f) => path.join(fdir, f));
   }
   const assetPaths = new Map((video.assets ?? []).map((a) => [a.id, path.join(dir, a.path)]));
-  const built = buildProject({ video, timing, brand, fontFiles, assetPaths });
+  let built;
+  try {
+    built = buildProject({ video, timing, brand, fontFiles, assetPaths, captions });
+  } catch (e) {
+    fail(e.message);
+  }
   notes.push(...built.notes);
 
   const work = path.join(dir, "out", "hf");

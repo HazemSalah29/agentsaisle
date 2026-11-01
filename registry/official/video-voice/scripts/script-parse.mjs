@@ -92,7 +92,7 @@ export function parseStoryboard(text) {
     const n = i + 1;
     if (!raw.trim().startsWith("|")) return;
     const cells = splitRow(raw);
-    if (cells.every((c) => /^:?-{2,}:?$/.test(c))) return;
+    if (cells.every((c) => /^:?-+:?$/.test(c))) return;
     if (!head) {
       head = cells.map((c) => c.toLowerCase());
       for (const need of ["scene", "kind"])

@@ -2,6 +2,7 @@
 // tween helper from this skill and returns what to write; render.mjs writes it and copies the media.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { captionProblem, renderCaptions } from "../assets/engine/hyperframes/captions.mjs";
 import { KINDS, esc, renderScene } from "../assets/engine/hyperframes/scenes.mjs";
 import { skillDir } from "./_lib.mjs";
 
@@ -58,7 +59,7 @@ html,body{margin:0;background:${brand.colors.bg}}
 `;
 
 /**
- * Build the project. Returns { files: { "index.html": text }, media: [{ from, to }], fonts: [{ from, to }],
+ * Build the project (`captions` is a parsed captions.json to draw, or null). Returns { files: { "index.html": text }, media: [{ from, to }], fonts: [{ from, to }],
  * notes: [string] }. `fontFiles` are absolute paths found in brand/fonts; `assetPaths` maps asset id -> abs path.
  */
 export function buildProject({
@@ -67,6 +68,7 @@ export function buildProject({
   brand: rawBrand,
   fontFiles = [],
   assetPaths = new Map(),
+  captions = null,
 }) {
   const [w, h] = SIZES[video.meta.format];
   const vertical = h > w;
@@ -135,13 +137,23 @@ export function buildProject({
     body += `<section id="${prefix}" class="clip scene scene-${s.kind}" data-start="${t.start}" data-duration="${t.seconds}">${r.html}</section>\n`;
   });
 
+  let captionCss = "";
+  if (captions) {
+    const problem = captionProblem(captions, fps, timing.totalSeconds);
+    if (problem) throw new Error(`Captions cannot be drawn: ${problem}. Run captions.mjs again.`);
+    const c = renderCaptions({ captions, brand, size: [w, h] });
+    body += c.html;
+    plan.push(...c.plan);
+    captionCss = c.css;
+  }
+
   const tween = readFileSync(path.join(skillDir(), "assets", "lib", "tween.js"), "utf8");
   const planJson = JSON.stringify(plan).replace(/</g, "\\u003c");
   const index = `<!doctype html>
 <html lang="${esc(lang)}">
 <head>
 <meta charset="utf-8">
-<style>${css({ w, h, brand, stack, faces, vertical })}</style>
+<style>${css({ w, h, brand, stack, faces, vertical })}${captionCss}</style>
 </head>
 <body>
 <div id="root" dir="${dir}" data-composition-id="main" data-start="0" data-duration="${timing.totalSeconds}" data-width="${w}" data-height="${h}" data-fps="${fps}">

@@ -64,6 +64,17 @@ describe("video-write parsers", () => {
     expect(parseStoryboard("no table").problems[0]!.message).toMatch(/no storyboard table/);
   });
 
+  it("accepts any separator row, including single dashes and alignment colons", async () => {
+    const { parseStoryboard } = await parse();
+    for (const sep of ["| - | - |", "|---|---|", "| :-- | --: |", "|:-:|:-:|"]) {
+      const r = parseStoryboard(`| scene | kind |\n${sep}\n| a | title |\n`);
+      expect(
+        r.rows.map((x) => x.scene),
+        sep,
+      ).toEqual(["a"]);
+    }
+  });
+
   it("counts speech time, slower for Arabic, and reads hook options", async () => {
     const { speechSeconds, parseHooks } = await parse();
     expect(speechSeconds("one two three four five", "en")).toBe(2);
