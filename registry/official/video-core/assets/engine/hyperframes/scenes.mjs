@@ -4,11 +4,22 @@
 
 import { code, codeCss } from "./code.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
+import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { sequence, sequenceCss } from "./sequence.mjs";
 import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
 
 export { esc };
-export const KINDS = ["title", "quote", "list", "chart", "broll", "rate-limit", "code", "sequence"];
+export const KINDS = [
+  "title",
+  "quote",
+  "list",
+  "chart",
+  "broll",
+  "rate-limit",
+  "code",
+  "sequence",
+  "request-flow",
+];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
 
@@ -168,11 +179,21 @@ function broll(s, ctx) {
   return { html: media + cap, plan };
 }
 
-const BUILDERS = { title, quote, list, chart, broll, "rate-limit": rateLimit, code, sequence };
+const BUILDERS = {
+  title,
+  quote,
+  list,
+  chart,
+  broll,
+  "rate-limit": rateLimit,
+  code,
+  sequence,
+  "request-flow": requestFlow,
+};
 
 /** Styles the kinds above need on top of the base page styles. */
 export const kindCss = (brand, vertical) =>
-  rateLimitCss(brand, vertical) + codeCss(brand) + sequenceCss(brand);
+  rateLimitCss(brand, vertical) + codeCss(brand) + sequenceCss(brand) + requestFlowCss(brand);
 
 /**
  * Markup and animations for one scene.

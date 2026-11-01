@@ -6,6 +6,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { codeProblems } from "../assets/engine/hyperframes/code.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
+import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
 import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
 import { specProblems } from "../assets/sim/rate-limit.mjs";
 import { validate } from "./schema-check.mjs";
@@ -98,6 +99,8 @@ export function checkProject(video, dir, schema = loadSchema()) {
     const propSchema = schema.definitions?.props?.[s.kind];
     if (propSchema) problems.push(...validate(propSchema, s.props ?? {}, schema, `${at}.props`));
     if (s.kind === "rate-limit") problems.push(...rateLimitProblems(s.props ?? {}, `${at}.props`));
+    if (s.kind === "request-flow")
+      problems.push(...flowProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "sequence")
       problems.push(...sequenceProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "code")

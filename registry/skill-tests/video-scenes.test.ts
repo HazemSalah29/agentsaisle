@@ -39,6 +39,7 @@ describe("video-core scenes", () => {
       "rate-limit",
       "code",
       "sequence",
+      "request-flow",
     ]);
   });
 
