@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -10,6 +10,7 @@ type Runner = {
   ALLOWED: string[];
   scrubEnv: (env?: Record<string, string>) => Record<string, string>;
   assertAllowed: (cmd: unknown, args: unknown) => void;
+  resolveCommand: (cmd: string, home?: string) => string;
   run: (
     cmd: string,
     args: string[],
@@ -84,5 +85,52 @@ describe("video-core runner", () => {
     const r = run("node", [skillFile("video-core", "scripts/check.mjs")]);
     expect(r.status).toBe(2); // check.mjs with no argument prints usage and exits 2
     expect(r.stderr).toMatch(/Usage/);
+  });
+
+  it("lets python run only a .py file inside a video skill folder", async () => {
+    const { assertAllowed } = await load();
+    const own = skillFile("video-core", "scripts/x.py");
+    expect(() => assertAllowed("python", [own, "--arg"])).not.toThrow();
+    expect(() =>
+      assertAllowed("python", [skillFile("video-voice", "providers/kokoro.py")]),
+    ).not.toThrow();
+    for (const args of [
+      ["-c", "print(1)"],
+      ["-m", "http.server"],
+      ["x.py"],
+      ["/tmp/x.py"],
+      [skillFile("arch-visualize", "scripts/x.py")],
+      [skillFile("video-core", "../../../etc/x.py")],
+      [skillFile("video-core", "scripts/x.txt")],
+      [],
+    ])
+      expect(() => assertAllowed("python", args)).toThrow(/python may only run/);
+    expect(() => assertAllowed("python3", [own])).toThrow(/not an allowed program/);
+  });
+
+  it("allows whisper-cli with an argument array", async () => {
+    const { assertAllowed } = await load();
+    expect(() => assertAllowed("whisper-cli", ["-m", "model.bin", "-f", "a.wav"])).not.toThrow();
+    expect(() => assertAllowed("whisper-cli", "-m x" as unknown as string[])).toThrow(
+      /array of strings/,
+    );
+  });
+
+  it("takes python and whisper-cli paths from tools.json only when they look right", async () => {
+    const { resolveCommand } = await load();
+    const home = mkdtempSync(path.join(os.tmpdir(), "video-tools-"));
+    expect(resolveCommand("python", home)).toBe("python3");
+    expect(resolveCommand("ffmpeg", home)).toBe("ffmpeg");
+    mkdirSync(path.join(home, ".aisle-video"));
+    const write = (o: unknown) =>
+      writeFileSync(path.join(home, ".aisle-video", "tools.json"), JSON.stringify(o));
+    write({ python: "/v/bin/python3.12", "whisper-cli": "/b/whisper-cli" });
+    expect(resolveCommand("python", home)).toBe("/v/bin/python3.12");
+    expect(resolveCommand("whisper-cli", home)).toBe("/b/whisper-cli");
+    write({ python: "/bin/sh", "whisper-cli": "relative/whisper-cli" });
+    expect(resolveCommand("python", home)).toBe("python3");
+    expect(resolveCommand("whisper-cli", home)).toBe("whisper-cli");
+    writeFileSync(path.join(home, ".aisle-video", "tools.json"), "{ not json");
+    expect(resolveCommand("python", home)).toBe("python3");
   });
 });
