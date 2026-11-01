@@ -14,6 +14,8 @@ type Align = {
   alignToScript: (w: string[], h: Loose[], s: number) => { words: Loose[]; matched: number };
   alignLine: (o: Loose) => Loose;
   whisperArgs: (o: Loose) => string[];
+  dtwPreset: (m: string) => string | null;
+  speechOnset: (b: Buffer) => number;
 };
 const load = () => loadScript<Align>("video-voice", "scripts/align.mjs");
 const heard = (...ws: [string, number, number][]) =>
@@ -77,6 +79,142 @@ describe("video-voice align: whisper output", () => {
         "/o",
       ]),
     );
+  });
+});
+
+describe("video-voice align: DTW timings", () => {
+  it("names the DTW preset from the model file", async () => {
+    const { dtwPreset } = await load();
+    const names = [
+      "ggml-base.bin",
+      "ggml-base.en.bin",
+      "ggml-small.bin",
+      "ggml-tiny.en.bin",
+      "ggml-medium.bin",
+      "ggml-large-v3.bin",
+      "ggml-large-v3-turbo.bin",
+      "ggml-base-q5_1.bin",
+      "weird.bin",
+    ];
+    expect(names.map((n) => dtwPreset(`/models/${n}`))).toEqual([
+      "base",
+      "base.en",
+      "small",
+      "tiny.en",
+      "medium",
+      "large.v3",
+      "large.v3.turbo",
+      "base",
+      null,
+    ]);
+  });
+
+  it("uses DTW flags for a known model and the per-word fallback otherwise", async () => {
+    const { whisperArgs } = await load();
+    const dtw = whisperArgs({
+      model: "/m/ggml-base.bin",
+      wav: "/in.wav",
+      lang: "en",
+      outPrefix: "/o",
+    });
+    expect(dtw).toEqual(expect.arrayContaining(["-dtw", "base", "-nfa", "-ojf", "-of", "/o"]));
+    expect(dtw).not.toContain("-ml");
+    expect(whisperArgs({ model: "/m/x.bin", wav: "/in.wav", lang: "en", outPrefix: "/o" })).toEqual(
+      expect.arrayContaining(["-ml", "1", "-sow", "-oj"]),
+    );
+  });
+
+  it("ends each word at its last token's DTW time and starts it where the previous word ended", async () => {
+    const { parseWhisperJson } = await load();
+    const tok = (text: string, dtw: number, from = 0) => ({
+      text,
+      t_dtw: dtw,
+      offsets: { from, to: from + 100 },
+    });
+    const json = {
+      transcription: [
+        {
+          text: " It works.",
+          tokens: [
+            tok("[_BEG_]", -1),
+            tok(" It", 38, 10),
+            tok(" wor", 50),
+            tok("ks", 66),
+            tok(".", 70),
+            tok("[_TT_100]", 70),
+          ],
+        },
+        { text: " Next", tokens: [tok(" Next", 95)] },
+      ],
+    };
+    expect(parseWhisperJson(json)).toEqual([
+      { text: "It", start: 0.01, end: 0.38 },
+      { text: "works.", start: 0.38, end: 0.7 },
+      { text: "Next", start: 0.7, end: 0.95 },
+    ]);
+  });
+
+  it("finds where the voice begins in a wav, and returns 0 for silence or a loud start", async () => {
+    const { speechOnset } = await load();
+    const rate = 16000;
+    const make = (lead: number, tone: number, total = 1) => {
+      const n = rate * total;
+      const b = Buffer.alloc(44 + n * 2);
+      b.write("RIFF", 0, "latin1");
+      b.write("WAVEfmt ", 8, "latin1");
+      b.writeUInt32LE(16, 16);
+      b.writeUInt16LE(1, 20);
+      b.writeUInt16LE(1, 22);
+      b.writeUInt32LE(rate, 24);
+      b.write("data", 36, "latin1");
+      b.writeUInt32LE(n * 2, 40);
+      for (let i = Math.round(lead * rate); i < n; i++)
+        b.writeInt16LE(Math.round(Math.sin(i / 8) * tone), 44 + i * 2);
+      return b;
+    };
+    expect(speechOnset(make(0.25, 8000))).toBeCloseTo(0.25, 1);
+    expect(speechOnset(make(0, 8000))).toBe(0);
+    expect(speechOnset(make(0.1, 0))).toBe(0); // nothing but silence
+  });
+
+  it("moves a first word that whisper put at zero up to where the voice starts (and does the same for estimates)", async () => {
+    const { alignLine } = await load();
+    const rate = 16000;
+    const n = rate * 2;
+    const b = Buffer.alloc(44 + n * 2);
+    b.write("RIFF", 0, "latin1");
+    b.write("WAVEfmt ", 8, "latin1");
+    b.writeUInt32LE(16, 16);
+    b.writeUInt16LE(1, 20);
+    b.writeUInt16LE(1, 22);
+    b.writeUInt32LE(rate, 24);
+    b.write("data", 36, "latin1");
+    b.writeUInt32LE(n * 2, 40);
+    for (let i = Math.round(0.3 * rate); i < n; i++)
+      b.writeInt16LE(Math.round(Math.sin(i / 8) * 8000), 44 + i * 2);
+    const wavFile = path.join(mkdtempSync(path.join(os.tmpdir(), "video-onset-")), "l.wav");
+    writeFileSync(wavFile, b);
+    const heard = {
+      transcription: [
+        { text: " Hello", offsets: { from: 0, to: 600 } },
+        { text: " there", offsets: { from: 700, to: 1500 } },
+      ],
+    };
+    const engine = {
+      model: "/m.bin",
+      run: (cmd: string, args: string[]) => {
+        if (cmd === "whisper-cli")
+          writeFileSync(`${args[args.indexOf("-of") + 1]}.json`, JSON.stringify(heard));
+        return { status: 0, stdout: "", stderr: "" };
+      },
+    };
+    const base = { text: "Hello there", wavFile, seconds: 2, lang: "en" };
+    const w = alignLine({ ...base, engine });
+    expect(w.words[0].start).toBeCloseTo(0.3, 1);
+    expect(w.words[1].start).toBe(0.7);
+    const e = alignLine({ ...base, engine: null });
+    expect(e.words[0].start).toBeCloseTo(0.3, 1);
+    expect(e.words.at(-1).end).toBe(2);
   });
 });
 

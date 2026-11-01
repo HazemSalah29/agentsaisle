@@ -40,28 +40,63 @@ export function estimateWords(text, seconds) {
   });
 }
 
-/** whisper-cli arguments. The one place that knows its flags (`TODO(verify)` against the installed build). */
-export const whisperArgs = ({ model, wav, lang, outPrefix }) => [
-  "-m",
-  model,
-  "-f",
-  wav,
-  "-l",
-  lang,
-  "-ml",
-  "1",
-  "-sow",
-  "-oj",
-  "-of",
-  outPrefix,
-];
+/** The DTW preset whisper.cpp wants for a model file (ggml-base.bin -> "base"), or null for an unknown name. */
+export function dtwPreset(model) {
+  const m = /^ggml-(tiny|base|small|medium|large-v[123](?:-turbo)?)(\.en)?(?:-q\d\w*)?\.bin$/.exec(
+    path.basename(model),
+  );
+  if (!m) return null;
+  return (
+    m[1].replace(/^large-v(\d)-turbo$/, "large.v$1.turbo").replace(/^large-v(\d)$/, "large.v$1") +
+    (m[2] ?? "")
+  );
+}
 
-/** Words (seconds) from whisper.cpp JSON: one entry per word with `-ml 1`; pieces without a leading space join. */
+/**
+ * whisper-cli arguments. The one place that knows its flags (checked against whisper.cpp v1.9.5).
+ * With a known model, DTW token timestamps are used (`-dtw <preset> -nfa`): in a test on 52 words they were
+ * far closer than the per-word segment times (`-ml 1`), which stay as the fallback for unknown models.
+ */
+export const whisperArgs = ({ model, wav, lang, outPrefix }) => {
+  const preset = dtwPreset(model);
+  const common = ["-m", model, "-f", wav, "-l", lang];
+  return preset
+    ? [...common, "-dtw", preset, "-nfa", "-ojf", "-of", outPrefix]
+    : [...common, "-ml", "1", "-sow", "-oj", "-of", outPrefix];
+};
+
+const isMarker = (t) => /^\s*[[(].*[\])]\s*$/.test(t) || /^\[_/.test(t.trim());
+
+/**
+ * Words (seconds) from whisper.cpp JSON. With DTW (`tokens[].t_dtw` in hundredths of a second) a word ends at its
+ * last token's DTW time and starts where the previous word ended. Otherwise one entry per word (`-ml 1`),
+ * pieces without a leading space joining the word before.
+ */
 export function parseWhisperJson(json) {
   const out = [];
-  for (const e of json?.transcription ?? []) {
+  const segs = json?.transcription ?? [];
+  const dtw = segs.some((e) => (e.tokens ?? []).some((t) => (t.t_dtw ?? -1) > 0));
+  if (dtw) {
+    for (const e of segs)
+      for (const t of e.tokens ?? []) {
+        const text = String(t.text ?? "");
+        if (isMarker(text) || !text.trim() || !(t.t_dtw > 0)) continue;
+        const end = t.t_dtw / 100;
+        if (out.length && !/^\s/.test(text)) {
+          out[out.length - 1].text += text;
+          out[out.length - 1].end = Math.max(out[out.length - 1].end, end);
+        } else
+          out.push({
+            text: text.trim(),
+            start: out.length ? out[out.length - 1].end : (t.offsets?.from ?? 0) / 1000,
+            end,
+          });
+      }
+    return out.filter((w) => /[\p{L}\p{N}]/u.test(w.text) && w.end >= w.start);
+  }
+  for (const e of segs) {
     const text = String(e.text ?? "");
-    if (/^\s*[[(].*[\])]\s*$/.test(text) || !text.trim()) continue;
+    if (isMarker(text) || !text.trim()) continue;
     const from = (e.offsets?.from ?? 0) / 1000;
     const to = (e.offsets?.to ?? 0) / 1000;
     if (out.length && !/^\s/.test(text)) {
@@ -71,6 +106,31 @@ export function parseWhisperJson(json) {
     } else out.push({ text: text.trim(), start: from, end: to });
   }
   return out;
+}
+
+const safeOnset = (file) => {
+  try {
+    return speechOnset(readFileSync(file));
+  } catch {
+    return 0;
+  }
+};
+
+/** Seconds of leading silence in a mono 16-bit PCM WAV: the first 10 ms frame louder than -50 dBFS. */
+export function speechOnset(buf) {
+  const rate = buf.readUInt32LE(24);
+  let at = 12;
+  while (at + 8 <= buf.length && buf.toString("latin1", at, at + 4) !== "data")
+    at += 8 + buf.readUInt32LE(at + 4);
+  const start = at + 8;
+  const frame = Math.max(1, Math.round(rate / 100));
+  const limit = Math.pow(10, -50 / 20);
+  for (let i = start; i + frame * 2 <= buf.length; i += frame * 2) {
+    let sum = 0;
+    for (let k = 0; k < frame; k++) sum += (buf.readInt16LE(i + k * 2) / 32768) ** 2;
+    if (Math.sqrt(sum / frame) > limit) return Math.round(((i - start) / 2 / rate) * 1000) / 1000;
+  }
+  return 0;
 }
 
 /**
@@ -126,8 +186,13 @@ export function alignToScript(scriptWords, heard, seconds) {
  * Returns { words, source, approximate, note? }.
  */
 export function alignLine({ text, wavFile, seconds, lang, engine, tmp = os.tmpdir() }) {
+  const onset = Math.min(safeOnset(wavFile), Math.max(0, seconds - 0.1));
   const estimate = (note) => ({
-    words: estimateWords(text, seconds),
+    words: estimateWords(text, seconds - onset).map((w) => ({
+      ...w,
+      start: r3(w.start + onset),
+      end: r3(w.end + onset),
+    })),
     source: "estimate",
     approximate: true,
     ...(note ? { note } : {}),
@@ -163,6 +228,9 @@ export function alignLine({ text, wavFile, seconds, lang, engine, tmp = os.tmpdi
     const { words, matched } = alignToScript(scriptWords, heard, seconds);
     if (matched < Math.ceil(scriptWords.length / 2))
       return estimate("whisper heard too little of this line");
+    // whisper often starts the first word at 0; the audio itself says where the voice begins
+    const first = words[0];
+    if (first && first.start < onset - 0.03) first.start = Math.min(onset, first.end);
     return { words, source: "whisper", approximate: false };
   } finally {
     rmSync(dir, { recursive: true, force: true });
