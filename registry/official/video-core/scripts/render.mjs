@@ -107,10 +107,9 @@ export function voicePlacements(video, timing, dir) {
  * ffmpeg arguments that mux silent video with the mixed audio. `voice` is from voicePlacements, `music` the
  * absolute music path or null. Without any audio the video is only remuxed. `draft` scales down to 540 px high.
  */
-export function muxArgs({ video, silent, out, voice, music, duckDb = -14, seconds, draft }) {
+export function muxArgs({ silent, out, voice, music, duckDb = -14, seconds, draft }) {
   const args = ["-y", "-v", "error", "-i", silent];
-  const inputs = [];
-  voice.forEach((v) => (args.push("-i", v.file), inputs.push(v)));
+  voice.forEach((v) => args.push("-i", v.file));
   if (music) args.push("-i", music);
   const filters = [];
   voice.forEach((v, i) =>

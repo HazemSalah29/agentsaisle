@@ -6,9 +6,11 @@ import { describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 import { wav } from "./video-fixtures";
 
+type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 type Timing = {
   wavSeconds: (b: Buffer) => number | null;
-  buildTiming: (v: any, measure: (id: string) => number, pad?: number) => any;
+  buildTiming: (v: Loose, measure: (id: string) => number, pad?: number) => Loose;
 };
 
 const video = (scenes: unknown[], fps = 30) => ({
@@ -37,8 +39,8 @@ describe("video-core timing", () => {
       (id) => lens[id]!,
       0.3,
     );
-    expect(t.scenes.map((s: any) => s.frames)).toEqual([114, 60, 30]); // 3.8s, 2s, 1.0s at 30 fps
-    expect(t.scenes.map((s: any) => s.startFrame)).toEqual([0, 114, 174]);
+    expect(t.scenes.map((s: Loose) => s.frames)).toEqual([114, 60, 30]); // 3.8s, 2s, 1.0s at 30 fps
+    expect(t.scenes.map((s: Loose) => s.startFrame)).toEqual([0, 114, 174]);
     expect(t.totalFrames).toBe(204);
     expect(t.totalSeconds).toBe(6.8);
     expect(t.scenes[0].lines).toEqual([

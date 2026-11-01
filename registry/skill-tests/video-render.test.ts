@@ -7,26 +7,28 @@ import { describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 import { fixtureVideo, wav } from "./video-fixtures";
 
+type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 type Project = {
-  buildProject: (o: any) => {
+  buildProject: (o: Loose) => {
     files: Record<string, string>;
-    media: any[];
-    fonts: any[];
+    media: Loose[];
+    fonts: Loose[];
     notes: string[];
     size: number[];
   };
-  cleanBrand: (b: any) => { colors: Record<string, string>; font: string };
+  cleanBrand: (b: Loose) => { colors: Record<string, string>; font: string };
 };
 type Render = {
-  binOf: (dir: string, fs: any) => { bin: string; version: string } | null;
-  candidateDirs: (o: any) => string[];
-  findHyperframes: (o: any, fs?: any) => { bin: string; version: string } | null;
-  muxArgs: (o: any) => string[];
-  voicePlacements: (v: any, t: any, dir: string) => { file: string; ms: number }[];
+  binOf: (dir: string, fs: Loose) => { bin: string; version: string } | null;
+  candidateDirs: (o: Loose) => string[];
+  findHyperframes: (o: Loose, fs?: Loose) => { bin: string; version: string } | null;
+  muxArgs: (o: Loose) => string[];
+  voicePlacements: (v: Loose, t: Loose, dir: string) => { file: string; ms: number }[];
 };
-type Timing = { buildTiming: (v: any, m: (id: string) => number, pad?: number) => any };
+type Timing = { buildTiming: (v: Loose, m: (id: string) => number, pad?: number) => Loose };
 
-const timingFor = async (video: any) => {
+const timingFor = async (video: Loose) => {
   const { buildTiming } = await loadScript<Timing>("video-core", "scripts/timing.mjs");
   return buildTiming(video, () => 1.2, 0.3);
 };
@@ -61,14 +63,14 @@ describe("video-core project builder", () => {
       buildProject({ video, timing: t }).files["index.html"],
     );
     const wide = fixtureVideo();
-    (wide as any).meta.format = "youtube-16x9";
+    (wide as Loose).meta.format = "youtube-16x9";
     expect(buildProject({ video: wide, timing: t }).size).toEqual([1920, 1080]);
   });
 
   it("keeps hostile text from breaking out of markup or of the plan script", async () => {
     const { buildProject } = await project();
     const video = fixtureVideo();
-    (video as any).scenes[0].props.text = `</script><script>alert(1)</script><b onmouseover=x>`;
+    (video as Loose).scenes[0].props.text = `</script><script>alert(1)</script><b onmouseover=x>`;
     const t = await timingFor(video);
     const html = buildProject({ video, timing: t }).files["index.html"]!;
     expect(html.match(/<script/g)).toHaveLength(2); // the tween helper and the plan, nothing injected
@@ -97,7 +99,7 @@ describe("video-core project builder", () => {
 
   it("sets rtl for Arabic, loads local fonts and maps broll media", async () => {
     const { buildProject } = await project();
-    const video: any = fixtureVideo();
+    const video: Loose = fixtureVideo();
     video.meta.lang = "ar";
     video.assets = [{ id: "pic", path: "assets/pic.JPG", source: "user", licence: "own" }];
     video.scenes.push({
@@ -126,7 +128,7 @@ describe("video-core project builder", () => {
 
   it("says when a transition is not built yet", async () => {
     const { buildProject } = await project();
-    const video: any = fixtureVideo();
+    const video: Loose = fixtureVideo();
     video.scenes[1].transitionIn = "whip";
     const t = await timingFor(video);
     expect(buildProject({ video, timing: t }).notes).toEqual([
@@ -235,7 +237,7 @@ describe("video-core render helpers", () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "video-voice-"));
     mkdirSync(path.join(dir, "voice"));
     writeFileSync(path.join(dir, "voice", "l1.wav"), wav(1));
-    const video: any = fixtureVideo();
+    const video: Loose = fixtureVideo();
     const t = await timingFor(video);
     const p = voicePlacements(video, t, dir);
     expect(p).toEqual([{ file: path.join(dir, "voice", "l1.wav"), ms: 0 }]);

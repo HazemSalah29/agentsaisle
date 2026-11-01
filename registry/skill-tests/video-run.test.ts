@@ -4,6 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
+type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 type Runner = {
   ALLOWED: string[];
   scrubEnv: (env?: Record<string, string>) => Record<string, string>;
@@ -44,8 +46,8 @@ describe("video-core runner", () => {
 
   it("spawns without a shell, with the arguments untouched and a time limit", async () => {
     const { run } = await load();
-    let seen: { cmd: string; args: string[]; opts: Record<string, any> } | undefined;
-    const fake = (cmd: string, args: string[], opts: Record<string, any>) => {
+    let seen: { cmd: string; args: string[]; opts: Loose } | undefined;
+    const fake = (cmd: string, args: string[], opts: Loose) => {
       seen = { cmd, args, opts };
       return { status: 0, stdout: "ok", stderr: "" };
     };

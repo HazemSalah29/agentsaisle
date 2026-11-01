@@ -5,11 +5,13 @@ import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
+type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 type Check = {
   checkProject: (video: unknown, dir: string) => string[];
   scriptLineIds: (text: string) => Set<string>;
 };
-type Video = Record<string, any>;
+type Video = Loose;
 
 let dir: string;
 let check: Check;

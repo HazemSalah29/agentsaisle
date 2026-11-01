@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { loadLib, loadScript } from "./load";
 
+type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 type Scenes = {
   KINDS: string[];
   esc: (s: unknown) => string;
-  renderScene: (scene: any, ctx: any) => { html: string; plan: any[] };
+  renderScene: (scene: Loose, ctx: Loose) => { html: string; plan: Loose[] };
 };
 const load = () => loadScript<Scenes>("video-core", "assets/engine/hyperframes/scenes.mjs");
 
@@ -177,11 +179,11 @@ describe("video-core scenes", () => {
 });
 
 describe("video-core tween helper", () => {
-  type VT = { VT: { run: (plan: any[], o: any) => any; easing: (n: string) => string } };
+  type VT = { VT: { run: (plan: Loose[], o: Loose) => Loose; easing: (n: string) => string } };
   const stubDoc = () => {
-    const made: any[] = [];
+    const made: Loose[] = [];
     const el = (id: string) => ({
-      animate: (frames: any, opts: any) => {
+      animate: (frames: Loose, opts: Loose) => {
         const a = {
           id,
           frames,
@@ -202,7 +204,7 @@ describe("video-core tween helper", () => {
   it("places every animation paused at its absolute time, with fill both", () => {
     const { VT } = loadLib<VT>("video-core", ["assets/lib/tween.js"]);
     const { made, doc } = stubDoc();
-    const win: any = {};
+    const win: Loose = {};
     VT.run(
       [
         { id: "a", frames: [{ opacity: 0 }, { opacity: 1 }], at: 1.5, dur: 0.5, ease: "out" },
@@ -219,7 +221,7 @@ describe("video-core tween helper", () => {
   it("seeks every animation when the timeline is asked to", () => {
     const { VT } = loadLib<VT>("video-core", ["assets/lib/tween.js"]);
     const { made, doc } = stubDoc();
-    const win: any = {};
+    const win: Loose = {};
     const tl = VT.run([{ id: "a", frames: [], at: 0, dur: 1, ease: "linear" }], {
       id: "m",
       duration: 1,

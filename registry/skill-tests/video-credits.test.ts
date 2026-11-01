@@ -5,14 +5,16 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
+type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
 type Credits = {
-  computeDisclosure: (v: any) => {
+  computeDisclosure: (v: Loose) => {
     realisticSynthetic: boolean;
     aiMusic: boolean;
     voiceClone: string;
   };
-  buildCredits: (v: any) => { ok: boolean; problems: string[]; credits: any };
-  creditsText: (c: any) => string;
+  buildCredits: (v: Loose) => { ok: boolean; problems: string[]; credits: Loose };
+  creditsText: (c: Loose) => string;
 };
 const load = () => loadScript<Credits>("video-core", "scripts/credits.mjs");
 
