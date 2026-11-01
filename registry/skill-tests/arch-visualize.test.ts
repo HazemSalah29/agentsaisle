@@ -25,7 +25,7 @@ type Node = {
   evidence: Evidence[];
 };
 type Model = {
-  version: 1;
+  version: 1 | 2;
   project: string;
   nodes: Node[];
   edges: { id: string; from: string; to: string; protocol?: string; evidence?: Evidence[] }[];
@@ -34,7 +34,8 @@ type Model = {
   inferred?: string[];
 };
 type Check = {
-  checkModel: (m: unknown, o?: { draft?: boolean }) => string[];
+  checkModel: (m: unknown, o?: { draft?: boolean; root?: string | null }) => string[];
+  upgradeModel: <T>(m: T) => T;
   loadSchema: () => { $defs: { role: { enum: string[] }; tier: { enum: string[] } } };
 };
 type Discover = { TIER_OF_ROLE: Record<string, string> };
@@ -71,7 +72,7 @@ describe("arch-visualize discovery", () => {
 
   it("exits 0 and writes a draft model", () => {
     expect(result.status).toBe(0);
-    expect(model.version).toBe(1);
+    expect(model.version).toBe(2);
     expect(model.project).toBe("shop");
     expect(model.flows).toEqual([]);
   });
@@ -295,6 +296,178 @@ describe("arch-visualize model-check", () => {
   });
 });
 
+describe("arch-visualize model v2", () => {
+  type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let check: Check;
+  const base = (): Loose => JSON.parse(JSON.stringify(readJson("evals/fixture-model-v2.json")));
+  const problems = async (mutate: (m: Loose) => void, root: string | null = null) => {
+    check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
+    const m = base();
+    mutate(m);
+    return check.checkModel(m, { root });
+  };
+  const node = (m: Loose, id: string) => m.nodes.find((n: Loose) => n.id === id);
+  const edge = (m: Loose, id: string) => m.edges.find((e: Loose) => e.id === id);
+
+  it("accepts the v2 fixture", async () => expect(await problems(() => {})).toEqual([]));
+
+  it("upgrades v1 models in memory, without mutating them, and idempotently", async () => {
+    check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
+    for (const f of [
+      "evals/fixture-model.json",
+      "evals/hostile-model.json",
+      "evals/demo/devpath.architecture.json",
+    ]) {
+      const v1 = readJson(f);
+      const copy = JSON.stringify(v1);
+      const v2 = check.upgradeModel(v1);
+      expect(v1.version, f).toBe(1);
+      expect(JSON.stringify(v1), f).toBe(copy);
+      expect(v2.version, f).toBe(2);
+      expect(check.upgradeModel(v2), f).toEqual(v2);
+      expect(check.checkModel(v1), f).toEqual([]);
+    }
+  });
+
+  it("renders a v1 model and embeds it as version 2", async () => {
+    const render = await loadScript<Render>("arch-visualize", "scripts/render.mjs");
+    const html = render.renderPage(readJson("evals/fixture-model.json"));
+    expect(JSON.parse(dataBlock(html, "model")!).version).toBe(2);
+  });
+
+  const facts: [string, (m: Loose) => void, (m: Loose) => void][] = [
+    [
+      "timeoutMs",
+      (m) => ((edge(m, "api-db").timeoutMs = 500), delete edge(m, "api-db").evidence),
+      (m) => (edge(m, "api-db").timeoutMs = 500),
+    ],
+    [
+      "retries",
+      (m) => ((edge(m, "worker-db").retries = 2), delete edge(m, "worker-db").evidence),
+      (m) => (edge(m, "worker-db").retries = 2),
+    ],
+    [
+      "tls true",
+      (m) => ((edge(m, "api-stripe").tls = true), delete edge(m, "api-stripe").evidence),
+      (m) => (edge(m, "api-stripe").tls = true),
+    ],
+    [
+      "tls false",
+      (m) => ((edge(m, "api-db").tls = false), delete edge(m, "api-db").evidence),
+      (m) => (edge(m, "api-db").tls = false),
+    ],
+    [
+      "auth",
+      (m) => ((edge(m, "api-db").auth = "jwt"), delete edge(m, "api-db").evidence),
+      (m) => (edge(m, "api-db").auth = "jwt"),
+    ],
+    [
+      "optional",
+      (m) => ((edge(m, "worker-resend").optional = true), delete edge(m, "worker-resend").evidence),
+      (m) => (edge(m, "worker-resend").optional = true),
+    ],
+    [
+      "replicas",
+      (m) => ((node(m, "api").replicas = 2), delete node(m, "api").evidence),
+      (m) => (node(m, "api").replicas = 2),
+    ],
+  ];
+  for (const [name, bad] of facts)
+    it(`needs evidence for ${name}`, async () => {
+      const ps = await problems((m) => {
+        // an inferred item keeps no evidence on purpose
+        bad(m);
+        m.inferred = [
+          ...(m.inferred ?? []),
+          "edge:api-db",
+          "edge:api-stripe",
+          "edge:worker-resend",
+          "edge:worker-db",
+          "node:api",
+        ];
+      });
+      expect(
+        ps.some((p) => /needs evidence/.test(p)),
+        name,
+      ).toBe(true);
+    });
+  it("lets facts pass with evidence and unknowns pass without it", async () => {
+    for (const [, , good] of facts) expect(await problems(good)).toEqual([]);
+    const ps = await problems((m) => {
+      delete edge(m, "api-db").evidence;
+      m.inferred.push("edge:api-db");
+      Object.assign(edge(m, "api-db"), { tls: "unknown", auth: "unknown" });
+      delete node(m, "api").evidence;
+      node(m, "api").replicas = "unknown";
+      m.inferred.push("node:api");
+    });
+    expect(ps).toEqual([]);
+  });
+
+  it("checks groups, zones, data labels and view focus", async () => {
+    expect(await problems((m) => (node(m, "api").group = "nope"))).toEqual([
+      expect.stringContaining("not declared"),
+    ]);
+    expect(
+      (await problems((m) => m.groups.push({ id: "compose", label: "x", kind: "deploy" }))).join(),
+    ).toContain("duplicate");
+    expect((await problems((m) => (node(m, "api").zone = "moon"))).join()).toContain("not one of");
+    expect((await problems((m) => (node(m, "api").data = ["gossip"]))).join()).toContain(
+      "not one of",
+    );
+    expect((await problems((m) => (m.views[0].focus = ["ghost"]))).join()).toContain("not a node");
+    const cyc = await problems((m) => {
+      m.groups = [
+        { id: "a", label: "A", kind: "other", parent: "b" },
+        { id: "b", label: "B", kind: "other", parent: "a" },
+      ];
+      for (const n of m.nodes) delete n.group;
+    });
+    expect(cyc.join()).toContain("must not contain themselves");
+  });
+
+  it("only accepts an audit grade that matches a real audit file", async () => {
+    const root = tmp();
+    writeFileSync(path.join(root, "audit.json"), JSON.stringify({ grade: "B" }));
+    const ai = (grade: string, source?: string) => (m: Loose) =>
+      (node(m, "worker").ai = {
+        kind: "agent",
+        auditGrade: grade,
+        ...(source ? { auditSource: source } : {}),
+      });
+    expect((await problems(ai("B"), root)).join()).toContain("needs ai.auditSource");
+    expect(await problems(ai("B", "audit.json"), root)).toEqual([]);
+    expect((await problems(ai("A", "audit.json"), root)).join()).toContain("does not match");
+    expect((await problems(ai("B", "missing.json"), root)).join()).toContain("not a readable");
+    expect((await problems(ai("B", "../audit.json"), root)).join()).toContain("relative");
+  });
+
+  it("rejects secret-looking text in new fields without echoing it", async () => {
+    const secret = "sk-ant-" + "a".repeat(30);
+    for (const set of [
+      (m: Loose) => (node(m, "api").owner = secret),
+      (m: Loose) => (m.groups[0].label = secret),
+    ]) {
+      const ps = await problems(set);
+      expect(ps.join()).toContain("looks like a credential");
+      expect(ps.join()).not.toContain(secret);
+    }
+  });
+
+  it("--write-upgrade rewrites a v1 file once and leaves v2 alone", () => {
+    const dir = tmp();
+    const file = path.join(dir, "m.json");
+    writeFileSync(file, readFileSync(skillFile("arch-visualize", "evals/fixture-model.json")));
+    const r = run("model-check.mjs", ["--model", file, "--write-upgrade", "--root", FIXTURE]);
+    expect(r.status).toBe(0);
+    expect(JSON.parse(readFileSync(file, "utf8")).version).toBe(2);
+    const before = readFileSync(file, "utf8");
+    run("model-check.mjs", ["--model", file, "--write-upgrade", "--root", FIXTURE]);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    expect(r.stdout.split("\n").length).toBeLessThanOrEqual(40);
+  });
+});
+
 describe("arch-visualize files", () => {
   it("keeps every script small enough to read and prints nothing outside the cap", () => {
     const dir = skillFile("arch-visualize", "scripts");
@@ -352,12 +525,15 @@ describe("arch-visualize render", () => {
   });
 
   it("embeds the model so it parses back unchanged", () => {
-    expect(JSON.parse(dataBlock(fixtureHtml, "model")!)).toEqual(
-      readJson("evals/fixture-model.json"),
-    );
-    expect(JSON.parse(dataBlock(hostileHtml, "model")!)).toEqual(
-      readJson("evals/hostile-model.json"),
-    );
+    // a v1 model is embedded as v2; nothing else changes
+    expect(JSON.parse(dataBlock(fixtureHtml, "model")!)).toEqual({
+      ...readJson("evals/fixture-model.json"),
+      version: 2,
+    });
+    expect(JSON.parse(dataBlock(hostileHtml, "model")!)).toEqual({
+      ...readJson("evals/hostile-model.json"),
+      version: 2,
+    });
   });
 
   it("escaping canary: hostile text cannot leave the data block", () => {

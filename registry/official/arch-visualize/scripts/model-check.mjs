@@ -1,6 +1,6 @@
 // Stage 3a: validate a model against assets/model.schema.json with a small built-in validator, check the
 // links between its parts, and fail on anything that looks like a credential. Read-only.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 
@@ -49,6 +49,11 @@ export function validate(schema, value, root = schema, at = "$") {
       .reduce((o, k) => o?.[k], root);
     return validate(target, value, root, at);
   }
+  if (schema.anyOf) {
+    if (!schema.anyOf.some((sub) => validate(sub, value, root, at).length === 0))
+      out.push(`${at}: "${String(value).slice(0, 40)}" is not an allowed value`);
+    return out;
+  }
   if ("const" in schema && value !== schema.const)
     out.push(`${at}: must be ${JSON.stringify(schema.const)}`);
   if (schema.enum && !schema.enum.includes(value))
@@ -86,11 +91,93 @@ function* strings(value, at = "$") {
     for (const [k, v] of Object.entries(value)) yield* strings(v, `${at}.${k}`);
 }
 
+/**
+ * A v1 model as v2, in memory. v2 only adds optional fields, so the upgrade changes the version number.
+ * Never mutates its input; running it on a v2 model returns an equal copy.
+ */
+export function upgradeModel(model) {
+  if (!model || typeof model !== "object" || Array.isArray(model)) return model;
+  return model.version === 1 ? { ...model, version: 2 } : { ...model };
+}
+
+const hasEvidence = (item) => (item.evidence?.length ?? 0) > 0;
+const relativeOk = (p) => !path.isAbsolute(p) && !p.split(/[\\/]/).includes("..");
+
+/** Problems with the v2 fields: facts need evidence, references must exist, no secrets in groups. */
+function checkV2(model, nodeIds, root, problems) {
+  const groups = model.groups ?? [];
+  const groupIds = new Set();
+  groups.forEach((g, i) => {
+    if (groupIds.has(g.id)) problems.push(`groups[${i}]: duplicate id "${g.id}"`);
+    groupIds.add(g.id);
+  });
+  const parent = new Map(groups.map((g) => [g.id, g.parent]));
+  groups.forEach((g, i) => {
+    if (g.parent && !groupIds.has(g.parent))
+      problems.push(`groups[${i}] ${g.id}: parent "${g.parent}" is not a group`);
+    for (let cur = g.parent, hops = 0; cur; cur = parent.get(cur), hops++)
+      if (cur === g.id || hops > groups.length) {
+        problems.push(`groups[${i}] ${g.id}: groups must not contain themselves`);
+        break;
+      }
+  });
+  model.nodes.forEach((n, i) => {
+    const at = `nodes[${i}] ${n.id}`;
+    if (n.group && !groupIds.has(n.group))
+      problems.push(`${at}: group "${n.group}" is not declared`);
+    if (typeof n.replicas === "number" && !hasEvidence(n))
+      problems.push(`${at}: replicas needs evidence, or use "unknown"`);
+    if (n.ai?.auditGrade && !n.ai.auditSource)
+      problems.push(`${at}: ai.auditGrade needs ai.auditSource (an aisle audit JSON file)`);
+    if (n.ai?.auditSource) {
+      const src = n.ai.auditSource;
+      if (!relativeOk(src)) problems.push(`${at}: ai.auditSource must be relative to the project`);
+      else if (root) {
+        const file = path.join(root, src);
+        let grade;
+        try {
+          grade =
+            statSync(file).size < 5_000_000 ? JSON.parse(readFileSync(file, "utf8")).grade : null;
+        } catch {
+          grade = null;
+        }
+        if (!existsSync(file) || grade === null || grade === undefined)
+          problems.push(
+            `${at}: ai.auditSource "${src.slice(0, 60)}" is not a readable aisle audit JSON file`,
+          );
+        else if (n.ai.auditGrade && grade !== n.ai.auditGrade)
+          problems.push(
+            `${at}: ai.auditGrade ${n.ai.auditGrade} does not match the audit file (${grade})`,
+          );
+      }
+    }
+  });
+  model.edges.forEach((e, i) => {
+    const at = `edges[${i}] ${e.id}`;
+    const claim = (field, on) => {
+      if (on && !hasEvidence(e))
+        problems.push(
+          `${at}: ${field} needs evidence${field === "timeoutMs" || field === "retries" || field === "optional" ? "" : ', or use "unknown"'}`,
+        );
+    };
+    claim("timeoutMs", e.timeoutMs !== undefined);
+    claim("retries", e.retries !== undefined);
+    claim("optional", e.optional === true);
+    claim("tls", typeof e.tls === "boolean");
+    claim("auth", e.auth !== undefined && e.auth !== "unknown");
+  });
+  (model.views ?? []).forEach((v, i) => {
+    for (const id of v.focus ?? [])
+      if (!nodeIds.has(id)) problems.push(`views[${i}] ${v.id}: focus "${id}" is not a node`);
+  });
+}
+
 /** All problems with `model`. `draft` allows a model with no flows yet. */
 export function checkModel(
   model,
-  { draft = false, schema = loadSchema(), catalog = loadCatalog() } = {},
+  { draft = false, root = null, schema = loadSchema(), catalog = loadCatalog() } = {},
 ) {
+  model = upgradeModel(model);
   const problems = validate(schema, model);
   if (problems.length) return problems; // links below assume the right shapes
   const nodeIds = new Set();
@@ -139,7 +226,8 @@ export function checkModel(
     for (const id of r.nodes)
       if (!nodeIds.has(id)) problems.push(`risks[${i}] ${r.id}: node "${id}" does not exist`);
   });
-  for (const group of [model.nodes, model.edges, model.risks])
+  checkV2(model, nodeIds, root, problems);
+  for (const group of [model.nodes, model.edges, model.risks, model.groups ?? []])
     for (const item of group)
       for (const ev of item.evidence ?? [])
         if (path.isAbsolute(ev.file) || ev.file.split(/[\\/]/).includes(".."))
@@ -153,7 +241,10 @@ export function checkModel(
 }
 
 function run(argv) {
-  const { flags } = parseArgs(argv, { strings: ["model"], booleans: ["draft"] });
+  const { flags } = parseArgs(argv, {
+    strings: ["model", "root"],
+    booleans: ["draft", "write-upgrade"],
+  });
   const file = path.resolve(flags.model ?? "docs/architecture.json");
   let model;
   try {
@@ -162,9 +253,14 @@ function run(argv) {
     console.error(`model-check: cannot read ${file}: ${e.message}`);
     return 2;
   }
-  const problems = checkModel(model, { draft: Boolean(flags.draft) });
+  const root = flags.root ? path.resolve(flags.root) : process.cwd();
+  const problems = checkModel(model, { draft: Boolean(flags.draft), root });
   if (problems.length === 0) {
     const m = model;
+    if (flags["write-upgrade"] && model.version === 1) {
+      writeFileSync(file, `${JSON.stringify(upgradeModel(model), null, 2)}\n`);
+      console.log("upgraded the file to model version 2");
+    }
     console.log(
       `model ok: ${m.nodes.length} nodes, ${m.edges.length} edges, ${m.flows.length} flows, ${m.risks.length} risks`,
     );

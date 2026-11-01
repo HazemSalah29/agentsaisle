@@ -5,7 +5,7 @@
   "required": ["version", "project", "nodes", "edges", "flows", "risks"],
   "properties": {
     "version": {
-      "const": 1
+      "enum": [1, 2]
     },
     "project": {
       "type": "string",
@@ -37,6 +37,19 @@
         "$ref": "#/$defs/risk"
       }
     },
+    "groups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/group"
+      }
+    },
+    "views": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/view"
+      }
+    },
     "inferred": {
       "type": "array",
       "description": "Items without evidence, as node:<id> or edge:<id>.",
@@ -47,6 +60,76 @@
     }
   },
   "$defs": {
+    "zone": {
+      "enum": ["public", "dmz", "private", "third-party", "user-device"]
+    },
+    "dataLabel": {
+      "enum": ["pii", "credentials", "payments", "health", "secrets-ref", "logs"]
+    },
+    "lens": {
+      "enum": ["system", "flows", "security", "failure", "ai", "diff"]
+    },
+    "unknownOr": {
+      "enum": ["unknown"]
+    },
+    "group": {
+      "type": "object",
+      "required": ["id", "label", "kind"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "kind": {
+          "enum": ["deploy", "namespace", "package", "other"]
+        },
+        "parent": {
+          "$ref": "#/$defs/id"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "required": ["id", "name", "lens"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "lens": {
+          "$ref": "#/$defs/lens"
+        },
+        "focus": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "camera": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "zoom": { "type": "number" }
+          }
+        }
+      }
+    },
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
@@ -110,6 +193,42 @@
         "tier": {
           "$ref": "#/$defs/tier"
         },
+        "group": {
+          "$ref": "#/$defs/id"
+        },
+        "zone": {
+          "$ref": "#/$defs/zone"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dataLabel"
+          }
+        },
+        "replicas": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "$ref": "#/$defs/unknownOr" }]
+        },
+        "ai": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["llm-provider", "agent", "mcp-server", "skill", "vector-store"]
+            },
+            "auditGrade": {
+              "enum": ["A", "B", "C", "D", "F"]
+            },
+            "auditSource": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 80
+        },
         "evidence": {
           "type": "array",
           "items": {
@@ -135,6 +254,29 @@
           "type": "string"
         },
         "sync": {
+          "type": "boolean"
+        },
+        "auth": {
+          "enum": ["none", "session", "jwt", "api-key", "mtls", "oauth", "unknown"]
+        },
+        "tls": {
+          "anyOf": [{ "type": "boolean" }, { "$ref": "#/$defs/unknownOr" }]
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "carries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dataLabel"
+          }
+        },
+        "optional": {
           "type": "boolean"
         },
         "evidence": {
