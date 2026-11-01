@@ -27,7 +27,7 @@
         var raw;
         try {
           raw = decodeURIComponent(pair.slice(i + 1));
-        } catch (e) {
+        } catch {
           return;
         }
         if (ORDER.indexOf(key) < 0 || key in out) return;
