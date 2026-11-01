@@ -171,6 +171,27 @@ describe("video-core render helpers", () => {
     expect(args.at(-1)).toBe("/o.mp4");
   });
 
+  it("ends the audio graph with loudness normalisation to the target, and not without audio", async () => {
+    const { muxArgs } = await loadScript<Render>("video-core", "scripts/render.mjs");
+    const withVoice = muxArgs({
+      silent: "/s.mp4",
+      out: "/o.mp4",
+      voice: [{ file: "/a.wav", ms: 0 }],
+      music: null,
+      seconds: 4,
+    }).join(" ");
+    expect(withVoice).toContain("loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[final]");
+    expect(withVoice).toContain("-map [final]");
+    const silent = muxArgs({
+      silent: "/s.mp4",
+      out: "/o.mp4",
+      voice: [],
+      music: null,
+      seconds: 4,
+    }).join(" ");
+    expect(silent).not.toContain("loudnorm");
+  });
+
   it("only remuxes when there is no audio, and scales a draft", async () => {
     const { muxArgs } = await render();
     const plain = muxArgs({ silent: "/s.mp4", out: "/o.mp4", seconds: 3, voice: [], music: null });

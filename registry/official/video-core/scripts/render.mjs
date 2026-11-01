@@ -106,6 +106,9 @@ export function voicePlacements(video, timing, dir) {
  * ffmpeg arguments that mux silent video with the mixed audio. `voice` is from voicePlacements, `music` the
  * absolute music path or null. Without any audio the video is only remuxed. `draft` scales down to 540 px high.
  */
+/** Loudness the mix is brought to: integrated LUFS and true-peak ceiling. A working default shared with video-qa. */
+export const LOUDNESS = Object.freeze({ lufs: -14, truePeak: -1.5 }); // TODO(verify) per platform
+
 export function muxArgs({ silent, out, voice, music, duckDb = -14, seconds, draft }) {
   const args = ["-y", "-v", "error", "-i", silent];
   voice.forEach((v) => args.push("-i", v.file));
@@ -135,6 +138,13 @@ export function muxArgs({ silent, out, voice, music, duckDb = -14, seconds, draf
       filters.push(`${base}[mix]`);
       map = "[mix]";
     }
+  }
+  if (map) {
+    // One last stage so the voice and music land at the target level whatever they were recorded at.
+    filters.push(
+      `${map}loudnorm=I=${LOUDNESS.lufs}:TP=${LOUDNESS.truePeak}:LRA=11,aresample=48000[final]`,
+    );
+    map = "[final]";
   }
   if (filters.length) args.push("-filter_complex", filters.join(";"));
   args.push("-map", "0:v");
