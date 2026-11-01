@@ -1,6 +1,6 @@
 ---
 name: video-core
-description: Check, time and render a video.json project to an MP4 with HyperFrames, and write its credits and disclosure notes. Scene kinds are title, quote, list, chart, broll and rate-limit. Use when the user wants to render or re-render a video.json, check one, or get its CREDITS.txt. Don't use for writing the script, making voice audio, captions or editing footage; those are other video skills.
+description: Check, time and render a video.json project to an MP4 with HyperFrames, and write its credits and disclosure notes. Scene kinds are title, quote, list, chart, broll, rate-limit, code, sequence and request-flow. Use when the user wants to render or re-render a video.json, check one, or get its CREDITS.txt. Don't use for writing the script, making voice audio, captions or editing footage; those are other video skills.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
@@ -21,7 +21,7 @@ The engine under the video library. A project is a folder with a `video.json` (t
 
 ## Steps
 
-1. Write or edit `<project>/video.json` (`references/video-json.md`; props per kind in `references/scene-kinds.md`; schema in `<skill>/assets/video.schema.json`). Only use the built kinds (`references/scene-kinds.md`).
+1. Write or edit `<project>/video.json` (`references/video-json.md`; props per kind in `references/scene-kinds.md`; schema in `<skill>/assets/video.schema.json`). Only use the built kinds (`references/scene-kinds.md`); fill `rate-limit` and `request-flow` with `video-explain`, never by hand.
 2. Run `node <skill>/scripts/check.mjs <project>`. Fix every problem it lists, then run it again until it says OK.
 3. If scenes take their length from the voice: put one audio file per script line at `<project>/voice/<line-id>.wav`, then run `node <skill>/scripts/timing.mjs <project>`. If every scene is fixed, skip this step.
 4. Run `node <skill>/scripts/render.mjs <project> --draft` first (540p), then without `--draft` for the final. Output: `<project>/out/<folder-name>.mp4`.
