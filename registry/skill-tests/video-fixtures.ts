@@ -27,3 +27,40 @@ export function wav(seconds: number, rate = 16000, extraChunk = false) {
   riff.writeUInt32LE(body.length, 4);
   return Buffer.concat([riff, body]);
 }
+
+/** A small valid project: one voiced title scene, one fixed list scene and a fixed quote. */
+export function fixtureVideo(over: Record<string, unknown> = {}) {
+  return {
+    version: 1,
+    script: "script.md",
+    meta: { title: "Fixture", type: "explainer", format: "reel-9x16", fps: 30, lang: "en" },
+    scenes: [
+      {
+        id: "intro",
+        kind: "title",
+        narration: ["l1"],
+        props: { text: "Rate limiting", subtitle: "in 10 seconds" },
+      },
+      {
+        id: "rules",
+        kind: "list",
+        durationFrom: "fixed",
+        seconds: 2,
+        transitionIn: "fade",
+        props: {
+          heading: "Three rules",
+          items: ["Count requests", "Refill slowly", "Reject with 429"],
+          numbered: true,
+        },
+      },
+      {
+        id: "quote",
+        kind: "quote",
+        durationFrom: "fixed",
+        seconds: 2,
+        props: { text: "Be liberal.", by: "Fixture" },
+      },
+    ],
+    ...over,
+  };
+}
