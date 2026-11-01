@@ -131,7 +131,13 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
     );
 
   // name format. The core kit (niche "core") keeps short names like "plan" and "verify".
-  if (meta?.niche && meta.niche !== CORE_NICHE && !skill.startsWith(`${meta.niche}-`)) {
+  // A skill named exactly like its niche (the "video" orchestrator) is the niche's entry point.
+  if (
+    meta?.niche &&
+    meta.niche !== CORE_NICHE &&
+    skill !== meta.niche &&
+    !skill.startsWith(`${meta.niche}-`)
+  ) {
     add("SKILL.md", "name", `name must start with the niche: "${meta.niche}-<task>".`);
   }
 

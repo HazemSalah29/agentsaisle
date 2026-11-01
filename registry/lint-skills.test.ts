@@ -94,6 +94,11 @@ describe("lintSkill", () => {
     expect(rules(await lint(other))).toContain("name");
   });
 
+  it("rule 3: a skill named exactly like its niche is the niche's entry point", async () => {
+    const dir = await skill("code", { "skill.meta.yaml": meta() });
+    expect(rules(await lint(dir))).not.toContain("name");
+  });
+
   it("rule 4: all six sections are required, in order", async () => {
     const missing = await skill("code-a", {
       "SKILL.md": `${frontmatter("code-a")}${body(["Use when", "Steps"])}`,
