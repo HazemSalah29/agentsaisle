@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "docs": {
+      "command": "npx",
+      "args": ["-y", "docs-mcp"],
+      "env": { "DOCS_TOKEN": "replace-me" }
+    }
+  }
+}

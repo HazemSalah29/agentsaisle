@@ -102,7 +102,7 @@ describe("arch-visualize discovery", () => {
   it("passes model-check as a draft", () => {
     const r = run("model-check.mjs", ["--model", out, "--draft"]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toMatch(/model ok: 9 nodes, 5 edges/);
+    expect(r.stdout).toMatch(/model ok: 14 nodes, 5 edges/);
   });
 
   it("is deterministic", () => {
@@ -1088,6 +1088,16 @@ describe("arch-visualize risk-check", () => {
       name: "one postgres service",
       fires: true,
       files: { "docker-compose.yml": compose("  db:\n    image: postgres:16\n") },
+    },
+    {
+      rule: "AV-R01",
+      name: "deploy replicas of an app are not a database replica",
+      fires: true,
+      files: {
+        "docker-compose.yml": compose(
+          "  db:\n    image: postgres:16\n  api:\n    build: .\n    deploy:\n      replicas: 2\n",
+        ),
+      },
     },
     {
       rule: "AV-R01",

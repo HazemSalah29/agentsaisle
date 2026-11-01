@@ -126,6 +126,8 @@ function r01(ctx) {
   const blob = [...ctx.compose, ...ctx.docker, ...ctx.hosting, ...ctx.conf]
     .map((x) => x.text)
     .join("\n")
+    // "replicas: 2" under deploy: is how many copies of an app run, not a database replica
+    .replace(/^\s*replicas:\s*\d+\s*$/gm, "")
     .toLowerCase();
   const deps = ctx.packages.flatMap((p) => p.deps).join(" ");
   if (

@@ -100,3 +100,4 @@ A field that states a fact (`timeoutMs`, `retries`, `tls`, `auth` other than `un
 - `flows[].steps[].together`: this step runs at the same time as the step before it (see `flows.md`).
 - `risks[].fixes`: one to three `{ text, tradeoff }` options. `risk-check.mjs` writes them for every rule.
 - `views[].lens`: `system`, `flows`, `security`, `failure`, `ai` or `diff`.
+- `candidates`: only in a draft. Connections discovery suspects, each with `confidence`, `evidence` and optional `timeoutMs`, `retries`, `optional`, `confirms`. The final model must not have any: confirm each as an edge or delete it.

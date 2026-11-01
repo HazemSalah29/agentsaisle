@@ -110,7 +110,7 @@
         },
         {
           "file": "docker-compose.yml",
-          "line": 15,
+          "line": 27,
           "note": "service worker builds ./apps/worker"
         }
       ],
@@ -140,7 +140,7 @@
         },
         {
           "file": "docker-compose.yml",
-          "line": 27,
+          "line": 39,
           "note": "image redis:7, ports 6379:6379"
         }
       ],
@@ -180,7 +180,7 @@
         },
         {
           "file": "docker-compose.yml",
-          "line": 23,
+          "line": 35,
           "note": "image postgres:16, ports 5432:5432"
         }
       ],
@@ -243,7 +243,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 14,
+          "line": 16,
           "note": "depends_on cache"
         }
       ],
@@ -257,7 +257,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 13,
+          "line": 15,
           "note": "depends_on db"
         }
       ],
@@ -293,7 +293,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 18,
+          "line": 30,
           "note": "depends_on cache"
         }
       ],
@@ -307,7 +307,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 20,
+          "line": 32,
           "note": "depends_on db"
         }
       ],
@@ -492,7 +492,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 27,
+          "line": 39,
           "note": "one redis service"
         },
         {
@@ -513,7 +513,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 23,
+          "line": 35,
           "note": "image postgres:16, ports 5432:5432"
         },
         {
@@ -550,7 +550,7 @@
       "evidence": [
         {
           "file": "apps/api/src/server.ts",
-          "line": 6,
+          "line": 7,
           "note": "route defined here"
         }
       ],
@@ -630,17 +630,17 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 24,
+          "line": 36,
           "note": "db: port 5432:5432 published on all interfaces"
         },
         {
           "file": "docker-compose.yml",
-          "line": 28,
+          "line": 40,
           "note": "cache: port 6379:6379 published on all interfaces"
         },
         {
           "file": "docker-compose.yml",
-          "line": 27,
+          "line": 39,
           "note": "cache: Redis has no requirepass or REDIS_PASSWORD"
         }
       ],

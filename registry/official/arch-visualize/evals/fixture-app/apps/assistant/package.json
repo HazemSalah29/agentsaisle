@@ -1,0 +1,9 @@
+{
+  "name": "assistant",
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.30.0",
+    "chromadb": "1.8.0",
+    "express": "4.19.0",
+    "ioredis": "5.4.0"
+  }
+}

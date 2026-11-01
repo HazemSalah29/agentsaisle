@@ -63,7 +63,7 @@
         },
         {
           "file": "docker-compose.yml",
-          "line": 15
+          "line": 27
         }
       ]
     },
@@ -74,7 +74,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 27
+          "line": 39
         },
         {
           "file": ".env.example",
@@ -89,7 +89,7 @@
       "evidence": [
         {
           "file": "docker-compose.yml",
-          "line": 23
+          "line": 35
         },
         {
           "file": "apps/api/prisma/schema.prisma",
@@ -118,6 +118,85 @@
           "line": 9
         }
       ]
+    },
+    {
+      "id": "assistant",
+      "role": "backend",
+      "tech": "express",
+      "evidence": [
+        {
+          "file": "apps/assistant/package.json",
+          "line": 6
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "id": "skill-refund-helper",
+      "role": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "skills/refund-helper/SKILL.md",
+          "line": 4
+        }
+      ],
+      "ai": {
+        "kind": "skill",
+        "tools": [
+          "Read",
+          "Bash(node *)"
+        ]
+      }
+    },
+    {
+      "id": "chroma",
+      "role": "search",
+      "tech": "chroma",
+      "evidence": [
+        {
+          "file": "apps/assistant/package.json",
+          "line": 5
+        }
+      ],
+      "ai": {
+        "kind": "vector-store"
+      }
+    },
+    {
+      "id": "anthropic",
+      "role": "external",
+      "tech": "anthropic",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 8
+        },
+        {
+          "file": "apps/assistant/package.json",
+          "line": 4
+        }
+      ],
+      "ai": {
+        "kind": "llm-provider"
+      }
+    },
+    {
+      "id": "mcp-docs",
+      "role": "external",
+      "tech": "generic-external",
+      "evidence": [
+        {
+          "file": "apps/assistant/.mcp.json",
+          "line": 3
+        }
+      ],
+      "ai": {
+        "kind": "mcp-server"
+      }
     }
   ],
   "edges": [
@@ -136,7 +215,7 @@
         "evidence": [
           {
             "file": "docker-compose.yml",
-            "line": 23
+            "line": 35
           }
         ]
       },
@@ -159,7 +238,7 @@
         "evidence": [
           {
             "file": "apps/api/src/server.ts",
-            "line": 6
+            "line": 7
           }
         ]
       },
@@ -216,11 +295,11 @@
         "evidence": [
           {
             "file": "docker-compose.yml",
-            "line": 24
+            "line": 36
           },
           {
             "file": "docker-compose.yml",
-            "line": 27
+            "line": 39
           }
         ]
       }
@@ -297,6 +376,80 @@
       "from": "worker",
       "to": "resend",
       "fileBacked": true
+    },
+    {
+      "id": "api-assistant",
+      "from": "api",
+      "to": "assistant",
+      "fileBacked": true
+    },
+    {
+      "id": "assistant-anthropic",
+      "from": "assistant",
+      "to": "anthropic",
+      "fileBacked": true
+    },
+    {
+      "id": "assistant-chroma",
+      "from": "assistant",
+      "to": "chroma",
+      "fileBacked": true
+    },
+    {
+      "id": "assistant-cache",
+      "from": "assistant",
+      "to": "cache",
+      "fileBacked": true
+    },
+    {
+      "id": "assistant-mcp-docs",
+      "from": "assistant",
+      "to": "mcp-docs",
+      "fileBacked": true
     }
-  ]
+  ],
+  "candidates": {
+    "note": "candidates discover must propose, with the lowest confidence each may have",
+    "expected": [
+      {
+        "id": "api-bullmq",
+        "confidence": "high"
+      },
+      {
+        "id": "api-stripe",
+        "confidence": "medium"
+      },
+      {
+        "id": "bullmq-worker",
+        "confidence": "high"
+      },
+      {
+        "id": "worker-resend",
+        "confidence": "high"
+      },
+      {
+        "id": "api-assistant",
+        "confidence": "medium"
+      },
+      {
+        "id": "assistant-anthropic",
+        "confidence": "high",
+        "timeoutMs": 20000,
+        "retries": 2
+      },
+      {
+        "id": "assistant-chroma",
+        "confidence": "high",
+        "optional": true
+      },
+      {
+        "id": "assistant-cache",
+        "confidence": "high"
+      },
+      {
+        "id": "assistant-mcp-docs",
+        "confidence": "medium"
+      }
+    ]
+  }
 }

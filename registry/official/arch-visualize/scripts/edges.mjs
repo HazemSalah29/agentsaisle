@@ -3,6 +3,7 @@
 // queue producers and consumers, and the environment variable NAMES the code reads. Every candidate has a
 // confidence and the file and line it comes from, and the agent confirms or drops each one.
 import path from "node:path";
+import { balanced } from "./_lib.mjs";
 
 const APP_ROLES = new Set(["frontend", "backend", "worker"]);
 const PROTOCOL = {
@@ -75,7 +76,10 @@ function targetFor(nodes, entry) {
   const infra = nodes.filter((n) => !APP_ROLES.has(n.role));
   const same = infra.find((n) => n.tech === entry.tech);
   if (same) return same;
-  const sameRole = infra.filter((n) => n.role === entry.role);
+  // by role, but an AI part (a vector store) is never taken for a plain database or search service
+  const sameRole = infra.filter(
+    (n) => n.role === entry.role && Boolean(n.ai) === Boolean(entry.ai),
+  );
   return sameRole.length === 1 ? sameRole[0] : null;
 }
 
@@ -108,11 +112,133 @@ function importedNames(text, spec) {
   return [...new Set(names)];
 }
 
+const TIMEOUT_RES = [
+  /\b(?:timeout|connectTimeout|commandTimeout|requestTimeout)\s*:\s*(\d[\d_]*)\b/,
+  /\bAbortSignal\.timeout\(\s*(\d[\d_]*)\s*\)/,
+];
+const RETRY_RE = /\b(?:retries|maxRetries|max_retries|maxAttempts)\s*:\s*(\d+)\b/;
+const BREAKER = /["'](opossum|cockatiel)["']/;
+const CALL_START =
+  /\b(?:new\s+[A-Z]\w*|fetch|axios(?:\.\w+)?|got(?:\.\w+)?|ky(?:\.\w+)?|\w+\.(?:get|post|put|patch|delete|request))\s*\(/;
+// a catch block that answers with an error status is not a fallback
+const ERROR_ANSWER = /\b(?:res\.status\(\s*5\d\d|status:\s*5\d\d|sendStatus\(\s*5\d\d)/;
+
+/** try blocks whose catch block neither rethrows nor answers with an error: [{ from, to, catchLine }] as line ranges. */
+function fallbackBlocks(text) {
+  const out = [];
+  for (const m of text.matchAll(/\btry\s*\{/g)) {
+    const open = m.index + m[0].length - 1;
+    const body = balanced(text, open);
+    if (!body) continue;
+    const after = /^\s*catch\b[^{]*\{/.exec(text.slice(body.end));
+    if (!after) continue;
+    const catchOpen = body.end + after[0].length - 1;
+    const handler = balanced(text, catchOpen);
+    if (!handler || /\bthrow\b/.test(handler.text) || ERROR_ANSWER.test(handler.text)) continue;
+    out.push({
+      from: lineOfIndex(text, open),
+      to: lineOfIndex(text, body.end),
+      catchLine: lineOfIndex(text, catchOpen),
+    });
+  }
+  return out;
+}
+
+/** The argument text of the call that starts on `line`: { text, from } where `from` is its first line. */
+function callArgs(text, line) {
+  const before =
+    text
+      .split("\n")
+      .slice(0, line - 1)
+      .join("\n").length + (line > 1 ? 1 : 0);
+  const rest = text.slice(
+    before,
+    text.indexOf("\n", before) < 0 ? undefined : text.indexOf("\n", before),
+  );
+  const m = CALL_START.exec(rest);
+  if (!m) return null;
+  const body = balanced(text, before + m.index + m[0].length - 1);
+  return body ? { text: body.text, from: line } : null;
+}
+
+/**
+ * Add literal timeouts, retry counts and fallbacks. Timeouts and retries are read only from the arguments of
+ * the call or constructor on the evidence line, so a neighbouring client's settings are not mistaken for this
+ * one's. A fallback needs every use of the client to sit in a try block whose catch carries on.
+ */
+function enrich(candidates, texts) {
+  for (const c of candidates) {
+    for (const ev of [...c.evidence]) {
+      const text = texts.get(ev.file);
+      if (text === undefined || /^imports /.test(ev.note ?? "")) continue;
+      const args = callArgs(text, ev.line);
+      if (args) {
+        const rows = args.text.split("\n");
+        rows.forEach((row, i) => {
+          const at = args.from + i;
+          for (const re of TIMEOUT_RES) {
+            const t = c.timeoutMs === undefined && re.exec(row);
+            if (t) {
+              c.timeoutMs = Number(t[1].replace(/_/g, ""));
+              c.evidence.push({ file: ev.file, line: at, note: `timeout ${c.timeoutMs} ms` });
+              break;
+            }
+          }
+          const r = c.retries === undefined && RETRY_RE.exec(row);
+          if (r) {
+            c.retries = Number(r[1]);
+            c.evidence.push({ file: ev.file, line: at, note: `${c.retries} retries` });
+          }
+        });
+      }
+      if (c.optional === undefined) {
+        const lines = text.split("\n");
+        const decl = /^\s*(?:export\s+)?(?:const|let|var)\s+([\w$]+)\s*=/.exec(
+          lines[ev.line - 1] ?? "",
+        );
+        const uses = decl
+          ? lines
+              .map((row, i) =>
+                i + 1 !== ev.line &&
+                new RegExp(`\\b${decl[1].replace(/\$/g, "\\$")}\\.\\w+\\(`).test(row)
+                  ? i + 1
+                  : 0,
+              )
+              .filter(Boolean)
+          : [ev.line];
+        const blocks = fallbackBlocks(text);
+        const guarded = uses.map((u) => blocks.find((b) => u > b.from && u < b.to));
+        const chained = /\.catch\(\s*(?:\([^)]*\)|\w+)?\s*=>\s*(?!\s*\{?\s*throw)/.test(
+          lines.slice(Math.max(0, ev.line - 1), ev.line + 2).join(" "),
+        );
+        if (uses.length && guarded.every(Boolean)) {
+          c.optional = true;
+          c.evidence.push({
+            file: ev.file,
+            line: guarded[0].catchLine,
+            note: "every use is in a try block whose catch carries on",
+          });
+        } else if (chained) {
+          c.optional = true;
+          c.evidence.push({
+            file: ev.file,
+            line: ev.line,
+            note: "failure is caught and handled on the call",
+          });
+        } else if (BREAKER.test(text)) {
+          c.optional = true;
+          c.evidence.push({ file: ev.file, line: 1, note: "file uses a circuit breaker library" });
+        }
+      }
+    }
+  }
+}
+
 /**
  * Candidates for the connections the source files suggest. `sources` is [{ rel, text }] with comments
  * already masked. Returns [{ id, from, to, protocol, sync, confidence, why, evidence }] sorted by id.
  */
-export function findCandidates({ nodes, edges, sources, catalog }) {
+export function findCandidates({ nodes, edges, sources, catalog, hints = [], networks = [] }) {
   const found = new Map();
   const add = (from, to, c) => {
     if (!from || !to || from.id === to.id) return;
@@ -140,6 +266,15 @@ export function findCandidates({ nodes, edges, sources, catalog }) {
     if (!cur.protocol && c.protocol) cur.protocol = c.protocol;
   };
   const queueUse = []; // { file, kind, name, line, owner, node }
+  // candidates found outside source files (compose links, Kubernetes service names)
+  for (const h of hints)
+    add(h.from, h.to, {
+      sync: h.sync ?? true,
+      protocol: h.protocol,
+      confidence: h.confidence,
+      why: h.why,
+      evidence: h.evidence,
+    });
 
   for (const src of sources) {
     const owner = ownerOf(nodes, src.rel);
@@ -257,13 +392,26 @@ export function findCandidates({ nodes, edges, sources, catalog }) {
     else add(u.node, u.owner, c);
   }
 
+  // two components on the same user-defined network make a suspected connection between them more likely
+  for (const net of networks) {
+    for (const c of found.values()) {
+      const same = (c.from === net.a && c.to === net.b) || (c.from === net.b && c.to === net.a);
+      if (!same) continue;
+      if (c.confidence === "low") c.confidence = "medium";
+      if (!c.evidence.some((e) => e.file === net.file && e.line === net.line))
+        c.evidence.push({ file: net.file, line: net.line, note: `both on network ${net.name}` });
+    }
+  }
   const byPair = new Map(edges.map((e) => [`${e.from}>${e.to}`, e.id]));
-  return [...found.values()]
+  const texts = new Map(sources.map((x) => [x.rel, x.text]));
+  const all = [...found.values()];
+  enrich(all, texts);
+  return all
     .map((c) => {
       const confirms = byPair.get(`${c.from}>${c.to}`);
       return {
         ...c,
-        evidence: c.evidence.slice(0, MAX_EVIDENCE),
+        evidence: c.evidence.slice(0, MAX_EVIDENCE + 3),
         ...(confirms ? { confirms } : {}),
       };
     })

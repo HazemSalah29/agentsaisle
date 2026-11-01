@@ -56,6 +56,21 @@ The D6 budget (300 KB for the viewer and its libraries, 1.5 MB for the fixture p
 
 The lens demo (`evals/fixture-lenses.json`) triggers AV-R01 to AV-R05, R07, R08, R10 (from the fixture app's files) and R11, R12, R13, R14, R18 (from the model). Screenshots are in `evals/m5-lenses/`. The budget (300 KB for the viewer and its libraries) still holds.
 
+## After M6 (discovery with edge candidates)
+
+Measured on `evals/fixture-app`, now grown to cover every pattern (an assistant app with an LLM, a vector store, Redis, an MCP server, a skill, Kubernetes manifests, compose links and networks, literal timeouts, retries and one fallback). `expected.json` lists 16 true connections; 14 are shown by a file and 2 are not (marked `fileBacked: false`).
+
+| Measure                                                        | 0.1.1 / start of 0.2.0 | After M6        |
+| -------------------------------------------------------------- | ---------------------- | --------------- |
+| File-backed connections found by `edges` alone                 | 5 of 14 (0.36)         | 5 of 14         |
+| File-backed connections found by `edges` and `candidates`      | not available          | 14 of 14 (1.00) |
+| Candidates proposed that are not a real connection (precision) | not available          | 0 of 11         |
+| Components found                                               | 9 of 9                 | 14 of 14        |
+
+Earlier I wrote "5 of 5, recall 1.0" for this fixture; that list was too short (5 of the 9 file-backed connections of the original fixture, 0.56). Both the honest baseline and the number after use the grown list above.
+
+What this does not show: the fixture was written by me, so recall measures the patterns I thought of, not real projects. A spot check on this repository (not designed for it) found one genuine candidate outside the fixture (`apps/web` to GitHub's API, medium) and no false ones; that is one project, not a study. DevPath's source is not in this repository, so its 2 of 13 stays the recorded baseline and I did not re-run it.
+
 ## Tokens and tool calls
 
 No eval-run log exists for a full skill run, so there are no numbers. M8 will measure it by running the skill once on the fixture with the old and new version and reading the token and tool-call totals from the session transcript.
