@@ -112,21 +112,21 @@ describe("arch-visualize languages and direction", () => {
 
   it("renders English left to right by default", () => {
     expect(en.status).toBe(0);
-    expect(en.html).toContain('<html lang="en" dir="ltr" data-flow="ltr">');
+    expect(en.html).toContain('<html lang="en" dir="ltr" data-flow="ltr" data-lens="system">');
     expect(en.html).toContain(strings.en["btn.theme"]);
     expect(en.html).not.toMatch(/\{\{|__LANG__|__DIR__|__FLOW__|__I18N_JSON__/);
   });
 
   it("renders Arabic right to left with Arabic text", () => {
     expect(ar.status).toBe(0);
-    expect(ar.html).toContain('<html lang="ar" dir="rtl" data-flow="ltr">');
+    expect(ar.html).toContain('<html lang="ar" dir="rtl" data-flow="ltr" data-lens="system">');
     expect(ar.html).toContain(strings.ar["btn.theme"]);
     expect(ar.html).not.toContain(strings.en["btn.theme"]);
   });
 
   it("keeps the diagram direction separate: --flow-dir rtl on an English page", () => {
     const r = render(fixture, ["--flow-dir", "rtl"]);
-    expect(r.html).toContain('<html lang="en" dir="ltr" data-flow="rtl">');
+    expect(r.html).toContain('<html lang="en" dir="ltr" data-flow="rtl" data-lens="system">');
   });
 
   it("embeds the chosen text table once, with English underneath", () => {
@@ -160,5 +160,87 @@ describe("arch-visualize languages and direction", () => {
       expect(html).not.toContain("<img src=x");
       expect(html).not.toContain("<svg onload");
     }
+  });
+});
+
+// ---- colours: every pair that is drawn on top of another must pass WCAG 2.1 AA
+type Tokens = Record<string, string>;
+const css = read("styles.css");
+const tokensOf = (block: string): Tokens =>
+  Object.fromEntries(
+    [...block.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)].map((m) => [m[1]!, m[2]!]),
+  );
+const lightBlock = /:root\s*\{([\s\S]*?)\n\}/.exec(css)![1]!;
+const darkBlock = /:root\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/.exec(css)![1]!;
+const mediaDarkBlock = /:root:not\(\[data-theme="light"\]\)\s*\{([\s\S]*?)\n\s*\}/.exec(css)![1]!;
+const channel = (v: number) => {
+  const c = v / 255;
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+};
+const luminance = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  return 0.2126 * channel(n >> 16) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
+};
+const contrast = (a: string, b: string) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi! + 0.05) / (lo! + 0.05);
+};
+
+describe("arch-visualize colours", () => {
+  const themes: Record<string, Tokens> = {
+    light: tokensOf(lightBlock),
+    dark: tokensOf(darkBlock),
+  };
+  it("defines the same tokens for the dark theme chosen by the system and by the button", () => {
+    expect(tokensOf(mediaDarkBlock)).toEqual(themes.dark);
+    expect(Object.keys(themes.dark!).sort()).toEqual(
+      Object.keys(themes.light!)
+        .filter((k) => !["fs-s", "fs-m", "fs-l"].includes(k) || k in themes.dark!)
+        .sort(),
+    );
+  });
+
+  // [foreground, background, minimum ratio]: 4.5 for text, 3 for lines and focus rings
+  const pairs: [string, string, number][] = [
+    ["text", "bg", 4.5],
+    ["text", "surface", 4.5],
+    ["text", "surface-2", 4.5],
+    ["muted", "bg", 4.5],
+    ["muted", "surface", 4.5],
+    ["muted", "surface-2", 4.5],
+    ["muted", "band", 4.5],
+    ["text", "warn-bg", 4.5],
+    ["muted", "warn-bg", 4.5],
+    ["warn-text", "warn", 4.5],
+    ["accent-text", "accent-system", 4.5],
+    ["accent-text", "accent-flows", 4.5],
+    ["accent-system", "surface", 4.5],
+    ["accent-flows", "surface", 4.5],
+    ["accent-system", "surface-2", 4.5],
+    ["accent-flows", "surface-2", 4.5],
+    ["accent-system", "band", 3],
+    ["accent-flows", "band", 3],
+    ["focus", "bg", 3],
+    ["focus", "surface", 3],
+    ["edge", "bg", 3],
+    ["edge", "band", 3],
+    ["edge", "surface", 3],
+    ["warn", "bg", 3],
+  ];
+  for (const [theme, tokens] of Object.entries(themes))
+    for (const [fg, bg, min] of pairs)
+      it(`${theme}: ${fg} on ${bg} is at least ${min}:1`, () => {
+        expect(tokens[fg], fg).toBeDefined();
+        expect(tokens[bg], bg).toBeDefined();
+        expect(contrast(tokens[fg]!, tokens[bg]!)).toBeGreaterThanOrEqual(min);
+      });
+
+  it("uses three type sizes and no other font size", () => {
+    const sizes = new Set(
+      [...css.matchAll(/--fs-([sml]):\s*(\d+)px/g)].map((m) => `${m[1]}${m[2]}`),
+    );
+    expect([...sizes].sort()).toEqual(["l18", "m14", "s12"]);
+    const fontLines = css.split("\n").filter((l) => /font-size:|^\s+\d+ ?(px|rem)/.test(l));
+    for (const l of fontLines) expect(l, l).toMatch(/var\(--fs-[sml]\)/);
   });
 });

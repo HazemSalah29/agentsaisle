@@ -36,13 +36,35 @@ var defs = s(
 );
 var vp = s("g", { id: "viewport" });
 canvas.append(defs, vp);
+lay.layers.forEach(function (l) {
+  vp.append(
+    s("rect", {
+      class: "band",
+      x: l.x - 14,
+      y: 52,
+      width: W + 28,
+      height: Math.max(0, contentH - 52 - 14),
+      rx: 12,
+    }),
+  );
+});
 lay.groups.forEach(function (g) {
+  var text = clip(g.label, 32);
+  var chipW = Math.min(g.w - 16, text.length * 7 + 16);
   vp.append(
     s(
       "g",
       { class: "group", "data-group": g.id },
-      s("rect", { x: g.x, y: g.y, width: g.w, height: g.h, rx: 6 }),
-      s("text", { x: RTL ? g.x + g.w - 10 : g.x + 10, y: g.y + 16 }, clip(g.label, 40)),
+      s("rect", { class: "box", x: g.x, y: g.y, width: g.w, height: g.h, rx: 10 }),
+      s("rect", {
+        class: "chip",
+        x: RTL ? g.x + g.w - 8 - chipW : g.x + 8,
+        y: g.y + 4,
+        width: chipW,
+        height: 18,
+        rx: 9,
+      }),
+      s("text", { x: RTL ? g.x + g.w - 16 : g.x + 16, y: g.y + 17 }, text),
     ),
   );
 });
@@ -106,14 +128,15 @@ model.nodes.forEach(function (n) {
   });
   g.append(
     s("title", {}, label),
-    s("rect", { class: "ring", x: -4, y: -4, width: W + 8, height: H + 8, rx: 10 }),
-    s("rect", { class: "box", width: W, height: H, rx: 7 }),
+    s("rect", { class: "ring", x: -4, y: -4, width: W + 8, height: H + 8, rx: 14 }),
+    s("rect", { class: "box", width: W, height: H, rx: 10 }),
+    s("rect", { class: "tile", x: RTL ? W - 52 : 8, y: 10, width: 44, height: 44, rx: 9 }),
   );
-  var ic = iconSvg(n, 32, "icon", RTL ? W - 46 : 14, 16);
+  var ic = iconSvg(n, 28, "icon", RTL ? W - 44 : 16, 18);
   if (ic) g.append(ic);
   g.append(
-    s("text", { class: "name", x: RTL ? W - 58 : 58, y: 28 }, clip(n.label, 17)),
-    s("text", { class: "sub", x: RTL ? W - 58 : 58, y: 47 }, clip(techText(n), 20)),
+    s("text", { class: "name", x: RTL ? W - 62 : 62, y: 29 }, clip(n.label, 16)),
+    s("text", { class: "sub", x: RTL ? W - 62 : 62, y: 47 }, clip(techText(n), 16)),
   );
   if (risks.length)
     g.append(

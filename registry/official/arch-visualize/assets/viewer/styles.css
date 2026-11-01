@@ -1,13 +1,19 @@
 :root {
-  --bg: #f6f5f1;
+  --bg: #f4f4f2;
   --surface: #ffffff;
-  --surface-2: #efeee9;
+  --surface-2: #ecebe8;
+  --band: #ebebe8;
   --text: #1b1a18;
-  --muted: #5a5750;
-  --line: #cfccc4;
-  --edge: #6f6b62;
-  --accent: #b8420a;
+  --muted: #55524b;
+  --line: #cdcac2;
+  --edge: #6a665e;
+  --accent-system: #2c5aa0;
+  --accent-flows: #b8420a;
+  --accent: var(--accent-system);
   --accent-text: #ffffff;
+  --fs-s: 12px;
+  --fs-m: 14px;
+  --fs-l: 18px;
   --warn: #b45309;
   --warn-text: #ffffff;
   --warn-bg: #fff4e5;
@@ -15,15 +21,18 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #131312;
-    --surface: #1d1c1a;
+    --bg: #121211;
+    --surface: #1c1b19;
     --surface-2: #272624;
+    --band: #181816;
     --text: #ecebe6;
     --muted: #aaa69d;
     --line: #3d3b37;
     --edge: #9a968c;
-    --accent: #ff8a4c;
-    --accent-text: #1b1a18;
+    --accent-system: #8fb0ea;
+    --accent-flows: #ff8a4c;
+    --accent: var(--accent-system);
+    --accent-text: #14181f;
     --warn: #fbbf24;
     --warn-text: #1b1a18;
     --warn-bg: #33290f;
@@ -31,19 +40,25 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #131312;
-  --surface: #1d1c1a;
+  --bg: #121211;
+  --surface: #1c1b19;
   --surface-2: #272624;
+  --band: #181816;
   --text: #ecebe6;
   --muted: #aaa69d;
   --line: #3d3b37;
   --edge: #9a968c;
-  --accent: #ff8a4c;
-  --accent-text: #1b1a18;
+  --accent-system: #8fb0ea;
+  --accent-flows: #ff8a4c;
+  --accent: var(--accent-system);
+  --accent-text: #14181f;
   --warn: #fbbf24;
   --warn-text: #1b1a18;
   --warn-bg: #33290f;
   --focus: #7aa2ff;
+}
+:root[data-lens="flows"] {
+  --accent: var(--accent-flows);
 }
 * {
   box-sizing: border-box;
@@ -57,7 +72,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font:
-    15px/1.5 system-ui,
+    var(--fs-m)/1.5 system-ui,
     -apple-system,
     "Segoe UI",
     Roboto,
@@ -68,7 +83,7 @@ body {
 code,
 .mono {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.86em;
+  font-size: var(--fs-s);
 }
 button {
   font: inherit;
@@ -97,12 +112,12 @@ header {
 }
 header h1 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--fs-l);
 }
 header p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-s);
   flex: 1 1 260px;
 }
 main {
@@ -166,11 +181,11 @@ main {
 }
 #body h2 {
   margin: 0 0 4px;
-  font-size: 1.15rem;
+  font-size: var(--fs-l);
 }
 #body h3 {
   margin: 18px 0 6px;
-  font-size: 0.78rem;
+  font-size: var(--fs-s);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
@@ -193,7 +208,7 @@ main {
   border-radius: 6px;
   padding: 8px 10px;
   margin: 10px 0 0;
-  font-size: 0.9rem;
+  font-size: var(--fs-m);
 }
 .link {
   border: 0;
@@ -212,28 +227,28 @@ main {
 }
 .risk .tag {
   margin: 0 0 4px;
-  font-size: 0.75rem;
+  font-size: var(--fs-s);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .risk .risk-title {
   margin: 2px 0 4px;
-  font-size: 1rem;
+  font-size: var(--fs-m);
 }
 .risk p {
   margin: 4px 0;
 }
 .risk .src {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-s);
 }
 .legend {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-s);
 }
 .legend svg {
   vertical-align: middle;
@@ -242,20 +257,28 @@ main {
 .tier-label {
   fill: var(--muted);
   font:
-    600 11px system-ui,
+    600 var(--fs-s) system-ui,
     sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.group rect {
-  fill: none;
+.band {
+  fill: var(--band);
+}
+.group rect.box {
+  fill: var(--surface);
+  fill-opacity: 0.45;
   stroke: var(--line);
-  stroke-dasharray: 2 4;
+  stroke-width: 1.5;
+}
+.group rect.chip {
+  fill: var(--surface);
+  stroke: var(--line);
 }
 .group text {
   fill: var(--muted);
   font:
-    600 11px system-ui,
+    600 var(--fs-s) system-ui,
     sans-serif;
 }
 .edge .hit {
@@ -288,6 +311,9 @@ main {
   stroke: var(--line);
   stroke-width: 1.5;
 }
+.node .tile {
+  fill: var(--surface-2);
+}
 .node.inferred .box {
   stroke-dasharray: 6 4;
   stroke: var(--edge);
@@ -311,13 +337,13 @@ main {
 .node .name {
   fill: var(--text);
   font:
-    600 13px system-ui,
+    600 var(--fs-m) system-ui,
     sans-serif;
 }
 .node .sub {
   fill: var(--muted);
   font:
-    11.5px ui-monospace,
+    var(--fs-s) ui-monospace,
     Menlo,
     Consolas,
     monospace;
@@ -328,7 +354,7 @@ main {
 .node .badge text {
   fill: var(--warn-text);
   font:
-    700 12px system-ui,
+    700 var(--fs-s) system-ui,
     sans-serif;
   text-anchor: middle;
 }
@@ -343,7 +369,7 @@ main {
 }
 #list h2 {
   margin: 18px 0 6px;
-  font-size: 0.78rem;
+  font-size: var(--fs-s);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
@@ -373,7 +399,7 @@ main {
 .card .s,
 .card .c {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-s);
 }
 .close,
 .phone-only {
@@ -469,7 +495,7 @@ main {
 }
 .flowctl label {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-s);
 }
 .flowctl select {
   font: inherit;
@@ -491,7 +517,7 @@ main {
 }
 .caption .step {
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--fs-s);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -500,7 +526,7 @@ main {
 }
 .caption .dir {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--fs-m);
 }
 #dot {
   pointer-events: none;
