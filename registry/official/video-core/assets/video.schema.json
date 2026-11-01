@@ -73,7 +73,17 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
         "kind": {
-          "enum": ["title", "quote", "list", "chart", "broll", "rate-limit", "code", "custom"]
+          "enum": [
+            "title",
+            "quote",
+            "list",
+            "chart",
+            "broll",
+            "rate-limit",
+            "code",
+            "sequence",
+            "custom"
+          ]
         },
         "durationFrom": { "enum": ["voice", "fixed"] },
         "seconds": { "type": "number", "minimum": 0.5 },
@@ -194,6 +204,14 @@
             "maxItems": 8,
             "items": { "type": "object", "required": ["lines"] }
           }
+        }
+      },
+      "sequence": {
+        "type": "object",
+        "required": ["source"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1, "maxLength": 1200 },
+          "title": { "type": "string", "maxLength": 120 }
         }
       },
       "custom": { "type": "object" }

@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { loadLib, loadScript } from "./load";
+import { loadLib, loadScript, skillFile } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -29,7 +30,25 @@ const HOSTILE = `<img src=x onerror=alert(1)> "q" 'a' & </script><script>alert(2
 describe("video-core scenes", () => {
   it("builds the kinds", async () => {
     const { KINDS } = await load();
-    expect(KINDS).toEqual(["title", "quote", "list", "chart", "broll", "rate-limit", "code"]);
+    expect(KINDS).toEqual([
+      "title",
+      "quote",
+      "list",
+      "chart",
+      "broll",
+      "rate-limit",
+      "code",
+      "sequence",
+    ]);
+  });
+
+  it("lists exactly the built kinds (and custom) in the schema, with props for each", async () => {
+    const { KINDS } = await load();
+    const schema = JSON.parse(
+      readFileSync(skillFile("video-core", "assets/video.schema.json"), "utf8"),
+    );
+    expect(schema.definitions.scene.properties.kind.enum).toEqual([...KINDS, "custom"]);
+    for (const k of KINDS) expect(schema.definitions.props[k], k).toBeTruthy();
   });
 
   it("shows hostile strings as text in every kind, never as markup", async () => {
