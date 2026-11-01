@@ -3,7 +3,7 @@
 // this file). Reads one or more media files, writes one new file; the original is never changed.
 // Usage: node edit.mjs <command> --in <file>[,<file>...] --out <file> [options] [--best] [--force]
 // Exit: 0 done, 2 refused or failed.
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -21,8 +21,19 @@ import {
   speedArgs,
   trimArgs,
 } from "./commands.mjs";
-import { checkJson, checkLut, checkOutput, checkPath, ffmpeg, probe } from "./ffwrap.mjs";
-import { capLines, isEntry, parseArgs } from "./_lib.mjs";
+import {
+  buildCutPlan,
+  cutArgs,
+  fillerSet,
+  parseSilence,
+  readWords,
+  silenceArgs,
+  speechSpans,
+} from "./cutplan.mjs";
+import { whisperArgs, configuredModel, parseWhisperJson } from "./_whisper.mjs";
+import { run } from "./run.mjs";
+import { checkJson, checkLut, checkOutput, checkPath, ffmpeg, input, probe } from "./ffwrap.mjs";
+import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 
 const STRINGS = [
   "in",
@@ -39,7 +50,90 @@ const STRINGS = [
   "lut",
   "marks",
   "strength",
+  "pause",
+  "breath",
+  "lang",
+  "words",
+  "plan",
+  "fillers-extra",
 ];
+
+const readFillers = () =>
+  JSON.parse(readFileSync(path.join(skillDir(), "assets", "fillers.json"), "utf8"));
+
+/** Speech words of a clip from whisper.cpp (measured times). Needs whisper-cli and a ggml model (see doctor). */
+function whisperWords(file, lang) {
+  const model = configuredModel();
+  if (!model || !existsSync(model))
+    throw new Error(
+      "whisper.cpp is not set up (no model in ~/.aisle-video/tools.json). Run /video doctor, or use --silence-only, or give --words words.json.",
+    );
+  const work = mkdtempSync(path.join(os.tmpdir(), "video-edit-"));
+  try {
+    const wav = path.join(work, "a.wav");
+    ffmpeg([...input(file), "-vn", "-ac", "1", "-ar", "16000", "-y", wav]);
+    const prefix = path.join(work, "out");
+    const r = run("whisper-cli", whisperArgs({ model, wav, lang, outPrefix: prefix }), {
+      timeoutMs: 3_600_000,
+    });
+    if (r.status !== 0)
+      throw new Error(
+        `whisper-cli failed: ${String(r.stderr).trim().split("\n").slice(-2).join(" | ").slice(0, 200)}`,
+      );
+    return parseWhisperJson(JSON.parse(readFileSync(`${prefix}.json`, "utf8")));
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+/** transcribe: write the clip's words with their times to --out (a .json file) for cut, or for the writer. */
+function transcribe(file, flags) {
+  const words = whisperWords(file, flags.lang ?? "en");
+  const out = checkOutput(flags.out ?? "", file, flags.force);
+  writeFileSync(out, `${JSON.stringify(words, null, 2)}\n`);
+  return [`Wrote ${path.basename(out)}: ${words.length} words, measured with whisper.cpp.`];
+}
+
+/** cut: plan (and with --apply, render) the removal of long pauses and fillers. */
+function cut(file, info, flags, best) {
+  const lang = flags.lang ?? "en";
+  const pause = flags.pause === undefined ? 0.35 : Number(flags.pause);
+  const breath = flags.breath === undefined ? 0.12 : Number(flags.breath);
+  let spans;
+  if (flags["silence-only"]) {
+    spans = speechSpans(
+      parseSilence(ffmpeg(silenceArgs({ file, pause }), { level: "info" }).stderr, info.seconds),
+      info.seconds,
+    );
+  } else if (flags.words)
+    spans = readWords(JSON.parse(readFileSync(checkJson(flags.words, "words"), "utf8")));
+  else spans = whisperWords(file, lang);
+  const fillers =
+    flags["silence-only"] || flags["no-fillers"]
+      ? new Set()
+      : fillerSet(readFillers(), lang, flags["fillers-extra"]);
+  const plan = buildCutPlan(spans, { duration: info.seconds, pause, breath, fillers });
+  const lines = [
+    `${path.basename(file)}: ${plan.seconds.before} s -> ${plan.seconds.after} s (saves ${plan.seconds.saved} s): ${plan.counts.pauses} pause(s), ${plan.counts.fillers} filler(s)`,
+    ...plan.removed
+      .slice(0, 12)
+      .map((r) => `  ${r.start}-${r.end} s  ${r.kind}${r.text ? ` "${r.text}"` : ""}`),
+  ];
+  if (plan.removed.length > 12) lines.push(`  ... ${plan.removed.length - 12} more`);
+  if (flags.plan) {
+    const p = checkOutput(flags.plan, file, flags.force);
+    writeFileSync(p, `${JSON.stringify(plan, null, 2)}\n`);
+    lines.push(`Wrote the plan to ${path.basename(p)}.`);
+  }
+  if (!flags.apply)
+    return [...lines, "Dry run: nothing was cut. Add --apply --out <file> to render it."];
+  if (!flags.out) throw new Error("--apply needs --out <file>.");
+  const out = checkOutput(flags.out, file, flags.force);
+  mkdirSync(path.dirname(out), { recursive: true });
+  ffmpeg(cutArgs({ file, out, keeps: plan.keeps, best }, info));
+  const after = probe(out);
+  return [...lines, `Wrote ${path.basename(out)}: ${Math.round(after.seconds * 100) / 100} s.`];
+}
 
 /** Run one command. Returns the lines to print. Exported for tests. */
 export function execute(command, flags) {
@@ -73,6 +167,8 @@ export function execute(command, flags) {
     }
     return lines;
   }
+  if (command === "cut") return cut(files[0], infos[0], flags, best);
+  if (command === "transcribe") return transcribe(files[0], flags);
   const out = checkOutput(need("out"), files[0], flags.force);
   mkdirSync(path.dirname(out), { recursive: true });
   let args;
@@ -147,7 +243,7 @@ export function execute(command, flags) {
     args = loudnormApplyArgs(o, infos[0], m);
   } else
     throw new Error(
-      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color, stabilize, jumpcut.`,
+      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color, stabilize, jumpcut, cut, transcribe.`,
     );
   ffmpeg(args);
   const after = probe(out);
@@ -159,7 +255,16 @@ export function execute(command, flags) {
 function main() {
   try {
     const { flags, positional } = parseArgs(process.argv.slice(2), {
-      booleans: ["best", "force", "denoise", "duck", "auto-wb"],
+      booleans: [
+        "best",
+        "force",
+        "denoise",
+        "duck",
+        "auto-wb",
+        "apply",
+        "silence-only",
+        "no-fillers",
+      ],
       strings: STRINGS,
     });
     if (!positional[0])
