@@ -28,6 +28,24 @@
     "unicode-bidi",
   ];
 
+  // Which of those properties a child inherits from its parent, and the default of those it does not.
+  var INHERITED = {
+    fill: 1,
+    "fill-opacity": 1,
+    stroke: 1,
+    "stroke-width": 1,
+    "stroke-dasharray": 1,
+    visibility: 1,
+    "font-family": 1,
+    "font-size": 1,
+    "font-weight": 1,
+    "letter-spacing": 1,
+    "text-transform": 1,
+    "text-anchor": 1,
+    direction: 1,
+  };
+  var DEFAULTS = { opacity: "1", display: "inline", "unicode-bidi": "normal" };
+
   /** A safe ASCII file name part: letters, digits and single hyphens; "architecture" when nothing is left. */
   function slug(name) {
     var s = String(name === undefined || name === null ? "" : name)
@@ -46,13 +64,17 @@
 
   /** Escape text for XML, and drop the characters XML 1.0 does not allow at all. */
   function xmlEscape(text) {
-    return String(text === undefined || text === null ? "" : text)
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
+    return (
+      String(text === undefined || text === null ? "" : text)
+        // XML 1.0 cannot hold these characters at all, so removing them is the point
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;")
+    );
   }
 
   function num(v) {
@@ -118,6 +140,8 @@
     svgDocument: svgDocument,
     scaleFor: scaleFor,
     STYLE_PROPS: STYLE_PROPS,
+    INHERITED: INHERITED,
+    DEFAULTS: DEFAULTS,
     FOOTER_H: FOOTER_H,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

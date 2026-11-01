@@ -130,7 +130,22 @@
     "flow.focus": "Focus",
     "flow.scrub": "Position in this request",
     "flow.together.one": "and {n} more at the same time",
-    "flow.together.other": "and {n} more at the same time"
+    "flow.together.other": "and {n} more at the same time",
+    "export.button": "Export",
+    "export.aria": "Save or print",
+    "export.svg": "Save as SVG",
+    "export.png1": "Save as PNG (1×)",
+    "export.png2": "Save as PNG (2×)",
+    "export.png3": "Save as PNG (3×)",
+    "export.json": "Save the model (JSON)",
+    "export.print": "Print or save as PDF",
+    "export.saved": "Saved {name}",
+    "export.scaled": "Saved {name} at a smaller scale ({scale}×) because the picture is very large.",
+    "export.failed": "This browser would not save the file here. The same picture is available through your browser's own print or screenshot.",
+    "export.pngFailed": "PNG export did not work in this browser. Use SVG instead.",
+    "export.note": "Generated from code; not live traffic.",
+    "print.risks": "Possible risks to check",
+    "print.none": "No possible risks were recorded."
   },
   "ar": {
     "doc.title": "البنية المعمارية لـ {project}",
@@ -295,6 +310,21 @@
     "flow.together.two": "ومعه اثنان آخران في الوقت نفسه",
     "flow.together.few": "ومعه {n} أخرى في الوقت نفسه",
     "flow.together.many": "ومعه {n} أخرى في الوقت نفسه",
-    "flow.together.other": "ومعه {n} أخرى في الوقت نفسه"
+    "flow.together.other": "ومعه {n} أخرى في الوقت نفسه",
+    "export.button": "تصدير",
+    "export.aria": "حفظ أو طباعة",
+    "export.svg": "حفظ بصيغة SVG",
+    "export.png1": "حفظ بصيغة PNG (1×)",
+    "export.png2": "حفظ بصيغة PNG (2×)",
+    "export.png3": "حفظ بصيغة PNG (3×)",
+    "export.json": "حفظ النموذج (JSON)",
+    "export.print": "طباعة أو حفظ بصيغة PDF",
+    "export.saved": "تم حفظ {name}",
+    "export.scaled": "تم حفظ {name} بمقياس أصغر ({scale}×) لأن الصورة كبيرة جدًا.",
+    "export.failed": "لم يسمح هذا المتصفح بحفظ الملف هنا. يمكنك الحصول على الصورة نفسها عبر الطباعة أو لقطة الشاشة في المتصفح.",
+    "export.pngFailed": "لم ينجح تصدير PNG في هذا المتصفح. استخدم SVG بدلًا منه.",
+    "export.note": "أُنشئت من الشيفرة، وليست حركة مرور حقيقية.",
+    "print.risks": "مخاطر محتملة للتحقق منها",
+    "print.none": "لم تُسجَّل أي مخاطر محتملة."
   }
 }

@@ -19,6 +19,8 @@ type Lib = {
     }) => string;
     scaleFor: (w: number, h: number, wanted: number) => number;
     STYLE_PROPS: string[];
+    INHERITED: Record<string, number>;
+    DEFAULTS: Record<string, string>;
     FOOTER_H: number;
   };
 };
@@ -116,7 +118,73 @@ describe("arch-visualize export helpers", () => {
     for (const p of X.STYLE_PROPS)
       expect(p, p).not.toMatch(/image|content|filter|mask|clip|cursor|src|url|marker|font-face/);
     expect(new Set(X.STYLE_PROPS).size).toBe(X.STYLE_PROPS.length);
+    // every property is either inherited (written only where it changes) or has a default to skip
+    for (const p of X.STYLE_PROPS) expect(p in X.INHERITED || p in X.DEFAULTS, p).toBe(true);
     expect(X.STYLE_PROPS).toContain("fill");
     expect(X.STYLE_PROPS).toContain("stroke-dasharray");
+  });
+});
+
+describe("arch-visualize export in the page", () => {
+  const dir = skillFile("arch-visualize", "assets/viewer");
+  const src = readFileSync(`${dir}/src/75-export.js`, "utf8");
+  const css = readFileSync(`${dir}/styles.css`, "utf8");
+  const markup = readFileSync(`${dir}/index.html`, "utf8");
+
+  it("builds pictures from text nodes and the serializer, never from markup strings", () => {
+    expect(src).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\(/);
+    expect(src).toMatch(/new XMLSerializer\(\)/);
+    expect(src).toMatch(/ArchExport\.STYLE_PROPS/);
+    expect(src).toMatch(/ArchExport\.svgDocument/);
+  });
+
+  it("writes only the styles that change from the parent, and states everything at the top", () => {
+    expect(src).toMatch(/ArchExport\.INHERITED\[p\]/);
+    expect(src).toMatch(/ArchExport\.DEFAULTS\[p\]/);
+    expect(src).toMatch(/bakeStyles\(live, clone, true\)/);
+  });
+
+  it("makes no network or storage calls", () => {
+    expect(src).not.toMatch(
+      /\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|\bimport\s*\(|localStorage|sessionStorage|document\.cookie/,
+    );
+  });
+
+  it("draws at full detail and restores the page afterwards", () => {
+    expect(src).toMatch(/canvas\.setAttribute\("data-lod", "near"\)/);
+    expect(src).toMatch(/finally \{[\s\S]*root\.setAttribute\("data-theme", prevTheme\)/);
+  });
+
+  it("keeps the PNG path inside try/catch and falls back to a message", () => {
+    expect(src).toMatch(/try \{[\s\S]*new Image\(\)[\s\S]*\} catch/);
+    expect(src).toMatch(/img\.onerror/);
+    expect(src).toMatch(/toBlob/);
+    expect(src).toMatch(/"data:image\/svg\+xml;charset=utf-8,"/);
+  });
+
+  it("prints a light diagram page and a risks page, and clears them afterwards", () => {
+    expect(src).toMatch(/addEventListener\("beforeprint", fillPrint\)/);
+    expect(src).toMatch(/addEventListener\("afterprint", clearPrint\)/);
+    expect(src).toMatch(/buildSvgText\(true\)/);
+    expect(src).toMatch(/root\.setAttribute\("data-theme", "light"\)/);
+    expect(css).toMatch(/@media print/);
+    expect(css).toMatch(/break-before: page/);
+    for (const hidden of ["header", "#panel", "#stage", "#flowbar"])
+      expect(css.slice(css.indexOf("@media print"))).toContain(hidden);
+  });
+
+  it("has a keyboard-operable menu: Esc closes and returns focus", () => {
+    expect(markup).toMatch(/id="export"[\s\S]*aria-haspopup="menu"[\s\S]*aria-expanded="false"/);
+    expect(markup).toMatch(/role="menu"/);
+    expect(markup.match(/role="menuitem"/g)).toHaveLength(6);
+    expect(src).toMatch(/ev\.key === "Escape"[\s\S]*closeExport\(true\)/);
+    expect(src).toMatch(/exportBtn\.focus\(\)/);
+    expect(markup).toMatch(/id="export-status" class="sr" aria-live="polite"/);
+  });
+
+  it("puts the honesty line in every exported picture", () => {
+    expect(src).toMatch(/note: t\("export\.note"\)/);
+    const en = JSON.parse(readFileSync(`${dir}/i18n.json`, "utf8")).en as Record<string, string>;
+    expect(en["export.note"]).toContain("not live traffic");
   });
 });

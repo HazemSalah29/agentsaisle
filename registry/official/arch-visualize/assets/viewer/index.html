@@ -30,6 +30,26 @@
       </div>
       <button type="button" id="trace" aria-pressed="false">{{trace.button}}</button>
       <div id="find-status" class="sr" aria-live="polite"></div>
+      <div class="export">
+        <button
+          type="button"
+          id="export"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="export-menu"
+        >
+          {{export.button}}
+        </button>
+        <div id="export-menu" role="menu" aria-label="{{export.aria}}" hidden>
+          <button type="button" role="menuitem" data-act="svg">{{export.svg}}</button>
+          <button type="button" role="menuitem" data-act="png1">{{export.png1}}</button>
+          <button type="button" role="menuitem" data-act="png2">{{export.png2}}</button>
+          <button type="button" role="menuitem" data-act="png3">{{export.png3}}</button>
+          <button type="button" role="menuitem" data-act="json">{{export.json}}</button>
+          <button type="button" role="menuitem" data-act="print">{{export.print}}</button>
+        </div>
+      </div>
+      <div id="export-status" class="sr" aria-live="polite"></div>
       <button type="button" id="open-risks" class="phone-only">{{btn.risks}}</button>
       <button type="button" id="theme">{{btn.theme}}</button>
     </header>
@@ -99,6 +119,8 @@
         <div id="body"></div>
       </aside>
     </main>
+    <div id="print-diagram"></div>
+    <section id="print-risks"></section>
     <script type="application/json" id="model">
       __MODEL_JSON__
     </script>

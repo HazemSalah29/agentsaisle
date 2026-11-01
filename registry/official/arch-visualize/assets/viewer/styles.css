@@ -340,6 +340,36 @@ main {
   background: var(--surface-2);
   font-weight: 600;
 }
+.export {
+  position: relative;
+}
+#export-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 4px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+#export-menu button {
+  border: 0;
+  background: none;
+  text-align: start;
+  white-space: nowrap;
+}
+#export-menu button:hover,
+#export-menu button:focus-visible {
+  background: var(--surface-2);
+}
+#print-diagram,
+#print-risks {
+  display: none;
+}
 .find {
   position: relative;
   flex: 0 1 220px;
@@ -766,4 +796,63 @@ main {
 /* labels written by the project may be in any script: each one finds its own direction */
 svg text {
   unicode-bidi: plaintext;
+}
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  :root,
+  :root[data-theme="dark"],
+  :root:not([data-theme="light"]) {
+    --bg: #ffffff !important;
+    --surface: #ffffff !important;
+    --surface-2: #f2f2f2 !important;
+    --text: #000000 !important;
+    --muted: #333333 !important;
+    --line: #999999 !important;
+    --warn: #000000 !important;
+    --warn-text: #ffffff !important;
+    --warn-bg: #ffffff !important;
+  }
+  html,
+  body {
+    height: auto;
+    display: block;
+    background: #fff;
+    color: #000;
+  }
+  header,
+  #lenses,
+  #flowbar,
+  #caption,
+  #stage,
+  #list,
+  #panel,
+  #find-status,
+  #export-status {
+    display: none !important;
+  }
+  main {
+    display: block;
+  }
+  #print-diagram,
+  #print-risks {
+    display: block;
+  }
+  #print-diagram h1 {
+    font-size: var(--fs-l);
+    margin: 0 0 8px;
+  }
+  #print-diagram svg {
+    width: 100%;
+    height: auto;
+    max-height: 22cm;
+  }
+  #print-risks {
+    break-before: page;
+  }
+  #print-risks .risk {
+    break-inside: avoid;
+    border: 1px solid #000;
+  }
 }

@@ -382,7 +382,11 @@ describe("arch-visualize layout files", () => {
     for (const f of readdirSync(skillFile("arch-visualize", "assets/lib")).filter((n) =>
       n.endsWith(".js"),
     )) {
-      const src = readFileSync(skillFile("arch-visualize", `assets/lib/${f}`), "utf8");
+      // the SVG namespace is a name, never fetched; it is the only address a library may contain
+      const src = readFileSync(skillFile("arch-visualize", `assets/lib/${f}`), "utf8").replaceAll(
+        "http://www.w3.org/2000/svg",
+        "",
+      );
       expect(src, f).not.toMatch(
         /\b(document|window|fetch|XMLHttpRequest|setTimeout|setInterval|requestAnimationFrame|eval|import|require)\b\s*[(.]|<\/script|https?:\/\/|\bnew Function\b/,
       );
