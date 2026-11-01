@@ -100,7 +100,8 @@
     "risk.src.agent": "Added from the agent's reading of the code",
     "risk.src.rule": "Rule-based heuristic, so it can be wrong",
     "risk.show": "Show on the diagram",
-    "tier.misc": "Other"
+    "tier.misc": "Other",
+    "map.aria": "Overview map. Click or drag to move the view; arrow keys pan."
   },
   "ar": {
     "doc.title": "البنية المعمارية لـ {project}",
@@ -221,6 +222,7 @@
     "risk.src.agent": "أضافه الوكيل من قراءته للشيفرة",
     "risk.src.rule": "قاعدة استدلالية، لذا قد تخطئ",
     "risk.show": "أظهره على المخطط",
-    "tier.misc": "أخرى"
+    "tier.misc": "أخرى",
+    "map.aria": "خريطة عامة. انقر أو اسحب لتحريك العرض، ومفاتيح الأسهم للتحريك."
   }
 }

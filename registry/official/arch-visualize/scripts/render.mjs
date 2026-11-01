@@ -71,7 +71,12 @@ export function renderPage(input, { lang = "en", flowDir = "ltr" } = {}) {
   const asset = (...p) => readFileSync(path.join(skillDir(), "assets", ...p), "utf8");
   const template = asset("viewer", "index.html");
   const styles = asset("viewer", "styles.css");
-  const lib = ["geometry.js", "layout.js"].map((f) => asset("lib", f)).join("\n");
+  // alphabetical; only layout.js needs another file (geometry.js), and "g" sorts before "l"
+  const lib = readdirSync(path.join(skillDir(), "assets", "lib"))
+    .filter((f) => f.endsWith(".js"))
+    .sort()
+    .map((f) => asset("lib", f))
+    .join("\n");
   const code = readdirSync(path.join(skillDir(), "assets", "viewer", "src"))
     .filter((f) => f.endsWith(".js"))
     .sort()

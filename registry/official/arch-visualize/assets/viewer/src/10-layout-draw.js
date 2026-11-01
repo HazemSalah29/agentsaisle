@@ -104,6 +104,24 @@ model.edges.forEach(function (e) {
       "marker-end": "url(#arrow)",
     }),
   );
+  var lab = e.protocol && lay.labels[e.id];
+  if (lab) {
+    g.append(
+      s("rect", {
+        class: "edge-label-bg",
+        x: lab.x,
+        y: lab.y,
+        width: lab.w,
+        height: lab.h,
+        rx: 4,
+      }),
+      s(
+        "text",
+        { class: "edge-label", x: lab.x + lab.w / 2, y: lab.y + 12, "text-anchor": "middle" },
+        clip(e.protocol, 18),
+      ),
+    );
+  }
   g.addEventListener("click", function (ev) {
     ev.stopPropagation();
     if (!moved) select("edge", e.id);

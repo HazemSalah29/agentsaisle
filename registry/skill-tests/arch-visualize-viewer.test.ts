@@ -3,7 +3,7 @@ import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { skillFile } from "./load";
+import { loadLib, skillFile } from "./load";
 
 const viewerDir = skillFile("arch-visualize", "assets/viewer");
 const read = (rel: string) => readFileSync(path.join(viewerDir, rel), "utf8");
@@ -242,5 +242,40 @@ describe("arch-visualize colours", () => {
     expect([...sizes].sort()).toEqual(["l18", "m14", "s12"]);
     const fontLines = css.split("\n").filter((l) => /font-size:|^\s+\d+ ?(px|rem)/.test(l));
     for (const l of fontLines) expect(l, l).toMatch(/var\(--fs-[sml]\)/);
+  });
+});
+
+describe("arch-visualize level of detail and minimap", () => {
+  const { ArchLod } = loadLib<{
+    ArchLod: { level: (k: number) => string; FAR: number; NEAR: number };
+  }>("arch-visualize", ["assets/lib/lod.js"]);
+
+  it("maps zoom to far, mid and near at the documented thresholds", () => {
+    expect(ArchLod.level(0.2)).toBe("far");
+    expect(ArchLod.level(ArchLod.FAR - 0.001)).toBe("far");
+    expect(ArchLod.level(ArchLod.FAR)).toBe("mid");
+    expect(ArchLod.level(ArchLod.NEAR - 0.001)).toBe("mid");
+    expect(ArchLod.level(ArchLod.NEAR)).toBe("near");
+    expect(ArchLod.level(3)).toBe("near");
+    expect(ArchLod.FAR).toBeLessThan(ArchLod.NEAR);
+  });
+
+  it("hides text, badges and labels in the styles as the zoom goes out", () => {
+    const css = read("styles.css");
+    expect(css).toMatch(/\[data-lod="far"\] \.node \.name/);
+    expect(css).toMatch(/\[data-lod="mid"\] \.node \.sub/);
+    expect(css).toMatch(/\[data-lod="mid"\] \.edge-label/);
+    expect(code).toMatch(/canvas\.setAttribute\("data-lod", ArchLod\.level\(view\.k\)\)/);
+  });
+
+  it("has a minimap that can be reached by keyboard and does not start a pan", () => {
+    expect(markup).toMatch(/id="minimap" tabindex="0"/);
+    expect(code).toMatch(/closest\("#zoom, #minimap"\)/);
+    expect(code).toMatch(/\$\("minimap"\)\.addEventListener\("keydown"/);
+  });
+
+  it("draws connection labels with text only", () => {
+    expect(code).toMatch(/class: "edge-label"/);
+    expect(code).not.toMatch(/innerHTML/);
   });
 });

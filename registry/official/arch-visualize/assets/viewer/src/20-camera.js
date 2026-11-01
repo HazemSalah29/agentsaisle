@@ -4,6 +4,13 @@ var view = { x: 0, y: 0, k: 1 };
 var moved = false;
 function applyView() {
   vp.setAttribute("transform", "translate(" + view.x + " " + view.y + ") scale(" + view.k + ")");
+  canvas.setAttribute("data-lod", ArchLod.level(view.k));
+  drawMinimapView();
+}
+function panBy(dx, dy) {
+  view.x += dx;
+  view.y += dy;
+  applyView();
 }
 function fit() {
   var r = stage.getBoundingClientRect();
@@ -47,7 +54,7 @@ stage.addEventListener(
 );
 var drag = null;
 stage.addEventListener("pointerdown", function (ev) {
-  if (ev.target.closest && ev.target.closest("#zoom")) return;
+  if (ev.target.closest && ev.target.closest("#zoom, #minimap")) return;
   drag = { x: ev.clientX, y: ev.clientY, vx: view.x, vy: view.y };
   moved = false;
 });

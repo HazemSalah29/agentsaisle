@@ -39,6 +39,9 @@
         <div id="caption" class="caption" aria-live="polite" hidden></div>
         <section id="stage" tabindex="0" aria-label="{{stage.aria}}">
           <svg id="canvas" role="group" aria-label="{{canvas.aria}}"></svg>
+          <div id="minimap" tabindex="0" role="group" aria-label="{{map.aria}}">
+            <svg id="mini" aria-hidden="true"></svg>
+          </div>
           <div id="zoom">
             <button type="button" id="zin" aria-label="{{zoom.in}}">+</button>
             <button type="button" id="zout" aria-label="{{zoom.out}}">&minus;</button>
