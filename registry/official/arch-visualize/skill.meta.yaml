@@ -1,4 +1,4 @@
-version: 0.1.1
+version: 0.2.0
 category: [architecture, web]
 clients: [claude-code, codex, cursor]
 runs_scripts: true
@@ -14,10 +14,10 @@ permissions:
 demo:
   url: /demos/arch-visualize/devpath.html
   embed: true
-  caption: "DevPath is a Next.js learning platform with MongoDB, Redis and a job queue, three AI providers (Anthropic, OpenAI and Gemini), a code-execution sandbox and Docker-based practice labs. The page below is exactly what /arch-visualize generated for it, not a mock-up. It shows how requests would travel according to the code, not live traffic, and every risk is something to check, not a verdict."
+  caption: "DevPath is a Next.js learning platform with MongoDB, Redis and a job queue, three AI providers (Anthropic, OpenAI and Gemini), a code-execution sandbox and Docker-based practice labs. The page below is the model /arch-visualize wrote for it, drawn again with the current viewer (the project itself is not in this repository, so it was not discovered again). It is not a mock-up. It shows how requests would travel according to the code, not live traffic, and every risk is something to check, not a verdict."
   steps:
     - title: Discover (a script)
-      text: "discover.mjs read 4 files (package.json, docker-compose.yml, the Dockerfile and the .env.example variable names) and found 11 of the 12 components and 2 of the 13 connections. It counted .env.local as skipped and never opened it."
+      text: "In the first run (0.1.1), discover.mjs read 4 files (package.json, docker-compose.yml, the Dockerfile and the .env.example variable names) and found 11 of the 12 components and 2 of the 13 connections. It counted .env.local as skipped and never opened it."
     - title: Read (the agent)
       text: "The agent searched for where each service is created and read only those lines. It added the WebSocket server the scripts cannot see, 11 more connections each with a file and line, and marked 2 connections as inferred (dashed) because no file shows them."
     - title: Write the flows (the agent)
@@ -25,13 +25,16 @@ demo:
     - title: Check (scripts)
       text: "model-check confirmed that every item has evidence or is marked inferred and that nothing looks like a secret. risk-check then added 3 possible risks by rule (a single database, no health check, data ports published to the host). The agent added 1 from its own reading: the Docker socket mounted into the app, with its file and line."
     - title: Render (a script)
-      text: "render.mjs wrote one offline HTML file of about 75 KB. It makes no network requests, which is why it can sit inside this page."
+      text: "render.mjs writes one offline HTML file of about 190 KB with the current viewer. It makes no network requests, which is why it can sit inside this page. The page has System, Flows, Failure and AI views; Security shows nothing here because no file in this model records zones, authentication or data labels."
+    - title: Ask what if (a script)
+      text: "simulate.mjs --down redis reads only the model: the lab queue and the web app fail because the model records no fallback for Redis, and all 4 flows break at step 1. This is a what-if from the model, not a prediction about production."
   screenshots:
-    - 01-overview-light.jpg
-    - 02-overview-dark.jpg
-    - 03-request-flow.jpg
-    - 04-response-flow.jpg
-    - 05-node-evidence.jpg
-    - 06-risks.jpg
-    - 07-checkout-flow.jpg
-    - 08-phone-list.jpg
+    - 01-system-light.jpg
+    - 02-system-dark.jpg
+    - 03-flows.jpg
+    - 04-security.jpg
+    - 05-failure-what-if.jpg
+    - 06-ai.jpg
+    - 07-changes.jpg
+    - 08-arabic.jpg
+    - 09-phone-list.jpg

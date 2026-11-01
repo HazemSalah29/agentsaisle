@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import vm from "node:vm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
 
@@ -25,7 +26,7 @@ type Node = {
   evidence: Evidence[];
 };
 type Model = {
-  version: 1;
+  version: 1 | 2;
   project: string;
   nodes: Node[];
   edges: { id: string; from: string; to: string; protocol?: string; evidence?: Evidence[] }[];
@@ -34,7 +35,8 @@ type Model = {
   inferred?: string[];
 };
 type Check = {
-  checkModel: (m: unknown, o?: { draft?: boolean }) => string[];
+  checkModel: (m: unknown, o?: { draft?: boolean; root?: string | null }) => string[];
+  upgradeModel: <T>(m: T) => T;
   loadSchema: () => { $defs: { role: { enum: string[] }; tier: { enum: string[] } } };
 };
 type Discover = { TIER_OF_ROLE: Record<string, string> };
@@ -71,7 +73,7 @@ describe("arch-visualize discovery", () => {
 
   it("exits 0 and writes a draft model", () => {
     expect(result.status).toBe(0);
-    expect(model.version).toBe(1);
+    expect(model.version).toBe(2);
     expect(model.project).toBe("shop");
     expect(model.flows).toEqual([]);
   });
@@ -100,7 +102,7 @@ describe("arch-visualize discovery", () => {
   it("passes model-check as a draft", () => {
     const r = run("model-check.mjs", ["--model", out, "--draft"]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toMatch(/model ok: 9 nodes, 5 edges/);
+    expect(r.stdout).toMatch(/model ok: 14 nodes, 5 edges/);
   });
 
   it("is deterministic", () => {
@@ -263,6 +265,23 @@ describe("arch-visualize model-check", () => {
     );
   });
 
+  it("allows together only on an edge step that follows an edge step", async () => {
+    const flowWith = (steps: unknown[]) => (m: Model) => {
+      m.flows = [{ id: "f", name: "F", steps }];
+    };
+    const ok = [{ edge: "api-db" }, { edge: "api-db", together: true }];
+    expect(await problems(flowWith(ok))).toEqual([]);
+    const first = await problems(flowWith([{ edge: "api-db", together: true }]));
+    expect(first.join()).toContain('"together"');
+    const afterEvent = await problems(
+      flowWith([
+        { event: "e", node: "api" },
+        { edge: "api-db", together: true },
+      ]),
+    );
+    expect(afterEvent.join()).toContain('"together"');
+  });
+
   it("needs a flow unless the model is a draft", async () => {
     expect((await problems((m) => (m.flows = []))).join("\n")).toMatch(/at least one request flow/);
     expect(await problems((m) => (m.flows = []), { draft: true })).toEqual([]);
@@ -292,6 +311,243 @@ describe("arch-visualize model-check", () => {
     expect(r.status).toBe(1);
     expect(r.stdout.trimEnd().split("\n").length).toBeLessThanOrEqual(40);
     expect(run("model-check.mjs", ["--model", path.join(tmp(), "none.json")]).status).toBe(2);
+  });
+});
+
+describe("arch-visualize model v2", () => {
+  type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+  let check: Check;
+  const base = (): Loose => JSON.parse(JSON.stringify(readJson("evals/fixture-model-v2.json")));
+  const problems = async (mutate: (m: Loose) => void, root: string | null = null) => {
+    check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
+    const m = base();
+    mutate(m);
+    return check.checkModel(m, { root });
+  };
+  const node = (m: Loose, id: string) => m.nodes.find((n: Loose) => n.id === id);
+  const edge = (m: Loose, id: string) => m.edges.find((e: Loose) => e.id === id);
+
+  it("accepts the v2 fixture", async () => expect(await problems(() => {})).toEqual([]));
+
+  it("upgrades v1 models in memory, without mutating them, and idempotently", async () => {
+    check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
+    for (const f of [
+      "evals/fixture-model.json",
+      "evals/hostile-model.json",
+      "evals/demo/devpath.architecture.json",
+    ]) {
+      const v1 = readJson(f);
+      const copy = JSON.stringify(v1);
+      const v2 = check.upgradeModel(v1);
+      expect(v1.version, f).toBe(1);
+      expect(JSON.stringify(v1), f).toBe(copy);
+      expect(v2.version, f).toBe(2);
+      expect(check.upgradeModel(v2), f).toEqual(v2);
+      expect(check.checkModel(v1), f).toEqual([]);
+    }
+  });
+
+  it("renders a v1 model and embeds it as version 2", async () => {
+    const render = await loadScript<Render>("arch-visualize", "scripts/render.mjs");
+    const html = render.renderPage(readJson("evals/fixture-model.json"));
+    expect(JSON.parse(dataBlock(html, "model")!).version).toBe(2);
+  });
+
+  const facts: [string, (m: Loose) => void, (m: Loose) => void][] = [
+    [
+      "timeoutMs",
+      (m) => ((edge(m, "api-db").timeoutMs = 500), delete edge(m, "api-db").evidence),
+      (m) => (edge(m, "api-db").timeoutMs = 500),
+    ],
+    [
+      "retries",
+      (m) => ((edge(m, "worker-db").retries = 2), delete edge(m, "worker-db").evidence),
+      (m) => (edge(m, "worker-db").retries = 2),
+    ],
+    [
+      "tls true",
+      (m) => ((edge(m, "api-stripe").tls = true), delete edge(m, "api-stripe").evidence),
+      (m) => (edge(m, "api-stripe").tls = true),
+    ],
+    [
+      "tls false",
+      (m) => ((edge(m, "api-db").tls = false), delete edge(m, "api-db").evidence),
+      (m) => (edge(m, "api-db").tls = false),
+    ],
+    [
+      "auth",
+      (m) => ((edge(m, "api-db").auth = "jwt"), delete edge(m, "api-db").evidence),
+      (m) => (edge(m, "api-db").auth = "jwt"),
+    ],
+    [
+      "optional",
+      (m) => ((edge(m, "worker-resend").optional = true), delete edge(m, "worker-resend").evidence),
+      (m) => (edge(m, "worker-resend").optional = true),
+    ],
+    [
+      "replicas",
+      (m) => ((node(m, "api").replicas = 2), delete node(m, "api").evidence),
+      (m) => (node(m, "api").replicas = 2),
+    ],
+  ];
+  for (const [name, bad] of facts)
+    it(`needs evidence for ${name}`, async () => {
+      const ps = await problems((m) => {
+        // an inferred item keeps no evidence on purpose
+        bad(m);
+        m.inferred = [
+          ...(m.inferred ?? []),
+          "edge:api-db",
+          "edge:api-stripe",
+          "edge:worker-resend",
+          "edge:worker-db",
+          "node:api",
+        ];
+      });
+      expect(
+        ps.some((p) => /needs evidence/.test(p)),
+        name,
+      ).toBe(true);
+    });
+  it("lets facts pass with evidence and unknowns pass without it", async () => {
+    for (const [, , good] of facts) expect(await problems(good)).toEqual([]);
+    const ps = await problems((m) => {
+      delete edge(m, "api-db").evidence;
+      m.inferred.push("edge:api-db");
+      Object.assign(edge(m, "api-db"), { tls: "unknown", auth: "unknown" });
+      delete node(m, "api").evidence;
+      node(m, "api").replicas = "unknown";
+      m.inferred.push("node:api");
+    });
+    expect(ps).toEqual([]);
+  });
+
+  it("lists AI tools only with evidence, and accepts fixes on a risk", async () => {
+    expect(
+      await problems((m) => (node(m, "api").ai = { kind: "agent", tools: ["Read", "Bash"] })),
+    ).toEqual([]);
+    const noEvidence = await problems((m) => {
+      node(m, "worker").ai = { kind: "skill", tools: ["Write"] };
+      delete node(m, "worker").evidence;
+      m.inferred.push("node:worker");
+    });
+    expect(noEvidence.join()).toContain("ai.tools needs evidence");
+    expect(
+      (
+        await problems((m) => (node(m, "api").ai = { kind: "agent", tools: ["x".repeat(41)] }))
+      ).join(),
+    ).toContain("longer than 40");
+    const risk = (fixes: unknown) => (m: Loose) => {
+      m.risks = [{ id: "AV-R01", severity: "warn", nodes: ["db"], why: "w", check: "c", fixes }];
+    };
+    expect(await problems(risk([{ text: "Add a replica", tradeoff: "Costs money" }]))).toEqual([]);
+    expect((await problems(risk(Array(4).fill({ text: "x" })))).join()).toContain("at most 3");
+    expect((await problems(risk([{ tradeoff: "no text" }]))).join()).toContain('missing "text"');
+  });
+
+  describe("edge candidates", () => {
+    const cand = (extra: Loose = {}) => ({
+      id: "api-cache",
+      from: "api",
+      to: "db",
+      confidence: "medium",
+      why: "imports a client",
+      evidence: [{ file: "src/x.ts", line: 2 }],
+      ...extra,
+    });
+    it("are fine in a draft and must be resolved before the final model", async () => {
+      check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
+      const m = base();
+      m.candidates = [cand()];
+      expect(check.checkModel(m, { draft: true })).toEqual([]);
+      expect(check.checkModel(m).join()).toContain("1 edge candidate(s) left");
+      m.candidates = [];
+      expect(check.checkModel(m)).toEqual([]);
+    });
+    it("need real ends, a known confidence, evidence and a relative path", async () => {
+      expect((await problems((m) => (m.candidates = [cand({ to: "ghost" })]))).join()).toContain(
+        "is not a node",
+      );
+      expect(
+        (await problems((m) => (m.candidates = [cand({ confidence: "sure" })]))).join(),
+      ).toContain("not one of");
+      expect((await problems((m) => (m.candidates = [cand({ evidence: [] })]))).join()).toContain(
+        "at least 1",
+      );
+      expect(
+        (
+          await problems(
+            (m) => (m.candidates = [cand({ evidence: [{ file: "/etc/x", line: 1 }] })]),
+          )
+        ).join(),
+      ).toContain("relative");
+      expect(
+        (await problems((m) => (m.candidates = [cand({ confirms: "nope" })]))).join(),
+      ).toContain("not an edge");
+    });
+  });
+
+  it("checks groups, zones, data labels and view focus", async () => {
+    expect(await problems((m) => (node(m, "api").group = "nope"))).toEqual([
+      expect.stringContaining("not declared"),
+    ]);
+    expect(
+      (await problems((m) => m.groups.push({ id: "compose", label: "x", kind: "deploy" }))).join(),
+    ).toContain("duplicate");
+    expect((await problems((m) => (node(m, "api").zone = "moon"))).join()).toContain("not one of");
+    expect((await problems((m) => (node(m, "api").data = ["gossip"]))).join()).toContain(
+      "not one of",
+    );
+    expect((await problems((m) => (m.views[0].focus = ["ghost"]))).join()).toContain("not a node");
+    const cyc = await problems((m) => {
+      m.groups = [
+        { id: "a", label: "A", kind: "other", parent: "b" },
+        { id: "b", label: "B", kind: "other", parent: "a" },
+      ];
+      for (const n of m.nodes) delete n.group;
+    });
+    expect(cyc.join()).toContain("must not contain themselves");
+  });
+
+  it("only accepts an audit grade that matches a real audit file", async () => {
+    const root = tmp();
+    writeFileSync(path.join(root, "audit.json"), JSON.stringify({ grade: "B" }));
+    const ai = (grade: string, source?: string) => (m: Loose) =>
+      (node(m, "worker").ai = {
+        kind: "agent",
+        auditGrade: grade,
+        ...(source ? { auditSource: source } : {}),
+      });
+    expect((await problems(ai("B"), root)).join()).toContain("needs ai.auditSource");
+    expect(await problems(ai("B", "audit.json"), root)).toEqual([]);
+    expect((await problems(ai("A", "audit.json"), root)).join()).toContain("does not match");
+    expect((await problems(ai("B", "missing.json"), root)).join()).toContain("not a readable");
+    expect((await problems(ai("B", "../audit.json"), root)).join()).toContain("relative");
+  });
+
+  it("rejects secret-looking text in new fields without echoing it", async () => {
+    const secret = "sk-ant-" + "a".repeat(30);
+    for (const set of [
+      (m: Loose) => (node(m, "api").owner = secret),
+      (m: Loose) => (m.groups[0].label = secret),
+    ]) {
+      const ps = await problems(set);
+      expect(ps.join()).toContain("looks like a credential");
+      expect(ps.join()).not.toContain(secret);
+    }
+  });
+
+  it("--write-upgrade rewrites a v1 file once and leaves v2 alone", () => {
+    const dir = tmp();
+    const file = path.join(dir, "m.json");
+    writeFileSync(file, readFileSync(skillFile("arch-visualize", "evals/fixture-model.json")));
+    const r = run("model-check.mjs", ["--model", file, "--write-upgrade", "--root", FIXTURE]);
+    expect(r.status).toBe(0);
+    expect(JSON.parse(readFileSync(file, "utf8")).version).toBe(2);
+    const before = readFileSync(file, "utf8");
+    run("model-check.mjs", ["--model", file, "--write-upgrade", "--root", FIXTURE]);
+    expect(readFileSync(file, "utf8")).toBe(before);
+    expect(r.stdout.split("\n").length).toBeLessThanOrEqual(40);
   });
 });
 
@@ -330,6 +586,20 @@ const dataBlock = (html: string, id: string) => {
   return m ? m[1]! : null;
 };
 
+/** The viewer's parts: markup, styles and the numbered scripts, read from the skill folder. */
+const viewerParts = () => {
+  const dir = skillFile("arch-visualize", "assets/viewer");
+  const code = readdirSync(path.join(dir, "src"))
+    .filter((f) => f.endsWith(".js"))
+    .sort()
+    .map((f) => readFileSync(path.join(dir, "src", f), "utf8"))
+    .join("\n");
+  const markup = readFileSync(path.join(dir, "index.html"), "utf8");
+  const styles = readFileSync(path.join(dir, "styles.css"), "utf8");
+  const i18n = readFileSync(path.join(dir, "i18n.json"), "utf8");
+  return { code, markup, styles, i18n, all: [markup, styles, i18n, code].join("\n") };
+};
+
 describe("arch-visualize render", () => {
   const fixtureModel = skillFile("arch-visualize", "evals/fixture-model.json");
   const hostileModel = skillFile("arch-visualize", "evals/hostile-model.json");
@@ -340,31 +610,54 @@ describe("arch-visualize render", () => {
   renderCli(hostileModel, hostileOut);
   const fixtureHtml = readFileSync(fixtureOut, "utf8");
   const hostileHtml = readFileSync(hostileOut, "utf8");
-  const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
-  const viewerCode = /<script>([\s\S]*?)<\/script>/.exec(viewer)![1];
+  const parts = viewerParts();
+  const viewer = parts.all;
+  const viewerCode = parts.code;
 
   it("renders the fixture model and says where the file is", () => {
     expect(first.status).toBe(0);
     expect(first.stdout).toMatch(/Wrote .*fixture\.html .*9 components, 3 flows/);
     expect(first.stdout.trimEnd().split("\n").length).toBeLessThanOrEqual(40);
     expect(fixtureHtml.startsWith("<!doctype html>")).toBe(true);
-    expect(fixtureHtml).toContain("<!-- arch-visualize viewer v1 -->");
+    expect(fixtureHtml).toContain("<!-- arch-visualize viewer v2 -->");
+  });
+
+  it("inlines the layout library once and leaves no placeholder", () => {
+    for (const html of [fixtureHtml, hostileHtml]) {
+      expect(html.match(/root\.ArchLayout = /g)).toHaveLength(1);
+      expect(html.match(/root\.ArchGeometry = /g)).toHaveLength(1);
+      expect(html).not.toContain("__LIB_JS__");
+    }
+  });
+
+  it("keeps the viewer and its libraries within the 300 KB budget", () => {
+    let bytes = Buffer.byteLength(viewer);
+    for (const f of ["geometry.js", "layout.js"])
+      bytes += statSync(skillFile("arch-visualize", `assets/lib/${f}`)).size;
+    expect(bytes).toBeLessThan(300_000);
+    expect(Buffer.byteLength(fixtureHtml)).toBeLessThan(1_500_000);
   });
 
   it("embeds the model so it parses back unchanged", () => {
-    expect(JSON.parse(dataBlock(fixtureHtml, "model")!)).toEqual(
-      readJson("evals/fixture-model.json"),
-    );
-    expect(JSON.parse(dataBlock(hostileHtml, "model")!)).toEqual(
-      readJson("evals/hostile-model.json"),
-    );
+    // a v1 model is embedded as v2; nothing else changes
+    expect(JSON.parse(dataBlock(fixtureHtml, "model")!)).toEqual({
+      ...readJson("evals/fixture-model.json"),
+      version: 2,
+    });
+    expect(JSON.parse(dataBlock(hostileHtml, "model")!)).toEqual({
+      ...readJson("evals/hostile-model.json"),
+      version: 2,
+    });
   });
 
   it("escaping canary: hostile text cannot leave the data block", () => {
-    // Only the three real script tags exist: model, icons, viewer code.
-    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(3);
-    expect(hostileHtml.match(/<script/gi)).toHaveLength(3);
-    const data = dataBlock(hostileHtml, "model")! + dataBlock(hostileHtml, "icons")!;
+    // Only the six real script tags exist: model, diff, icons, text, the libraries, viewer code.
+    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(6);
+    expect(hostileHtml.match(/<script/gi)).toHaveLength(6);
+    const data =
+      dataBlock(hostileHtml, "model")! +
+      dataBlock(hostileHtml, "icons")! +
+      dataBlock(hostileHtml, "i18n")!;
     expect(data).not.toMatch(new RegExp("[<>&" + String.fromCharCode(0x2028, 0x2029) + "]"));
     expect(hostileHtml).not.toContain("<img src=x");
     expect(hostileHtml).not.toContain("<svg onload");
@@ -408,9 +701,27 @@ describe("arch-visualize render", () => {
     expect(renderCli(fixtureModel, foreign).status).toBe(2);
     expect(readFileSync(foreign, "utf8")).toBe("<h1>my own page</h1>");
     expect(renderCli(fixtureModel, foreign, ["--force"]).status).toBe(0);
-    expect(readFileSync(foreign, "utf8")).toContain("arch-visualize viewer v1");
+    expect(readFileSync(foreign, "utf8")).toContain("arch-visualize viewer v2");
     // Its own page can be replaced without --force.
     expect(renderCli(fixtureModel, foreign).status).toBe(0);
+    // So can a page made by an older version of the viewer.
+    const old = path.join(tmp(), "old.html");
+    writeFileSync(old, "<!doctype html>\n<!-- arch-visualize viewer v1 -->\n<p>old</p>");
+    expect(renderCli(fixtureModel, old).status).toBe(0);
+  });
+
+  it("builds the viewer from parts that form one valid script", () => {
+    expect(
+      () => new vm.Script(`(function () {\n"use strict";\n${parts.code}\n})();`),
+    ).not.toThrow();
+    for (const hole of [
+      "__STYLES__",
+      "__LIB_JS__",
+      "__VIEWER_JS__",
+      "__MODEL_JSON__",
+      "__ICONS_JSON__",
+    ])
+      expect(fixtureHtml).not.toContain(hole);
   });
 
   it("refuses an invalid model and lists the problems", () => {
@@ -518,7 +829,7 @@ type Engine = {
 };
 
 describe("arch-visualize flow engine", () => {
-  const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
+  const viewer = viewerParts().all;
   const block = /\/\/ <flow-engine>([\s\S]*?)\/\/ <\/flow-engine>/.exec(viewer);
   // The engine is our own code and has no DOM access, so the test can run it on its own.
   const E = new Function(
@@ -548,6 +859,25 @@ describe("arch-visualize flow engine", () => {
     });
     expect(E.dotAt(steps[0]!, 0.25)).toBe(0.25);
     expect(E.dotAt(steps[4]!, 0.25)).toBe(0.75);
+  });
+
+  it("merges a step marked together into the step before it, as one more dot", () => {
+    const flow = {
+      steps: [
+        { edge: "web-api" },
+        { edge: "api-cache", label: "Look up" },
+        { edge: "api-db", together: true },
+        { event: "x", node: "api" },
+        { edge: "api-db", together: true }, // after an event: nothing to run with, so it is a step of its own
+      ],
+    };
+    const built = E.buildSteps(flow, edges, nodes) as (Step & { extra?: { edge: string }[] })[];
+    expect(built).toHaveLength(4);
+    expect(built[1]!.extra!.map((x) => x.edge)).toEqual(["api-db"]);
+    expect(built[0]!.extra).toEqual([]);
+    expect(built[3]!).toMatchObject({ kind: "edge", edge: "api-db" });
+    // it takes the same time as one step
+    expect(E.stepMs(built[1]!, 1)).toBe(1000);
   });
 
   it("drops steps that point at nothing", () => {
@@ -658,7 +988,8 @@ describe("arch-visualize flow engine", () => {
 
   it("starts nothing on load and honours reduced motion in the page code", () => {
     expect(viewer).toMatch(/prefers-reduced-motion: reduce/);
-    expect(viewer).toMatch(/Play \(uses motion\)/);
+    expect(viewer).toMatch(/"flow\.playMotion"/);
+    expect(viewer).toMatch(/"flow\.playMotion": "Play \(uses motion\)"/);
     // The only place a loop starts is a click handler through kick().
     expect(viewer.match(/requestAnimationFrame\(/g)).toHaveLength(2);
     expect(viewer).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pulse/);
@@ -688,7 +1019,17 @@ describe("arch-visualize risk-check", () => {
     "AV-R08",
     "AV-R09",
     "AV-R10",
+    "AV-R11",
+    "AV-R12",
+    "AV-R13",
+    "AV-R14",
+    "AV-R15",
+    "AV-R16",
+    "AV-R17",
+    "AV-R18",
   ];
+  // R01 to R10 read the project's files and are seeded below; R11 to R18 read the model (see the model-rules file)
+  const fileRuleIds = riskIds.slice(0, 10);
   const json = (v: unknown) => JSON.stringify(v, null, 2);
   const pkg = (deps: string[], name = "app") =>
     json({ name, dependencies: Object.fromEntries(deps.map((d) => [d, "1.0.0"])) });
@@ -747,6 +1088,16 @@ describe("arch-visualize risk-check", () => {
       name: "one postgres service",
       fires: true,
       files: { "docker-compose.yml": compose("  db:\n    image: postgres:16\n") },
+    },
+    {
+      rule: "AV-R01",
+      name: "deploy replicas of an app are not a database replica",
+      fires: true,
+      files: {
+        "docker-compose.yml": compose(
+          "  db:\n    image: postgres:16\n  api:\n    build: .\n    deploy:\n      replicas: 2\n",
+        ),
+      },
     },
     {
       rule: "AV-R01",
@@ -1185,8 +1536,8 @@ describe("arch-visualize risk-check", () => {
     },
   ];
 
-  it("has a seeded case and a benign case for every rule", () => {
-    for (const id of riskIds) {
+  it("has a seeded case and a benign case for every rule that reads files", () => {
+    for (const id of fileRuleIds) {
       expect(
         cases.some((c) => c.rule === id && c.fires),
         `${id} seeded`,
@@ -1318,7 +1669,18 @@ describe("arch-visualize risk-check", () => {
   it("documents every rule, and says which are heuristics", () => {
     const doc = readFileSync(skillFile("arch-visualize", "references/risks.md"), "utf8");
     for (const id of riskIds) expect(doc, id).toMatch(new RegExp(`## ${id} `));
-    for (const id of ["AV-R02", "AV-R03", "AV-R04", "AV-R05", "AV-R06", "AV-R08", "AV-R09"])
+    for (const id of [
+      "AV-R02",
+      "AV-R03",
+      "AV-R04",
+      "AV-R05",
+      "AV-R06",
+      "AV-R08",
+      "AV-R09",
+      "AV-R11",
+      "AV-R12",
+      "AV-R17",
+    ])
       expect(doc, id).toMatch(new RegExp(`## ${id} [^\\n]*_heuristic_`));
     expect(doc).toMatch(/possible risk to check/i);
     expect(doc).toMatch(/names only|env \*\*names\*\*/);
@@ -1326,7 +1688,16 @@ describe("arch-visualize risk-check", () => {
 
   it("keeps rule texts honest: no verdict words, a check for each", async () => {
     const { RULES } = await loadScript<{
-      RULES: Record<string, { why: string; check: string; severity: string; title: string }>;
+      RULES: Record<
+        string,
+        {
+          why: string;
+          check: string;
+          severity: string;
+          title: string;
+          fixes: { text: string; tradeoff: string }[];
+        }
+      >;
     }>("arch-visualize", "scripts/risk-check.mjs");
     expect(Object.keys(RULES).sort()).toEqual(riskIds);
     for (const r of Object.values(RULES)) {
@@ -1335,6 +1706,16 @@ describe("arch-visualize risk-check", () => {
         /\b(vulnerable|insecure|broken|bad architecture|must fix|critical)\b/i,
       );
       expect(r.check.length).toBeGreaterThan(30);
+      // one to three options, each with its cost, and none of them a verdict
+      expect(r.fixes.length).toBeGreaterThanOrEqual(1);
+      expect(r.fixes.length).toBeLessThanOrEqual(3);
+      for (const f of r.fixes) {
+        expect(f.text.length).toBeGreaterThan(10);
+        expect(f.tradeoff.length).toBeGreaterThan(10);
+        expect(f.text + f.tradeoff).not.toMatch(
+          /\b(vulnerable|insecure|broken|bad architecture|must fix|critical)\b/i,
+        );
+      }
     }
   });
 });
@@ -1566,8 +1947,8 @@ describe("arch-visualize live demo (DevPath)", () => {
     const out = path.join(tmp(), "devpath.html");
     expect(renderCli(demoFile, out).status).toBe(0);
     const html = readFileSync(out, "utf8");
-    expect(html).toContain("arch-visualize viewer v1");
-    expect(html.match(/<\/script/gi)).toHaveLength(3);
+    expect(html).toContain("arch-visualize viewer v2");
+    expect(html.match(/<\/script/gi)).toHaveLength(6);
   });
 
   it("is linked from the skill page by a site path the web build creates", () => {
@@ -1597,7 +1978,7 @@ describe("arch-visualize demo text matches the demo model", () => {
     text: m[2]!,
   }));
 
-  it("is embedded, with five steps and a project paragraph", () => {
+  it("is embedded, with six steps and a project paragraph", () => {
     expect(meta).toMatch(/^ {2}embed: true$/m);
     expect(steps.map((s) => s.title.replace(/ \(.*\)/, ""))).toEqual([
       "Discover",
@@ -1605,6 +1986,7 @@ describe("arch-visualize demo text matches the demo model", () => {
       "Write the flows",
       "Check",
       "Render",
+      "Ask what if",
     ]);
     expect(meta).toMatch(/caption: "DevPath is a Next\.js learning platform/);
   });
@@ -1624,19 +2006,45 @@ describe("arch-visualize demo text matches the demo model", () => {
     expect(model.inferred.every((i) => i.startsWith("edge:"))).toBe(true);
   });
 
+  it("the what-if step says what simulate.mjs really reports for the model", () => {
+    const r = spawnSync(
+      process.execPath,
+      [
+        skillFile("arch-visualize", "scripts/simulate.mjs"),
+        "--model",
+        skillFile("arch-visualize", "evals/demo/devpath.architecture.json"),
+        "--down",
+        "redis",
+        "--json",
+      ],
+      { encoding: "utf8" },
+    );
+    const sim = JSON.parse(r.stdout) as {
+      nodes: Record<string, { status: string }>;
+      flows: { status: string; step: number }[];
+    };
+    expect(sim.nodes["bullmq"]!.status).toBe("failed");
+    expect(sim.nodes["properlearn"]!.status).toBe("failed");
+    expect(sim.flows).toHaveLength(4);
+    expect(sim.flows.every((f) => f.status !== "ok" && f.step === 1)).toBe(true);
+    expect(steps[5]!.text).toContain("all 4 flows break at step 1");
+    expect(steps[5]!.text).toContain("what-if from the model");
+  });
+
   it("describes the demo page size honestly", () => {
     const out = path.join(tmp(), "d.html");
     renderCli(skillFile("arch-visualize", "evals/demo/devpath.architecture.json"), out);
     const kb = readFileSync(out).length / 1024;
-    expect(kb).toBeGreaterThan(65);
-    expect(kb).toBeLessThan(85);
-    expect(steps[4]!.text).toContain("about 75 KB");
+    // measured in M8 at 190 KB; the text says "about 190 KB", so keep the two together
+    expect(kb).toBeGreaterThan(170);
+    expect(kb).toBeLessThan(210);
+    expect(steps[4]!.text).toContain("about 190 KB");
   });
 });
 
 describe("arch-visualize viewer inside a frame", () => {
   it("leaves plain scrolling to the page that embeds it", () => {
-    const viewer = readFileSync(skillFile("arch-visualize", "assets/viewer.html"), "utf8");
+    const viewer = viewerParts().all;
     expect(viewer).toMatch(/framed = window\.self !== window\.top/);
     expect(viewer).toMatch(/if \(framed && !ev\.ctrlKey && !ev\.metaKey\) return;/);
   });

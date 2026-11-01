@@ -3,6 +3,9 @@
 // model. Never opens .env files, never runs project code, never touches the network.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { readMcp, readSkill } from "./ai-layer.mjs";
+import { findCandidates, ownerOf } from "./edges.mjs";
+import { isK8sFile, readK8s } from "./k8s.mjs";
 import {
   capLines,
   envKeyNames,
@@ -10,6 +13,7 @@ import {
   isEntry,
   isExampleEnv,
   listFiles,
+  maskComments,
   parseArgs,
   parseYaml,
   readText,
@@ -33,6 +37,9 @@ export const TIER_OF_ROLE = {
 };
 const TIER_ORDER = ["clients", "edge", "frontend", "backend", "async", "data", "external"];
 const COMPOSE = /^(docker-compose|compose)(\.[\w-]+)?\.ya?ml$/;
+const SOURCE = /\.(?:[cm]?[jt]sx?)$/;
+const NOT_SOURCE =
+  /(^|\/)(__tests__|tests?|specs?|e2e|__mocks__)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$|\.d\.ts$|\.config\.[cm]?[jt]s$/;
 const GENERIC_TECH = { database: "generic-database", email: "generic-external" };
 
 const slug = (s) =>
@@ -65,7 +72,8 @@ function matchImage(catalog, image) {
  * holds the counts the CLI prints.
  */
 export function discover(root, catalog = loadCatalog()) {
-  const want = (n) =>
+  const want = (n, rel = n) =>
+    (SOURCE.test(n) && !NOT_SOURCE.test(rel)) ||
     n === "package.json" ||
     n === "requirements.txt" ||
     n === "pyproject.toml" ||
@@ -74,6 +82,10 @@ export function discover(root, catalog = loadCatalog()) {
     n === "Dockerfile" ||
     n.startsWith("Dockerfile.") ||
     COMPOSE.test(n) ||
+    isK8sFile(n, rel) ||
+    n === ".mcp.json" ||
+    n === "mcp.json" ||
+    n === "SKILL.md" ||
     isExampleEnv(n) ||
     Boolean(catalog.hosting[n]);
   const { files, stats } = listFiles(root, want);
@@ -93,12 +105,35 @@ export function discover(root, catalog = loadCatalog()) {
   const inProcess = []; // libraries that run inside an app: { dir, claim }
   const composeServices = []; // { svc, deps, rel }
   const composeEvidence = []; // { svc, buildDir, ev }
+  const composeLinks = []; // { svc, to, rel, line }
+  const composeNets = []; // { svc, name, rel, line }
+  const composeReplicas = []; // { svc, n, rel, line }
+  const k8sDocs = []; // { rel, kind, name, replicas, calls }
+  const mcpServers = []; // { rel, name, line }
+  const skills = []; // { rel, name, tools, line }
   const dockerEvidence = []; // { dir, ev }
   let projectName = "";
 
+  const sources = []; // JavaScript and TypeScript files, comments masked, read for edge candidates
   for (const rel of files) {
     const base = path.posix.basename(rel);
     const dir = dirOf(rel);
+    if (SOURCE.test(base)) {
+      const t = text(rel);
+      if (t !== null) sources.push({ rel, text: maskComments(t) });
+      continue;
+    }
+    if (base === ".mcp.json" || base === "mcp.json") {
+      const t = text(rel);
+      if (t !== null) for (const s of readMcp(t)) mcpServers.push({ rel, ...s });
+      continue;
+    }
+    if (base === "SKILL.md") {
+      const t = text(rel);
+      const s = t === null ? null : readSkill(t);
+      if (s) skills.push({ rel, ...s });
+      continue;
+    }
     if (base === "package.json") {
       const t = text(rel);
       if (t === null) continue;
@@ -213,6 +248,36 @@ export function discover(root, catalog = loadCatalog()) {
         const depends = Array.isArray(def.depends_on)
           ? def.depends_on
           : Object.keys(def.depends_on ?? {});
+        (Array.isArray(def.links) ? def.links : []).forEach((l, i) =>
+          composeLinks.push({
+            svc,
+            to: String(l).split(":")[0],
+            rel,
+            line: lineOf(`services.${svc}.links[${i}]`),
+          }),
+        );
+        const nets = Array.isArray(def.networks) ? def.networks : Object.keys(def.networks ?? {});
+        nets.forEach((name, i) =>
+          composeNets.push({
+            svc,
+            name: String(name),
+            rel,
+            line: lineOf(
+              Array.isArray(def.networks)
+                ? `services.${svc}.networks[${i}]`
+                : `services.${svc}.networks.${name}`,
+            ),
+          }),
+        );
+        const reps =
+          def.deploy && typeof def.deploy === "object" ? Number(def.deploy.replicas) : NaN;
+        if (Number.isInteger(reps) && reps >= 1)
+          composeReplicas.push({
+            svc,
+            n: reps,
+            rel,
+            line: lineOf(`services.${svc}.deploy.replicas`),
+          });
         const deps = depends.map((d, i) => ({
           to: String(d),
           line: lineOf(
@@ -260,6 +325,10 @@ export function discover(root, catalog = loadCatalog()) {
           });
         }
       }
+    } else if (isK8sFile(base, rel)) {
+      const t = text(rel);
+      if (t === null) continue;
+      for (const d of readK8s(t)) k8sDocs.push({ rel, ...d });
     } else if (isExampleEnv(base)) {
       const t = text(rel);
       if (t === null) continue;
@@ -400,6 +469,103 @@ export function discover(root, catalog = loadCatalog()) {
     }
   }
 
+  // ---- the AI layer: LLM and vector-store components are flagged, MCP servers and skills become components
+  const aiByTech = {};
+  for (const d of Object.values(catalog.deps)) if (d.ai) aiByTech[d.tech] = d.ai;
+  for (const n of nodes) if (aiByTech[n.tech]) n.ai = { kind: aiByTech[n.tech] };
+  const mcpHints = [];
+  for (const s of mcpServers) {
+    const n = mkNode(
+      uniqueId(`mcp-${s.name}`),
+      `${s.name} (MCP server)`,
+      "external",
+      "generic-external",
+      [{ file: s.rel, line: s.line, note: `MCP server ${s.name}` }],
+      true,
+    );
+    n.ai = { kind: "mcp-server" };
+    const owner = ownerOf(nodes, s.rel);
+    if (owner)
+      mcpHints.push({
+        from: owner,
+        to: n,
+        protocol: "MCP",
+        confidence: "medium",
+        why: "MCP server listed in a config beside the app",
+        evidence: { file: s.rel, line: s.line, note: `lists MCP server ${s.name}` },
+      });
+  }
+  for (const s of skills) {
+    const n = mkNode(uniqueId(`skill-${s.name}`), s.name, "backend", "generic-backend", [
+      { file: s.rel, line: s.line, note: `skill ${s.name}` },
+    ]);
+    n.ai = { kind: "skill", ...(s.tools.length ? { tools: s.tools } : {}) };
+  }
+
+  // ---- hints for the edge finder: compose links and networks, Kubernetes service names; replicas as node facts
+  const hints = [...mcpHints];
+  const networks = [];
+  for (const l of composeLinks) {
+    const from = svcNode.get(l.svc);
+    const to = svcNode.get(l.to);
+    if (from && to)
+      hints.push({
+        from,
+        to,
+        confidence: "medium",
+        why: "compose links",
+        evidence: { file: l.rel, line: l.line, note: `links ${l.to}` },
+      });
+  }
+  const byNet = {};
+  for (const n of composeNets) if (n.name !== "default") (byNet[n.name] ??= []).push(n);
+  for (const [name, list] of Object.entries(byNet))
+    for (let i = 0; i < list.length; i++)
+      for (let j = i + 1; j < list.length; j++) {
+        const a = svcNode.get(list[i].svc);
+        const b = svcNode.get(list[j].svc);
+        if (a && b && a !== b)
+          networks.push({ a: a.id, b: b.id, name, file: list[i].rel, line: list[i].line });
+      }
+  for (const r of composeReplicas) {
+    const n = svcNode.get(r.svc);
+    if (!n) continue;
+    n.replicas = r.n;
+    addEv(n, { file: r.rel, line: r.line, note: `replicas: ${r.n}` });
+  }
+  const stripSuffix = (name) => slug(name).replace(/-(svc|service|deployment|deploy|app)$/, "");
+  const k8sNode = (name) => {
+    const want = stripSuffix(name);
+    return nodes.find(
+      (n) =>
+        n.id === want ||
+        stripSuffix(path.posix.basename(dirOf(n.evidence[0]?.file ?? ""))) === want,
+    );
+  };
+  for (const d of k8sDocs.filter((x) => x.kind !== "Service")) {
+    const from = k8sNode(d.name);
+    if (!from) continue;
+    if (d.replicas) {
+      from.replicas = d.replicas.n;
+      addEv(from, { file: d.rel, line: d.replicas.line, note: `replicas: ${d.replicas.n}` });
+    }
+    for (const call of d.calls) {
+      const to = k8sNode(call.host.split(".")[0]);
+      if (to && to !== from)
+        hints.push({
+          from,
+          to,
+          protocol: "HTTP",
+          confidence: "medium",
+          why: "Kubernetes service name in an environment value",
+          evidence: {
+            file: d.rel,
+            line: call.line,
+            note: `calls service ${call.host.split(".")[0]}`,
+          },
+        });
+    }
+  }
   nodes.sort(
     (a, b) =>
       TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier) ||
@@ -409,14 +575,16 @@ export function discover(root, catalog = loadCatalog()) {
     n.evidence.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
   edges.sort((a, b) => (a.id < b.id ? -1 : 1));
   const model = {
-    version: 1,
+    version: 2,
     project: (projectName || path.basename(path.resolve(root))).slice(0, 80),
     nodes,
     edges,
+    candidates: [],
     flows: [],
     risks: [],
     inferred: [],
   };
+  model.candidates = findCandidates({ nodes, edges, sources, catalog, hints, networks });
   return { model, report: { read, stats, notes } };
 }
 
@@ -438,6 +606,7 @@ function run(argv) {
   extra.push(...report.notes);
   const summary = [
     `Found ${model.nodes.length} components and ${model.edges.length} links; read ${report.read.length} files.`,
+    `${model.candidates.length} edge candidate(s) to confirm or drop (${["high", "medium", "low"].map((c) => `${model.candidates.filter((x) => x.confidence === c).length} ${c}`).join(", ")}).`,
     ...extra.slice(0, 6),
     `Draft written to ${path.relative(process.cwd(), out) || out}`,
   ].join("\n");

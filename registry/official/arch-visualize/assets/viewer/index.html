@@ -1,0 +1,189 @@
+<!doctype html>
+<!-- arch-visualize viewer v2 -->
+<html lang="__LANG__" dir="__DIR__" data-flow="__FLOW__" data-lens="__LENS__">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Architecture</title>
+    <style>
+      /*__STYLES__*/
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1 id="title">Architecture</h1>
+      <p>{{header.note}}</p>
+      <div class="find">
+        <input
+          id="q"
+          type="search"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="results"
+          aria-autocomplete="list"
+          autocomplete="off"
+          placeholder="{{search.placeholder}}"
+          aria-label="{{search.label}}"
+        />
+        <ul id="results" role="listbox" hidden></ul>
+      </div>
+      <button type="button" id="trace" aria-pressed="false">{{trace.button}}</button>
+      <div id="find-status" class="sr" aria-live="polite"></div>
+      <div class="export">
+        <button
+          type="button"
+          id="export"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="export-menu"
+        >
+          {{export.button}}
+        </button>
+        <div id="export-menu" role="menu" aria-label="{{export.aria}}" hidden>
+          <button type="button" role="menuitem" data-act="svg">{{export.svg}}</button>
+          <button type="button" role="menuitem" data-act="png1">{{export.png1}}</button>
+          <button type="button" role="menuitem" data-act="png2">{{export.png2}}</button>
+          <button type="button" role="menuitem" data-act="png3">{{export.png3}}</button>
+          <button type="button" role="menuitem" data-act="json">{{export.json}}</button>
+          <button type="button" role="menuitem" data-act="print">{{export.print}}</button>
+        </div>
+      </div>
+      <div id="export-status" class="sr" aria-live="polite"></div>
+      <button type="button" id="open-risks" class="phone-only">{{btn.risks}}</button>
+      <button type="button" id="theme">{{btn.theme}}</button>
+    </header>
+    <main>
+      <div id="center">
+        <div id="lenses" class="lenses" role="tablist" aria-label="{{lens.aria}}">
+          <button type="button" role="tab" id="lens-system" data-lens="system" aria-selected="true">
+            {{lens.system}}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-flows"
+            data-lens="flows"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.flows}}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-security"
+            data-lens="security"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.security}}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-failure"
+            data-lens="failure"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.failure}}
+          </button>
+          <button type="button" role="tab" id="lens-ai" data-lens="ai" aria-selected="false" hidden>
+            {{lens.ai}}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-diff"
+            data-lens="diff"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.diff}}
+          </button>
+        </div>
+        <div id="lensbar" class="lensbar" hidden>
+          <div id="lb-security" hidden>
+            <button type="button" id="pii-btn" aria-pressed="false">{{sec.pii}}</button>
+          </div>
+          <div id="lb-failure" hidden>
+            <span id="fail-hint" class="hint">{{fail.hint}}</span>
+            <button type="button" id="fail-reset">{{fail.reset}}</button>
+          </div>
+          <div id="lb-ai" hidden>
+            <span class="hint">{{ai.intro}}</span>
+          </div>
+        </div>
+        <div id="sim-status" class="sr" aria-live="polite"></div>
+        <div id="flowbar" class="flowbar" hidden>
+          <div class="flowtabs" id="flowtabs" role="tablist" aria-label="{{flows.aria}}"></div>
+          <div class="flowctl">
+            <button type="button" id="fback">{{flow.back}}</button>
+            <button type="button" id="fplay">{{flow.play}}</button>
+            <button type="button" id="fstep">{{flow.step}}</button>
+            <button type="button" id="frestart">{{flow.restart}}</button>
+            <button type="button" id="ffocus" aria-pressed="true">{{flow.focus}}</button>
+            <input type="range" id="fscrub" min="0" max="0" value="0" aria-label="{{flow.scrub}}" />
+            <label
+              >{{flow.speed}}
+              <select id="fspeed">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1x</option>
+                <option value="2">2x</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="caption" class="caption" aria-live="polite" hidden></div>
+        <section id="stage" tabindex="0" aria-label="{{stage.aria}}">
+          <svg id="canvas" role="group" aria-label="{{canvas.aria}}"></svg>
+          <div id="minimap" tabindex="0" role="group" aria-label="{{map.aria}}">
+            <svg id="mini" aria-hidden="true"></svg>
+          </div>
+          <div id="zoom">
+            <button type="button" id="zin" aria-label="{{zoom.in}}">+</button>
+            <button type="button" id="zout" aria-label="{{zoom.out}}">&minus;</button>
+            <button type="button" id="zfit">{{zoom.fit}}</button>
+          </div>
+        </section>
+        <section id="list" aria-label="{{list.aria}}"></section>
+      </div>
+      <aside id="panel" aria-live="polite">
+        <button type="button" class="close" id="close">{{panel.close}}</button>
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" id="tab-details" aria-selected="true">
+            {{tab.details}}
+          </button>
+          <button type="button" role="tab" id="tab-flow" aria-selected="false" hidden>
+            {{tab.flow}}
+          </button>
+          <button type="button" role="tab" id="tab-risks" aria-selected="false">
+            {{btn.risks}}
+          </button>
+        </div>
+        <div id="body"></div>
+      </aside>
+    </main>
+    <div id="print-diagram"></div>
+    <section id="print-risks"></section>
+    <script type="application/json" id="model">
+      __MODEL_JSON__
+    </script>
+    <script type="application/json" id="diff">
+      __DIFF_JSON__
+    </script>
+    <script type="application/json" id="i18n">
+      __I18N_JSON__
+    </script>
+    <script type="application/json" id="icons">
+      __ICONS_JSON__
+    </script>
+    <script>
+      /*__LIB_JS__*/
+    </script>
+    <script>
+      /*__VIEWER_JS__*/
+    </script>
+  </body>
+</html>

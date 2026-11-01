@@ -4,7 +4,7 @@ One JSON file is the source of truth between the scripts. `assets/model.schema.j
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "project": "shop",
   "nodes": [
     {
@@ -59,6 +59,29 @@ One JSON file is the source of truth between the scripts. `assets/model.schema.j
 | `inferred`                               | `node:<id>` or `edge:<id>` for anything you believe exists but no file shows. Drawn dashed and explained in the side panel. Each entry must point at a real item.                                                         |
 | `risks`                                  | Written by `risk-check.mjs` (`source: "rule"`) and by you (`source: "agent"`, with evidence). See `risks.md`.                                                                                                             |
 
+## Version 2 fields (all optional)
+
+Version 1 models still work: the scripts read them as version 2 in memory, and `model-check.mjs --model <file> --write-upgrade` saves the upgrade. Add these only when a file shows them; otherwise leave them out.
+
+| Field                             | Values and rule                                                                                                                                                                                                                                                                    |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `groups[]`                        | `{ id, label, kind, parent?, evidence }`. `kind`: `deploy`, `namespace`, `package`, `other`. A group never contains itself.                                                                                                                                                        |
+| `nodes[].group`                   | Id of a declared group.                                                                                                                                                                                                                                                            |
+| `nodes[].zone`                    | `public`, `dmz`, `private`, `third-party`, `user-device`.                                                                                                                                                                                                                          |
+| `nodes[].data`, `edges[].carries` | Labels only, never values: `pii`, `credentials`, `payments`, `health`, `secrets-ref`, `logs`.                                                                                                                                                                                      |
+| `nodes[].replicas`                | A number (needs evidence on the node) or `"unknown"`.                                                                                                                                                                                                                              |
+| `nodes[].ai`                      | `{ kind, auditGrade?, auditSource? }`. `kind`: `llm-provider`, `agent`, `mcp-server`, `skill`, `vector-store`. A grade needs `auditSource`, a relative path to an `aisle audit` JSON file whose `grade` matches; the checker reads it from `--root` (default: the current folder). |
+| `nodes[].owner`                   | Free text such as a team, at most 80 characters.                                                                                                                                                                                                                                   |
+| `edges[].auth`                    | `none`, `session`, `jwt`, `api-key`, `mtls`, `oauth`, `unknown`.                                                                                                                                                                                                                   |
+| `edges[].tls`                     | `true`, `false` or `"unknown"`.                                                                                                                                                                                                                                                    |
+| `edges[].timeoutMs`, `retries`    | Whole numbers, only where a file sets them (give the file and line as edge evidence).                                                                                                                                                                                              |
+| `edges[].optional`                | `true` when the caller keeps working if the callee fails (try/catch fallback, circuit breaker); needs evidence.                                                                                                                                                                    |
+| `views[]`                         | `{ id, name, lens, focus?, camera? }` saved starting views. `lens`: `system`, `flows`, `security`, `failure`, `ai`, `diff`. `focus` lists node ids.                                                                                                                                |
+
+### Evidence rule for facts
+
+A field that states a fact (`timeoutMs`, `retries`, `tls`, `auth` other than `unknown`, `replicas` as a number, `optional: true`) needs evidence on its node or edge. If you cannot point at a file and line, write `"unknown"` or leave the field out. The checker fails a fact without evidence.
+
 ## Flow steps
 
 - `{ "edge": "<edge id>", "label": "..." }` moves a dot from the edge's `from` to its `to`.
@@ -70,3 +93,11 @@ One JSON file is the source of truth between the scripts. `assets/model.schema.j
 
 - Put a secret value anywhere (keys, passwords, connection strings with passwords). The checker fails on strings that look like credentials.
 - Put markup in labels. The page shows text only, so `<b>` would appear literally.
+
+## Added in 0.2.0
+
+- `ai.tools`: the tools an AI component can use (needs evidence on the component).
+- `flows[].steps[].together`: this step runs at the same time as the step before it (see `flows.md`).
+- `risks[].fixes`: one to three `{ text, tradeoff }` options. `risk-check.mjs` writes them for every rule.
+- `views[].lens`: `system`, `flows`, `security`, `failure`, `ai` or `diff`.
+- `candidates`: only in a draft. Connections discovery suspects, each with `confidence`, `evidence` and optional `timeoutMs`, `retries`, `optional`, `confirms`. The final model must not have any: confirm each as an edge or delete it.

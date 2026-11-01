@@ -144,7 +144,10 @@
           "line": 19,
           "note": "dependency @anthropic-ai/sdk"
         }
-      ]
+      ],
+      "ai": {
+        "kind": "llm-provider"
+      }
     },
     {
       "id": "docker",
@@ -187,7 +190,10 @@
           "line": 21,
           "note": "dependency @google/genai"
         }
-      ]
+      ],
+      "ai": {
+        "kind": "llm-provider"
+      }
     },
     {
       "id": "github",
@@ -230,7 +236,10 @@
           "line": 33,
           "note": "dependency openai"
         }
-      ]
+      ],
+      "ai": {
+        "kind": "llm-provider"
+      }
     },
     {
       "id": "resend",

@@ -1,0 +1,90 @@
+# Baseline: arch-visualize 0.1.1
+
+Measured on 2026-11-01 (M0 of `ARCH_VISUALIZE_V2_BRIEF.md`). Everything in `RESULTS-0.2.0.md` is compared with this file.
+
+## Screenshots
+
+`evals/baseline-0.1.1/`: the fixture model and the DevPath demo at 1440×900 and 390×844, light and dark (8 PNGs, taken with Chromium via the Playwright already installed for `apps/web`).
+
+## Numbers
+
+| Measure                                       | Fixture (`fixture-model.json`) | DevPath demo |
+| --------------------------------------------- | ------------------------------ | ------------ |
+| `viewer.html` template, bytes                 | 60,768                         | same         |
+| Rendered page                                 | 78 KB                          | 73 KB        |
+| `render.mjs` wall time (node, cold start)     | 0.03 s                         | 0.02 s       |
+| Components / connections / flows in the model | 9 / 11 / 3                     | 12 / 13 / 4  |
+
+## Discover recall
+
+| Run                                         | Components | Connections |
+| ------------------------------------------- | ---------- | ----------- |
+| Fixture (`discover.mjs` vs `expected.json`) | 9 of 9     | 5 of 5      |
+| DevPath (from the demo notes)               | 11 of 12   | 2 of 13     |
+
+Finding: the fixture is too easy to show the weakness. `expected.json` lists 5 edges while the hand-written fixture model has 11, and all 5 are compose or Prisma links the draft already finds. The 0.8 target in section 8.1 is already met at 1.0 on the current fixture, so M6 must grow the fixture (and `expected.json`) first, otherwise the number says nothing. The honest edge baseline is the DevPath 2 of 13.
+
+## Layout (crossings)
+
+Measured in Chromium at 1440×900: every edge path is sampled at 80 points with `getPointAtLength` and counted with `ArchGeometry.polylineCrossings` (crossings within 10 px of an edge's start or end are ignored, so edges that meet at one node do not count). The same counter and the same sampling are used before and after.
+
+| Page         | Crossings 0.1.1 | Crossings M2 | Edges through boxes 0.1.1 | M2  |
+| ------------ | --------------- | ------------ | ------------------------- | --- |
+| Fixture      | 9               | 4            | 0                         | 0   |
+| DevPath demo | 26              | 6            | 0                         | 0   |
+
+Straight-line count in Node (no curve sampling): fixture 3, DevPath 6. A random 150-node, 300-edge graph lays out in about 80 ms (366 lane slots for the long edges).
+
+## After M3 (new viewer)
+
+| Measure                                               | 0.1.1  | After M3 |
+| ----------------------------------------------------- | ------ | -------- |
+| Viewer template (parts and libraries together), bytes | 60,768 | 122,405  |
+| Rendered fixture page                                 | 78 KB  | 128 KB   |
+| Rendered DevPath page                                 | 73 KB  | 124 KB   |
+| `render.mjs` wall time (node, cold start)             | 0.03 s | 0.02 s   |
+
+The D6 budget (300 KB for the viewer and its libraries, 1.5 MB for the fixture page) holds. Screenshots of every view that exists are in `evals/m3-viewer/`. The page grew about 50 KB: the layout, search, trace, link and detail modules, the Arabic text table and the new styles.
+
+## After M5 (lenses, simulation, new rules)
+
+| Measure                                               | After M3 | After M5 |
+| ----------------------------------------------------- | -------- | -------- |
+| Viewer template (parts and libraries together), bytes | 122,405  | 175,658  |
+| Rendered lens demo page (12 components)               | n/a      | 187 KB   |
+| Risk rules                                            | 10       | 18       |
+
+The lens demo (`evals/fixture-lenses.json`) triggers AV-R01 to AV-R05, R07, R08, R10 (from the fixture app's files) and R11, R12, R13, R14, R18 (from the model). Screenshots are in `evals/m5-lenses/`. The budget (300 KB for the viewer and its libraries) still holds.
+
+## After M6 (discovery with edge candidates)
+
+Measured on `evals/fixture-app`, now grown to cover every pattern (an assistant app with an LLM, a vector store, Redis, an MCP server, a skill, Kubernetes manifests, compose links and networks, literal timeouts, retries and one fallback). `expected.json` lists 16 true connections; 14 are shown by a file and 2 are not (marked `fileBacked: false`).
+
+| Measure                                                        | 0.1.1 / start of 0.2.0 | After M6        |
+| -------------------------------------------------------------- | ---------------------- | --------------- |
+| File-backed connections found by `edges` alone                 | 5 of 14 (0.36)         | 5 of 14         |
+| File-backed connections found by `edges` and `candidates`      | not available          | 14 of 14 (1.00) |
+| Candidates proposed that are not a real connection (precision) | not available          | 0 of 11         |
+| Components found                                               | 9 of 9                 | 14 of 14        |
+
+Earlier I wrote "5 of 5, recall 1.0" for this fixture; that list was too short (5 of the 9 file-backed connections of the original fixture, 0.56). Both the honest baseline and the number after use the grown list above.
+
+What this does not show: the fixture was written by me, so recall measures the patterns I thought of, not real projects. A spot check on this repository (not designed for it) found one genuine candidate outside the fixture (`apps/web` to GitHub's API, medium) and no false ones; that is one project, not a study. DevPath's source is not in this repository, so its 2 of 13 stays the recorded baseline and I did not re-run it.
+
+## After M7 (diff and CI)
+
+Measured on `evals/fixture-model-base.json` (an earlier version of the fixture model with one component renamed, one added, one removed, and two connection facts changed) against `evals/fixture-model-v2.json`.
+
+| Measure                                                 | After M5 / M6 | After M7                           |
+| ------------------------------------------------------- | ------------- | ---------------------------------- |
+| Viewer template (parts, libraries, styles, text), bytes | 175,658       | 198,425                            |
+| Rendered fixture page (9 components), bytes             | n/a           | 199,705 plain; 200,946 with a diff |
+| Scripts                                                 | 5             | 6 (`diff.mjs`)                     |
+
+The diff found exactly what was seeded: 1 added component and its connection, 1 removed component and its connection, 1 rename (`redis` to `cache`, matched by technology and a shared evidence file), 2 changed connection facts (`retries`, `timeoutMs`). Screenshots (English light and dark, Arabic, a selected ghost) are in `evals/m7-diff/`. The 300 KB budget for the viewer still holds.
+
+What this does not show: the base was written by me from the same fixture, so it shows that seeded changes are found, not how often a real rename is recognised. Rename detection needs the same technology and a shared evidence file, and gives up when two components could match.
+
+## Tokens and tool calls
+
+No eval-run log exists for a full skill run, so there are no numbers. M8 will measure it by running the skill once on the fixture with the old and new version and reading the token and tool-call totals from the session transcript.

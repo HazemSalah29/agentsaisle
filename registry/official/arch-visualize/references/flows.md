@@ -17,6 +17,7 @@ Skip near-duplicates. Prefer real routes from the code over generic ones, and ta
 
 - Walk the code in call order. One step per hop along an existing edge: `{ "edge": "api-db", "label": "SELECT user" }`.
 - Show the answer coming back with `reverse: true` on the same edge: `{ "edge": "api-db", "reverse": true, "label": "Row returned" }`. Do this where the response matters, not for every hop.
+- Add `"together": true` to a step that runs at the same time as the step right before it (two calls made in parallel, for example `Promise.all`). It shares that step's place in the timeline and draws one more dot. It needs an edge step before it; the checker fails otherwise. Use it only where the code makes the calls together.
 - Use an event for something that happens at a node, such as a cache miss or a retry: `{ "event": "cache-miss", "node": "cache" }`.
 - Keep labels short (about 4 words). They are plain text.
 - Keep a flow to roughly 4 to 10 steps. Split long ones.

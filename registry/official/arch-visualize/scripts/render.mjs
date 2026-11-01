@@ -1,12 +1,14 @@
 // Stage 4: embed a checked model and its icons into the viewer template and write one self-contained,
 // offline HTML file. Model text is data: it is escaped for the HTML data block and the viewer only ever
 // shows it through textContent.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
-import { checkModel } from "./model-check.mjs";
+import { checkModel, upgradeModel } from "./model-check.mjs";
 
-export const MARKER = "<!-- arch-visualize viewer v1 -->";
+export const MARKER = "<!-- arch-visualize viewer v2 -->";
+/** Any version of our page may be replaced without --force. */
+const OURS = /<!-- arch-visualize viewer v\d+ -->/;
 
 /** JSON that is safe inside <script type="application/json">: no "<", ">", "&" or line separators. */
 export const safeJson = (value) =>
@@ -41,11 +43,94 @@ export function iconFor(tech, role, dir = path.join(skillDir(), "assets", "icons
   return parseIcon(readFileSync(file, "utf8"), path.basename(file));
 }
 
-/** Build the page for `model`. Throws with the list of problems when the model is invalid. */
-export function renderPage(model) {
+export const LANGS = { en: "ltr", ar: "rtl" };
+export const LENSES = ["system", "flows", "security", "failure", "ai", "diff"];
+
+const escapeHtml = (text) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** The text table for `lang`: English underneath, so a missing key still reads. */
+export function loadI18n(lang = "en") {
+  if (!LANGS[lang])
+    throw new Error(`unknown language "${lang}" (use ${Object.keys(LANGS).join(" or ")})`);
+  const all = JSON.parse(
+    readFileSync(path.join(skillDir(), "assets", "viewer", "i18n.json"), "utf8"),
+  );
+  return { lang, dir: LANGS[lang], strings: { ...all.en, ...all[lang] } };
+}
+
+const isList = (x) =>
+  Array.isArray(x) && x.every((i) => i && typeof i === "object" && !Array.isArray(i));
+/** A diff file must be what diff.mjs writes: records with ids, lists, counts. Anything else is refused. */
+export function checkDiff(diff) {
+  const bad = (why) => {
+    throw new Error(`the diff file is not valid: ${why}`);
+  };
+  if (!diff || diff.kind !== "arch-diff" || diff.version !== 1) bad('kind must be "arch-diff"');
+  for (const [group, keys] of [
+    ["nodes", ["added", "removed", "changed", "renamed"]],
+    ["edges", ["added", "removed", "changed"]],
+    ["risks", ["added", "removed"]],
+  ])
+    for (const k of keys) if (!isList(diff[group]?.[k])) bad(`${group}.${k} must be a list`);
+  const idOk = (x) => typeof x === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(x);
+  for (const n of [...diff.nodes.added, ...diff.nodes.removed, ...diff.nodes.changed])
+    if (!idOk(n.id)) bad("a component has an invalid id");
+  for (const n of diff.nodes.renamed)
+    if (!idOk(n.from) || !idOk(n.to)) bad("a rename has an invalid id");
+  for (const e of [...diff.edges.added, ...diff.edges.removed, ...diff.edges.changed])
+    if (!idOk(e.id)) bad("a connection has an invalid id");
+  for (const e of [...diff.edges.added, ...diff.edges.removed])
+    if (!idOk(e.from) || !idOk(e.to)) bad("a connection has an invalid end");
+}
+
+/**
+ * Build the page for `model`. Throws with the list of problems when the model is invalid.
+ * Options: lang ("en" or "ar"), flowDir ("ltr" or "rtl": which way the diagram runs).
+ */
+export function renderPage(
+  input,
+  { lang = "en", flowDir = "ltr", lens = "system", diff = null } = {},
+) {
+  if (flowDir !== "ltr" && flowDir !== "rtl") throw new Error('--flow-dir must be "ltr" or "rtl"');
+  if (!LENSES.includes(lens)) throw new Error(`--lens must be one of ${LENSES.join(", ")}`);
+  if (lens === "diff" && !diff) throw new Error("--lens diff needs --diff <file>");
+  if (diff) checkDiff(diff);
+  const i18n = loadI18n(lang);
+  const model = upgradeModel(input);
   const problems = checkModel(model);
   if (problems.length) throw Object.assign(new Error("model has problems"), { problems });
-  const template = readFileSync(path.join(skillDir(), "assets", "viewer.html"), "utf8");
+  const asset = (...p) => readFileSync(path.join(skillDir(), "assets", ...p), "utf8");
+  const template = asset("viewer", "index.html");
+  const styles = asset("viewer", "styles.css");
+  // alphabetical; only layout.js needs another file (geometry.js), and "g" sorts before "l"
+  const lib = readdirSync(path.join(skillDir(), "assets", "lib"))
+    .filter((f) => f.endsWith(".js"))
+    .sort()
+    .map((f) => asset("lib", f))
+    .join("\n");
+  const code = readdirSync(path.join(skillDir(), "assets", "viewer", "src"))
+    .filter((f) => f.endsWith(".js"))
+    .sort()
+    .map((f) => asset("viewer", "src", f))
+    .join("\n");
+  const viewer = `(function () {\n"use strict";\n${code}\n})();`;
+  for (const [name, text] of [
+    ["library", lib],
+    ["viewer code", viewer],
+    ["styles", styles],
+  ])
+    if (/<\/(script|style)/i.test(text)) throw new Error(`${name} must not contain a closing tag`);
+  const holes = [
+    "/*__STYLES__*/",
+    "/*__LIB_JS__*/",
+    "/*__VIEWER_JS__*/",
+    "__MODEL_JSON__",
+    "__ICONS_JSON__",
+    "__DIFF_JSON__",
+  ];
+  for (const hole of holes)
+    if (!template.includes(hole)) throw new Error(`viewer/index.html is missing ${hole}`);
   const icons = {};
   for (const n of model.nodes) {
     const key = `${n.tech}|${n.role}`;
@@ -56,15 +141,31 @@ export function renderPage(model) {
       .sort()
       .map((k) => [k, icons[k]]),
   );
-  if (!template.includes("__MODEL_JSON__") || !template.includes("__ICONS_JSON__"))
-    throw new Error("viewer.html is missing its data placeholders");
+  const text = (key) => {
+    if (i18n.strings[key] === undefined)
+      throw new Error(`viewer/index.html uses an unknown text key "${key}"`);
+    return escapeHtml(i18n.strings[key]);
+  };
   return template
+    .replace(/\{\{([\w.]+)\}\}/g, (_, key) => text(key))
+    .replace("__LANG__", () => lang)
+    .replace("__DIR__", () => i18n.dir)
+    .replace("__FLOW__", () => flowDir)
+    .replace("__LENS__", () => lens)
+    .replace("__I18N_JSON__", () => safeJson(i18n))
+    .replace("/*__STYLES__*/", () => styles)
+    .replace("/*__LIB_JS__*/", () => lib)
+    .replace("/*__VIEWER_JS__*/", () => viewer)
     .replace("__MODEL_JSON__", () => safeJson(model))
-    .replace("__ICONS_JSON__", () => safeJson(sorted));
+    .replace("__ICONS_JSON__", () => safeJson(sorted))
+    .replace("__DIFF_JSON__", () => (diff ? safeJson(diff) : "null"));
 }
 
 function run(argv) {
-  const { flags } = parseArgs(argv, { strings: ["model", "out"], booleans: ["force"] });
+  const { flags } = parseArgs(argv, {
+    strings: ["model", "out", "lang", "flow-dir", "lens", "diff"],
+    booleans: ["force"],
+  });
   const modelFile = path.resolve(flags.model ?? "docs/architecture.json");
   const out = path.resolve(flags.out ?? "docs/architecture.html");
   let model;
@@ -74,15 +175,30 @@ function run(argv) {
     console.error(`render: cannot read ${modelFile}: ${e.message}`);
     return 2;
   }
-  if (existsSync(out) && !flags.force && !readFileSync(out, "utf8").includes(MARKER)) {
+  if (existsSync(out) && !flags.force && !OURS.test(readFileSync(out, "utf8"))) {
     console.error(
       `render: ${out} exists and is not an arch-visualize page. Use --out, or --force to replace it.`,
     );
     return 2;
   }
+  let diff = null;
+  if (flags.diff) {
+    try {
+      diff = JSON.parse(readFileSync(path.resolve(flags.diff), "utf8"));
+      checkDiff(diff);
+    } catch (e) {
+      console.error(`render: cannot use --diff ${flags.diff}: ${e.message}`);
+      return 2;
+    }
+  }
   let html;
   try {
-    html = renderPage(model);
+    html = renderPage(model, {
+      lang: flags.lang,
+      flowDir: flags["flow-dir"],
+      lens: flags.lens ?? (diff ? "diff" : undefined),
+      diff,
+    });
   } catch (e) {
     if (e.problems) {
       console.log(
