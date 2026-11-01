@@ -140,7 +140,6 @@ describe("video-voice align: matching the script to what was heard", () => {
 });
 
 describe("video-voice align: one line with an engine", () => {
-  const dir = () => mkdtempSync(path.join(os.tmpdir(), "video-align-"));
   const engine = (json: Loose | null, whisperStatus = 0, ffStatus = 0) => ({
     model: "/m.bin",
     run: (cmd: string, args: string[]) => {

@@ -19,7 +19,8 @@ export const normWord = (w) =>
   w
     .toLowerCase()
     .normalize("NFKC")
-    .replace(/[ـً-ٰٟ]/g, "")
+    .replace(/\p{M}/gu, "")
+    .replace(/\u0640/g, "")
     .replace(/[^\p{L}\p{N}]/gu, "");
 
 /** Words of a line as written, split on spaces. */
