@@ -23,7 +23,17 @@ const ORDER = {
   explain: ["hook", "misconception", "analogy", "step", "edge", "takeaway"],
   story: ["hook", "setup", "turn", "climax", "button"],
 };
-export const BUILT_KINDS = ["title", "quote", "list", "chart", "broll"];
+export const BUILT_KINDS = [
+  "title",
+  "quote",
+  "list",
+  "chart",
+  "broll",
+  "rate-limit",
+  "code",
+  "sequence",
+  "request-flow",
+];
 const WEAK_HOOKS = [
   "you won't believe",
   "you wont believe",

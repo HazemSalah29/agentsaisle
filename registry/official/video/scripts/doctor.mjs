@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const MIN_NODE_MAJOR = 22;
 export const MAX_LINES = 40;
@@ -156,6 +156,17 @@ export function engineLines(cfg, { run = spawnSync, exists = existsSync } = {}) 
   return lines;
 }
 
+/** One line on the bundled code highlighter (part of video-core), so a missing install shows up early. */
+export function sceneLines({
+  exists = existsSync,
+  root = path.join(path.dirname(realpathSync(fileURLToPath(import.meta.url))), "..", ".."),
+} = {}) {
+  const ok = exists(path.join(root, "video-core", "assets", "vendor", "shiki.mjs"));
+  return [
+    `  code scenes ${ok ? "ready (highlighter is bundled with video-core)" : "video-core not found next to this skill"}`,
+  ];
+}
+
 export function report({ tools, keys, platform, engines = [] }) {
   const lines = ["video doctor"];
   for (const t of TOOLS) {
@@ -178,7 +189,12 @@ function main() {
   const tools = Object.fromEntries(TOOLS.map((t) => [t.id, probe(t)]));
   const keys = Object.fromEntries(KEY_NAMES.map((k) => [k, Boolean(process.env[k])]));
   console.log(
-    report({ tools, keys, platform: process.platform, engines: engineLines(readToolsConfig()) }),
+    report({
+      tools,
+      keys,
+      platform: process.platform,
+      engines: [...engineLines(readToolsConfig()), ...sceneLines()],
+    }),
   );
   process.exit(hardwareTier(tools) === "not ready" ? 1 : 0);
 }

@@ -5,7 +5,7 @@ Beats, in this order (each is a `beat:` value; `step` may repeat):
 1. `hook` - the opening line.
 2. `misconception` - what most people think.
 3. `analogy` - a real-world comparison.
-4. `step` - the mechanism, one step per line, each mapped to one animation beat.
+4. `step` - the mechanism, one step per line, each mapped to one animation beat. When the mechanism is an algorithm, a request path, a message exchange or code, give the scene a technical kind (`rate-limit`, `request-flow`, `sequence`, `code`) so it is shown, not listed; `video-explain` fills it in.
 5. `edge` - an edge case or failure.
 6. `takeaway` - one line to remember.
 7. `cta` (optional) - after the takeaway only.
@@ -17,3 +17,5 @@ Honesty: never invent statistics, quotes, testimonials or reviews. If the user w
 On screen: a small citation can show the source name; it is the user's choice.
 
 Length: about 2.5 words a second; keep each line under about 6 seconds.
+
+Technical scenes: write one `step` line per row or step of the picture, so each row appears with its line. A number the narration quotes from a simulation is a fact too: `facts.md` says `Source: simulate.mjs, seed 42` (never a number you worked out yourself).
