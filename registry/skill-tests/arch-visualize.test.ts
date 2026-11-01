@@ -1978,7 +1978,7 @@ describe("arch-visualize demo text matches the demo model", () => {
     text: m[2]!,
   }));
 
-  it("is embedded, with five steps and a project paragraph", () => {
+  it("is embedded, with six steps and a project paragraph", () => {
     expect(meta).toMatch(/^ {2}embed: true$/m);
     expect(steps.map((s) => s.title.replace(/ \(.*\)/, ""))).toEqual([
       "Discover",
@@ -1986,6 +1986,7 @@ describe("arch-visualize demo text matches the demo model", () => {
       "Write the flows",
       "Check",
       "Render",
+      "Ask what if",
     ]);
     expect(meta).toMatch(/caption: "DevPath is a Next\.js learning platform/);
   });
@@ -2005,15 +2006,39 @@ describe("arch-visualize demo text matches the demo model", () => {
     expect(model.inferred.every((i) => i.startsWith("edge:"))).toBe(true);
   });
 
+  it("the what-if step says what simulate.mjs really reports for the model", () => {
+    const r = spawnSync(
+      process.execPath,
+      [
+        skillFile("arch-visualize", "scripts/simulate.mjs"),
+        "--model",
+        skillFile("arch-visualize", "evals/demo/devpath.architecture.json"),
+        "--down",
+        "redis",
+        "--json",
+      ],
+      { encoding: "utf8" },
+    );
+    const sim = JSON.parse(r.stdout) as {
+      nodes: Record<string, { status: string }>;
+      flows: { status: string; step: number }[];
+    };
+    expect(sim.nodes["bullmq"]!.status).toBe("failed");
+    expect(sim.nodes["properlearn"]!.status).toBe("failed");
+    expect(sim.flows).toHaveLength(4);
+    expect(sim.flows.every((f) => f.status !== "ok" && f.step === 1)).toBe(true);
+    expect(steps[5]!.text).toContain("all 4 flows break at step 1");
+    expect(steps[5]!.text).toContain("what-if from the model");
+  });
+
   it("describes the demo page size honestly", () => {
     const out = path.join(tmp(), "d.html");
     renderCli(skillFile("arch-visualize", "evals/demo/devpath.architecture.json"), out);
     const kb = readFileSync(out).length / 1024;
-    expect(kb).toBeGreaterThan(65);
-    // The new viewer makes a fresh render about 170 KB; the page embedded on the skill page is still
-    // the 0.1.1 one (about 75 KB). M8 regenerates the demo and rewrites this text and bound together.
-    expect(kb).toBeLessThan(220);
-    expect(steps[4]!.text).toContain("about 75 KB");
+    // measured in M8 at 190 KB; the text says "about 190 KB", so keep the two together
+    expect(kb).toBeGreaterThan(170);
+    expect(kb).toBeLessThan(210);
+    expect(steps[4]!.text).toContain("about 190 KB");
   });
 });
 
