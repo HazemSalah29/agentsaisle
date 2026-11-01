@@ -977,7 +977,17 @@ describe("arch-visualize risk-check", () => {
     "AV-R08",
     "AV-R09",
     "AV-R10",
+    "AV-R11",
+    "AV-R12",
+    "AV-R13",
+    "AV-R14",
+    "AV-R15",
+    "AV-R16",
+    "AV-R17",
+    "AV-R18",
   ];
+  // R01 to R10 read the project's files and are seeded below; R11 to R18 read the model (see the model-rules file)
+  const fileRuleIds = riskIds.slice(0, 10);
   const json = (v: unknown) => JSON.stringify(v, null, 2);
   const pkg = (deps: string[], name = "app") =>
     json({ name, dependencies: Object.fromEntries(deps.map((d) => [d, "1.0.0"])) });
@@ -1474,8 +1484,8 @@ describe("arch-visualize risk-check", () => {
     },
   ];
 
-  it("has a seeded case and a benign case for every rule", () => {
-    for (const id of riskIds) {
+  it("has a seeded case and a benign case for every rule that reads files", () => {
+    for (const id of fileRuleIds) {
       expect(
         cases.some((c) => c.rule === id && c.fires),
         `${id} seeded`,
@@ -1607,7 +1617,18 @@ describe("arch-visualize risk-check", () => {
   it("documents every rule, and says which are heuristics", () => {
     const doc = readFileSync(skillFile("arch-visualize", "references/risks.md"), "utf8");
     for (const id of riskIds) expect(doc, id).toMatch(new RegExp(`## ${id} `));
-    for (const id of ["AV-R02", "AV-R03", "AV-R04", "AV-R05", "AV-R06", "AV-R08", "AV-R09"])
+    for (const id of [
+      "AV-R02",
+      "AV-R03",
+      "AV-R04",
+      "AV-R05",
+      "AV-R06",
+      "AV-R08",
+      "AV-R09",
+      "AV-R11",
+      "AV-R12",
+      "AV-R17",
+    ])
       expect(doc, id).toMatch(new RegExp(`## ${id} [^\\n]*_heuristic_`));
     expect(doc).toMatch(/possible risk to check/i);
     expect(doc).toMatch(/names only|env \*\*names\*\*/);
@@ -1615,7 +1636,16 @@ describe("arch-visualize risk-check", () => {
 
   it("keeps rule texts honest: no verdict words, a check for each", async () => {
     const { RULES } = await loadScript<{
-      RULES: Record<string, { why: string; check: string; severity: string; title: string }>;
+      RULES: Record<
+        string,
+        {
+          why: string;
+          check: string;
+          severity: string;
+          title: string;
+          fixes: { text: string; tradeoff: string }[];
+        }
+      >;
     }>("arch-visualize", "scripts/risk-check.mjs");
     expect(Object.keys(RULES).sort()).toEqual(riskIds);
     for (const r of Object.values(RULES)) {
@@ -1624,6 +1654,16 @@ describe("arch-visualize risk-check", () => {
         /\b(vulnerable|insecure|broken|bad architecture|must fix|critical)\b/i,
       );
       expect(r.check.length).toBeGreaterThan(30);
+      // one to three options, each with its cost, and none of them a verdict
+      expect(r.fixes.length).toBeGreaterThanOrEqual(1);
+      expect(r.fixes.length).toBeLessThanOrEqual(3);
+      for (const f of r.fixes) {
+        expect(f.text.length).toBeGreaterThan(10);
+        expect(f.tradeoff.length).toBeGreaterThan(10);
+        expect(f.text + f.tradeoff).not.toMatch(
+          /\b(vulnerable|insecure|broken|bad architecture|must fix|critical)\b/i,
+        );
+      }
     }
   });
 });

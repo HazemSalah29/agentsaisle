@@ -1,7 +1,7 @@
-// Stage 3b: add rule-based POSSIBLE risks (AV-R01 to AV-R10) to a model. Reads the project's files as text
+// Stage 3b: add rule-based POSSIBLE risks (AV-R01 to AV-R18) to a model. Reads the project's files as text
 // only: no project code is run, secret files are never opened, nothing touches the network. Every risk is
 // something to check, not a verdict, and carries the evidence it is based on.
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   balanced,
@@ -17,92 +17,15 @@ import {
   readText,
 } from "./_lib.mjs";
 import { loadCatalog } from "./model-check.mjs";
+import { FAN_OUT_LIMIT, MODEL_RULES } from "./risk-model.mjs";
+import { RULES, ev, risk } from "./risk-rules.mjs";
+import { toSarif } from "./sarif.mjs";
+
+export { FAN_OUT_LIMIT, RULES, toSarif };
 
 const SOURCE = /\.(?:[cm]?[jt]sx?)$/;
 const TESTISH =
   /(^|\/)(__tests__|tests?|specs?|e2e|__mocks__)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$|\.d\.ts$/;
-const MAX_EVIDENCE = 5;
-
-/** Rule texts. `heuristic` rules say so in their explanation. */
-export const RULES = {
-  "AV-R01": {
-    title: "Single database with no replica or backup configuration",
-    severity: "warn",
-    why: "The model has one database and none of the files read mention a replica, a standby, a backup tool or a managed database service.",
-    check:
-      "Confirm where backups are taken and that a restore has been tried. Decide whether a replica or a managed service is worth its cost for this project.",
-  },
-  "AV-R02": {
-    title: "Cache entries written without an expiry",
-    severity: "info",
-    heuristic: true,
-    why: "Heuristic: a Redis write has no expiry option (EX, PX, ttl) and no expire call close by, so the entry stays until it is evicted or deleted.",
-    check:
-      "Check the eviction policy and whether these keys should expire. Some data (counters, locks you release yourself) is meant to stay; adding a TTL there can lose data.",
-  },
-  "AV-R03": {
-    title: "No rate limiting found on a public API",
-    severity: "warn",
-    heuristic: true,
-    why: "Heuristic: the app defines public routes (including Next.js route handlers), but no rate-limit package, middleware or helper appears in the dependencies or code read. It may be done at a gateway, CDN or proxy that these files do not show.",
-    check:
-      "Look for rate limiting at the proxy, CDN or API gateway. If there is none, consider limits on login, signup and expensive routes first.",
-  },
-  "AV-R04": {
-    title: "External call without a timeout",
-    severity: "warn",
-    heuristic: true,
-    why: "Heuristic: a call to an outside host has no AbortSignal.timeout, signal or timeout option, so a slow provider can hold the request open.",
-    check:
-      "Check the client's default timeout. Add an explicit one that is shorter than your own request limit, and decide what the user sees when it fires.",
-  },
-  "AV-R05": {
-    title: "Database query inside a loop",
-    severity: "warn",
-    heuristic: true,
-    why: "Heuristic: an awaited database call sits inside a loop or an async map, which often means one query per item (the N+1 pattern).",
-    check:
-      "Check how many items the loop runs over. A single batched query (findMany with a list, a join, an IN clause) is usually faster, but can be heavier for very large lists.",
-  },
-  "AV-R06": {
-    title: "Slow work done during the request",
-    severity: "info",
-    heuristic: true,
-    why: "Heuristic: a route handler sends email or SMS, processes files or handles a payment webhook directly, and the model has no queue.",
-    check:
-      "Check how long this takes under load and what happens if it fails. A background job adds a queue to run and monitor; for small volumes doing it inline can be the simpler choice.",
-  },
-  "AV-R07": {
-    title: "Secret-looking variable exposed to the browser",
-    severity: "warn",
-    why: "A variable with a browser-exposed prefix (NEXT_PUBLIC_, VITE_ and similar) has a name containing SECRET, PRIVATE, KEY, TOKEN or PASSWORD. Such variables are copied into the public JavaScript bundle. Only the name was read, never the value.",
-    check:
-      "Check whether the value is really meant to be public. If it is a secret, move it to the server and rotate it, because it may already be in a deployed bundle.",
-  },
-  "AV-R08": {
-    title: "No health check endpoint found",
-    severity: "info",
-    heuristic: true,
-    why: "Heuristic: the app defines routes but none of the files read has a /health, /healthz or /ready route.",
-    check:
-      "Check whether your host, load balancer or orchestrator probes the service another way (a TCP check, the home page). If not, a small health route lets it restart or stop sending traffic to a stuck instance.",
-  },
-  "AV-R09": {
-    title: "Serverless functions may connect straight to Postgres",
-    severity: "warn",
-    heuristic: true,
-    why: "Heuristic: a serverless host file sits beside code that uses a Postgres client, and no connection pooler marker was found. Each function instance can open its own connections and exhaust the database limit under load. Only dependency names and variable names were read, not values.",
-    check:
-      "Check whether the connection string already points at a pooler (PgBouncer, a provider's pooled host, Prisma Accelerate, Hyperdrive). If not, consider one; it adds a service and some limits on session features.",
-  },
-  "AV-R10": {
-    title: "Data service exposed or unprotected in docker-compose",
-    severity: "warn",
-    why: "A compose service for a data store publishes its port to the host on all interfaces, or Redis has no password (requirepass) configured.",
-    check:
-      "Check where this compose file is used. For local development it is often fine; on a shared or public machine, bind ports to 127.0.0.1, set a password and keep the service off public networks.",
-  },
-};
 
 const dirOf = (f) => (path.posix.dirname(f) === "." ? "" : path.posix.dirname(f));
 const lineOfIndex = (text, index) => text.slice(0, index).split("\n").length;
@@ -181,18 +104,6 @@ function ownerNode(ctx, file) {
   }
   return best;
 }
-const ev = (file, line, note) => ({ file, line, note });
-const risk = (id, nodes, evidence, extra = {}) => ({
-  id,
-  title: RULES[id].title,
-  severity: RULES[id].severity,
-  nodes: uniq(nodes.filter(Boolean)).sort(),
-  evidence: evidence.slice(0, MAX_EVIDENCE),
-  why: RULES[id].why,
-  check: RULES[id].check,
-  source: "rule",
-  ...extra,
-});
 const byRole = (m, role) => m.nodes.filter((n) => n.role === role);
 
 const ROUTE_DEF =
@@ -571,7 +482,7 @@ function r10(ctx) {
   return out.length ? [risk("AV-R10", nodes, out)] : [];
 }
 
-export const RULE_FUNCTIONS = [r01, r02, r03, r04, r05, r06, r07, r08, r09, r10];
+export const RULE_FUNCTIONS = [r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, ...MODEL_RULES];
 
 /** All rule risks for `model`, found by reading `root`. Pure with respect to the model. */
 export function findRisks(root, model, catalog = loadCatalog()) {
@@ -581,7 +492,12 @@ export function findRisks(root, model, catalog = loadCatalog()) {
 }
 
 function run(argv) {
-  const { flags } = parseArgs(argv, { strings: ["model", "root", "out"] });
+  const { flags } = parseArgs(argv, { strings: ["model", "root", "out", "format"] });
+  const format = flags.format ?? "model";
+  if (format !== "model" && format !== "sarif") {
+    console.error('risk-check: --format must be "model" or "sarif"');
+    return 2;
+  }
   const modelFile = path.resolve(flags.model ?? "docs/architecture.json");
   const root = path.resolve(flags.root ?? ".");
   const out = path.resolve(flags.out ?? modelFile);
@@ -597,6 +513,22 @@ function run(argv) {
     return 2;
   }
   const { risks, stats } = findRisks(root, model);
+  if (format === "sarif") {
+    // CI mode: the model is left alone; the rule risks are recomputed and joined with the agent's own
+    const all = [...(model.risks ?? []).filter((r) => r.source !== "rule"), ...risks];
+    const rel = path.relative(root, modelFile).split(path.sep).join("/");
+    const sarifOut = path.resolve(flags.out ?? "docs/architecture.sarif");
+    mkdirSync(path.dirname(sarifOut), { recursive: true });
+    writeFileSync(
+      sarifOut,
+      JSON.stringify(toSarif(all, rel.startsWith("..") ? path.basename(modelFile) : rel), null, 2) +
+        "\n",
+    );
+    console.log(
+      `${all.length} possible risk(s) written as SARIF to ${path.relative(process.cwd(), sarifOut) || sarifOut}. The model was not changed. These are things to check, not verdicts.`,
+    );
+    return 0;
+  }
   const kept = (model.risks ?? []).filter((r) => r.source !== "rule");
   model.risks = [...kept, ...risks];
   writeFileSync(out, JSON.stringify(model, null, 2) + "\n");

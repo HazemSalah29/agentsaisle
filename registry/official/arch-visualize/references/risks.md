@@ -1,6 +1,6 @@
 # Possible risks (AV-R rules)
 
-`risk-check.mjs` adds these to the model. Every one is a **possible risk to check**, with the files it is based on. None is a verdict, and none says an architecture is good or bad. Rules marked _heuristic_ read code as text and can be wrong in both directions: they miss risks (code they cannot see) and flag things that are fine (limits set somewhere else).
+`risk-check.mjs` adds these to the model. AV-R01 to AV-R10 read the project's files; AV-R11 to AV-R18 read the model's own facts. Every one is a **possible risk to check**, with the files it is based on. None is a verdict, and none says an architecture is good or bad. Rules marked _heuristic_ read code as text and can be wrong in both directions: they miss risks (code they cannot see) and flag things that are fine (limits set somewhere else).
 
 Scope in 0.1: JavaScript and TypeScript source for the code rules; docker-compose, Dockerfiles, Prisma schemas, `package.json`, hosting files and env example **key names** for the rest. Python and Go dependency files make nodes in discovery, but the code rules do not read `.py` or `.go` files yet. Files named `.env`, `.env.local`, `*.pem` and `*.key` are never opened.
 
@@ -89,6 +89,79 @@ Severity is `info` (worth knowing) or `warn` (worth checking soon). The agent ma
 - **False positives:** a compose file used only on a private development machine.
 - **Check:** where the compose file runs; bind to `127.0.0.1`, set a password, keep it off public networks.
 - **Trade-offs:** a password means every client needs it; local convenience versus safety.
+
+## AV-R11 Some synchronous calls have a timeout recorded and these do not (_heuristic_)
+
+- **Means:** the model records a timeout on at least one synchronous connection (`timeoutMs`) but not on others, so calls may behave differently when a service is slow.
+- **Detected by:** at least one synchronous connection with `timeoutMs`, and others (not `sync: false`) without it.
+- **Deviation from the brief:** the brief says "a sync call with no timeout evidence". Flagging every call in a model that records no timeouts would only say that none were looked for, and would repeat AV-R04, so this rule fires on the inconsistency.
+- **False positives:** a deliberate longer or absent timeout, or one set where the model did not record it.
+- **Check:** the client or call behind each connection; record the timeout in the model when it is set.
+- **Trade-offs:** a short timeout can cut off a slow success.
+
+## AV-R12 Retries with no backoff noted (_heuristic_)
+
+- **Means:** a connection retries, and nothing in its evidence notes a delay between attempts.
+- **Detected by:** `retries` above 0 on a connection whose evidence notes do not mention backoff, jitter or exponential waits.
+- **False positives:** a backoff in a wrapper the evidence does not mention.
+- **Check:** how the retry waits and how many attempts it makes.
+- **Trade-offs:** longer waits slow recovery; fewer attempts fail sooner.
+
+## AV-R13 Connection crosses a trust zone with no authentication or encryption
+
+- **Means:** two components in different trust zones are joined with `auth: none` or `tls: false`.
+- **Detected by:** a connection whose two ends both have a `zone`, the zones differ, and `auth` is `none` or `tls` is `false` (both need a file as evidence in the model).
+- **False positives:** a link on a private network you control, recorded in different zones for another reason.
+- **Check:** whether the link can be reached from outside its zone.
+- **Trade-offs:** TLS means certificates; credentials need rotation.
+
+## AV-R14 Personal data reaches a third party or logs
+
+- **Means:** personal data goes to, or is held by, a third party or a logging component.
+- **Detected by:** a connection whose `carries` has `pii` and whose target is in the `third-party` zone or holds `logs`; or a `third-party` component whose `data` has `pii`.
+- **False positives:** the data may be masked or agreed with the third party in a way the model does not record.
+- **Check:** where the data goes, what the other side does with it, and whether it can be left out or masked first.
+- **Trade-offs:** masking loses detail for support and debugging.
+
+## AV-R15 AI agent with write or run tools and no audit grade
+
+- **Means:** an agent, MCP server or skill can write files or run commands, and no audit result is linked.
+- **Detected by:** an `ai` component of kind `agent`, `mcp-server` or `skill`, with `tools` naming a write, edit, bash, shell, exec, run, delete or apply_patch tool, and no `auditGrade`.
+- **False positives:** the tools may be limited by settings the model does not show.
+- **Check:** what the tools can reach; run an audit (for example `aisle audit`) and link it as `auditSource`.
+- **Trade-offs:** an audit reduces risk, it cannot prove safety; narrower tools mean more manual steps.
+
+## AV-R16 AI component with a low audit grade
+
+- **Means:** a linked audit result graded the component D or F.
+- **Detected by:** `ai.auditGrade` of `D` or `F`. The grade is only accepted when `auditSource` points at a real audit file.
+- **False positives:** the audit may be old.
+- **Check:** open the audit file and read the findings.
+- **Trade-offs:** fixing takes time; replacing means a new component to look at.
+
+## AV-R17 Many synchronous calls in one step (_heuristic_)
+
+- **Means:** one step of a flow makes more than four synchronous calls at once (`together` steps), so it is as slow as the slowest and fails if any one fails.
+- **Detected by:** a flow step, plus the steps marked `together` after it, with more than four synchronous connections.
+- **False positives:** calls that are fast and all required.
+- **Check:** whether all of them must finish before the answer.
+- **Trade-offs:** moving work to a background job adds a queue; the result is not ready at once.
+
+## AV-R18 Single copy of a component that several flows depend on
+
+- **Means:** one failure or restart of the component interrupts every flow that passes through it.
+- **Detected by:** `replicas: 1` (with evidence) on a component that three or more flows use, as an end of a step's connection or as the node of an event.
+- **False positives:** one copy may be enough where restarts are quick.
+- **Check:** restart time, and what the flows do while it is gone.
+- **Trade-offs:** a second copy costs more and shared state must move out of memory.
+
+## Each risk carries options
+
+Every risk has `fixes`: one to three options, each with its trade-off. They are choices to weigh, not instructions.
+
+## SARIF for pull requests
+
+`node scripts/risk-check.mjs --model docs/architecture.json --root . --format sarif --out docs/architecture.sarif` writes the same risks as SARIF 2.1.0 and leaves the model untouched (the default format updates the model). Each result points at the model file and at up to five evidence files and lines, and says "Possible risk to check". The output has no dates, so the same input gives the same file. Fields were checked against the SARIF 2.1.0 schema; whether a given code-scanning host shows `help` text in the same way is `TODO(verify)`.
 
 ## Adding risks yourself
 
