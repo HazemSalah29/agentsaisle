@@ -114,6 +114,7 @@ function riskCard(r, withLink) {
     h("p", {}, r.why),
     h("p", {}, h("strong", {}, t("risk.check")), r.check),
     evidenceList(r.evidence),
+    riskExtras(r),
     h(
       "p",
       { class: "src" },
@@ -157,6 +158,13 @@ function renderPanel() {
     });
     return;
   }
+  var intro = !sel && lensIntro();
+  if (intro) {
+    intro.forEach(function (x) {
+      body.append(x);
+    });
+    return;
+  }
   if (!sel) {
     body.append(
       h("h2", {}, model.project),
@@ -191,6 +199,9 @@ function renderPanel() {
       ),
     );
     if (isInferred("node", n.id)) body.append(h("p", { class: "note" }, t("node.inferred.note")));
+    lensNodeExtras(n).forEach(function (x) {
+      body.append(x);
+    });
     body.append(
       h("h3", {}, t("h.evidence")),
       evidenceList(n.evidence) || h("p", { class: "meta" }, t("none.recorded")),
@@ -242,6 +253,9 @@ function renderPanel() {
       ),
     );
     if (isInferred("edge", e.id)) body.append(h("p", { class: "note" }, t("edge.inferred.note")));
+    lensEdgeExtras(e).forEach(function (x) {
+      body.append(x);
+    });
     body.append(
       h("h3", {}, t("h.evidence")),
       evidenceList(e.evidence) || h("p", { class: "meta" }, t("none.recorded")),

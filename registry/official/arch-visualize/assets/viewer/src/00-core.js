@@ -111,6 +111,18 @@ var risksByNode = {};
     (risksByNode[id] = risksByNode[id] || []).push(r);
   });
 });
+/** The security facts of a connection as short text: "jwt · TLS", "no auth · TLS ?"; empty if none recorded. */
+var secText = function (e) {
+  var parts = [];
+  if (e.auth) parts.push(t("auth." + e.auth));
+  if (e.tls === true) parts.push(t("tls.yes"));
+  else if (e.tls === false) parts.push(t("tls.no"));
+  else if (e.tls === "unknown") parts.push(t("tls.unknown"));
+  return parts.join(" · ");
+};
+var zoneOf = function (id) {
+  return nodeById[id] && nodeById[id].zone;
+};
 var techText = function (n) {
   return n.tech.indexOf("generic-") === 0 ? roleName(n.role) : n.tech;
 };

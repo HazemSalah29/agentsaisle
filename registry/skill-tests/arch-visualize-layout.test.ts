@@ -342,6 +342,32 @@ describe("arch-visualize layout", () => {
   });
 });
 
+describe("arch-visualize label text hook", () => {
+  const model: Model = {
+    nodes: [
+      { id: "a", tier: "backend" },
+      { id: "b", tier: "data" },
+    ],
+    edges: [
+      { id: "ab", from: "a", to: "b" }, // no protocol
+      { id: "ba", from: "b", to: "a", protocol: "TCP" },
+    ],
+  };
+  it("gives a connection with no protocol a label slot when the caller supplies its text", () => {
+    expect(layout(model).labels.ab).toBeUndefined();
+    const withText = layout(model, {
+      labelText: (e: { id: string }) => (e.id === "ab" ? "jwt · TLS" : ""),
+    });
+    expect(withText.labels.ab).toBeDefined();
+    expect(withText.labels.ba).toBeUndefined(); // the hook replaces the protocol as the text to fit
+    expect(withText.labels.ab!.w).toBeGreaterThan(40);
+  });
+
+  it("leaves the default layout alone", () => {
+    expect(layoutHash(layout(MODELS.fixture!))).toBe("ba08529d");
+  });
+});
+
 describe("arch-visualize mirrored layout", () => {
   it("reflects x, keeps y, and mirroring twice gives the original", () => {
     for (const [, model] of allModels()) {

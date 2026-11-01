@@ -69,7 +69,43 @@
           >
             {{lens.flows}}
           </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-security"
+            data-lens="security"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.security}}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-failure"
+            data-lens="failure"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.failure}}
+          </button>
+          <button type="button" role="tab" id="lens-ai" data-lens="ai" aria-selected="false" hidden>
+            {{lens.ai}}
+          </button>
         </div>
+        <div id="lensbar" class="lensbar" hidden>
+          <div id="lb-security" hidden>
+            <button type="button" id="pii-btn" aria-pressed="false">{{sec.pii}}</button>
+          </div>
+          <div id="lb-failure" hidden>
+            <span id="fail-hint" class="hint">{{fail.hint}}</span>
+            <button type="button" id="fail-reset">{{fail.reset}}</button>
+          </div>
+          <div id="lb-ai" hidden>
+            <span class="hint">{{ai.intro}}</span>
+          </div>
+        </div>
+        <div id="sim-status" class="sr" aria-live="polite"></div>
         <div id="flowbar" class="flowbar" hidden>
           <div class="flowtabs" id="flowtabs" role="tablist" aria-label="{{flows.aria}}"></div>
           <div class="flowctl">

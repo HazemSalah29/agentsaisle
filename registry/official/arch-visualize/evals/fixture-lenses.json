@@ -1,0 +1,1094 @@
+{
+  "version": 2,
+  "project": "shop",
+  "nodes": [
+    {
+      "id": "vercel",
+      "label": "Vercel hosting",
+      "role": "edge",
+      "tech": "vercel",
+      "tier": "edge",
+      "evidence": [
+        {
+          "file": "apps/web/vercel.json",
+          "line": 1,
+          "note": "hosting file vercel.json"
+        }
+      ],
+      "zone": "public"
+    },
+    {
+      "id": "web",
+      "label": "Storefront",
+      "role": "frontend",
+      "tech": "nextjs",
+      "tier": "frontend",
+      "evidence": [
+        {
+          "file": "apps/web/Dockerfile",
+          "line": 1,
+          "note": "base image node:20-alpine, exposes 3000"
+        },
+        {
+          "file": "apps/web/package.json",
+          "line": 1,
+          "note": "dependency next"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 2,
+          "note": "service web builds ./apps/web, ports 3000:3000"
+        }
+      ],
+      "group": "compose",
+      "zone": "dmz",
+      "data": [
+        "pii"
+      ]
+    },
+    {
+      "id": "api",
+      "label": "Shop API",
+      "role": "backend",
+      "tech": "express",
+      "tier": "backend",
+      "evidence": [
+        {
+          "file": "apps/api/Dockerfile",
+          "line": 1,
+          "note": "base image node:20, exposes 4000"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 6,
+          "note": "dependency express"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 8,
+          "note": "service api builds ./apps/api, ports 4000:4000"
+        }
+      ],
+      "group": "compose",
+      "zone": "private",
+      "replicas": 1,
+      "owner": "Platform team"
+    },
+    {
+      "id": "bullmq",
+      "label": "Receipt queue",
+      "role": "queue",
+      "tech": "bullmq",
+      "tier": "async",
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 5,
+          "note": "dependency bullmq"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency bullmq"
+        }
+      ],
+      "group": "compose"
+    },
+    {
+      "id": "worker",
+      "label": "Receipt worker",
+      "role": "worker",
+      "tech": "generic-worker",
+      "tier": "async",
+      "evidence": [
+        {
+          "file": "apps/worker/Dockerfile",
+          "line": 1,
+          "note": "base image node:20"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency bullmq"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 15,
+          "note": "service worker builds ./apps/worker"
+        }
+      ],
+      "group": "compose"
+    },
+    {
+      "id": "cache",
+      "label": "Session cache",
+      "role": "cache",
+      "tech": "redis",
+      "tier": "data",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 3,
+          "note": "env key REDIS_URL"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 7,
+          "note": "dependency ioredis"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency ioredis"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 27,
+          "note": "image redis:7, ports 6379:6379"
+        }
+      ],
+      "group": "compose",
+      "data": [
+        "pii"
+      ],
+      "zone": "private",
+      "replicas": 1
+    },
+    {
+      "id": "db",
+      "label": "Orders database",
+      "role": "database",
+      "tech": "postgresql",
+      "tier": "data",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 2,
+          "note": "env key DATABASE_URL"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 4,
+          "note": "dependency @prisma/client"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 11,
+          "note": "dependency prisma"
+        },
+        {
+          "file": "apps/api/prisma/schema.prisma",
+          "line": 2,
+          "note": "datasource provider postgresql"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency @prisma/client"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 23,
+          "note": "image postgres:16, ports 5432:5432"
+        }
+      ],
+      "group": "compose",
+      "zone": "private",
+      "data": [
+        "pii",
+        "payments"
+      ]
+    },
+    {
+      "id": "resend",
+      "label": "Resend email",
+      "role": "external",
+      "tech": "resend",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 5,
+          "note": "email provider key"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 8,
+          "note": "dependency resend"
+        },
+        {
+          "file": "apps/worker/package.json",
+          "line": 3,
+          "note": "dependency resend"
+        }
+      ],
+      "zone": "third-party"
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe payments",
+      "role": "external",
+      "tech": "stripe",
+      "tier": "external",
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 4,
+          "note": "env key STRIPE_SECRET_KEY"
+        },
+        {
+          "file": "apps/api/package.json",
+          "line": 9,
+          "note": "dependency stripe"
+        }
+      ],
+      "zone": "third-party"
+    },
+    {
+      "id": "agent",
+      "label": "Support agent",
+      "role": "backend",
+      "tech": "generic-backend",
+      "tier": "backend",
+      "zone": "private",
+      "group": "compose",
+      "data": [
+        "pii"
+      ],
+      "ai": {
+        "kind": "agent",
+        "tools": [
+          "Read",
+          "Bash"
+        ],
+        "auditGrade": "C",
+        "auditSource": "evals/audits/support-agent.json"
+      },
+      "evidence": [
+        {
+          "file": "apps/api/src/agent.ts",
+          "line": 1,
+          "note": "agent entry"
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "label": "Docs MCP server",
+      "role": "external",
+      "tech": "generic-external",
+      "tier": "external",
+      "zone": "third-party",
+      "ai": {
+        "kind": "mcp-server",
+        "tools": [
+          "Read"
+        ]
+      },
+      "evidence": [
+        {
+          "file": ".mcp.json",
+          "line": 2
+        }
+      ]
+    },
+    {
+      "id": "llm",
+      "label": "LLM provider",
+      "role": "external",
+      "tech": "generic-external",
+      "tier": "external",
+      "zone": "third-party",
+      "ai": {
+        "kind": "llm-provider"
+      },
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 7,
+          "note": "dependency"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "api-cache",
+      "from": "api",
+      "to": "cache",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 14,
+          "note": "depends_on cache"
+        }
+      ],
+      "protocol": "TCP (Redis)"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 13,
+          "note": "depends_on db"
+        }
+      ],
+      "protocol": "TCP (SQL)",
+      "auth": "unknown",
+      "tls": "unknown",
+      "carries": [
+        "pii"
+      ]
+    },
+    {
+      "id": "web-api",
+      "from": "web",
+      "to": "api",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 7,
+          "note": "depends_on api"
+        },
+        {
+          "file": "apps/web/app/page.tsx",
+          "line": 2,
+          "note": "fetch /api/me"
+        }
+      ],
+      "protocol": "HTTP",
+      "auth": "session",
+      "tls": true,
+      "carries": [
+        "pii"
+      ]
+    },
+    {
+      "id": "worker-cache",
+      "from": "worker",
+      "to": "cache",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 18,
+          "note": "depends_on cache"
+        }
+      ],
+      "protocol": "TCP (Redis)"
+    },
+    {
+      "id": "worker-db",
+      "from": "worker",
+      "to": "db",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 20,
+          "note": "depends_on db"
+        }
+      ],
+      "protocol": "TCP (SQL)"
+    },
+    {
+      "id": "api-bullmq",
+      "from": "api",
+      "to": "bullmq",
+      "protocol": "Redis",
+      "sync": false,
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 5,
+          "note": "new Queue receipts"
+        }
+      ]
+    },
+    {
+      "id": "api-stripe",
+      "from": "api",
+      "to": "stripe",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 13,
+          "note": "fetch api.stripe.com"
+        }
+      ],
+      "tls": true,
+      "auth": "api-key",
+      "carries": [
+        "payments"
+      ]
+    },
+    {
+      "id": "bullmq-worker",
+      "from": "bullmq",
+      "to": "worker",
+      "protocol": "Redis",
+      "sync": false,
+      "evidence": [
+        {
+          "file": "apps/worker/src/worker.ts",
+          "line": 6,
+          "note": "new Worker receipts"
+        }
+      ]
+    },
+    {
+      "id": "worker-resend",
+      "from": "worker",
+      "to": "resend",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "apps/worker/src/worker.ts",
+          "line": 7,
+          "note": "resend.emails.send"
+        }
+      ],
+      "optional": true,
+      "retries": 3
+    },
+    {
+      "id": "bullmq-cache",
+      "from": "bullmq",
+      "to": "cache",
+      "protocol": "TCP (Redis)",
+      "sync": true
+    },
+    {
+      "id": "vercel-web",
+      "from": "vercel",
+      "to": "web",
+      "protocol": "HTTPS",
+      "sync": true
+    },
+    {
+      "id": "api-agent",
+      "from": "api",
+      "to": "agent",
+      "protocol": "HTTP",
+      "sync": true,
+      "auth": "session",
+      "tls": "unknown",
+      "carries": [
+        "pii"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/src/agent.ts",
+          "line": 9
+        }
+      ]
+    },
+    {
+      "id": "agent-llm",
+      "from": "agent",
+      "to": "llm",
+      "protocol": "HTTPS",
+      "sync": true,
+      "tls": true,
+      "auth": "api-key",
+      "carries": [
+        "pii"
+      ],
+      "timeoutMs": 20000,
+      "evidence": [
+        {
+          "file": "apps/api/src/agent.ts",
+          "line": 22
+        }
+      ]
+    },
+    {
+      "id": "agent-mcp",
+      "from": "agent",
+      "to": "mcp",
+      "protocol": "MCP",
+      "sync": true,
+      "optional": true,
+      "evidence": [
+        {
+          "file": ".mcp.json",
+          "line": 4
+        }
+      ],
+      "auth": "none"
+    }
+  ],
+  "flows": [
+    {
+      "id": "load-profile",
+      "name": "User loads their profile",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "GET /api/me"
+        },
+        {
+          "edge": "api-cache",
+          "label": "Look up session"
+        },
+        {
+          "event": "cache-miss",
+          "node": "cache"
+        },
+        {
+          "edge": "api-db",
+          "label": "SELECT user"
+        },
+        {
+          "edge": "api-db",
+          "label": "Row returned",
+          "reverse": true
+        },
+        {
+          "edge": "api-cache",
+          "label": "Store session"
+        },
+        {
+          "edge": "web-api",
+          "label": "200 OK",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "checkout",
+      "name": "Customer checks out",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "POST /api/checkout"
+        },
+        {
+          "edge": "api-db",
+          "label": "Read prices"
+        },
+        {
+          "edge": "api-db",
+          "label": "Prices returned",
+          "reverse": true
+        },
+        {
+          "edge": "api-stripe",
+          "label": "Charge card"
+        },
+        {
+          "edge": "api-stripe",
+          "label": "Charge result",
+          "reverse": true
+        },
+        {
+          "edge": "api-bullmq",
+          "label": "Queue receipt email"
+        },
+        {
+          "edge": "web-api",
+          "label": "200 OK",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "send-receipt",
+      "name": "Receipt email (background)",
+      "steps": [
+        {
+          "edge": "bullmq-worker",
+          "label": "Job delivered"
+        },
+        {
+          "edge": "worker-resend",
+          "label": "Send email"
+        },
+        {
+          "edge": "worker-resend",
+          "label": "Accepted",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "ask-agent",
+      "name": "User asks the support agent",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "POST /api/ask"
+        },
+        {
+          "edge": "api-agent",
+          "label": "Hand over"
+        },
+        {
+          "edge": "agent-llm",
+          "label": "Prompt"
+        },
+        {
+          "edge": "agent-llm",
+          "reverse": true,
+          "label": "Answer"
+        },
+        {
+          "edge": "web-api",
+          "reverse": true,
+          "label": "200 OK"
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "AV-R01",
+      "title": "Single database with no replica or backup configuration",
+      "severity": "warn",
+      "nodes": [
+        "db"
+      ],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 23,
+          "note": "image postgres:16, ports 5432:5432"
+        },
+        {
+          "file": "apps/api/prisma/schema.prisma",
+          "line": 2,
+          "note": "datasource provider postgresql"
+        }
+      ],
+      "why": "The model has one database and none of the files read mention a replica, a standby, a backup tool or a managed database service.",
+      "check": "Confirm where backups are taken and that a restore has been tried. Decide whether a replica or a managed service is worth its cost for this project.",
+      "fixes": [
+        {
+          "text": "Take scheduled backups and rehearse a restore.",
+          "tradeoff": "Costs storage and an hour of practice; it protects against loss, not against downtime."
+        },
+        {
+          "text": "Use a managed database that handles backups and failover.",
+          "tradeoff": "Less control and a monthly bill; fewer things to run yourself."
+        },
+        {
+          "text": "Add a read replica or standby.",
+          "tradeoff": "Costs money and adds replication lag; a replica is not a backup."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R02",
+      "title": "Cache entries written without an expiry",
+      "severity": "info",
+      "nodes": [
+        "api",
+        "cache"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/src/lib/session.ts",
+          "line": 10,
+          "note": "redis .set() without an expiry"
+        }
+      ],
+      "why": "Heuristic: a Redis write has no expiry option (EX, PX, ttl) and no expire call close by, so the entry stays until it is evicted or deleted.",
+      "check": "Check the eviction policy and whether these keys should expire. Some data (counters, locks you release yourself) is meant to stay; adding a TTL there can lose data.",
+      "fixes": [
+        {
+          "text": "Set an expiry (EX, PX or ttl) when the entry can be rebuilt.",
+          "tradeoff": "A short expiry means more cache misses and more load on the source."
+        },
+        {
+          "text": "Set a memory limit and an eviction policy on Redis.",
+          "tradeoff": "Entries can disappear when memory is full, so keep only data you can rebuild."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R03",
+      "title": "No rate limiting found on a public API",
+      "severity": "warn",
+      "nodes": [
+        "api"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/src/server.ts",
+          "line": 6,
+          "note": "route defined here"
+        }
+      ],
+      "why": "Heuristic: the app defines public routes (including Next.js route handlers), but no rate-limit package, middleware or helper appears in the dependencies or code read. It may be done at a gateway, CDN or proxy that these files do not show.",
+      "check": "Look for rate limiting at the proxy, CDN or API gateway. If there is none, consider limits on login, signup and expensive routes first.",
+      "fixes": [
+        {
+          "text": "Add a rate limiter at the proxy, CDN or gateway.",
+          "tradeoff": "One place to manage; the app itself stays unaware of limits."
+        },
+        {
+          "text": "Add a limiter in the app, first on login, signup and expensive routes.",
+          "tradeoff": "Needs a shared store such as Redis to work across instances; users behind one address share a limit."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R04",
+      "title": "External call without a timeout",
+      "severity": "warn",
+      "nodes": [
+        "api",
+        "stripe"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 13,
+          "note": "fetch to api.stripe.com without a timeout"
+        }
+      ],
+      "why": "Heuristic: a call to an outside host has no AbortSignal.timeout, signal or timeout option, so a slow provider can hold the request open.",
+      "check": "Check the client's default timeout. Add an explicit one that is shorter than your own request limit, and decide what the user sees when it fires.",
+      "fixes": [
+        {
+          "text": "Set a timeout on the call or on the shared client, shorter than your own request limit.",
+          "tradeoff": "A timeout that is too short cuts off slow successes."
+        },
+        {
+          "text": "Pair the timeout with one retry and a clear error for the user.",
+          "tradeoff": "Retries multiply load on a provider that is already slow."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R05",
+      "title": "Database query inside a loop",
+      "severity": "warn",
+      "nodes": [
+        "api"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/src/routes/checkout.ts",
+          "line": 11,
+          "note": "awaited database call inside a loop"
+        }
+      ],
+      "why": "Heuristic: an awaited database call sits inside a loop or an async map, which often means one query per item (the N+1 pattern).",
+      "check": "Check how many items the loop runs over. A single batched query (findMany with a list, a join, an IN clause) is usually faster, but can be heavier for very large lists.",
+      "fixes": [
+        {
+          "text": "Load the items with one batched query (a list, a join, an IN clause).",
+          "tradeoff": "Can use more memory or hit parameter limits on very large lists."
+        },
+        {
+          "text": "Keep the loop but cap the number of items.",
+          "tradeoff": "Simple, but later items are skipped or need paging."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R07",
+      "title": "Secret-looking variable exposed to the browser",
+      "severity": "warn",
+      "nodes": [
+        "web"
+      ],
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 6,
+          "note": "env name NEXT_PUBLIC_ANALYTICS_SECRET_KEY (value not read)"
+        }
+      ],
+      "why": "A variable with a browser-exposed prefix (NEXT_PUBLIC_, VITE_ and similar) has a name containing SECRET, PRIVATE, KEY, TOKEN or PASSWORD. Such variables are copied into the public JavaScript bundle. Only the name was read, never the value.",
+      "check": "Check whether the value is really meant to be public. If it is a secret, move it to the server and rotate it, because it may already be in a deployed bundle.",
+      "fixes": [
+        {
+          "text": "Move the value to the server and call it from there.",
+          "tradeoff": "One more request hop for the browser."
+        },
+        {
+          "text": "If it was a secret, rotate it, because it may already be in a deployed bundle.",
+          "tradeoff": "Anything using the old value must be updated."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R08",
+      "title": "No health check endpoint found",
+      "severity": "info",
+      "nodes": [
+        "api"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/package.json",
+          "line": 6,
+          "note": "dependency express"
+        }
+      ],
+      "why": "Heuristic: the app defines routes but none of the files read has a /health, /healthz or /ready route.",
+      "check": "Check whether your host, load balancer or orchestrator probes the service another way (a TCP check, the home page). If not, a small health route lets it restart or stop sending traffic to a stuck instance.",
+      "fixes": [
+        {
+          "text": "Add a small liveness route that returns 200 without touching other services.",
+          "tradeoff": "Cheap, but it only shows the process is up."
+        },
+        {
+          "text": "Add a separate readiness route that checks the database.",
+          "tradeoff": "A slow database can then take the instance out of rotation; keep it apart from liveness."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R10",
+      "title": "Data service exposed or unprotected in docker-compose",
+      "severity": "warn",
+      "nodes": [
+        "cache",
+        "db"
+      ],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 24,
+          "note": "db: port 5432:5432 published on all interfaces"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 28,
+          "note": "cache: port 6379:6379 published on all interfaces"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 27,
+          "note": "cache: Redis has no requirepass or REDIS_PASSWORD"
+        }
+      ],
+      "why": "A compose service for a data store publishes its port to the host on all interfaces, or Redis has no password (requirepass) configured.",
+      "check": "Check where this compose file is used. For local development it is often fine; on a shared or public machine, bind ports to 127.0.0.1, set a password and keep the service off public networks.",
+      "fixes": [
+        {
+          "text": "Bind published ports to 127.0.0.1 or remove them.",
+          "tradeoff": "Other machines can no longer reach the service, including ones that should."
+        },
+        {
+          "text": "Set a password (requirepass) and keep the service off public networks.",
+          "tradeoff": "Every client needs the password."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R11",
+      "title": "Some synchronous calls have a timeout recorded and these do not",
+      "severity": "info",
+      "nodes": [
+        "agent",
+        "api",
+        "bullmq",
+        "vercel",
+        "web",
+        "worker"
+      ],
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 14,
+          "note": "api-cache: no timeout recorded"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 13,
+          "note": "api-db: no timeout recorded"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 7,
+          "note": "web-api: no timeout recorded"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 18,
+          "note": "worker-cache: no timeout recorded"
+        },
+        {
+          "file": "docker-compose.yml",
+          "line": 20,
+          "note": "worker-db: no timeout recorded"
+        }
+      ],
+      "why": "Heuristic: the model records a timeout on at least one synchronous connection but not on these, so the calls may behave differently when a service is slow. A model that records no timeouts at all is not flagged, because that only means none were looked for.",
+      "check": "Look at the client or call behind each connection. Decide whether the missing timeout is deliberate, and record it in the model when it is set.",
+      "fixes": [
+        {
+          "text": "Set an explicit timeout on each call, shorter than your own request limit.",
+          "tradeoff": "A timeout that is too short cuts off slow successes."
+        },
+        {
+          "text": "Share one client configuration so every call gets the same timeout.",
+          "tradeoff": "One value fits all calls badly if some are slower on purpose."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R12",
+      "title": "Retries with no backoff noted",
+      "severity": "warn",
+      "nodes": [
+        "worker"
+      ],
+      "evidence": [
+        {
+          "file": "apps/worker/src/worker.ts",
+          "line": 7,
+          "note": "worker-resend: 3 retries, no backoff noted"
+        }
+      ],
+      "why": "Heuristic: a connection retries a failed call, and nothing in its evidence notes a delay between attempts (backoff or jitter). Immediate retries can pile load onto a service that is already struggling.",
+      "check": "Check how the retry waits. If it retries at once, add a growing delay with some randomness, and a limit on attempts.",
+      "fixes": [
+        {
+          "text": "Wait longer after each failed attempt (exponential backoff) and add jitter.",
+          "tradeoff": "Slower recovery for the caller when the failure was brief."
+        },
+        {
+          "text": "Cap the number of attempts and fail with a clear error.",
+          "tradeoff": "Some calls that would have succeeded on a later try now fail."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R13",
+      "title": "Connection crosses a trust zone with no authentication or encryption",
+      "severity": "warn",
+      "nodes": [
+        "agent",
+        "mcp"
+      ],
+      "evidence": [
+        {
+          "file": ".mcp.json",
+          "line": 4,
+          "note": "agent-mcp: crosses private to third-party with no authentication"
+        }
+      ],
+      "why": "A connection joins components in different trust zones and is recorded as having no authentication (auth: none) or no TLS (tls: false), with a file as evidence.",
+      "check": "Check whether the connection stays on a private network that you control. If it can be reached from outside its zone, add authentication and encryption.",
+      "fixes": [
+        {
+          "text": "Turn on TLS for the connection (mutual TLS inside a private network if you can).",
+          "tradeoff": "Certificates to issue and renew; a small cost per connection."
+        },
+        {
+          "text": "Require a credential (a token, API key or signed request) on the receiving side.",
+          "tradeoff": "Every caller needs the credential and a way to rotate it."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R14",
+      "title": "Personal data reaches a third party or logs",
+      "severity": "warn",
+      "nodes": [
+        "agent",
+        "llm"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/src/agent.ts",
+          "line": 22,
+          "note": "agent-llm: carries personal data"
+        }
+      ],
+      "why": "A connection is recorded as carrying personal data (pii) to a component in the third-party zone or to one that holds logs, or a third-party component is recorded as holding it.",
+      "check": "Check whether this data really goes there, what the other side does with it, and whether it can be left out, masked or hashed first.",
+      "fixes": [
+        {
+          "text": "Remove or mask personal fields before the data leaves (or before it is logged).",
+          "tradeoff": "Support and debugging lose some detail."
+        },
+        {
+          "text": "Check the third party's data agreement and retention, and record the decision.",
+          "tradeoff": "Takes time; it may show the service is not a fit."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R18",
+      "title": "Single copy of a component that several flows depend on",
+      "severity": "warn",
+      "nodes": [
+        "api"
+      ],
+      "evidence": [
+        {
+          "file": "apps/api/Dockerfile",
+          "line": 1,
+          "note": "api: one replica, used by 3 flows"
+        }
+      ],
+      "why": "A component is recorded as running as one replica, and three or more request flows pass through it, so one failure or restart interrupts all of them.",
+      "check": "Check whether one copy is enough: how long a restart takes, and what the flows do while it is gone.",
+      "fixes": [
+        {
+          "text": "Run a second copy behind a load balancer.",
+          "tradeoff": "Costs more, and state held in memory must move out or be shared."
+        },
+        {
+          "text": "Keep one copy but add a health check and fast automatic restart.",
+          "tradeoff": "There is still a gap during each restart."
+        }
+      ],
+      "source": "rule"
+    }
+  ],
+  "inferred": [
+    "edge:bullmq-cache",
+    "edge:vercel-web"
+  ],
+  "groups": [
+    {
+      "id": "compose",
+      "label": "Docker Compose stack",
+      "kind": "deploy",
+      "evidence": [
+        {
+          "file": "docker-compose.yml",
+          "line": 1
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "start",
+      "name": "Start here",
+      "lens": "system",
+      "focus": [
+        "api"
+      ]
+    }
+  ]
+}

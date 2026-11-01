@@ -5,7 +5,7 @@
 
   var LENSES = ["system", "flows", "security", "failure", "ai", "diff"];
   var ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
-  var ORDER = ["lens", "node", "edge", "flow", "step", "x", "y", "k"];
+  var ORDER = ["lens", "node", "edge", "down", "flow", "step", "x", "y", "k"];
 
   function clamp(v, lo, hi) {
     return Math.min(hi, Math.max(lo, v));
@@ -34,6 +34,15 @@
         if (ORDER.indexOf(key) < 0 || key in out) return;
         if (key === "lens") {
           if (LENSES.indexOf(raw) >= 0) out.lens = raw;
+        } else if (key === "down") {
+          var ids = raw.split(",");
+          if (
+            ids.length <= 10 &&
+            ids.every(function (id) {
+              return ID.test(id);
+            })
+          )
+            out.down = raw;
         } else if (key === "node" || key === "edge" || key === "flow") {
           if (ID.test(raw)) out[key] = raw;
         } else if (/^-?\d+(\.\d+)?$/.test(raw)) {
@@ -55,6 +64,8 @@
       if (v === undefined || v === null || v === "") return;
       if (key === "lens" && LENSES.indexOf(v) < 0) return;
       if ((key === "node" || key === "edge" || key === "flow") && !ID.test(v)) return;
+      if (key === "down" && !/^[a-z0-9][a-z0-9-]{0,63}(,[a-z0-9][a-z0-9-]{0,63}){0,9}$/.test(v))
+        return;
       if (typeof v === "number" && !isFinite(v)) return;
       var text = typeof v === "number" ? (key === "k" ? round(v * 100) / 100 : round(v)) : v;
       parts.push(key + "=" + encodeURIComponent(String(text)));

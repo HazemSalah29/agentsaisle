@@ -30,7 +30,20 @@ const PLURAL = /\.(zero|one|two|few|many|other)$/;
 const base = (key: string) => key.replace(PLURAL, "");
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
 // Keys that code builds from a prefix and a model value (a tier, a role, a severity).
-const DYNAMIC = ["tier.", "role.", "sev.", "search.kind."];
+const DYNAMIC = [
+  "tier.",
+  "role.",
+  "sev.",
+  "search.kind.",
+  "zone.",
+  "data.",
+  "auth.",
+  "ai.kind.",
+  "fail.status.",
+  "fail.sync",
+  "fail.fallback",
+  "fail.delayed",
+];
 
 describe("arch-visualize text (i18n)", () => {
   it("has the same keys in English and Arabic, with an .other form for every plural", () => {
@@ -89,7 +102,11 @@ describe("arch-visualize text (i18n)", () => {
   it("writes the Arabic strings in Arabic letters", () => {
     const arabic = /[؀-ۿ]/;
     const plain = Object.entries(strings.ar).filter(
-      ([, v]) => !arabic.test(v) && v.replace(/\{\w+\}|[\s.,:;()·←→«»-]/g, "") !== "",
+      ([k, v]) =>
+        // technical names that stay in Latin letters on purpose
+        !["auth.jwt", "auth.oauth", "tls.yes"].includes(k) &&
+        !arabic.test(v) &&
+        v.replace(/\{\w+\}|[\s.,:;()·←→«»-]/g, "") !== "",
     );
     expect(plain.map(([k]) => k)).toEqual([]);
   });
@@ -226,6 +243,33 @@ describe("arch-visualize colours", () => {
     ["edge", "band", 3],
     ["edge", "surface", 3],
     ["warn", "bg", 3],
+    // the lenses added in 0.2.0: their accents are text and lines on cards and on the page
+    ["accent-security", "surface", 4.5],
+    ["accent-failure", "surface", 4.5],
+    ["accent-ai", "surface", 4.5],
+    ["accent-security", "surface-2", 4.5],
+    ["accent-failure", "surface-2", 4.5],
+    ["accent-ai", "surface-2", 4.5],
+    ["bad", "surface", 4.5],
+    ["bad", "bg", 3],
+    ["accent-security", "band", 3],
+    ["accent-failure", "band", 3],
+    ["accent-ai", "band", 3],
+    ["zone-public", "bg", 3],
+    ["zone-dmz", "bg", 3],
+    ["zone-private", "bg", 3],
+    ["zone-third-party", "bg", 3],
+    ["zone-user-device", "bg", 3],
+    ["zone-public", "band", 3],
+    ["zone-dmz", "band", 3],
+    ["zone-private", "band", 3],
+    ["zone-third-party", "band", 3],
+    ["zone-user-device", "band", 3],
+    ["zone-public", "surface", 4.5],
+    ["zone-dmz", "surface", 4.5],
+    ["zone-private", "surface", 4.5],
+    ["zone-third-party", "surface", 4.5],
+    ["zone-user-device", "surface", 4.5],
   ];
   for (const [theme, tokens] of Object.entries(themes))
     for (const [fg, bg, min] of pairs)
@@ -275,7 +319,8 @@ describe("arch-visualize level of detail and minimap", () => {
   });
 
   it("draws connection labels with text only", () => {
-    expect(code).toMatch(/class: "edge-label"/);
+    expect(code).toMatch(/class: "edge-label proto/);
+    expect(code).toMatch(/class: "edge-label sec/);
     expect(code).not.toMatch(/innerHTML/);
   });
 });
@@ -323,7 +368,7 @@ describe("arch-visualize lenses", () => {
   it("only offers the lenses that exist and falls back to System for the rest", () => {
     const src = read("src/55-lens.js");
     expect(src).toMatch(/LENS_ORDER\.indexOf\(name\) >= 0 \? name : "system"/);
-    expect(src).toMatch(/\["system"\]\.concat\(flows\.length \? \["flows"\] : \[\]\)/);
+    expect(src).toMatch(/\.filter\(lensAvailable\)/);
   });
 
   it("has a scrubbable timeline, a focus toggle and a live caption", () => {
@@ -404,5 +449,56 @@ describe("arch-visualize built page is offline", () => {
 describe("arch-visualize hidden parts", () => {
   it("lets the hidden attribute win over any display rule", () => {
     expect(read("styles.css")).toMatch(/\[hidden\] \{\s*display: none !important;/);
+  });
+});
+
+describe("arch-visualize Security, Failure and AI lenses in the page", () => {
+  const lensCode = read("src/57-lenses.js");
+
+  it("shows only the lenses that have something to say about the model", () => {
+    expect(lensCode).toMatch(/function lensAvailable\(name\)/);
+    expect(lensCode).toMatch(/hasSecurityFacts\(\)/);
+    expect(lensCode).toMatch(/model\.edges\.length > 0/);
+    expect(lensCode).toMatch(/return n\.ai;/);
+  });
+
+  it("writes every result as text and uses the shared simulation and data trace", () => {
+    expect(lensCode).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|document\.write/);
+    expect(lensCode).toMatch(/ArchSim\.simulate\(model, failDown\)/);
+    expect(lensCode).toMatch(/ArchData\.trace\(model, "pii"\)/);
+  });
+
+  it("says every result is a what-if from the model and announces it", () => {
+    expect(lensCode).toMatch(/t\("fail\.note"\)/);
+    expect(lensCode).toMatch(/\$\("sim-status"\)\.textContent = t\("fail\.announce"/);
+    expect(markup).toMatch(/id="sim-status" class="sr" aria-live="polite"/);
+    expect(strings.en["fail.hint"]).toContain("what-if");
+    expect(strings.en["fail.note"]).toContain("not a prediction about production");
+  });
+
+  it("keeps the layout still: lenses only change classes, never positions", () => {
+    expect(lensCode).not.toMatch(/ArchLayout|\.layout\(|transform/);
+  });
+
+  it("gives the risk card its options and a what-if button that opens the Failure lens", () => {
+    expect(lensCode).toMatch(/function riskExtras\(r\)/);
+    expect(lensCode).toMatch(/whatIf\(subject\)/);
+    expect(lensCode).toMatch(/setLens\("failure"\)/);
+    expect(read("src/30-list-panel.js")).toMatch(/riskExtras\(r\)/);
+  });
+
+  it("never relies on colour alone: the AI grade is a letter, the failure is a word", () => {
+    expect(read("src/10-layout-draw.js")).toMatch(/n\.ai\.auditGrade \|\| "–"/);
+    expect(lensCode).toMatch(/t\("fail\.status\." \+ st\)/);
+  });
+
+  it("has a tab for each lens, hidden until the model has something to show", () => {
+    for (const l of ["security", "failure", "ai"])
+      expect(markup).toMatch(new RegExp(`id="lens-${l}"[\\s\\S]*?hidden`));
+  });
+
+  it("keeps a link for the simulated components", () => {
+    expect(read("src/70-links.js")).toMatch(/down: failDown\.length/);
+    expect(read("src/70-links.js")).toMatch(/want\.down && lens === "failure"/);
   });
 });

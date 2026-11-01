@@ -186,6 +186,21 @@ describe("arch-visualize deep links", () => {
     expect(ArchHash.buildHash({ k: 1, node: "a", lens: "system" })).toBe("#lens=system&node=a&k=1");
   });
 
+  it("keeps a list of components to simulate, and only valid ones", () => {
+    expect(ArchHash.parseHash("#down=redis,db-1")).toEqual({ down: "redis,db-1" });
+    expect(ArchHash.parseHash("#down=redis,Bad Id")).toEqual({});
+    expect(ArchHash.parseHash("#down=" + Array(11).fill("a").join(","))).toEqual({});
+    expect(ArchHash.parseHash("#down=<script>")).toEqual({});
+    expect(ArchHash.buildHash({ lens: "failure", down: "redis,db" })).toBe(
+      "#lens=failure&down=redis%2Cdb",
+    );
+    expect(ArchHash.parseHash(ArchHash.buildHash({ lens: "failure", down: "redis,db" }))).toEqual({
+      lens: "failure",
+      down: "redis,db",
+    });
+    expect(ArchHash.buildHash({ down: "no good" })).toBe("");
+  });
+
   it("accepts the empty and missing hash", () => {
     expect(ArchHash.parseHash("")).toEqual({});
     expect(ArchHash.parseHash("#")).toEqual({});

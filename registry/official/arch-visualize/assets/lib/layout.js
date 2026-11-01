@@ -32,6 +32,7 @@
     radius: 8,
     sweeps: 8,
     labels: true,
+    labelText: null, // optional function(edge) -> the text a label has to fit; default is the protocol
   };
 
   function opt(o) {
@@ -638,8 +639,8 @@
       });
       var placed = [];
       edges.forEach(function (e) {
-        if (!e.protocol) return;
-        var text = String(e.protocol);
+        var text = String(o.labelText ? o.labelText(e) || "" : e.protocol || "");
+        if (!text) return;
         var w = Math.min(text.length, 18) * 6.4 + 10,
           h = 16;
         var p = routes[e.id].points;

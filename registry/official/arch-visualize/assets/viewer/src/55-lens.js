@@ -1,5 +1,5 @@
 // ---- lenses: the same diagram, read for a different question. System shows the parts; Flows plays a request.
-var LENS_ORDER = ["system"].concat(flows.length ? ["flows"] : []);
+var LENS_ORDER = ["system", "flows", "security", "failure", "ai"].filter(lensAvailable);
 function setLens(name) {
   lens = LENS_ORDER.indexOf(name) >= 0 ? name : "system";
   document.documentElement.setAttribute("data-lens", lens);
@@ -19,6 +19,7 @@ function setLens(name) {
   }
   if (flows.length) applyFocus();
   $("lenses").hidden = LENS_ORDER.length < 2;
+  applyLensView();
   renderPanel();
   scheduleLink();
 }

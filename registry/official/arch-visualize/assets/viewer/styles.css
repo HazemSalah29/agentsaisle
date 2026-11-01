@@ -9,6 +9,15 @@
   --edge: #6a665e;
   --accent-system: #2c5aa0;
   --accent-flows: #b8420a;
+  --bad: #b42318;
+  --accent-security: #6b3fa0;
+  --accent-failure: #b42318;
+  --accent-ai: #0f766e;
+  --zone-public: #b54708;
+  --zone-dmz: #8a6d00;
+  --zone-private: #0f6b4a;
+  --zone-third-party: #a21caf;
+  --zone-user-device: #1d5fa8;
   --accent: var(--accent-system);
   --accent-text: #ffffff;
   --fs-s: 12px;
@@ -31,6 +40,15 @@
     --edge: #9a968c;
     --accent-system: #8fb0ea;
     --accent-flows: #ff8a4c;
+    --bad: #ff8f85;
+    --accent-security: #c4a8f0;
+    --accent-failure: #ff8f85;
+    --accent-ai: #5eead4;
+    --zone-public: #ffb066;
+    --zone-dmz: #e6c84f;
+    --zone-private: #6fd8a6;
+    --zone-third-party: #f08be8;
+    --zone-user-device: #8fb8f0;
     --accent: var(--accent-system);
     --accent-text: #14181f;
     --warn: #fbbf24;
@@ -50,6 +68,15 @@
   --edge: #9a968c;
   --accent-system: #8fb0ea;
   --accent-flows: #ff8a4c;
+  --bad: #ff8f85;
+  --accent-security: #c4a8f0;
+  --accent-failure: #ff8f85;
+  --accent-ai: #5eead4;
+  --zone-public: #ffb066;
+  --zone-dmz: #e6c84f;
+  --zone-private: #6fd8a6;
+  --zone-third-party: #f08be8;
+  --zone-user-device: #8fb8f0;
   --accent: var(--accent-system);
   --accent-text: #14181f;
   --warn: #fbbf24;
@@ -59,6 +86,15 @@
 }
 :root[data-lens="flows"] {
   --accent: var(--accent-flows);
+}
+:root[data-lens="security"] {
+  --accent: var(--accent-security);
+}
+:root[data-lens="failure"] {
+  --accent: var(--accent-failure);
+}
+:root[data-lens="ai"] {
+  --accent: var(--accent-ai);
 }
 [hidden] {
   display: none !important;
@@ -855,4 +891,188 @@ svg text {
     break-inside: avoid;
     border: 1px solid #000;
   }
+}
+
+/* ---- lenses: classes are set on every node and edge; the lens decides which ones show */
+.lensbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.lensbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.lensbar .hint {
+  color: var(--muted);
+  font-size: var(--fs-s);
+  max-width: 70ch;
+}
+.lensbar button[aria-pressed="true"] {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.halo,
+.zone-chip,
+.badge-ai {
+  display: none;
+}
+.halo {
+  fill: none;
+  stroke-width: 2.5;
+  stroke: var(--z);
+}
+.zone-chip {
+  font:
+    600 var(--fs-s) system-ui,
+    sans-serif;
+  letter-spacing: 0.04em;
+  fill: var(--z);
+}
+.z-public {
+  --z: var(--zone-public);
+}
+.z-dmz {
+  --z: var(--zone-dmz);
+}
+.z-private {
+  --z: var(--zone-private);
+}
+.z-third-party {
+  --z: var(--zone-third-party);
+}
+.z-user-device {
+  --z: var(--zone-user-device);
+}
+[data-lens="security"] .node .halo,
+[data-lens="security"] .node .zone-chip {
+  display: inline;
+}
+[data-lens="security"] .edge .line {
+  opacity: 0.55;
+}
+[data-lens="security"] .edge.carries .line {
+  stroke: var(--accent-security);
+  stroke-width: 2;
+  opacity: 1;
+}
+[data-lens="security"] .edge.cross .line {
+  stroke: var(--accent-security);
+  stroke-width: 3;
+  opacity: 1;
+}
+[data-lens="security"] .node.has-data .box {
+  stroke: var(--accent-security);
+  stroke-width: 2.5;
+}
+.edge-label.sec,
+.edge-label-bg.only-sec {
+  display: none;
+}
+[data-lens="security"] .edge-label.sec,
+[data-lens="security"] .edge-label-bg.only-sec {
+  display: inline;
+}
+[data-lens="security"] .edge-label.proto:not(.no-sec) {
+  display: none;
+}
+.edge-label.unknown {
+  text-decoration: underline dotted;
+}
+.pii-tracing .node:not(.pii-on),
+.pii-tracing .edge:not(.pii-on) {
+  opacity: 0.25;
+}
+.node.pii-on .box,
+.edge.pii-on .line {
+  stroke: var(--accent-security);
+  stroke-width: 3;
+}
+.simulating .node.sim-ok,
+.simulating .edge:not(.sim-broken):not(.sim-fallback):not(.sim-delayed) {
+  opacity: 0.35;
+}
+.node.sim-failed .box {
+  stroke: var(--bad);
+  stroke-width: 3;
+}
+.node.sim-failed .tile {
+  fill: var(--bad);
+  fill-opacity: 0.25;
+}
+.node.sim-degraded .box {
+  stroke: var(--warn);
+  stroke-width: 3;
+  stroke-dasharray: 8 4;
+}
+.edge.sim-broken .line {
+  stroke: var(--bad);
+  stroke-width: 3;
+}
+.edge.sim-fallback .line,
+.edge.sim-delayed .line {
+  stroke: var(--warn);
+  stroke-width: 3;
+  stroke-dasharray: 8 4;
+}
+.sim-chip {
+  display: none;
+  font:
+    700 var(--fs-s) system-ui,
+    sans-serif;
+  fill: var(--text);
+}
+.simulating .sim-failed .sub,
+.simulating .sim-degraded .sub {
+  display: none;
+}
+.simulating .sim-failed .sim-chip,
+.simulating .sim-degraded .sim-chip {
+  display: inline;
+}
+[data-lens="ai"] .node .badge-ai {
+  display: inline;
+}
+.badge-ai circle {
+  fill: var(--accent-ai);
+}
+.badge-ai text {
+  fill: var(--surface);
+  font:
+    700 var(--fs-s) system-ui,
+    sans-serif;
+  text-anchor: middle;
+}
+[data-lens="ai"] .node:not(.is-ai),
+[data-lens="ai"] .edge:not(.to-ai) {
+  opacity: 0.3;
+}
+[data-lens="ai"] .node.is-ai .box {
+  stroke: var(--accent-ai);
+  stroke-width: 2.5;
+}
+#body ul.panel-list {
+  padding-inline-start: 18px;
+  list-style: disc;
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 12px;
+  margin: 6px 0;
+}
+.kv dt {
+  color: var(--muted);
+}
+.kv dd {
+  margin: 0;
+}
+.fixes .tradeoff {
+  color: var(--muted);
 }

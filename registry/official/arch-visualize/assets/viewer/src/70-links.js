@@ -15,6 +15,7 @@ function linkState() {
     lens: lens !== "system" ? lens : undefined,
     node: sel && sel.kind === "node" ? sel.id : undefined,
     edge: sel && sel.kind === "edge" ? sel.id : undefined,
+    down: failDown.length ? failDown.join(",") : undefined,
     flow: flows.length && st.index >= 0 ? flows[flowIx].id : undefined,
     step: flows.length && st.index >= 0 ? st.index + 1 : undefined,
     x: view.x,
@@ -52,6 +53,7 @@ function applyLink(want) {
       }
     }
   }
+  if (want.down && lens === "failure") simulateDown(want.down.split(","));
   if (want.node && nodeById[want.node]) select("node", want.node);
   else if (want.edge && edgeById[want.edge]) select("edge", want.edge);
 }

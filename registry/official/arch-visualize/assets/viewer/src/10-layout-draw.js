@@ -1,7 +1,14 @@
 // ---- layout: computed by the shared layout module (assets/lib), so tests run the same code
 var W = 190,
   H = 64;
-var lay = ArchLayout.layout(model);
+var lay = ArchLayout.layout(model, {
+  // a label has to fit the protocol or, in the Security lens, the authentication and encryption text
+  labelText: function (e) {
+    var a = e.protocol ? clip(e.protocol, 18) : "";
+    var b = secText(e);
+    return b.length > a.length ? b : a;
+  },
+});
 if (FLOW_RTL) lay = ArchLayout.mirror(lay);
 var present = lay.layers.map(function (l) {
   return l.tier;
@@ -90,8 +97,14 @@ vp.append(gEdges, gNodes);
 model.edges.forEach(function (e) {
   if (!pos[e.from] || !pos[e.to]) return;
   var d = lay.routes[e.id].d;
+  var cross = zoneOf(e.from) && zoneOf(e.to) && zoneOf(e.from) !== zoneOf(e.to);
   var g = s("g", {
-    class: "edge" + (isInferred("edge", e.id) ? " inferred" : ""),
+    class:
+      "edge" +
+      (isInferred("edge", e.id) ? " inferred" : "") +
+      (cross ? " cross" : "") +
+      (e.carries && e.carries.length ? " carries" : "") +
+      (nodeById[e.from].ai || nodeById[e.to].ai ? " to-ai" : ""),
     "data-edge": e.id,
   });
   g.append(
@@ -104,23 +117,45 @@ model.edges.forEach(function (e) {
       "marker-end": "url(#arrow)",
     }),
   );
-  var lab = e.protocol && lay.labels[e.id];
+  var lab = lay.labels[e.id];
+  var sec = secText(e);
   if (lab) {
     g.append(
       s("rect", {
-        class: "edge-label-bg",
+        class: "edge-label-bg" + (e.protocol ? "" : " only-sec"),
         x: lab.x,
         y: lab.y,
         width: lab.w,
         height: lab.h,
         rx: 4,
       }),
-      s(
-        "text",
-        { class: "edge-label", x: lab.x + lab.w / 2, y: lab.y + 12, "text-anchor": "middle" },
-        clip(e.protocol, 18),
-      ),
     );
+    if (e.protocol)
+      g.append(
+        s(
+          "text",
+          {
+            class: "edge-label proto" + (sec ? "" : " no-sec"),
+            x: lab.x + lab.w / 2,
+            y: lab.y + 12,
+            "text-anchor": "middle",
+          },
+          clip(e.protocol, 18),
+        ),
+      );
+    if (sec)
+      g.append(
+        s(
+          "text",
+          {
+            class: "edge-label sec" + (/\?/.test(sec) ? " unknown" : ""),
+            x: lab.x + lab.w / 2,
+            y: lab.y + 12,
+            "text-anchor": "middle",
+          },
+          sec,
+        ),
+      );
   }
   g.addEventListener("click", function (ev) {
     ev.stopPropagation();
@@ -136,8 +171,17 @@ model.nodes.forEach(function (n) {
     t("node.aria", { label: n.label, tech: techText(n), role: roleName(n.role) }) +
     (isInferred("node", n.id) ? t("node.aria.inferred") : "") +
     (risks.length ? tn("node.aria.risks", risks.length) : "");
+  if (n.ai)
+    label += n.ai.auditGrade
+      ? t("ai.aria", { kind: t("ai.kind." + n.ai.kind), grade: n.ai.auditGrade })
+      : t("ai.aria.nograde", { kind: t("ai.kind." + n.ai.kind) });
   var g = s("g", {
-    class: "node" + (isInferred("node", n.id) ? " inferred" : ""),
+    class:
+      "node" +
+      (isInferred("node", n.id) ? " inferred" : "") +
+      (n.zone ? " z-" + n.zone : "") +
+      (n.data && n.data.length ? " has-data" : "") +
+      (n.ai ? " is-ai" : ""),
     "data-node": n.id,
     transform: "translate(" + p.x + " " + p.y + ")",
     tabindex: "0",
@@ -146,6 +190,7 @@ model.nodes.forEach(function (n) {
   });
   g.append(
     s("title", {}, label),
+    s("rect", { class: "halo", x: -9, y: -9, width: W + 18, height: H + 18, rx: 18 }),
     s("rect", { class: "ring", x: -4, y: -4, width: W + 8, height: H + 8, rx: 14 }),
     s("rect", { class: "box", width: W, height: H, rx: 10 }),
     s("rect", { class: "tile", x: RTL ? W - 52 : 8, y: 10, width: 44, height: 44, rx: 9 }),
@@ -156,6 +201,17 @@ model.nodes.forEach(function (n) {
     s("text", { class: "name", x: RTL ? W - 62 : 62, y: 29 }, clip(n.label, 16)),
     s("text", { class: "sub", x: RTL ? W - 62 : 62, y: 47 }, clip(techText(n), 16)),
   );
+  if (n.zone) g.append(s("text", { class: "zone-chip", x: 0, y: H + 17 }, t("zone." + n.zone)));
+  g.append(s("text", { class: "sim-chip", x: RTL ? W - 62 : 62, y: 47 }, ""));
+  if (n.ai)
+    g.append(
+      s(
+        "g",
+        { class: "badge-ai", transform: "translate(4 4)" },
+        s("circle", { r: 11 }),
+        s("text", { y: 4.5 }, n.ai.auditGrade || "–"),
+      ),
+    );
   if (risks.length)
     g.append(
       s(
