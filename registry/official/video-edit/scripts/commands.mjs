@@ -301,3 +301,102 @@ export function colorArgs({ file, out, look, lut, autoWb, best }, info) {
     out,
   ];
 }
+
+const STAB = Object.freeze({
+  low: { shakiness: 3, smoothing: 10 },
+  normal: { shakiness: 5, smoothing: 15 },
+  high: { shakiness: 8, smoothing: 30 },
+});
+
+/**
+ * stabilize: two passes with vidstab. `trf` is the motion file both passes share (a path in a temp folder).
+ * Returns { detect, apply } argument arrays. The picture is cropped a little by the correction; audio is copied.
+ */
+export function stabilizeArgs({ file, out, trf, strength = "normal", best }, info) {
+  const s = STAB[strength];
+  if (!s)
+    throw new Error(`Unknown --strength "${strength}". Have: ${Object.keys(STAB).join(", ")}.`);
+  const t = filterPath(trf);
+  return {
+    detect: [
+      ...input(file),
+      "-an",
+      "-vf",
+      `vidstabdetect=shakiness=${s.shakiness}:accuracy=15:result=${t}`,
+      "-f",
+      "null",
+      "-",
+    ],
+    apply: [
+      ...input(file),
+      "-vf",
+      `vidstabtransform=input=${t}:smoothing=${s.smoothing}:zoom=0:optzoom=1,unsharp=5:5:0.8:3:3:0.4`,
+      ...encode({ best, audio: info.audio ? "copy" : false }),
+      "-y",
+      out,
+    ],
+  };
+}
+
+/**
+ * Marks for jumpcut: an array of times (seconds) or of { t, hold, zoom }. Returns clean objects. Marks must be
+ * at least 1 s apart, inside the clip, and at most 20; zoom 1.05 to 1.3; hold 0 to 3 s.
+ */
+export function parseMarks(raw, seconds) {
+  if (!Array.isArray(raw) || !raw.length)
+    throw new Error("The marks file must be a list of times, such as [1.5, 4.2].");
+  if (raw.length > 20) throw new Error("At most 20 marks in one pass.");
+  const marks = raw.map((m, i) => {
+    const o = typeof m === "number" ? { t: m } : m;
+    const t = Number(o?.t);
+    const hold = o?.hold === undefined ? 0.8 : Number(o.hold);
+    const zoom = o?.zoom === undefined ? 1.12 : Number(o.zoom);
+    if (!Number.isFinite(t) || t < 0 || t > seconds - 0.5)
+      throw new Error(
+        `Mark ${i + 1}: the time must be inside the clip (0 to ${r3(seconds - 0.5)} s).`,
+      );
+    if (!(hold >= 0 && hold <= 3))
+      throw new Error(`Mark ${i + 1}: hold must be from 0 to 3 seconds.`);
+    if (!(zoom >= 1.05 && zoom <= 1.3))
+      throw new Error(`Mark ${i + 1}: zoom must be from 1.05 to 1.3.`);
+    return { t: r3(t), hold: r3(hold), zoom: r3(zoom) };
+  });
+  marks.sort((a, b) => a.t - b.t);
+  marks.forEach((m, i) => {
+    if (i && m.t - marks[i - 1].t < 1 + marks[i - 1].hold)
+      throw new Error(
+        `Marks at ${marks[i - 1].t} s and ${m.t} s are too close; leave the zoom time to finish (at least 1 s plus the hold).`,
+      );
+  });
+  return marks;
+}
+
+const UP = 0.15;
+const DOWN = 0.35;
+/** The zoom factor over time as an ffmpeg expression in `it`: smooth in, hold, smooth out, for each mark. */
+export function zoomExpr(marks) {
+  const bump = (m) => {
+    const a = m.t;
+    const b = r3(m.t + UP);
+    const c = r3(m.t + UP + m.hold);
+    const d = r3(m.t + UP + m.hold + DOWN);
+    const k = r3(m.zoom - 1);
+    return `${k}*(between(it,${a},${b})*(0.5-0.5*cos(PI*(it-${a})/${UP}))+between(it,${b},${c})+between(it,${c},${d})*(0.5+0.5*cos(PI*(it-${c})/${DOWN})))`;
+  };
+  return `1+${marks.map(bump).join("+")}`;
+}
+
+/** jumpcut: punch-in zooms at the marks, around the centre of the picture, same size and length as the input. */
+export function jumpcutArgs({ file, out, marks, best }, info) {
+  const m = parseMarks(marks, info.seconds);
+  const up = info.width <= 1920 ? "scale=iw*2:ih*2:flags=bicubic," : ""; // sharper zoom for HD and smaller
+  const vf = `${up}zoompan=z='${zoomExpr(m)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${info.width}x${info.height}:fps=${r3(info.fps)}`;
+  return [
+    ...input(file),
+    "-vf",
+    vf,
+    ...encode({ best, audio: info.audio ? "copy" : false }),
+    "-y",
+    out,
+  ];
+}

@@ -30,14 +30,19 @@ export function checkPath(p, what = "file", { output = false } = {}) {
   return path.resolve(p);
 }
 
-/** A colour look-up table file: a .cube or .3dl path with the same guards as any other file name. */
-export function checkLut(p) {
-  checkPath(String(p).replace(/\.(cube|3dl)$/i, ".mp4"), "LUT");
-  if (!/\.(cube|3dl)$/i.test(p)) throw new Error("--lut must be a .cube or .3dl file.");
+/**
+ * A small side file (a LUT, a marks list, a words list): the same name guards as any file, plus an extension
+ * check and a check that it exists. Returns the absolute path.
+ */
+export function checkSidecar(p, ext, what, hint) {
+  checkPath(String(p).replace(ext, ".mp4"), what);
+  if (!ext.test(String(p))) throw new Error(`${what} must be a ${hint} file.`);
   const abs = path.resolve(p);
-  if (!existsSync(abs)) throw new Error(`LUT file ${path.basename(abs)} does not exist.`);
+  if (!existsSync(abs)) throw new Error(`${what} file ${path.basename(abs)} does not exist.`);
   return abs;
 }
+export const checkLut = (p) => checkSidecar(p, /\.(cube|3dl)$/i, "LUT", ".cube or .3dl");
+export const checkJson = (p, what = "JSON") => checkSidecar(p, /\.json$/i, what, ".json");
 
 /** An output may not be the input, and an existing file is only replaced with --force. */
 export function checkOutput(out, input, force) {

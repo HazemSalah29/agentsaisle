@@ -3,10 +3,13 @@
 // this file). Reads one or more media files, writes one new file; the original is never changed.
 // Usage: node edit.mjs <command> --in <file>[,<file>...] --out <file> [options] [--best] [--force]
 // Exit: 0 done, 2 refused or failed.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import {
   colorArgs,
+  jumpcutArgs,
+  stabilizeArgs,
   gifArgs,
   joinArgs,
   loudnormApplyArgs,
@@ -18,7 +21,7 @@ import {
   speedArgs,
   trimArgs,
 } from "./commands.mjs";
-import { checkLut, checkOutput, checkPath, ffmpeg, probe } from "./ffwrap.mjs";
+import { checkJson, checkLut, checkOutput, checkPath, ffmpeg, probe } from "./ffwrap.mjs";
 import { capLines, isEntry, parseArgs } from "./_lib.mjs";
 
 const STRINGS = [
@@ -34,6 +37,8 @@ const STRINGS = [
   "music",
   "look",
   "lut",
+  "marks",
+  "strength",
 ];
 
 /** Run one command. Returns the lines to print. Exported for tests. */
@@ -100,7 +105,33 @@ export function execute(command, flags) {
       },
       infos[0],
     );
-  else if (command === "audio") {
+  else if (command === "jumpcut")
+    args = jumpcutArgs(
+      {
+        file: files[0],
+        out,
+        marks: JSON.parse(readFileSync(checkJson(need("marks"), "marks"), "utf8")),
+        best,
+      },
+      infos[0],
+    );
+  else if (command === "stabilize") {
+    const work = mkdtempSync(path.join(os.tmpdir(), "video-stab-"));
+    try {
+      const plan = stabilizeArgs(
+        { file: files[0], out, trf: path.join(work, "motion.trf"), strength: flags.strength, best },
+        infos[0],
+      );
+      ffmpeg(plan.detect);
+      ffmpeg(plan.apply);
+    } finally {
+      rmSync(work, { recursive: true, force: true });
+    }
+    const after = probe(out);
+    return [
+      `Wrote ${path.basename(out)}: ${Math.round(after.seconds * 100) / 100} s, ${after.width}x${after.height}. The correction crops the picture slightly.`,
+    ];
+  } else if (command === "audio") {
     if (!infos[0].audio) throw new Error("This file has no sound to work on.");
     const music = flags.music ? checkPath(flags.music, "input") : null;
     const o = {
@@ -116,7 +147,7 @@ export function execute(command, flags) {
     args = loudnormApplyArgs(o, infos[0], m);
   } else
     throw new Error(
-      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color.`,
+      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color, stabilize, jumpcut.`,
     );
   ffmpeg(args);
   const after = probe(out);
