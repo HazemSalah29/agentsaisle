@@ -8,6 +8,9 @@ import os from "node:os";
 import path from "node:path";
 import {
   colorArgs,
+  parseSize,
+  readDetections,
+  reframeArgs,
   jumpcutArgs,
   stabilizeArgs,
   gifArgs,
@@ -30,9 +33,18 @@ import {
   silenceArgs,
   speechSpans,
 } from "./cutplan.mjs";
-import { whisperArgs, configuredModel, parseWhisperJson } from "./_whisper.mjs";
+import { configuredModel, parseWhisperJson, whisperArgs } from "./_whisper.mjs";
+import { cropSize, describePath, fixedLeft, keyframes, smoothPath } from "./reframe-path.mjs";
 import { run } from "./run.mjs";
-import { checkJson, checkLut, checkOutput, checkPath, ffmpeg, input, probe } from "./ffwrap.mjs";
+import {
+  checkJson,
+  checkLut,
+  checkOutput as checkOut,
+  checkPath,
+  ffmpeg,
+  input,
+  probe,
+} from "./ffwrap.mjs";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 
 const STRINGS = [
@@ -56,7 +68,19 @@ const STRINGS = [
   "words",
   "plan",
   "fillers-extra",
+  "mode",
+  "size",
+  "detections",
 ];
+
+/** Media files this run asked to create; a failed run removes the half-written ones. */
+const claimed = [];
+function checkOutput(...args) {
+  const o = checkOut(...args);
+  claimed.push(o);
+  return o;
+}
+const MEDIA = /\.(mp4|mov|mkv|webm|gif|wav|m4a)$/i;
 
 const readFillers = () =>
   JSON.parse(readFileSync(path.join(skillDir(), "assets", "fillers.json"), "utf8"));
@@ -135,6 +159,75 @@ function cut(file, info, flags, best) {
   return [...lines, `Wrote ${path.basename(out)}: ${Math.round(after.seconds * 100) / 100} s.`];
 }
 
+/** Where the speaker's face is, a few times a second, from OpenCV (the python script in this skill). */
+function detectFaces(file) {
+  const work = mkdtempSync(path.join(os.tmpdir(), "video-edit-"));
+  try {
+    const out = path.join(work, "faces.json");
+    const r = run(
+      "python",
+      [path.join(skillDir(), "scripts", "face_track.py"), file, out, "--fps", "3"],
+      { timeoutMs: 3_600_000 },
+    );
+    if (r.status === 3)
+      throw new Error(
+        `${String(r.stderr).trim()} Or use --mode center, left, right or x=0.4, or give --detections file.json.`,
+      );
+    if (r.status !== 0)
+      throw new Error(`Face detection failed: ${String(r.stderr).trim().slice(0, 200)}`);
+    return readDetections(JSON.parse(readFileSync(out, "utf8")));
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
+}
+
+/** reframe: 16:9 to 9:16 (or any narrower shape), following the face or at a fixed place. */
+function reframe(file, info, flags, best) {
+  const size = parseSize(flags.size ?? "1080x1920");
+  const { cropW, cropH } = cropSize({ srcW: info.width, srcH: info.height }, size[0], size[1]);
+  const mode = flags.mode ?? "face";
+  const lines = [];
+  let keys;
+  if (mode === "face") {
+    const samples = flags.detections
+      ? readDetections(JSON.parse(readFileSync(checkJson(flags.detections, "detections"), "utf8")))
+      : detectFaces(file);
+    const path1 = smoothPath(samples, { srcW: info.width, cropW });
+    if (!path1)
+      throw new Error(
+        "No face was found. Use --mode center, left, right or x=0.4 to place the crop yourself.",
+      );
+    if (path1.coverage < 0.2)
+      throw new Error(
+        `A face was found in only ${Math.round(path1.coverage * 100)}% of the samples, too few to follow. Use --mode center, left, right or x=0.4.`,
+      );
+    keys = keyframes(path1.points);
+    lines.push(
+      `Face found in ${Math.round(path1.coverage * 100)}% of the samples; where it was missing the crop held its last place.`,
+    );
+  } else keys = [{ t: 0, x: Math.round(fixedLeft(mode, { srcW: info.width, cropW }) * 10) / 10 }];
+  const d = describePath(keys, cropW, info.width);
+  lines.push(
+    `Crop ${cropW}x${cropH} out of ${info.width}x${info.height}, scaled to ${size.join("x")}: ${d.keyframes} keyframe(s), left edge ${d.leftMin} to ${d.leftMax} px.`,
+  );
+  if (flags.plan) {
+    const p = checkOutput(flags.plan, file, flags.force);
+    writeFileSync(
+      p,
+      `${JSON.stringify({ version: 1, mode, size, cropW, cropH, keyframes: keys }, null, 2)}\n`,
+    );
+    lines.push(`Wrote the path to ${path.basename(p)}.`);
+  }
+  const out = checkOutput(flags.out ?? "", file, flags.force);
+  mkdirSync(path.dirname(out), { recursive: true });
+  ffmpeg(reframeArgs({ file, out, keys, cropW, cropH, size, best }, info));
+  const after = probe(out);
+  return [
+    ...lines,
+    `Wrote ${path.basename(out)}: ${Math.round(after.seconds * 100) / 100} s, ${after.width}x${after.height}.`,
+  ];
+}
+
 /** Run one command. Returns the lines to print. Exported for tests. */
 export function execute(command, flags) {
   const ins = String(flags.in ?? "")
@@ -169,6 +262,7 @@ export function execute(command, flags) {
   }
   if (command === "cut") return cut(files[0], infos[0], flags, best);
   if (command === "transcribe") return transcribe(files[0], flags);
+  if (command === "reframe") return reframe(files[0], infos[0], flags, best);
   const out = checkOutput(need("out"), files[0], flags.force);
   mkdirSync(path.dirname(out), { recursive: true });
   let args;
@@ -243,7 +337,7 @@ export function execute(command, flags) {
     args = loudnormApplyArgs(o, infos[0], m);
   } else
     throw new Error(
-      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color, stabilize, jumpcut, cut, transcribe.`,
+      `Unknown command "${command}". Have: trim, join, speed, gif, scenes, audio, color, stabilize, jumpcut, cut, transcribe, reframe.`,
     );
   ffmpeg(args);
   const after = probe(out);
@@ -273,6 +367,7 @@ function main() {
       );
     console.log(capLines(execute(positional[0], flags), "The original file was not changed."));
   } catch (e) {
+    for (const f of claimed) if (MEDIA.test(f)) rmSync(f, { force: true });
     console.error(e.message);
     process.exit(2);
   }

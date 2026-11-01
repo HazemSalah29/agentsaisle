@@ -1,6 +1,7 @@
 // The edit commands as pure functions: each takes options and what was probed and returns ffmpeg arguments
 // (an array of strings, never a shell string) or a plan. Nothing here starts a program or touches the disk.
 import { encode, input } from "./ffwrap.mjs";
+import { cropExpr } from "./reframe-path.mjs";
 
 const num = (v, name) => {
   const n = Number(v);
@@ -391,6 +392,50 @@ export function jumpcutArgs({ file, out, marks, best }, info) {
   const m = parseMarks(marks, info.seconds);
   const up = info.width <= 1920 ? "scale=iw*2:ih*2:flags=bicubic," : ""; // sharper zoom for HD and smaller
   const vf = `${up}zoompan=z='${zoomExpr(m)}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${info.width}x${info.height}:fps=${r3(info.fps)}`;
+  return [
+    ...input(file),
+    "-vf",
+    vf,
+    ...encode({ best, audio: info.audio ? "copy" : false }),
+    "-y",
+    out,
+  ];
+}
+
+/** A size such as 1080x1920 (even numbers, 240 to 4320 each side). */
+export function parseSize(text) {
+  const m = /^(\d{3,4})x(\d{3,4})$/.exec(String(text));
+  const [w, h] = m ? [Number(m[1]), Number(m[2])] : [0, 0];
+  if (!m || w % 2 || h % 2 || w < 240 || h < 240 || w > 4320 || h > 4320)
+    throw new Error("--size must look like 1080x1920 (even numbers from 240 to 4320).");
+  return [w, h];
+}
+
+/** Face samples from detections.json: a list of { t, cx } with cx a fraction (0 to 1) or null. */
+export function readDetections(raw) {
+  if (!Array.isArray(raw) || raw.length < 2 || raw.length > 20000)
+    throw new Error("The detections file must be a list of 2 to 20000 samples { t, cx }.");
+  let last = -1;
+  return raw.map((s, i) => {
+    const t = Number(s?.t);
+    const cx = s?.cx === null || s?.cx === undefined ? null : Number(s.cx);
+    if (!Number.isFinite(t) || t < last || (cx !== null && !(cx >= 0 && cx <= 1)))
+      throw new Error(`Detection ${i + 1} needs t (seconds, in order) and cx (0 to 1 or null).`);
+    last = t;
+    return { t, cx };
+  });
+}
+
+/** reframe: crop a moving window out of a wide picture (keys: [{ t, x }] left edges in pixels) and scale it to `size`. */
+export function reframeArgs({ file, out, keys, cropW, cropH, size, best }, info) {
+  if (
+    ![cropW, cropH].every((n) => Number.isInteger(n) && n > 0) ||
+    keys.some((k) => !Number.isFinite(k.x) || !Number.isFinite(k.t))
+  )
+    throw new Error("The crop could not be worked out (a size or a position is not a number).");
+  const [w, h] = size;
+  const expr = cropExpr(keys);
+  const vf = `crop=w=${cropW}:h=${cropH}:x='${expr}':y=0,scale=${w}:${h}:flags=lanczos,setsar=1`;
   return [
     ...input(file),
     "-vf",
