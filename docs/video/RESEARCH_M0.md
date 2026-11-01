@@ -38,6 +38,21 @@ Checked against the pages linked in each row. Anything not confirmed stays `TODO
 
 Nothing in this table is installed yet. Your machine today: Node 24.17, Python 3.9.6, no FFmpeg. Python 3.9 may be too old for the TTS packages and Manim (`TODO(verify)`); `brew install python` would fix that.
 
-## Hello render
+## Hello render (done 2026-11-01)
 
-Not done yet. Needs your yes to the table rows marked "M0" and `brew install ffmpeg` run by you.
+Throwaway project outside the repo: `npx hyperframes init`, then 3 title scenes of 2 s each, GSAP fade-up, no audio. Machine: Apple Silicon Mac, Node 24.17, FFmpeg/ffprobe 9.0.2 (evermeet.cx x86_64 builds under Rosetta, in `~/bin`), hyperframes 0.8.226.
+
+| Check         | Result                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------- |
+| `check`       | 0 errors, 0 warnings, about 10 s                                                       |
+| First render  | 100 s wall time (includes downloading the package and browser); renderer reports 5.7 s |
+| Second render | 7.4 s wall time (2.5 s capture, 0.5 s encode)                                          |
+| Output        | H.264, 1920x1080, yuv420p, 30 fps, 180 frames, 32 KB                                   |
+| Determinism   | The two MP4s are byte-identical, and per-frame hashes (`framemd5`) match               |
+
+Findings for M1:
+
+- **The starter loads GSAP from a CDN** (`cdn.jsdelivr.net/npm/gsap@3.15.0`). Our rule is that scripts never fetch remote code, and renders should work offline. M1 must vendor a pinned GSAP file (or own tween helpers) into the project instead. GSAP licence note above still applies.
+- `init` also writes `AGENTS.md`, `CLAUDE.md`, linked agent skills (HyperFrames' own) and may show telemetry/feedback prompts. `TODO(verify)` what it sends and how to switch it off before recommending it to users.
+- The render reported "hardware gpu" screenshots; whether CPU-only machines behave the same is `TODO(verify)`.
+- FFmpeg 9.0.2 worked with HyperFrames 0.8.226 on first try.
