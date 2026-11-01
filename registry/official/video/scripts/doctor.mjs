@@ -3,7 +3,9 @@
 // Read-only. Runs only allow-listed programs with a fixed `--version` argument list (no shell), and for
 // API keys it reports "found" or "missing" without ever reading or printing a value.
 import { spawnSync } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const MIN_NODE_MAJOR = 22;
@@ -106,7 +108,55 @@ export function probe(tool, run = spawnSync) {
   return { found: true, version: parseVersion(out.split("\n")[0]) };
 }
 
-export function report({ tools, keys, platform }) {
+export const MIN_PYTHON = [3, 10]; // Kokoro needs 3.10 to 3.12
+
+/** The engine setup written when voice and caption engines were installed: ~/.aisle-video/tools.json. */
+export function readToolsConfig(home = os.homedir()) {
+  try {
+    const cfg = JSON.parse(readFileSync(path.join(home, ".aisle-video", "tools.json"), "utf8"));
+    return cfg && typeof cfg === "object" && !Array.isArray(cfg) ? cfg : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * One line per engine: ready, or what is missing and what happens without it. Only runs the configured
+ * python with `--version` and a fixed import check, and whisper-cli with `--help`; never loads a model.
+ * `cfg` is the tools.json content; `run` and `exists` are injectable for tests.
+ */
+export function engineLines(cfg, { run = spawnSync, exists = existsSync } = {}) {
+  const ok = (cmd, args) => {
+    const r = run(cmd, args, { encoding: "utf8", timeout: 20000, shell: false });
+    return !r.error && r.status === 0 ? `${r.stdout ?? ""}${r.stderr ?? ""}` : null;
+  };
+  const lines = [];
+  const py = typeof cfg.python === "string" && path.isAbsolute(cfg.python) ? cfg.python : null;
+  const ver = py ? parseVersion(ok(py, ["--version"])?.split("\n")[0]) : null;
+  const pyOk =
+    ver &&
+    (ver.major > MIN_PYTHON[0] || (ver.major === MIN_PYTHON[0] && ver.minor >= MIN_PYTHON[1]));
+  lines.push(
+    `  python venv ${pyOk ? `found ${ver.text}` : py ? "not usable (needs 3.10 to 3.12)" : "not set up (voice engines)"}`,
+  );
+  lines.push(
+    `  kokoro      ${pyOk && ok(py, ["-c", "import kokoro"]) !== null ? "ready (English voice)" : "not installed (English voice: use --provider test or add audio yourself)"}`,
+  );
+  lines.push(
+    `  3arab-tts   ${typeof cfg.arab3 === "string" && exists(cfg.arab3) ? "set up (Arabic voice)" : "not set up (Arabic voice)"}`,
+  );
+  const wc =
+    typeof cfg["whisper-cli"] === "string" && path.isAbsolute(cfg["whisper-cli"])
+      ? cfg["whisper-cli"]
+      : null;
+  const modelOk = typeof cfg.whisperModel === "string" && exists(cfg.whisperModel);
+  lines.push(
+    `  whisper.cpp ${wc && ok(wc, ["--help"]) !== null && modelOk ? `ready (${path.basename(cfg.whisperModel)})` : "not set up (captions use ESTIMATED word times)"}`,
+  );
+  return lines;
+}
+
+export function report({ tools, keys, platform, engines = [] }) {
   const lines = ["video doctor"];
   for (const t of TOOLS) {
     const r = tools[t.id];
@@ -117,6 +167,7 @@ export function report({ tools, keys, platform }) {
   lines.push(
     `  api keys    ${found.length ? `found: ${found.join(", ")}` : "none set (fine for the $0 tier)"}`,
   );
+  lines.push(...engines);
   lines.push(`tier: ${hardwareTier(tools)}`);
   const todo = installLines(tools, platform);
   if (todo.length) lines.push("install:", ...todo);
@@ -126,7 +177,9 @@ export function report({ tools, keys, platform }) {
 function main() {
   const tools = Object.fromEntries(TOOLS.map((t) => [t.id, probe(t)]));
   const keys = Object.fromEntries(KEY_NAMES.map((k) => [k, Boolean(process.env[k])]));
-  console.log(report({ tools, keys, platform: process.platform }));
+  console.log(
+    report({ tools, keys, platform: process.platform, engines: engineLines(readToolsConfig()) }),
+  );
   process.exit(hardwareTier(tools) === "not ready" ? 1 : 0);
 }
 

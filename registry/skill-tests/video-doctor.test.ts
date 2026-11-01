@@ -84,3 +84,95 @@ describe("video doctor", () => {
     expect(out.split("\n").length).toBeLessThanOrEqual(40);
   });
 });
+
+describe("video doctor engines", () => {
+  type Engines = {
+    engineLines(
+      cfg: Record<string, unknown>,
+      o: { run: unknown; exists: (f: string) => boolean },
+    ): string[];
+    readToolsConfig(home: string): Record<string, unknown>;
+  };
+  const e = () => d as unknown as Engines;
+  const fake =
+    (answers: Record<string, { status: number; out?: string }>) =>
+    (cmd: string, args: string[]) => {
+      const key = [cmd, ...args].join(" ");
+      const hit = answers[key];
+      return hit
+        ? { status: hit.status, stdout: hit.out ?? "", stderr: "" }
+        : { status: 1, stdout: "", stderr: "" };
+    };
+  const cfg = {
+    python: "/v/bin/python3.12",
+    "whisper-cli": "/b/whisper-cli",
+    whisperModel: "/m/ggml-base.bin",
+    arab3: "/a",
+  };
+
+  it("says everything is missing when nothing is set up", () => {
+    const text = e()
+      .engineLines({}, { run: fake({}), exists: () => false })
+      .join("\n");
+    expect(text).toMatch(/python venv not set up/);
+    expect(text).toMatch(/kokoro +not installed/);
+    expect(text).toMatch(/3arab-tts +not set up/);
+    expect(text).toMatch(/whisper.cpp +not set up \(captions use ESTIMATED word times\)/);
+  });
+
+  it("reports each engine ready when its checks pass", () => {
+    const run = fake({
+      "/v/bin/python3.12 --version": { status: 0, out: "Python 3.12.4\n" },
+      "/v/bin/python3.12 -c import kokoro": { status: 0 },
+      "/b/whisper-cli --help": { status: 0 },
+    });
+    const text = e()
+      .engineLines(cfg, { run, exists: () => true })
+      .join("\n");
+    expect(text).toMatch(/python venv found 3\.12\.4/);
+    expect(text).toMatch(/kokoro +ready/);
+    expect(text).toMatch(/3arab-tts +set up/);
+    expect(text).toMatch(/whisper.cpp +ready \(ggml-base\.bin\)/);
+  });
+
+  it("rejects a python that is too old and a model file that is missing", () => {
+    const run = fake({
+      "/v/bin/python3.12 --version": { status: 0, out: "Python 3.9.6\n" },
+      "/b/whisper-cli --help": { status: 0 },
+    });
+    const text = e()
+      .engineLines(cfg, { run, exists: (f) => f !== "/m/ggml-base.bin" })
+      .join("\n");
+    expect(text).toMatch(/not usable \(needs 3\.10 to 3\.12\)/);
+    expect(text).toMatch(/kokoro +not installed/);
+    expect(text).toMatch(/whisper.cpp +not set up/);
+  });
+
+  it("ignores relative paths in the config and never runs them", () => {
+    const calls: string[] = [];
+    const run = (cmd: string) => (
+      calls.push(cmd),
+      { status: 0, stdout: "Python 3.12.0", stderr: "" }
+    );
+    e().engineLines(
+      { python: "python3", "whisper-cli": "whisper-cli" },
+      { run, exists: () => true },
+    );
+    expect(calls).toEqual([]);
+  });
+
+  it("reads tools.json safely", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const home = mkdtempSync(path.join(os.tmpdir(), "video-tools-"));
+    expect(e().readToolsConfig(home)).toEqual({});
+    mkdirSync(path.join(home, ".aisle-video"));
+    writeFileSync(path.join(home, ".aisle-video", "tools.json"), '{"python":"/p/python3.12"}');
+    expect(e().readToolsConfig(home)).toEqual({ python: "/p/python3.12" });
+    writeFileSync(path.join(home, ".aisle-video", "tools.json"), "[1]");
+    expect(e().readToolsConfig(home)).toEqual({});
+    writeFileSync(path.join(home, ".aisle-video", "tools.json"), "{nope");
+    expect(e().readToolsConfig(home)).toEqual({});
+  });
+});
