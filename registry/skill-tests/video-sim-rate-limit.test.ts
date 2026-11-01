@@ -82,6 +82,34 @@ describe("rate-limit simulator", () => {
     expect(sw.runs[0].meter).toContainEqual([1000, 0]);
   });
 
+  it("shows the fixed-window edge: a burst before and a burst after the boundary both get through", async () => {
+    const { simulate } = await load();
+    // bursts of 5 at 0.9 s, 1.1 s and 1.3 s; the window edge is at 1 s
+    const edge = {
+      type: "burst",
+      ratePerSec: 1,
+      burstSize: 5,
+      burstEverySec: 0.2,
+      burstOffsetSec: 0.9,
+    };
+    const run = (a: Loose) => outcomes(simulate(spec(a, edge, 15)));
+    expect(run({ algo: "fixed-window", limit: 5, windowSec: 1 })).toBe("AAAAAAAAAARRRRR");
+    expect(run({ algo: "sliding-window", limit: 5, windowSec: 1 })).toBe("AAAAARRRRRRRRRR");
+    expect(
+      simulate(spec({ algo: "fixed-window", limit: 5, windowSec: 1 }, edge, 15)).arrivals[0],
+    ).toBe(900);
+  });
+
+  it("checks the burst offset", async () => {
+    const { specProblems } = await load();
+    const bad = spec(
+      { algo: "token-bucket", capacity: 1, refillPerSec: 1 },
+      { type: "burst", ratePerSec: 1, burstSize: 1, burstEverySec: 1, burstOffsetSec: -1 },
+      3,
+    );
+    expect(specProblems(bad).join()).toContain("burstOffsetSec");
+  });
+
   it("gives the same log for the same seed and a different one for another seed", async () => {
     const { simulate } = await load();
     const mk = (seed: number) =>

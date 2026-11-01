@@ -96,6 +96,38 @@ describe("simulate.mjs", () => {
     expect(r.stdout).toContain("first 429 is request 6 at 0 s");
   });
 
+  it("takes a burst offset, to show the fixed-window edge", () => {
+    const r = run("simulate.mjs", [
+      "--seed",
+      "1",
+      "--count",
+      "15",
+      "--pattern",
+      "burst",
+      "--burst-size",
+      "5",
+      "--burst-every",
+      "0.2",
+      "--burst-offset",
+      "0.9",
+      "--algo",
+      "fixed-window",
+      "--limit",
+      "5",
+      "--window",
+      "1",
+      "--algo2",
+      "sliding-window",
+      "--limit2",
+      "5",
+      "--window2",
+      "1",
+    ]);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("fixed-window: 10 allowed, 5 rejected");
+    expect(r.stdout).toContain("sliding-window: 5 allowed, 10 rejected");
+  });
+
   it("writes the props into a rate-limit scene and nowhere else", () => {
     const file = project("rate-limit");
     const r = run("simulate.mjs", [

@@ -3,7 +3,7 @@
 // script and the facts can quote real numbers. With --into it also writes the scene props into a video.json.
 // Usage: node simulate.mjs --seed 42 --count 80 --pattern poisson --rate 6
 //          --algo token-bucket --capacity 5 --refill 3 [--algo2 sliding-window --limit 4 --window 1] [--into video.json --scene s2]
-// Patterns: steady (--rate), poisson (--rate), burst (--burst-size --burst-every).
+// Patterns: steady (--rate), poisson (--rate), burst (--burst-size --burst-every [--burst-offset]).
 // Algorithms: token-bucket (--capacity --refill), leaky-bucket (--capacity --leak), fixed-window and
 // sliding-window (--limit --window); the second algorithm uses the same names with a 2 (--capacity2 ...).
 import { readFileSync, writeFileSync } from "node:fs";
@@ -17,6 +17,7 @@ const STRINGS = [
   "rate",
   "burst-size",
   "burst-every",
+  "burst-offset",
   "into",
   "scene",
   "title",
@@ -47,6 +48,7 @@ export function specFrom(f) {
   if (pattern.type === "burst") {
     pattern.burstSize = num(f["burst-size"]);
     pattern.burstEverySec = num(f["burst-every"]);
+    if (f["burst-offset"] !== undefined) pattern.burstOffsetSec = num(f["burst-offset"]);
   }
   const algos = [algoFrom(f), algoFrom(f, "2")].filter(Boolean);
   const spec = { seed: num(f.seed ?? 42), count: num(f.count ?? 60), pattern, algos };

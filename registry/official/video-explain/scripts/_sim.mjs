@@ -2,7 +2,7 @@
 // log, and the animation is drawn from that log, so what the video shows is what the algorithm does.
 // No clock, no randomness except the seeded generator, no I/O. Times are whole milliseconds.
 //
-// Spec: { seed, count, pattern: { type, ratePerSec, burstSize?, burstEverySec? },
+// Spec: { seed, count, pattern: { type, ratePerSec, burstSize?, burstEverySec?, burstOffsetSec? },
 //         algos: [{ algo, ...params }] }
 // Algorithms and params:
 //   token-bucket   capacity, refillPerSec   (starts full; a request takes 1 token)
@@ -52,6 +52,9 @@ export function specProblems(spec) {
       if (!Number.isInteger(pat.burstSize) || pat.burstSize < 1)
         p.push("pattern.burstSize: must be a whole number of 1 or more");
       if (!pos(pat.burstEverySec)) p.push("pattern.burstEverySec: must be a number above 0");
+      const off = pat.burstOffsetSec;
+      if (off !== undefined && !(typeof off === "number" && Number.isFinite(off) && off >= 0))
+        p.push("pattern.burstOffsetSec: must be a number of 0 or more");
     }
   }
   if (!Array.isArray(spec.algos) || spec.algos.length < 1 || spec.algos.length > 2)
@@ -83,9 +86,16 @@ export function arrivals({ seed, count, pattern }) {
       out.push(Math.round(t));
     }
   } else {
-    // Bursts of burstSize arrive at once every burstEverySec; ratePerSec is not used for timing.
+    // Bursts of burstSize arrive at once every burstEverySec, the first at burstOffsetSec (default 0);
+    // ratePerSec is not used for timing.
     for (let i = 0; i < count; i++)
-      out.push(Math.round(Math.floor(i / pattern.burstSize) * pattern.burstEverySec * 1000));
+      out.push(
+        Math.round(
+          ((pattern.burstOffsetSec ?? 0) +
+            Math.floor(i / pattern.burstSize) * pattern.burstEverySec) *
+            1000,
+        ),
+      );
   }
   return out;
 }

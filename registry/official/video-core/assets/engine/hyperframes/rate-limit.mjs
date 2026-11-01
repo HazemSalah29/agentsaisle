@@ -36,7 +36,7 @@ function paramsText(a) {
 function patternText(p) {
   if (p.type === "steady") return `steady, ${num(p.ratePerSec)} a second`;
   if (p.type === "poisson") return `random arrivals, about ${num(p.ratePerSec)} a second`;
-  return `bursts of ${num(p.burstSize)} every ${num(p.burstEverySec)} s`;
+  return `bursts of ${num(p.burstSize)} every ${num(p.burstEverySec)} s${p.burstOffsetSec ? `, the first at ${num(p.burstOffsetSec)} s` : ""}`;
 }
 
 const r2 = (n) => Math.round(n * 100) / 100;

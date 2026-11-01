@@ -15,7 +15,7 @@ The scene and `simulate.mjs` run the same code. A request arrives, the algorithm
 
 - `steady`: evenly spaced, `ratePerSec`.
 - `poisson`: random but seeded, about `ratePerSec` on average. Looks like real traffic.
-- `burst`: `burstSize` requests at once every `burstEverySec`. Best for showing a token bucket absorb a burst while a leaky bucket does not.
+- `burst`: `burstSize` requests at once every `burstEverySec`, the first at `burstOffsetSec` (default 0). Best for showing a token bucket absorb a burst while a leaky bucket does not.
 
 ## Choosing numbers that make the point
 
@@ -26,4 +26,4 @@ The scene and `simulate.mjs` run the same code. A request arrives, the algorithm
 
 ## Honesty
 
-Quote only numbers `simulate.mjs` printed. Say "in this simulation". Do not claim that one algorithm is better in general from one seed; say what it did on this traffic. A fixed window can let through twice its limit across a window edge, and `burst` shows it; a sliding window does not.
+Quote only numbers `simulate.mjs` printed. Say "in this simulation". Do not claim that one algorithm is better in general from one seed; say what it did on this traffic. A fixed window can let through twice its limit across a window edge. To show it, send bursts just before and just after the edge: `--pattern burst --burst-size 5 --burst-every 0.2 --burst-offset 0.9` with `--limit 5 --window 1` lets 10 through a fixed window and 5 through a sliding one.
