@@ -42,9 +42,7 @@
       ],
       "group": "compose",
       "zone": "dmz",
-      "data": [
-        "pii"
-      ]
+      "data": ["pii"]
     },
     {
       "id": "api",
@@ -148,9 +146,7 @@
         }
       ],
       "group": "compose",
-      "data": [
-        "pii"
-      ],
+      "data": ["pii"],
       "zone": "private",
       "replicas": 1
     },
@@ -194,10 +190,7 @@
       ],
       "group": "compose",
       "zone": "private",
-      "data": [
-        "pii",
-        "payments"
-      ]
+      "data": ["pii", "payments"]
     },
     {
       "id": "resend",
@@ -252,15 +245,10 @@
       "tier": "backend",
       "zone": "private",
       "group": "compose",
-      "data": [
-        "pii"
-      ],
+      "data": ["pii"],
       "ai": {
         "kind": "agent",
-        "tools": [
-          "Read",
-          "Bash"
-        ],
+        "tools": ["Read", "Bash"],
         "auditGrade": "C",
         "auditSource": "evals/audits/support-agent.json"
       },
@@ -281,9 +269,7 @@
       "zone": "third-party",
       "ai": {
         "kind": "mcp-server",
-        "tools": [
-          "Read"
-        ]
+        "tools": ["Read"]
       },
       "evidence": [
         {
@@ -341,9 +327,7 @@
       "protocol": "TCP (SQL)",
       "auth": "unknown",
       "tls": "unknown",
-      "carries": [
-        "pii"
-      ]
+      "carries": ["pii"]
     },
     {
       "id": "web-api",
@@ -365,9 +349,7 @@
       "protocol": "HTTP",
       "auth": "session",
       "tls": true,
-      "carries": [
-        "pii"
-      ]
+      "carries": ["pii"]
     },
     {
       "id": "worker-cache",
@@ -426,9 +408,7 @@
       ],
       "tls": true,
       "auth": "api-key",
-      "carries": [
-        "payments"
-      ]
+      "carries": ["payments"]
     },
     {
       "id": "bullmq-worker",
@@ -482,9 +462,7 @@
       "sync": true,
       "auth": "session",
       "tls": "unknown",
-      "carries": [
-        "pii"
-      ],
+      "carries": ["pii"],
       "evidence": [
         {
           "file": "apps/api/src/agent.ts",
@@ -500,9 +478,7 @@
       "sync": true,
       "tls": true,
       "auth": "api-key",
-      "carries": [
-        "pii"
-      ],
+      "carries": ["pii"],
       "timeoutMs": 20000,
       "evidence": [
         {
@@ -654,9 +630,7 @@
       "id": "AV-R01",
       "title": "Single database with no replica or backup configuration",
       "severity": "warn",
-      "nodes": [
-        "db"
-      ],
+      "nodes": ["db"],
       "evidence": [
         {
           "file": "docker-compose.yml",
@@ -691,10 +665,7 @@
       "id": "AV-R02",
       "title": "Cache entries written without an expiry",
       "severity": "info",
-      "nodes": [
-        "api",
-        "cache"
-      ],
+      "nodes": ["api", "cache"],
       "evidence": [
         {
           "file": "apps/api/src/lib/session.ts",
@@ -720,9 +691,7 @@
       "id": "AV-R03",
       "title": "No rate limiting found on a public API",
       "severity": "warn",
-      "nodes": [
-        "api"
-      ],
+      "nodes": ["api"],
       "evidence": [
         {
           "file": "apps/api/src/server.ts",
@@ -748,10 +717,7 @@
       "id": "AV-R04",
       "title": "External call without a timeout",
       "severity": "warn",
-      "nodes": [
-        "api",
-        "stripe"
-      ],
+      "nodes": ["api", "stripe"],
       "evidence": [
         {
           "file": "apps/api/src/routes/checkout.ts",
@@ -777,9 +743,7 @@
       "id": "AV-R05",
       "title": "Database query inside a loop",
       "severity": "warn",
-      "nodes": [
-        "api"
-      ],
+      "nodes": ["api"],
       "evidence": [
         {
           "file": "apps/api/src/routes/checkout.ts",
@@ -805,9 +769,7 @@
       "id": "AV-R07",
       "title": "Secret-looking variable exposed to the browser",
       "severity": "warn",
-      "nodes": [
-        "web"
-      ],
+      "nodes": ["web"],
       "evidence": [
         {
           "file": ".env.example",
@@ -833,9 +795,7 @@
       "id": "AV-R08",
       "title": "No health check endpoint found",
       "severity": "info",
-      "nodes": [
-        "api"
-      ],
+      "nodes": ["api"],
       "evidence": [
         {
           "file": "apps/api/package.json",
@@ -861,10 +821,7 @@
       "id": "AV-R10",
       "title": "Data service exposed or unprotected in docker-compose",
       "severity": "warn",
-      "nodes": [
-        "cache",
-        "db"
-      ],
+      "nodes": ["cache", "db"],
       "evidence": [
         {
           "file": "docker-compose.yml",
@@ -900,14 +857,7 @@
       "id": "AV-R11",
       "title": "Some synchronous calls have a timeout recorded and these do not",
       "severity": "info",
-      "nodes": [
-        "agent",
-        "api",
-        "bullmq",
-        "vercel",
-        "web",
-        "worker"
-      ],
+      "nodes": ["agent", "api", "bullmq", "vercel", "web", "worker"],
       "evidence": [
         {
           "file": "docker-compose.yml",
@@ -953,9 +903,7 @@
       "id": "AV-R12",
       "title": "Retries with no backoff noted",
       "severity": "warn",
-      "nodes": [
-        "worker"
-      ],
+      "nodes": ["worker"],
       "evidence": [
         {
           "file": "apps/worker/src/worker.ts",
@@ -981,10 +929,7 @@
       "id": "AV-R13",
       "title": "Connection crosses a trust zone with no authentication or encryption",
       "severity": "warn",
-      "nodes": [
-        "agent",
-        "mcp"
-      ],
+      "nodes": ["agent", "mcp"],
       "evidence": [
         {
           "file": ".mcp.json",
@@ -1010,10 +955,7 @@
       "id": "AV-R14",
       "title": "Personal data reaches a third party or logs",
       "severity": "warn",
-      "nodes": [
-        "agent",
-        "llm"
-      ],
+      "nodes": ["agent", "llm"],
       "evidence": [
         {
           "file": "apps/api/src/agent.ts",
@@ -1039,9 +981,7 @@
       "id": "AV-R18",
       "title": "Single copy of a component that several flows depend on",
       "severity": "warn",
-      "nodes": [
-        "api"
-      ],
+      "nodes": ["api"],
       "evidence": [
         {
           "file": "apps/api/Dockerfile",
@@ -1064,10 +1004,7 @@
       "source": "rule"
     }
   ],
-  "inferred": [
-    "edge:bullmq-cache",
-    "edge:vercel-web"
-  ],
+  "inferred": ["edge:bullmq-cache", "edge:vercel-web"],
   "groups": [
     {
       "id": "compose",
@@ -1086,9 +1023,7 @@
       "id": "start",
       "name": "Start here",
       "lens": "system",
-      "focus": [
-        "api"
-      ]
+      "focus": ["api"]
     }
   ]
 }
