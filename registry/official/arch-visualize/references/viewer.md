@@ -15,6 +15,7 @@ One self-contained file. It makes no network requests (no CDN, fonts, icons or a
 A switcher above the diagram changes what the page emphasises, never where things are.
 
 - **System**: the default. The parts and how they connect.
+- **Security**, **Failure** and **AI**: appear when the model has something for them (zones, authentication or data labels; at least one connection; an AI component). See `security-lens.md` and `simulation.md`. A risk card shows its options with their trade-offs, and a button that opens the Failure view for the component it names.
 - **Flows**: appears when the model has flows. Pick a flow from the tabs. **Focus** (on by default) fades everything outside the flow. **Play** runs it, **Step** moves one step, **Back** goes one step back, **Restart** resets, the slider scrubs to any step, and the speed menu offers 0.5x, 1x and 2x. A filled dot is a request; a hollow ring is a response travelling back. A step marked `together` in the model shows several dots at once. Events flash their component. The **Flow** tab lists the steps. Under reduced motion nothing moves by itself, Step jumps instantly, and Play is labelled "Play (uses motion)".
 
 ## Finding things

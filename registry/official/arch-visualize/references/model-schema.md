@@ -93,3 +93,10 @@ A field that states a fact (`timeoutMs`, `retries`, `tls`, `auth` other than `un
 
 - Put a secret value anywhere (keys, passwords, connection strings with passwords). The checker fails on strings that look like credentials.
 - Put markup in labels. The page shows text only, so `<b>` would appear literally.
+
+## Added in 0.2.0
+
+- `ai.tools`: the tools an AI component can use (needs evidence on the component).
+- `flows[].steps[].together`: this step runs at the same time as the step before it (see `flows.md`).
+- `risks[].fixes`: one to three `{ text, tradeoff }` options. `risk-check.mjs` writes them for every rule.
+- `views[].lens`: `system`, `flows`, `security`, `failure`, `ai` or `diff`.

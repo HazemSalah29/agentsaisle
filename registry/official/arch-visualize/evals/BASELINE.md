@@ -46,6 +46,16 @@ Straight-line count in Node (no curve sampling): fixture 3, DevPath 6. A random 
 
 The D6 budget (300 KB for the viewer and its libraries, 1.5 MB for the fixture page) holds. Screenshots of every view that exists are in `evals/m3-viewer/`. The page grew about 50 KB: the layout, search, trace, link and detail modules, the Arabic text table and the new styles.
 
+## After M5 (lenses, simulation, new rules)
+
+| Measure                                               | After M3 | After M5 |
+| ----------------------------------------------------- | -------- | -------- |
+| Viewer template (parts and libraries together), bytes | 122,405  | 175,658  |
+| Rendered lens demo page (12 components)               | n/a      | 187 KB   |
+| Risk rules                                            | 10       | 18       |
+
+The lens demo (`evals/fixture-lenses.json`) triggers AV-R01 to AV-R05, R07, R08, R10 (from the fixture app's files) and R11, R12, R13, R14, R18 (from the model). Screenshots are in `evals/m5-lenses/`. The budget (300 KB for the viewer and its libraries) still holds.
+
 ## Tokens and tool calls
 
 No eval-run log exists for a full skill run, so there are no numbers. M8 will measure it by running the skill once on the fixture with the old and new version and reading the token and tool-call totals from the session transcript.
