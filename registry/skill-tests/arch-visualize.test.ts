@@ -514,7 +514,8 @@ const viewerParts = () => {
     .join("\n");
   const markup = readFileSync(path.join(dir, "index.html"), "utf8");
   const styles = readFileSync(path.join(dir, "styles.css"), "utf8");
-  return { code, markup, styles, all: [markup, styles, code].join("\n") };
+  const i18n = readFileSync(path.join(dir, "i18n.json"), "utf8");
+  return { code, markup, styles, i18n, all: [markup, styles, i18n, code].join("\n") };
 };
 
 describe("arch-visualize render", () => {
@@ -568,10 +569,13 @@ describe("arch-visualize render", () => {
   });
 
   it("escaping canary: hostile text cannot leave the data block", () => {
-    // Only the four real script tags exist: model, icons, the layout library, viewer code.
-    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(4);
-    expect(hostileHtml.match(/<script/gi)).toHaveLength(4);
-    const data = dataBlock(hostileHtml, "model")! + dataBlock(hostileHtml, "icons")!;
+    // Only the five real script tags exist: model, icons, text, the layout library, viewer code.
+    expect(hostileHtml.match(/<\/script/gi)).toHaveLength(5);
+    expect(hostileHtml.match(/<script/gi)).toHaveLength(5);
+    const data =
+      dataBlock(hostileHtml, "model")! +
+      dataBlock(hostileHtml, "icons")! +
+      dataBlock(hostileHtml, "i18n")!;
     expect(data).not.toMatch(new RegExp("[<>&" + String.fromCharCode(0x2028, 0x2029) + "]"));
     expect(hostileHtml).not.toContain("<img src=x");
     expect(hostileHtml).not.toContain("<svg onload");
@@ -883,7 +887,8 @@ describe("arch-visualize flow engine", () => {
 
   it("starts nothing on load and honours reduced motion in the page code", () => {
     expect(viewer).toMatch(/prefers-reduced-motion: reduce/);
-    expect(viewer).toMatch(/Play \(uses motion\)/);
+    expect(viewer).toMatch(/"flow\.playMotion"/);
+    expect(viewer).toMatch(/"flow\.playMotion": "Play \(uses motion\)"/);
     // The only place a loop starts is a click handler through kick().
     expect(viewer.match(/requestAnimationFrame\(/g)).toHaveLength(2);
     expect(viewer).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pulse/);
@@ -1792,7 +1797,7 @@ describe("arch-visualize live demo (DevPath)", () => {
     expect(renderCli(demoFile, out).status).toBe(0);
     const html = readFileSync(out, "utf8");
     expect(html).toContain("arch-visualize viewer v2");
-    expect(html.match(/<\/script/gi)).toHaveLength(4);
+    expect(html.match(/<\/script/gi)).toHaveLength(5);
   });
 
   it("is linked from the skill page by a site path the web build creates", () => {

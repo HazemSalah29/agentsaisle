@@ -680,7 +680,7 @@
           });
         });
         if (spot) {
-          labels[e.id] = { x: spot.x, y: spot.y, w: spot.w, h: spot.h };
+          labels[e.id] = { x: G.round(spot.x), y: G.round(spot.y), w: G.round(spot.w), h: spot.h };
           placed.push(spot);
           labelStats.placed++;
         } else labelStats.omitted++;
@@ -731,6 +731,59 @@
     return out;
   }
 
+  /**
+   * The same layout drawn right to left: every x is reflected inside the layout's width. Pure; the input is
+   * not changed. Mirroring twice gives the original back.
+   */
+  function mirror(result) {
+    var w = result.size.w;
+    var pos = {};
+    Object.keys(result.pos).forEach(function (id) {
+      var p = result.pos[id];
+      pos[id] = { x: w - p.x - p.w, y: p.y, w: p.w, h: p.h, layer: p.layer };
+    });
+    var routes = {};
+    Object.keys(result.routes).forEach(function (id) {
+      var r = result.routes[id];
+      var points = r.points.map(function (q) {
+        return [w - q[0], q[1]];
+      });
+      routes[id] = {
+        points: points,
+        d: G.roundedPath(points, DEFAULTS.radius),
+        from: r.from,
+        to: r.to,
+      };
+    });
+    var labels = {};
+    Object.keys(result.labels).forEach(function (id) {
+      var l = result.labels[id];
+      labels[id] = { x: G.round(w - l.x - l.w), y: l.y, w: l.w, h: l.h };
+    });
+    return {
+      pos: pos,
+      layers: result.layers.map(function (l) {
+        return { tier: l.tier, index: l.index, x: w - l.x - l.w, w: l.w, nodes: l.nodes.slice() };
+      }),
+      routes: routes,
+      groups: result.groups.map(function (g) {
+        return {
+          id: g.id,
+          label: g.label,
+          parent: g.parent,
+          depth: g.depth,
+          x: w - g.x - g.w,
+          y: g.y,
+          w: g.w,
+          h: g.h,
+        };
+      }),
+      labels: labels,
+      size: { w: w, h: result.size.h },
+      stats: result.stats,
+    };
+  }
+
   /** A short fingerprint of a layout (positions, routes, groups, labels), to compare two runs. */
   function layoutHash(result) {
     var r = G.round;
@@ -758,5 +811,11 @@
     return G.hash(parts.join("|"));
   }
 
-  root.ArchLayout = { layout: layout, layoutHash: layoutHash, TIERS: TIERS, DEFAULTS: DEFAULTS };
+  root.ArchLayout = {
+    layout: layout,
+    mirror: mirror,
+    layoutHash: layoutHash,
+    TIERS: TIERS,
+    DEFAULTS: DEFAULTS,
+  };
 })(typeof globalThis !== "undefined" ? globalThis : this);

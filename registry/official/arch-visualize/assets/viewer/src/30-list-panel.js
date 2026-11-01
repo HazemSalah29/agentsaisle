@@ -1,7 +1,7 @@
 // ---- the list shown on narrow screens
 var list = $("list");
 cols.forEach(function (c, ci) {
-  list.append(h("h2", {}, TIER_NAME[present[ci]]));
+  list.append(h("h2", {}, tierName(present[ci])));
   c.forEach(function (n) {
     var risks = risksByNode[n.id] || [];
     var outs = model.edges
@@ -31,15 +31,15 @@ cols.forEach(function (c, ci) {
           h(
             "span",
             { class: "s mono" },
-            (techText(n) === n.role ? n.role : techText(n) + " · " + n.role) +
-              (isInferred("node", n.id) ? " · inferred" : "") +
-              (risks.length
-                ? " · " + risks.length + " possible risk" + (risks.length > 1 ? "s" : "")
-                : ""),
+            (techText(n) === roleName(n.role)
+              ? techText(n)
+              : techText(n) + " · " + roleName(n.role)) +
+              (isInferred("node", n.id) ? t("node.sub.inferred") : "") +
+              (risks.length ? tn("node.sub.risks", risks.length) : ""),
           ),
         ),
       ),
-      outs.length ? h("span", { class: "c" }, "Connects to: " + outs.join(", ")) : null,
+      outs.length ? h("span", { class: "c" }, t("list.connects", { list: outs.join(", ") })) : null,
     );
     card.addEventListener("click", function () {
       select("node", n.id);
@@ -91,17 +91,15 @@ function riskCard(r, withLink) {
   return h(
     "article",
     { class: "risk" },
-    h("p", { class: "tag" }, "Possible risk to check · " + r.severity),
+    h("p", { class: "tag" }, t("risk.tag", { severity: t("sev." + r.severity) })),
     r.title ? h("h4", { class: "risk-title" }, r.title) : null,
     h("p", {}, r.why),
-    h("p", {}, h("strong", {}, "What to check: "), r.check),
+    h("p", {}, h("strong", {}, t("risk.check")), r.check),
     evidenceList(r.evidence),
     h(
       "p",
       { class: "src" },
-      (r.source === "agent"
-        ? "Added from the agent's reading of the code"
-        : "Rule-based heuristic, so it can be wrong") +
+      (r.source === "agent" ? t("risk.src.agent") : t("risk.src.rule")) +
         " · " +
         r.id +
         " · " +
@@ -109,7 +107,7 @@ function riskCard(r, withLink) {
     ),
     withLink && r.nodes[0] && nodeById[r.nodes[0]]
       ? (function () {
-          var b = h("button", { type: "button", class: "link" }, "Show on the diagram");
+          var b = h("button", { type: "button", class: "link" }, t("risk.show"));
           b.addEventListener("click", function () {
             select("node", r.nodes[0]);
           });
@@ -127,22 +125,14 @@ function linkTo(kind, id, text) {
 }
 function renderPanel() {
   var nRisks = (model.risks || []).length;
-  $("tab-risks").textContent = "Risks (" + nRisks + ")";
+  $("tab-risks").textContent = t("tab.risks", { n: nRisks });
   $("tab-details").setAttribute("aria-selected", tab === "details" ? "true" : "false");
   $("tab-flow").setAttribute("aria-selected", tab === "flow" ? "true" : "false");
   $("tab-risks").setAttribute("aria-selected", tab === "risks" ? "true" : "false");
   clear(body);
   if (tab === "flow") return renderFlowPanel();
   if (tab === "risks") {
-    body.append(
-      h(
-        "p",
-        { class: "note" },
-        nRisks
-          ? "These are possible risks, not confirmed problems. Each one says what to check and which files it is based on."
-          : "No possible risks were recorded.",
-      ),
-    );
+    body.append(h("p", { class: "note" }, nRisks ? t("risks.note") : t("risks.none")));
     (model.risks || []).forEach(function (r) {
       body.append(riskCard(r, true));
     });
@@ -154,25 +144,20 @@ function renderPanel() {
       h(
         "p",
         { class: "meta" },
-        model.nodes.length + " components, " + model.edges.length + " connections",
+        t("summary", {
+          components: tn("count.components", model.nodes.length),
+          connections: tn("count.connections", model.edges.length),
+        }),
       ),
-      h(
-        "p",
-        { class: "note" },
-        "Select a component or a connection to see where it comes from in the code. Drag to pan, scroll to zoom.",
-      ),
-      h("h3", {}, "How to read it"),
+      h("p", { class: "note" }, t("intro.select")),
+      h("h3", {}, t("intro.read")),
       h(
         "div",
         { class: "legend" },
-        h("span", {}, legendLine(false), " Backed by files"),
-        h("span", {}, legendLine(true), " Inferred, no direct evidence"),
+        h("span", {}, legendLine(false), t("legend.solid")),
+        h("span", {}, legendLine(true), t("legend.dashed")),
       ),
-      h(
-        "p",
-        { class: "note" },
-        "This page shows how requests would travel based on the code and config. It is not live traffic, and it does not say any design is best.",
-      ),
+      h("p", { class: "note" }, t("intro.honest")),
     );
     return;
   }
@@ -180,24 +165,21 @@ function renderPanel() {
     var n = nodeById[sel.id];
     body.append(
       h("h2", {}, n.label),
-      h("p", { class: "meta" }, techText(n) + " · " + n.role + " · " + TIER_NAME[n.tier] + " tier"),
+      h(
+        "p",
+        { class: "meta" },
+        t("node.meta", { tech: techText(n), role: roleName(n.role), tier: tierName(n.tier) }),
+      ),
     );
-    if (isInferred("node", n.id))
-      body.append(
-        h(
-          "p",
-          { class: "note" },
-          "Inferred: no file in the project directly shows this component, so the diagram marks it with a dashed outline.",
-        ),
-      );
+    if (isInferred("node", n.id)) body.append(h("p", { class: "note" }, t("node.inferred.note")));
     body.append(
-      h("h3", {}, "Evidence"),
-      evidenceList(n.evidence) || h("p", { class: "meta" }, "None recorded."),
+      h("h3", {}, t("h.evidence")),
+      evidenceList(n.evidence) || h("p", { class: "meta" }, t("none.recorded")),
     );
     var conns = model.edges.filter(function (e) {
       return e.from === n.id || e.to === n.id;
     });
-    body.append(h("h3", {}, "Connections"));
+    body.append(h("h3", {}, t("h.connections")));
     body.append(
       conns.length
         ? h(
@@ -209,17 +191,17 @@ function renderPanel() {
               return h(
                 "li",
                 {},
-                out ? "To " : "From ",
+                out ? t("conn.to") : t("conn.from"),
                 linkTo("edge", e.id, other ? other.label : out ? e.to : e.from),
                 e.protocol ? " (" + e.protocol + ")" : "",
               );
             }),
           )
-        : h("p", { class: "meta" }, "None."),
+        : h("p", { class: "meta" }, t("none")),
     );
     var rs = risksByNode[n.id] || [];
     if (rs.length) {
-      body.append(h("h3", {}, "Possible risks"));
+      body.append(h("h3", {}, t("h.risks")));
       rs.forEach(function (r) {
         body.append(riskCard(r, false));
       });
@@ -228,35 +210,30 @@ function renderPanel() {
     var e = edgeById[sel.id];
     var a = nodeById[e.from],
       b = nodeById[e.to];
-    body.append(h("h2", {}, (a ? a.label : e.from) + " → " + (b ? b.label : e.to)));
+    body.append(
+      h("h2", {}, t("edge.title", { from: a ? a.label : e.from, to: b ? b.label : e.to })),
+    );
     body.append(
       h(
         "p",
         { class: "meta" },
-        [e.protocol, e.sync === true ? "synchronous" : e.sync === false ? "asynchronous" : null]
+        [e.protocol, e.sync === true ? t("edge.sync") : e.sync === false ? t("edge.async") : null]
           .filter(Boolean)
-          .join(" · ") || "Connection",
+          .join(" · ") || t("edge.connection"),
       ),
     );
-    if (isInferred("edge", e.id))
-      body.append(
-        h(
-          "p",
-          { class: "note" },
-          "Inferred: no file directly shows this connection, so the diagram draws it dashed.",
-        ),
-      );
+    if (isInferred("edge", e.id)) body.append(h("p", { class: "note" }, t("edge.inferred.note")));
     body.append(
-      h("h3", {}, "Evidence"),
-      evidenceList(e.evidence) || h("p", { class: "meta" }, "None recorded."),
+      h("h3", {}, t("h.evidence")),
+      evidenceList(e.evidence) || h("p", { class: "meta" }, t("none.recorded")),
     );
     body.append(
-      h("h3", {}, "Ends"),
+      h("h3", {}, t("h.ends")),
       h(
         "ul",
         {},
-        h("li", {}, "From ", a ? linkTo("node", a.id, a.label) : e.from),
-        h("li", {}, "To ", b ? linkTo("node", b.id, b.label) : e.to),
+        h("li", {}, t("conn.from"), a ? linkTo("node", a.id, a.label) : e.from),
+        h("li", {}, t("conn.to"), b ? linkTo("node", b.id, b.label) : e.to),
       ),
     );
   }

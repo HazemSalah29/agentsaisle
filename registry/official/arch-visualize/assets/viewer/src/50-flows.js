@@ -18,7 +18,7 @@ vp.append(dot);
 var stepLabel = function (step) {
   if (step.label) return step.label;
   if (step.kind === "event") return step.event.replace(/[-_]+/g, " ");
-  return step.reverse ? "Response" : "Request";
+  return step.reverse ? t("flow.response") : t("flow.request");
 };
 var nodeName = function (id) {
   return nodeById[id] ? nodeById[id].label : id;
@@ -84,42 +84,40 @@ function renderFlow() {
   // caption
   var cap = $("caption");
   clear(cap);
-  if (!steps.length) cap.append(h("span", { class: "label" }, "This flow has no steps."));
+  if (!steps.length) cap.append(h("span", { class: "label" }, t("flow.empty")));
   else if (!step)
     cap.append(
       h(
         "span",
         { class: "label" },
-        reducedMq.matches && !motionOk
-          ? "Reduced motion is on, so nothing moves by itself. Use Step to walk through this request one step at a time."
-          : "Press Play or Step to follow this request.",
+        reducedMq.matches && !motionOk ? t("flow.reduced") : t("flow.hint"),
       ),
     );
   else {
     cap.append(
-      h("span", { class: "step" }, "Step " + (st.index + 1) + " of " + steps.length),
+      h("span", { class: "step" }, t("flow.stepOf", { i: st.index + 1, n: steps.length })),
       h("span", { class: "label" }, stepLabel(step)),
       h(
         "span",
         { class: "dir" },
         step.kind === "edge"
-          ? (step.reverse ? "Response: " : "Request: ") +
-              nodeName(step.from) +
-              " → " +
-              nodeName(step.to)
-          : "Event at " + nodeName(step.node),
+          ? t(step.reverse ? "flow.dir.res" : "flow.dir.req", {
+              from: nodeName(step.from),
+              to: nodeName(step.to),
+            })
+          : t("flow.event", { node: nodeName(step.node) }),
       ),
     );
   }
   // controls
   var last = steps.length - 1;
   $("fplay").textContent = st.playing
-    ? "Pause"
+    ? t("flow.pause")
     : reducedMq.matches && !motionOk
-      ? "Play (uses motion)"
+      ? t("flow.playMotion")
       : atEnd(st, steps)
-        ? "Replay"
-        : "Play";
+        ? t("flow.replay")
+        : t("flow.play");
   $("fplay").disabled = !steps.length;
   $("fstep").disabled = !steps.length || (st.index >= last && st.t >= 1);
   $("fback").disabled = st.index < 0;
@@ -130,10 +128,7 @@ function renderFlow() {
 function renderFlowPanel() {
   clear(body);
   var f = flows[flowIx];
-  body.append(
-    h("h2", {}, f.name),
-    h("p", { class: "meta" }, steps.length + " steps. Select one to jump to it."),
-  );
+  body.append(h("h2", {}, f.name), h("p", { class: "meta" }, tn("flow.panel.meta", steps.length)));
   var ol = h("ol", { class: "steps" });
   steps.forEach(function (step, i) {
     var b = h(
@@ -149,13 +144,11 @@ function renderFlowPanel() {
         "span",
         { class: "meta" },
         step.kind === "edge"
-          ? " (" +
-              (step.reverse ? "response " : "") +
-              nodeName(step.from) +
-              " → " +
-              nodeName(step.to) +
-              ")"
-          : " (event at " + nodeName(step.node) + ")",
+          ? t(step.reverse ? "flow.item.res" : "flow.item.req", {
+              from: nodeName(step.from),
+              to: nodeName(step.to),
+            })
+          : t("flow.item.event", { node: nodeName(step.node) }),
       ),
     );
     b.addEventListener("click", function () {

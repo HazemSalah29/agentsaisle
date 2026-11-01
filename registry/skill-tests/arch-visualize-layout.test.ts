@@ -33,12 +33,13 @@ type Lib = {
   ArchLayout: {
     layout: (m: Model, o?: Record<string, unknown>) => Result;
     layoutHash: (r: Result) => string;
+    mirror: (r: Result) => Result;
   };
 };
 
 const lib = loadLib<Lib>("arch-visualize", ["assets/lib/geometry.js", "assets/lib/layout.js"]);
 const G = lib.ArchGeometry;
-const { layout, layoutHash } = lib.ArchLayout;
+const { layout, layoutHash, mirror } = lib.ArchLayout;
 const readJson = (rel: string) =>
   JSON.parse(readFileSync(skillFile("arch-visualize", rel), "utf8")) as Model;
 
@@ -338,6 +339,41 @@ describe("arch-visualize layout", () => {
     expect(G.rectInside(rectOf(r, "b"), outer)).toBe(true);
     expect(G.rectsOverlap(rectOf(r, "c"), outer)).toBe(false);
     expect(G.rectsOverlap(rectOf(r, "d"), outer)).toBe(false);
+  });
+});
+
+describe("arch-visualize mirrored layout", () => {
+  it("reflects x, keeps y, and mirroring twice gives the original", () => {
+    for (const [, model] of allModels()) {
+      const r = layout(model);
+      const m = mirror(r);
+      const copy = JSON.stringify(r);
+      expect(JSON.stringify(mirror(m))).toBe(copy);
+      expect(JSON.stringify(r)).toBe(copy);
+      for (const id of Object.keys(r.pos)) {
+        expect(m.pos[id]!.y).toBe(r.pos[id]!.y);
+        expect(m.pos[id]!.x + m.pos[id]!.w).toBe(r.size.w - r.pos[id]!.x);
+      }
+    }
+  });
+
+  it("keeps the rules: no overlaps, right angles, no edge through a box", () => {
+    for (const [, model] of allModels()) {
+      const m = mirror(layout(model));
+      const ids = model.nodes.map((n) => n.id);
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++)
+          expect(G.rectsOverlap(rectOf(m, ids[i]!), rectOf(m, ids[j]!))).toBe(false);
+      const lines = Object.fromEntries(Object.entries(m.routes).map(([k, v]) => [k, v.points]));
+      const rects = Object.fromEntries(ids.map((id) => [id, rectOf(m, id)]));
+      expect(G.edgesThroughNodes(lines, rects)).toEqual([]);
+      for (const route of Object.values(m.routes))
+        for (let i = 0; i + 1 < route.points.length; i++)
+          expect(
+            route.points[i]![0] === route.points[i + 1]![0] ||
+              route.points[i]![1] === route.points[i + 1]![1],
+          ).toBe(true);
+    }
   });
 });
 

@@ -2,6 +2,7 @@
 var W = 190,
   H = 64;
 var lay = ArchLayout.layout(model);
+if (FLOW_RTL) lay = ArchLayout.mirror(lay);
 var present = lay.layers.map(function (l) {
   return l.tier;
 });
@@ -41,12 +42,22 @@ lay.groups.forEach(function (g) {
       "g",
       { class: "group", "data-group": g.id },
       s("rect", { x: g.x, y: g.y, width: g.w, height: g.h, rx: 6 }),
-      s("text", { x: g.x + 10, y: g.y + 16 }, clip(g.label, 40)),
+      s("text", { x: RTL ? g.x + g.w - 10 : g.x + 10, y: g.y + 16 }, clip(g.label, 40)),
     ),
   );
 });
 lay.layers.forEach(function (l, ci) {
-  vp.append(s("text", { x: l.x, y: 36, class: "tier-label" }, TIER_NAME[present[ci]]));
+  vp.append(
+    s(
+      "text",
+      {
+        x: RTL ? l.x + W : l.x,
+        y: 36,
+        class: "tier-label",
+      },
+      tierName(present[ci]),
+    ),
+  );
 });
 var edgeEls = {},
   nodeEls = {},
@@ -82,15 +93,9 @@ model.nodes.forEach(function (n) {
   var p = pos[n.id];
   var risks = risksByNode[n.id] || [];
   var label =
-    n.label +
-    ", " +
-    techText(n) +
-    ", " +
-    n.role +
-    (isInferred("node", n.id) ? ", inferred" : "") +
-    (risks.length
-      ? ", " + risks.length + " possible risk" + (risks.length > 1 ? "s" : "") + " to check"
-      : "");
+    t("node.aria", { label: n.label, tech: techText(n), role: roleName(n.role) }) +
+    (isInferred("node", n.id) ? t("node.aria.inferred") : "") +
+    (risks.length ? tn("node.aria.risks", risks.length) : "");
   var g = s("g", {
     class: "node" + (isInferred("node", n.id) ? " inferred" : ""),
     "data-node": n.id,
@@ -104,11 +109,11 @@ model.nodes.forEach(function (n) {
     s("rect", { class: "ring", x: -4, y: -4, width: W + 8, height: H + 8, rx: 10 }),
     s("rect", { class: "box", width: W, height: H, rx: 7 }),
   );
-  var ic = iconSvg(n, 32, "icon", 14, 16);
+  var ic = iconSvg(n, 32, "icon", RTL ? W - 46 : 14, 16);
   if (ic) g.append(ic);
   g.append(
-    s("text", { class: "name", x: 58, y: 28 }, clip(n.label, 17)),
-    s("text", { class: "sub", x: 58, y: 47 }, clip(techText(n), 20)),
+    s("text", { class: "name", x: RTL ? W - 58 : 58, y: 28 }, clip(n.label, 17)),
+    s("text", { class: "sub", x: RTL ? W - 58 : 58, y: 47 }, clip(techText(n), 20)),
   );
   if (risks.length)
     g.append(

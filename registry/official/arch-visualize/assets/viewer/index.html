@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- arch-visualize viewer v2 -->
-<html lang="en">
+<html lang="__LANG__" dir="__DIR__" data-flow="__FLOW__">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -13,24 +13,21 @@
   <body>
     <header>
       <h1 id="title">Architecture</h1>
-      <p>
-        Generated from code; not live traffic. It shows how requests would travel, based on the
-        files read.
-      </p>
-      <button type="button" id="open-risks" class="phone-only">Risks</button>
-      <button type="button" id="theme">Switch theme</button>
+      <p>{{header.note}}</p>
+      <button type="button" id="open-risks" class="phone-only">{{btn.risks}}</button>
+      <button type="button" id="theme">{{btn.theme}}</button>
     </header>
     <main>
       <div id="center">
         <div id="flowbar" class="flowbar" hidden>
-          <div class="flowtabs" id="flowtabs" role="tablist" aria-label="Request flows"></div>
+          <div class="flowtabs" id="flowtabs" role="tablist" aria-label="{{flows.aria}}"></div>
           <div class="flowctl">
-            <button type="button" id="fback">Back</button>
-            <button type="button" id="fplay">Play</button>
-            <button type="button" id="fstep">Step</button>
-            <button type="button" id="frestart">Restart</button>
+            <button type="button" id="fback">{{flow.back}}</button>
+            <button type="button" id="fplay">{{flow.play}}</button>
+            <button type="button" id="fstep">{{flow.step}}</button>
+            <button type="button" id="frestart">{{flow.restart}}</button>
             <label
-              >Speed
+              >{{flow.speed}}
               <select id="fspeed">
                 <option value="0.5">0.5x</option>
                 <option value="1" selected>1x</option>
@@ -40,36 +37,37 @@
           </div>
         </div>
         <div id="caption" class="caption" aria-live="polite" hidden></div>
-        <section
-          id="stage"
-          tabindex="0"
-          aria-label="Architecture diagram. Arrow keys pan, plus and minus zoom, zero fits the view."
-        >
-          <svg
-            id="canvas"
-            role="group"
-            aria-label="Components and the connections between them"
-          ></svg>
+        <section id="stage" tabindex="0" aria-label="{{stage.aria}}">
+          <svg id="canvas" role="group" aria-label="{{canvas.aria}}"></svg>
           <div id="zoom">
-            <button type="button" id="zin" aria-label="Zoom in">+</button>
-            <button type="button" id="zout" aria-label="Zoom out">&minus;</button>
-            <button type="button" id="zfit">Fit</button>
+            <button type="button" id="zin" aria-label="{{zoom.in}}">+</button>
+            <button type="button" id="zout" aria-label="{{zoom.out}}">&minus;</button>
+            <button type="button" id="zfit">{{zoom.fit}}</button>
           </div>
         </section>
-        <section id="list" aria-label="Components"></section>
+        <section id="list" aria-label="{{list.aria}}"></section>
       </div>
       <aside id="panel" aria-live="polite">
-        <button type="button" class="close" id="close">Close</button>
+        <button type="button" class="close" id="close">{{panel.close}}</button>
         <div class="tabs" role="tablist">
-          <button type="button" role="tab" id="tab-details" aria-selected="true">Details</button>
-          <button type="button" role="tab" id="tab-flow" aria-selected="false" hidden>Flow</button>
-          <button type="button" role="tab" id="tab-risks" aria-selected="false">Risks</button>
+          <button type="button" role="tab" id="tab-details" aria-selected="true">
+            {{tab.details}}
+          </button>
+          <button type="button" role="tab" id="tab-flow" aria-selected="false" hidden>
+            {{tab.flow}}
+          </button>
+          <button type="button" role="tab" id="tab-risks" aria-selected="false">
+            {{btn.risks}}
+          </button>
         </div>
         <div id="body"></div>
       </aside>
     </main>
     <script type="application/json" id="model">
       __MODEL_JSON__
+    </script>
+    <script type="application/json" id="i18n">
+      __I18N_JSON__
     </script>
     <script type="application/json" id="icons">
       __ICONS_JSON__

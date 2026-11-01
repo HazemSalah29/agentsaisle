@@ -34,6 +34,38 @@ function clear(el) {
   el.textContent = "";
 }
 
+// ---- text: every string the page shows comes from the table the build embedded (assets/viewer/i18n.json)
+var I18N = { lang: "en", dir: "ltr", strings: {} };
+try {
+  I18N = JSON.parse($("i18n").textContent);
+} catch (e) {
+  // keys are shown as they are
+}
+var RTL = I18N.dir === "rtl";
+var FLOW_RTL = document.documentElement.getAttribute("data-flow") === "rtl";
+var pluralRules = null;
+try {
+  pluralRules = new Intl.PluralRules(I18N.lang);
+} catch (e) {
+  // falls back to one/other
+}
+function fill(text, vars) {
+  return text.replace(/\{(\w+)\}/g, function (m, k) {
+    return vars && vars[k] !== undefined ? String(vars[k]) : m;
+  });
+}
+function t(key, vars) {
+  var v = I18N.strings[key];
+  return fill(v === undefined ? key : v, vars);
+}
+/** The plural form of `key` for the count `n` (key.one, key.few, ..., falling back to key.other). */
+function tn(key, n, vars) {
+  var form = pluralRules ? pluralRules.select(n) : n === 1 ? "one" : "other";
+  var v = I18N.strings[key + "." + form];
+  if (v === undefined) v = I18N.strings[key + ".other"];
+  return fill(v === undefined ? key : v, Object.assign({ n: n }, vars));
+}
+
 // ---- data
 var model, icons;
 try {
@@ -41,10 +73,10 @@ try {
   icons = JSON.parse($("icons").textContent);
 } catch (e) {
   clear($("body"));
-  $("body").append("This page could not read its data.");
+  $("body").append(t("data.error"));
   return;
 }
-document.title = model.project + " architecture";
+document.title = t("doc.title", { project: model.project });
 $("title").textContent = model.project;
 
 var TIERS = ["clients", "edge", "frontend", "backend", "async", "data", "external"];
@@ -57,6 +89,12 @@ var TIER_NAME = {
   data: "Data",
   external: "External",
   other: "Other",
+};
+var tierName = function (tier) {
+  return t("tier." + (TIER_NAME[tier] ? tier : "misc"));
+};
+var roleName = function (role) {
+  return I18N.strings["role." + role] !== undefined ? t("role." + role) : role;
 };
 var inferred = new Set(model.inferred || []);
 var nodeById = {};
@@ -74,7 +112,7 @@ var risksByNode = {};
   });
 });
 var techText = function (n) {
-  return n.tech.indexOf("generic-") === 0 ? n.role : n.tech;
+  return n.tech.indexOf("generic-") === 0 ? roleName(n.role) : n.tech;
 };
 var isInferred = function (kind, id) {
   return inferred.has(kind + ":" + id);

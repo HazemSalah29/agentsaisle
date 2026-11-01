@@ -43,8 +43,28 @@ export function iconFor(tech, role, dir = path.join(skillDir(), "assets", "icons
   return parseIcon(readFileSync(file, "utf8"), path.basename(file));
 }
 
-/** Build the page for `model`. Throws with the list of problems when the model is invalid. */
-export function renderPage(input) {
+export const LANGS = { en: "ltr", ar: "rtl" };
+
+const escapeHtml = (text) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** The text table for `lang`: English underneath, so a missing key still reads. */
+export function loadI18n(lang = "en") {
+  if (!LANGS[lang])
+    throw new Error(`unknown language "${lang}" (use ${Object.keys(LANGS).join(" or ")})`);
+  const all = JSON.parse(
+    readFileSync(path.join(skillDir(), "assets", "viewer", "i18n.json"), "utf8"),
+  );
+  return { lang, dir: LANGS[lang], strings: { ...all.en, ...all[lang] } };
+}
+
+/**
+ * Build the page for `model`. Throws with the list of problems when the model is invalid.
+ * Options: lang ("en" or "ar"), flowDir ("ltr" or "rtl": which way the diagram runs).
+ */
+export function renderPage(input, { lang = "en", flowDir = "ltr" } = {}) {
+  if (flowDir !== "ltr" && flowDir !== "rtl") throw new Error('--flow-dir must be "ltr" or "rtl"');
+  const i18n = loadI18n(lang);
   const model = upgradeModel(input);
   const problems = checkModel(model);
   if (problems.length) throw Object.assign(new Error("model has problems"), { problems });
@@ -83,7 +103,17 @@ export function renderPage(input) {
       .sort()
       .map((k) => [k, icons[k]]),
   );
+  const text = (key) => {
+    if (i18n.strings[key] === undefined)
+      throw new Error(`viewer/index.html uses an unknown text key "${key}"`);
+    return escapeHtml(i18n.strings[key]);
+  };
   return template
+    .replace(/\{\{([\w.]+)\}\}/g, (_, key) => text(key))
+    .replace("__LANG__", () => lang)
+    .replace("__DIR__", () => i18n.dir)
+    .replace("__FLOW__", () => flowDir)
+    .replace("__I18N_JSON__", () => safeJson(i18n))
     .replace("/*__STYLES__*/", () => styles)
     .replace("/*__LIB_JS__*/", () => lib)
     .replace("/*__VIEWER_JS__*/", () => viewer)
@@ -92,7 +122,10 @@ export function renderPage(input) {
 }
 
 function run(argv) {
-  const { flags } = parseArgs(argv, { strings: ["model", "out"], booleans: ["force"] });
+  const { flags } = parseArgs(argv, {
+    strings: ["model", "out", "lang", "flow-dir"],
+    booleans: ["force"],
+  });
   const modelFile = path.resolve(flags.model ?? "docs/architecture.json");
   const out = path.resolve(flags.out ?? "docs/architecture.html");
   let model;
@@ -110,7 +143,7 @@ function run(argv) {
   }
   let html;
   try {
-    html = renderPage(model);
+    html = renderPage(model, { lang: flags.lang, flowDir: flags["flow-dir"] });
   } catch (e) {
     if (e.problems) {
       console.log(
