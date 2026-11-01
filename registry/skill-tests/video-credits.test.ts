@@ -18,7 +18,7 @@ type Credits = {
 };
 const load = () => loadScript<Credits>("video-core", "scripts/credits.mjs");
 
-const project = (extra: Record<string, unknown> = {}) => ({
+const project = (extra: Record<string, unknown> = {}): Loose => ({
   version: 1,
   meta: { title: "Demo", type: "explainer", format: "reel-9x16", fps: 30, lang: "en" },
   scenes: [{ id: "s1", kind: "title", durationFrom: "fixed", seconds: 2, props: { text: "x" } }],

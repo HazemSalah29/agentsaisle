@@ -99,8 +99,8 @@ describe("video-core scenes", () => {
     const s = { kind: "title", props: { text: "Hi", subtitle: "there" } };
     const first = renderScene(s, ctx({ first: true, at: 0 }));
     const later = renderScene(s, ctx());
-    expect(first.plan[0].frames[0]).not.toHaveProperty("opacity");
-    expect(later.plan[0].frames[0]).toHaveProperty("opacity", 0);
+    expect(first.plan[0]?.frames[0]).not.toHaveProperty("opacity");
+    expect(later.plan[0]?.frames[0]).toHaveProperty("opacity", 0);
     expect(later.plan.map((p) => p.at)).toEqual([2, 2.25]);
     expect(later.html).toContain('id="sc-a-t"');
   });
@@ -158,7 +158,7 @@ describe("video-core scenes", () => {
       },
       ctx(),
     );
-    expect(r.plan[0].frames).toEqual([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }]);
+    expect(r.plan[0]?.frames).toEqual([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }]);
     expect(r.html).toContain('pathLength="1"');
   });
 
@@ -213,8 +213,8 @@ describe("video-core tween helper", () => {
       { id: "main", duration: 4, doc, win },
     );
     expect(made).toHaveLength(1);
-    expect(made[0].opts).toMatchObject({ duration: 500, delay: 1500, fill: "both" });
-    expect(made[0].paused).toBe(true);
+    expect(made[0]?.opts).toMatchObject({ duration: 500, delay: 1500, fill: "both" });
+    expect(made[0]?.paused).toBe(true);
     expect(win.__timelines.main.duration()).toBe(4);
   });
 
@@ -229,7 +229,7 @@ describe("video-core tween helper", () => {
       win,
     });
     tl.seek(0.25);
-    expect(made[0].currentTime).toBe(250);
+    expect(made[0]?.currentTime).toBe(250);
     expect(tl.paused()).toBe(true);
   });
 
