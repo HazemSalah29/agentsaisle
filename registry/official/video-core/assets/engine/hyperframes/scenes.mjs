@@ -2,11 +2,12 @@
 // { html, plan }: markup for one scene and the animations that bring it in. Text is always escaped, so a
 // hostile string in video.json is shown as text and never becomes markup. Nothing here touches the disk.
 
+import { code, codeCss } from "./code.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
 import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
 
 export { esc };
-export const KINDS = ["title", "quote", "list", "chart", "broll", "rate-limit"];
+export const KINDS = ["title", "quote", "list", "chart", "broll", "rate-limit", "code"];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
 
@@ -166,10 +167,10 @@ function broll(s, ctx) {
   return { html: media + cap, plan };
 }
 
-const BUILDERS = { title, quote, list, chart, broll, "rate-limit": rateLimit };
+const BUILDERS = { title, quote, list, chart, broll, "rate-limit": rateLimit, code };
 
 /** Styles the kinds above need on top of the base page styles. */
-export const kindCss = (brand, vertical) => rateLimitCss(brand, vertical);
+export const kindCss = (brand, vertical) => rateLimitCss(brand, vertical) + codeCss(brand);
 
 /**
  * Markup and animations for one scene.

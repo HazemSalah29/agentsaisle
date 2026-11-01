@@ -72,7 +72,9 @@
       "required": ["id", "kind"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-        "kind": { "enum": ["title", "quote", "list", "chart", "broll", "rate-limit", "custom"] },
+        "kind": {
+          "enum": ["title", "quote", "list", "chart", "broll", "rate-limit", "code", "custom"]
+        },
         "durationFrom": { "enum": ["voice", "fixed"] },
         "seconds": { "type": "number", "minimum": 0.5 },
         "narration": {
@@ -175,6 +177,22 @@
             "minItems": 1,
             "maxItems": 2,
             "items": { "type": "object", "required": ["algo"] }
+          }
+        }
+      },
+      "code": {
+        "type": "object",
+        "required": ["language"],
+        "properties": {
+          "language": { "type": "string" },
+          "title": { "type": "string", "maxLength": 120 },
+          "file": { "type": "string", "maxLength": 80 },
+          "code": { "type": "string", "maxLength": 1500 },
+          "diff": { "type": "object", "required": ["before", "after"] },
+          "focus": {
+            "type": "array",
+            "maxItems": 8,
+            "items": { "type": "object", "required": ["lines"] }
           }
         }
       },

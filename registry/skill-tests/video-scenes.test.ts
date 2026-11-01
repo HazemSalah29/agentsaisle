@@ -29,7 +29,7 @@ const HOSTILE = `<img src=x onerror=alert(1)> "q" 'a' & </script><script>alert(2
 describe("video-core scenes", () => {
   it("builds the kinds", async () => {
     const { KINDS } = await load();
-    expect(KINDS).toEqual(["title", "quote", "list", "chart", "broll", "rate-limit"]);
+    expect(KINDS).toEqual(["title", "quote", "list", "chart", "broll", "rate-limit", "code"]);
   });
 
   it("shows hostile strings as text in every kind, never as markup", async () => {

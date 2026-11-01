@@ -4,6 +4,7 @@
 // Usage: node check.mjs <project-dir | path/to/video.json> [--json]
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { codeProblems } from "../assets/engine/hyperframes/code.mjs";
 import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
 import { specProblems } from "../assets/sim/rate-limit.mjs";
 import { validate } from "./schema-check.mjs";
@@ -96,6 +97,10 @@ export function checkProject(video, dir, schema = loadSchema()) {
     const propSchema = schema.definitions?.props?.[s.kind];
     if (propSchema) problems.push(...validate(propSchema, s.props ?? {}, schema, `${at}.props`));
     if (s.kind === "rate-limit") problems.push(...rateLimitProblems(s.props ?? {}, `${at}.props`));
+    if (s.kind === "code")
+      problems.push(
+        ...codeProblems(s.props ?? {}, s.narration?.length ?? 0).map((p) => `${at}.props.${p}`),
+      );
     if (s.kind === "broll" && s.props?.asset && !assetIds.has(s.props.asset))
       problems.push(`${at}.props.asset: "${s.props.asset}" is not listed in assets`);
   });

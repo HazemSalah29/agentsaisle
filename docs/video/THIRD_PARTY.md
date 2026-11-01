@@ -1,6 +1,6 @@
 # Third-party software (video library)
 
-The video skills **bundle none of these**. They run programs the user installs, and our scripts never download or install anything. Licences are as recorded on 2026-11-01; `TODO(verify)` each before a public release.
+The video skills **bundle none of the programs below** (one small library, Shiki, is vendored as source; see the last section). They run programs the user installs, and our scripts never download or install anything. Licences are as recorded on 2026-11-01; `TODO(verify)` each before a public release.
 
 | Program                    | Version tested               | Licence                             | How it is used                                                                                             |
 | -------------------------- | ---------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -25,3 +25,9 @@ The video skills **bundle none of these**. They run programs the user installs, 
 | uv, cmake, Python 3.12 (python-build-standalone)                                           | uv 0.13.6, cmake 4.4.4, 3.12.16          | MIT or Apache 2.0, PSF                        | Tooling to create the venv and build whisper.cpp.                                                                                                                                          |
 
 Our own code (the tween helper, scene kinds, scripts) is written for this repository and uses no GSAP. Bundled fonts: none; HyperFrames brings Inter and others, and users add their own OFL fonts to `brand/fonts/`.
+
+## Vendored in the repository
+
+| Name  | Version | Licence | Size                            | Where                                                    | Why                                                                                                                                                                                                                                                                                                                                                                   |
+| ----- | ------- | ------- | ------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shiki | 4.5.0   | MIT     | about 340 KB code + 580 KB JSON | `video-core/assets/vendor/` (`shiki.mjs`, `shiki-data/`) | Syntax colours for the `code` scene. Uses Shiki's JavaScript regex engine (no WebAssembly), the github-dark theme and the JavaScript, TypeScript, JSON, Bash and Python grammars (TextMate grammars, MIT, from the `@shikijs/langs` package). Built by `registry/build-vendor-shiki.mjs` from the pinned devDependency; esbuild 0.28.2 (MIT) is the dev-only bundler. |
