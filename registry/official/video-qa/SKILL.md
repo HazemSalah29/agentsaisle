@@ -1,0 +1,48 @@
+---
+name: video-qa
+description: Check a rendered video against its project before it ships, covering format, loudness and clipping, black stretches, frozen pictures, fast flashing, text in the margins, caption size and contrast, missing voice lines, licences and leftover placeholders, and make a contact sheet to look at. Use when the user wants a rendered video checked or runs /video-qa. Don't use to fix the video, to publish it, or to judge taste or accuracy of the content.
+disable-model-invocation: true
+allowed-tools: Read Write Glob Bash(node *)
+---
+
+# Video QA
+
+Runs the automatic checks on a rendered MP4 and tells you what to fix. The script measures; you read the contact sheet and decide. It changes nothing except `qa/report.json` and `qa/contact-sheet.png`. `<skill>` is the folder that holds this SKILL.md.
+
+## Use when
+
+- A project has a rendered video in `out/` and the user wants it checked, or `/video` reaches its QA step.
+- The user asks why a video would be rejected, too quiet, or hard to read on a phone.
+
+## Don't use when
+
+- There is no render yet. Run `video-core` first.
+- The user wants edits or a fix. Name what failed and the step that fixes it (`references/checks.md`), and stop.
+- The question is whether the content is true or good. This skill checks the file and the project, not the argument.
+
+## Steps
+
+1. Run `node <skill>/scripts/qa.mjs <project>` (add `--draft` for a 540p draft). It needs `ffmpeg` and `ffprobe` on the PATH and the `video-core` skill installed next to this one.
+2. Read the output. Every `FAIL` blocks publishing; every `WARN` needs a decision from you or the user.
+3. Open `<project>/qa/contact-sheet.png` with the Read tool and look at it once: is anything cut off, unreadable or empty? Say what you see.
+4. For each failure give the cause and the fix from `references/checks.md`. Do not edit the video yourself.
+5. After the fixes, render again and run the script again. Do not publish on a fail unless the user says so in words.
+
+## Budget
+
+- Search first (grep, glob, symbol search). Read line ranges, not whole files.
+- Read at most 8 files per step. If you need more, write down what you learned and narrow the question.
+- Do not re-read a file you just wrote or edited.
+- Prefer the smallest command output that answers the question: head, tail, quiet flags, filtered lists.
+
+- Run the script once per render. Do not read `report.json` unless the printed lines were cut at 40.
+- View the contact sheet once, not frame by frame.
+
+## Output
+
+- `QA PASS` or `QA FAIL`, each FAIL and WARN in one line with its time, and what you saw in the contact sheet.
+- What was not checked: spelling, platform UI margins and the loudness target are working defaults, not verified rules.
+
+## Done when
+
+- The script exited 0 (or the user accepted each remaining warning), the contact sheet was looked at, and nothing was published, uploaded or installed.
