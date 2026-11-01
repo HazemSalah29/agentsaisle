@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
-import { checkModel } from "./model-check.mjs";
+import { checkModel, upgradeModel } from "./model-check.mjs";
 
 export const MARKER = "<!-- arch-visualize viewer v1 -->";
 
@@ -42,7 +42,8 @@ export function iconFor(tech, role, dir = path.join(skillDir(), "assets", "icons
 }
 
 /** Build the page for `model`. Throws with the list of problems when the model is invalid. */
-export function renderPage(model) {
+export function renderPage(input) {
+  const model = upgradeModel(input);
   const problems = checkModel(model);
   if (problems.length) throw Object.assign(new Error("model has problems"), { problems });
   const template = readFileSync(path.join(skillDir(), "assets", "viewer.html"), "utf8");

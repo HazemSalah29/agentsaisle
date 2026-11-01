@@ -409,7 +409,7 @@ export function discover(root, catalog = loadCatalog()) {
     n.evidence.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
   edges.sort((a, b) => (a.id < b.id ? -1 : 1));
   const model = {
-    version: 1,
+    version: 2,
     project: (projectName || path.basename(path.resolve(root))).slice(0, 80),
     nodes,
     edges,
