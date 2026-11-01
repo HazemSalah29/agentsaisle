@@ -12,6 +12,7 @@ var linkTimer = 0,
 });
 function linkState() {
   return {
+    lens: lens !== "system" ? lens : undefined,
     node: sel && sel.kind === "node" ? sel.id : undefined,
     edge: sel && sel.kind === "edge" ? sel.id : undefined,
     flow: flows.length && st.index >= 0 ? flows[flowIx].id : undefined,
@@ -34,6 +35,7 @@ function scheduleLink() {
   }, 250);
 }
 function applyLink(want) {
+  if (want.lens && want.lens !== lens) setLens(want.lens);
   if (want.k !== undefined && want.x !== undefined && want.y !== undefined) {
     view = { x: want.x, y: want.y, k: want.k };
     applyView();

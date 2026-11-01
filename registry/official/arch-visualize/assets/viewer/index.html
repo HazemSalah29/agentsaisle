@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- arch-visualize viewer v2 -->
-<html lang="__LANG__" dir="__DIR__" data-flow="__FLOW__" data-lens="system">
+<html lang="__LANG__" dir="__DIR__" data-flow="__FLOW__" data-lens="__LENS__">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,6 +35,21 @@
     </header>
     <main>
       <div id="center">
+        <div id="lenses" class="lenses" role="tablist" aria-label="{{lens.aria}}">
+          <button type="button" role="tab" id="lens-system" data-lens="system" aria-selected="true">
+            {{lens.system}}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="lens-flows"
+            data-lens="flows"
+            aria-selected="false"
+            hidden
+          >
+            {{lens.flows}}
+          </button>
+        </div>
         <div id="flowbar" class="flowbar" hidden>
           <div class="flowtabs" id="flowtabs" role="tablist" aria-label="{{flows.aria}}"></div>
           <div class="flowctl">
@@ -42,6 +57,8 @@
             <button type="button" id="fplay">{{flow.play}}</button>
             <button type="button" id="fstep">{{flow.step}}</button>
             <button type="button" id="frestart">{{flow.restart}}</button>
+            <button type="button" id="ffocus" aria-pressed="true">{{flow.focus}}</button>
+            <input type="range" id="fscrub" min="0" max="0" value="0" aria-label="{{flow.scrub}}" />
             <label
               >{{flow.speed}}
               <select id="fspeed">

@@ -300,6 +300,9 @@
           "type": "string",
           "maxLength": 80
         },
+        "together": {
+          "type": "boolean"
+        },
         "event": {
           "type": "string",
           "maxLength": 40

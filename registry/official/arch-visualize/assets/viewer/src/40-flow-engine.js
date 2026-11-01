@@ -12,7 +12,19 @@ function buildSteps(flow, edgeById, nodeById) {
       var e = edgeById[st.edge];
       if (!e) return;
       var rev = st.reverse === true;
+      var prev = out[out.length - 1];
+      if (st.together === true && prev && prev.kind === "edge") {
+        // runs at the same time as the step before it: same position in the timeline, one more dot
+        prev.extra.push({
+          edge: e.id,
+          reverse: rev,
+          from: rev ? e.to : e.from,
+          to: rev ? e.from : e.to,
+        });
+        return;
+      }
       out.push({
+        extra: [],
         kind: "edge",
         edge: e.id,
         reverse: rev,

@@ -217,6 +217,8 @@ export function checkModel(
     f.steps.forEach((s, j) => {
       const at = `flows[${i}].steps[${j}]`;
       if (!s.edge && !s.event) problems.push(`${at}: needs an edge or an event`);
+      if (s.together && (!s.edge || !f.steps[j - 1]?.edge))
+        problems.push(`${at}: "together" needs an edge step and an edge step right before it`);
       if (s.edge && !edgeIds.has(s.edge)) problems.push(`${at}: edge "${s.edge}" does not exist`);
       if (s.event && !nodeIds.has(s.node))
         problems.push(`${at}: event "${s.event}" needs an existing node`);

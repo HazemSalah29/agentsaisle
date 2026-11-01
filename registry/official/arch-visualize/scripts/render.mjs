@@ -44,6 +44,7 @@ export function iconFor(tech, role, dir = path.join(skillDir(), "assets", "icons
 }
 
 export const LANGS = { en: "ltr", ar: "rtl" };
+export const LENSES = ["system", "flows", "security", "failure", "ai", "diff"];
 
 const escapeHtml = (text) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -62,8 +63,9 @@ export function loadI18n(lang = "en") {
  * Build the page for `model`. Throws with the list of problems when the model is invalid.
  * Options: lang ("en" or "ar"), flowDir ("ltr" or "rtl": which way the diagram runs).
  */
-export function renderPage(input, { lang = "en", flowDir = "ltr" } = {}) {
+export function renderPage(input, { lang = "en", flowDir = "ltr", lens = "system" } = {}) {
   if (flowDir !== "ltr" && flowDir !== "rtl") throw new Error('--flow-dir must be "ltr" or "rtl"');
+  if (!LENSES.includes(lens)) throw new Error(`--lens must be one of ${LENSES.join(", ")}`);
   const i18n = loadI18n(lang);
   const model = upgradeModel(input);
   const problems = checkModel(model);
@@ -118,6 +120,7 @@ export function renderPage(input, { lang = "en", flowDir = "ltr" } = {}) {
     .replace("__LANG__", () => lang)
     .replace("__DIR__", () => i18n.dir)
     .replace("__FLOW__", () => flowDir)
+    .replace("__LENS__", () => lens)
     .replace("__I18N_JSON__", () => safeJson(i18n))
     .replace("/*__STYLES__*/", () => styles)
     .replace("/*__LIB_JS__*/", () => lib)
@@ -128,7 +131,7 @@ export function renderPage(input, { lang = "en", flowDir = "ltr" } = {}) {
 
 function run(argv) {
   const { flags } = parseArgs(argv, {
-    strings: ["model", "out", "lang", "flow-dir"],
+    strings: ["model", "out", "lang", "flow-dir", "lens"],
     booleans: ["force"],
   });
   const modelFile = path.resolve(flags.model ?? "docs/architecture.json");
@@ -148,7 +151,7 @@ function run(argv) {
   }
   let html;
   try {
-    html = renderPage(model, { lang: flags.lang, flowDir: flags["flow-dir"] });
+    html = renderPage(model, { lang: flags.lang, flowDir: flags["flow-dir"], lens: flags.lens });
   } catch (e) {
     if (e.problems) {
       console.log(

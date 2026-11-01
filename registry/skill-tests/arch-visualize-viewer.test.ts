@@ -307,3 +307,39 @@ describe("arch-visualize search, trace and links in the page", () => {
       expect(html.match(new RegExp(`root\\.${name} = `, "g")), name).toHaveLength(1);
   });
 });
+
+describe("arch-visualize lenses", () => {
+  it("starts in the System lens and carries the lens on the page element", () => {
+    expect(render(fixture).html).toContain('data-lens="system"');
+    expect(render(fixture, ["--lens", "flows"]).html).toContain('data-lens="flows"');
+  });
+
+  it("accepts the names of the lenses planned for later and refuses anything else", () => {
+    for (const lens of ["security", "failure", "ai", "diff"])
+      expect(render(fixture, ["--lens", lens]).status, lens).toBe(0);
+    expect(render(fixture, ["--lens", "party"]).status).toBe(2);
+  });
+
+  it("only offers the lenses that exist and falls back to System for the rest", () => {
+    const src = read("src/55-lens.js");
+    expect(src).toMatch(/LENS_ORDER\.indexOf\(name\) >= 0 \? name : "system"/);
+    expect(src).toMatch(/\["system"\]\.concat\(flows\.length \? \["flows"\] : \[\]\)/);
+  });
+
+  it("has a scrubbable timeline, a focus toggle and a live caption", () => {
+    expect(markup).toMatch(/id="fscrub"/);
+    expect(markup).toMatch(/id="ffocus" aria-pressed="true"/);
+    expect(markup).toMatch(/id="caption" class="caption" aria-live="polite"/);
+    expect(code).toMatch(/\$\("fscrub"\)\.addEventListener\("input"/);
+  });
+
+  it("describes together in the schema and in the flows reference", () => {
+    const schema = JSON.parse(
+      readFileSync(skillFile("arch-visualize", "assets/model.schema.json"), "utf8"),
+    );
+    expect(schema.$defs.flowStep.properties.together.type).toBe("boolean");
+    expect(readFileSync(skillFile("arch-visualize", "references/flows.md"), "utf8")).toContain(
+      "together",
+    );
+  });
+});

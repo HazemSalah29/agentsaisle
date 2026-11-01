@@ -123,7 +123,14 @@
     "trace.sep": " → ",
     "trace.reset": "Pick other ends",
     "trace.exit": "Exit trace",
-    "trace.cut": "Showing the shortest ones; there may be more."
+    "trace.cut": "Showing the shortest ones; there may be more.",
+    "lens.aria": "Views",
+    "lens.system": "System",
+    "lens.flows": "Flows",
+    "flow.focus": "Focus",
+    "flow.scrub": "Position in this request",
+    "flow.together.one": "and {n} more at the same time",
+    "flow.together.other": "and {n} more at the same time"
   },
   "ar": {
     "doc.title": "البنية المعمارية لـ {project}",
@@ -278,6 +285,16 @@
     "trace.sep": " ← ",
     "trace.reset": "اختيار طرفين آخرين",
     "trace.exit": "إنهاء التتبّع",
-    "trace.cut": "تُعرض أقصر المسارات؛ وقد توجد غيرها."
+    "trace.cut": "تُعرض أقصر المسارات؛ وقد توجد غيرها.",
+    "lens.aria": "العروض",
+    "lens.system": "النظام",
+    "lens.flows": "المسارات",
+    "flow.focus": "تركيز",
+    "flow.scrub": "الموضع في هذا الطلب",
+    "flow.together.one": "ومعه واحد آخر في الوقت نفسه",
+    "flow.together.two": "ومعه اثنان آخران في الوقت نفسه",
+    "flow.together.few": "ومعه {n} أخرى في الوقت نفسه",
+    "flow.together.many": "ومعه {n} أخرى في الوقت نفسه",
+    "flow.together.other": "ومعه {n} أخرى في الوقت نفسه"
   }
 }

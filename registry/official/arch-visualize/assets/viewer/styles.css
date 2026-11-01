@@ -309,6 +309,34 @@ main {
     600 var(--fs-s) system-ui,
     sans-serif;
 }
+.lenses {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+}
+.lenses[hidden] {
+  display: none;
+}
+.lenses button {
+  border-radius: 6px 6px 0 0;
+  border-bottom-color: transparent;
+}
+.lenses button[aria-selected="true"] {
+  border-color: var(--accent);
+  border-bottom-color: var(--surface-2);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+#fscrub {
+  accent-color: var(--accent);
+  width: 140px;
+  vertical-align: middle;
+}
+#ffocus[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  font-weight: 600;
+}
 .find {
   position: relative;
   flex: 0 1 220px;

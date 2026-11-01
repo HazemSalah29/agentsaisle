@@ -265,6 +265,23 @@ describe("arch-visualize model-check", () => {
     );
   });
 
+  it("allows together only on an edge step that follows an edge step", async () => {
+    const flowWith = (steps: unknown[]) => (m: Model) => {
+      m.flows = [{ id: "f", name: "F", steps }];
+    };
+    const ok = [{ edge: "api-db" }, { edge: "api-db", together: true }];
+    expect(await problems(flowWith(ok))).toEqual([]);
+    const first = await problems(flowWith([{ edge: "api-db", together: true }]));
+    expect(first.join()).toContain('"together"');
+    const afterEvent = await problems(
+      flowWith([
+        { event: "e", node: "api" },
+        { edge: "api-db", together: true },
+      ]),
+    );
+    expect(afterEvent.join()).toContain('"together"');
+  });
+
   it("needs a flow unless the model is a draft", async () => {
     expect((await problems((m) => (m.flows = []))).join("\n")).toMatch(/at least one request flow/);
     expect(await problems((m) => (m.flows = []), { draft: true })).toEqual([]);
@@ -777,6 +794,25 @@ describe("arch-visualize flow engine", () => {
     });
     expect(E.dotAt(steps[0]!, 0.25)).toBe(0.25);
     expect(E.dotAt(steps[4]!, 0.25)).toBe(0.75);
+  });
+
+  it("merges a step marked together into the step before it, as one more dot", () => {
+    const flow = {
+      steps: [
+        { edge: "web-api" },
+        { edge: "api-cache", label: "Look up" },
+        { edge: "api-db", together: true },
+        { event: "x", node: "api" },
+        { edge: "api-db", together: true }, // after an event: nothing to run with, so it is a step of its own
+      ],
+    };
+    const built = E.buildSteps(flow, edges, nodes) as (Step & { extra?: { edge: string }[] })[];
+    expect(built).toHaveLength(4);
+    expect(built[1]!.extra!.map((x) => x.edge)).toEqual(["api-db"]);
+    expect(built[0]!.extra).toEqual([]);
+    expect(built[3]!).toMatchObject({ kind: "edge", edge: "api-db" });
+    // it takes the same time as one step
+    expect(E.stepMs(built[1]!, 1)).toBe(1000);
   });
 
   it("drops steps that point at nothing", () => {
