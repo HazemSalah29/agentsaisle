@@ -262,3 +262,66 @@ describe("arch-visualize simulate.mjs", () => {
     expect(path.basename(script)).toBe("simulate.mjs");
   });
 });
+
+describe("arch-visualize data trace", () => {
+  type Trace = {
+    label: string;
+    sources: string[];
+    nodes: string[];
+    edges: string[];
+    unlabelled: string[];
+  };
+  const { ArchData } = loadLib<{ ArchData: { trace: (m: unknown, l: string) => Trace } }>(
+    "arch-visualize",
+    ["assets/lib/dataflow.js"],
+  );
+  const m = {
+    nodes: [
+      { id: "web", data: [] },
+      { id: "api", data: ["pii"] },
+      { id: "db", data: ["pii", "payments"] },
+      { id: "logs", data: ["logs"] },
+      { id: "mail" },
+      { id: "cdn" },
+    ],
+    edges: [
+      { id: "web-api", from: "web", to: "api", carries: ["pii"] },
+      { id: "api-db", from: "api", to: "db", carries: ["pii", "payments"] },
+      { id: "api-logs", from: "api", to: "logs" }, // nothing recorded
+      { id: "api-mail", from: "api", to: "mail", carries: ["logs"] },
+      { id: "cdn-web", from: "cdn", to: "web", carries: [] },
+      { id: "x", from: "ghost", to: "api", carries: ["pii"] },
+    ],
+  };
+
+  it("lists the holders, the connections that carry the label and everything they reach", () => {
+    const r = ArchData.trace(m, "pii");
+    expect(r.sources).toEqual(["api", "db"]);
+    expect(r.edges).toEqual(["api-db", "web-api"]);
+    expect(r.nodes).toEqual(["api", "db", "web"]);
+  });
+
+  it("says which connections out of those components record nothing, and treats an empty list as recorded", () => {
+    const r = ArchData.trace(m, "pii");
+    expect(r.unlabelled).toEqual(["api-logs"]);
+    expect(r.unlabelled).not.toContain("cdn-web");
+  });
+
+  it("separates labels and copes with a label nobody uses and an empty model", () => {
+    expect(ArchData.trace(m, "payments").nodes).toEqual(["api", "db"]);
+    expect(ArchData.trace(m, "health")).toMatchObject({
+      sources: [],
+      nodes: [],
+      edges: [],
+      unlabelled: [],
+    });
+    expect(ArchData.trace({}, "pii").nodes).toEqual([]);
+  });
+
+  it("ignores connections to components that do not exist and does not change the model", () => {
+    const copy = JSON.stringify(m);
+    expect(ArchData.trace(m, "pii").edges).not.toContain("x");
+    expect(JSON.stringify(m)).toBe(copy);
+    expect(JSON.stringify(ArchData.trace(m, "pii"))).toBe(JSON.stringify(ArchData.trace(m, "pii")));
+  });
+});
