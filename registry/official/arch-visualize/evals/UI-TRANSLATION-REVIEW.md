@@ -5,6 +5,7 @@ The Arabic strings in `assets/viewer/i18n.json` (`ar`) are a machine draft writt
 - tone and grammar of the sentences (`header.note`, `intro.*`, `risks.note`, `flow.reduced`);
 - the plural forms (`count.*`, `flow.panel.meta`, `node.*.risks`), which follow the six CLDR categories for Arabic;
 - the terms for technical ideas: "الحافة" (edge), "غير المتزامن" (async), "ذاكرة مؤقتة" (cache), "طبقة" (tier);
+- the Changes view (`diff.*`, `lens.diff`): "مضاف / معدَّل / محذوف / أُعيدت تسميته" for added / changed / removed / renamed, and the sentence in `diff.note`;
 - the direction of the arrows: flow text uses "←" in Arabic so it reads in the order a reader follows.
 
 What stays in the original language on purpose: labels, flow names, risk text and evidence notes written in the model (they are the project's own text), technology names, file paths and rule ids. Numerals are written 0-9.

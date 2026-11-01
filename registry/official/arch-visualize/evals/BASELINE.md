@@ -71,6 +71,20 @@ Earlier I wrote "5 of 5, recall 1.0" for this fixture; that list was too short (
 
 What this does not show: the fixture was written by me, so recall measures the patterns I thought of, not real projects. A spot check on this repository (not designed for it) found one genuine candidate outside the fixture (`apps/web` to GitHub's API, medium) and no false ones; that is one project, not a study. DevPath's source is not in this repository, so its 2 of 13 stays the recorded baseline and I did not re-run it.
 
+## After M7 (diff and CI)
+
+Measured on `evals/fixture-model-base.json` (an earlier version of the fixture model with one component renamed, one added, one removed, and two connection facts changed) against `evals/fixture-model-v2.json`.
+
+| Measure                                                 | After M5 / M6 | After M7                           |
+| ------------------------------------------------------- | ------------- | ---------------------------------- |
+| Viewer template (parts, libraries, styles, text), bytes | 175,658       | 198,425                            |
+| Rendered fixture page (9 components), bytes             | n/a           | 199,705 plain; 200,946 with a diff |
+| Scripts                                                 | 5             | 6 (`diff.mjs`)                     |
+
+The diff found exactly what was seeded: 1 added component and its connection, 1 removed component and its connection, 1 rename (`redis` to `cache`, matched by technology and a shared evidence file), 2 changed connection facts (`retries`, `timeoutMs`). Screenshots (English light and dark, Arabic, a selected ghost) are in `evals/m7-diff/`. The 300 KB budget for the viewer still holds.
+
+What this does not show: the base was written by me from the same fixture, so it shows that seeded changes are found, not how often a real rename is recognised. Rename detection needs the same technology and a shared evidence file, and gives up when two components could match.
+
 ## Tokens and tool calls
 
 No eval-run log exists for a full skill run, so there are no numbers. M8 will measure it by running the skill once on the fixture with the old and new version and reading the token and tool-call totals from the session transcript.

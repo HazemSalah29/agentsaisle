@@ -168,6 +168,11 @@ function fillPrint() {
   } catch (e) {
     // the screen version is still there; only the printed picture is missing
   }
+  // when the page was built with a diff, the list of changes comes first
+  if (DIFF && !DIFF.empty)
+    diffIntro().forEach(function (x) {
+      printRisks.append(x);
+    });
   var rs = model.risks || [];
   printRisks.append(h("h2", {}, t("print.risks")));
   if (!rs.length) printRisks.append(h("p", {}, t("print.none")));

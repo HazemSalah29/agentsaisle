@@ -450,3 +450,26 @@ describe("arch-visualize Diff lens viewer code", () => {
     expect(ArchHash.buildHash({ lens: "diff", node: "api" })).toBe("#lens=diff&node=api");
   });
 });
+
+describe("arch-visualize CI recipe", () => {
+  const ci = readFileSync(skillFile("arch-visualize", "references/ci.md"), "utf8");
+  it("covers the four steps, the permissions and the open questions", () => {
+    for (const step of [
+      "model-check.mjs",
+      "--format sarif",
+      "diff.mjs",
+      "--diff architecture.diff.json",
+    ])
+      expect(ci, step).toContain(step);
+    expect(ci).toContain("security-events: write");
+    expect(ci).toContain("TODO(verify)");
+    expect(ci).toMatch(/fork/i);
+  });
+  it("is not installed into this repository's own workflows", () => {
+    expect(() =>
+      readFileSync(
+        path.join(skillFile("arch-visualize", ""), "../../../.github/workflows/architecture.yml"),
+      ),
+    ).toThrow();
+  });
+});
