@@ -40,6 +40,14 @@ beforeEach(async () => {
 });
 
 describe("video-core check", () => {
+  it("accepts an audience as long as the writer's brief allows (80 characters)", () => {
+    const v = base();
+    v.meta.audience = "a".repeat(80);
+    expect(check.checkProject(v, dir)).toEqual([]);
+    v.meta.audience = "a".repeat(81);
+    expect(check.checkProject(v, dir).join()).toContain("audience");
+  });
+
   it("accepts a minimal project", () => {
     expect(check.checkProject(base(), dir)).toEqual([]);
   });

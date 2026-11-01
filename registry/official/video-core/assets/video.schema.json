@@ -15,7 +15,7 @@
         "fps": { "enum": [24, 25, 30, 60] },
         "lang": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z]{2,4})?$" },
         "dir": { "enum": ["ltr", "rtl"] },
-        "audience": { "type": "string", "maxLength": 40 },
+        "audience": { "type": "string", "maxLength": 80 },
         "brand": { "type": "string", "maxLength": 200 }
       }
     },
