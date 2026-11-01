@@ -18,6 +18,7 @@ export function loadSim() {
 // Labels come from the project; never let one write control codes into a terminal.
 const plain = (text) =>
   String(text ?? "")
+    // eslint-disable-next-line no-control-regex -- removing control codes is the point
     .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
     .slice(0, 80);
 

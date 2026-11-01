@@ -151,9 +151,11 @@ describe("arch-visualize simulation", () => {
     // the job flow starts at the API, which has failed too
     expect(flow("job")).toMatchObject({ status: "broken", step: 1, node: "api" });
     const mail = sim(model, "mail");
+    // the API is only degraded (step 1), but the flow then reaches the mail service itself (step 2)
     expect(mail.flows.find((f) => f.id === "mailing")).toMatchObject({
-      status: "degraded",
-      step: 1,
+      status: "broken",
+      step: 2,
+      node: "mail",
     });
     expect(sim(model, "worker").flows.find((f) => f.id === "job")).toMatchObject({
       status: "broken",
@@ -248,6 +250,7 @@ describe("arch-visualize simulate.mjs", () => {
     const hostile = skillFile("arch-visualize", "evals/hostile-model.json");
     const id = (JSON.parse(readFileSync(hostile, "utf8")) as Model).nodes[0]!.id;
     const r = run("--model", hostile, "--down", id);
+    // eslint-disable-next-line no-control-regex -- the point of the test is that none appear
     expect(r.stdout).not.toMatch(/[\u0000-\u0008\u000B-\u001F\u007F]/);
   });
 
