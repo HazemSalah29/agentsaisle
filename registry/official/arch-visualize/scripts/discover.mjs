@@ -3,6 +3,7 @@
 // model. Never opens .env files, never runs project code, never touches the network.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { findCandidates } from "./edges.mjs";
 import {
   capLines,
   envKeyNames,
@@ -10,6 +11,7 @@ import {
   isEntry,
   isExampleEnv,
   listFiles,
+  maskComments,
   parseArgs,
   parseYaml,
   readText,
@@ -33,6 +35,9 @@ export const TIER_OF_ROLE = {
 };
 const TIER_ORDER = ["clients", "edge", "frontend", "backend", "async", "data", "external"];
 const COMPOSE = /^(docker-compose|compose)(\.[\w-]+)?\.ya?ml$/;
+const SOURCE = /\.(?:[cm]?[jt]sx?)$/;
+const NOT_SOURCE =
+  /(^|\/)(__tests__|tests?|specs?|e2e|__mocks__)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$|\.d\.ts$|\.config\.[cm]?[jt]s$/;
 const GENERIC_TECH = { database: "generic-database", email: "generic-external" };
 
 const slug = (s) =>
@@ -65,7 +70,8 @@ function matchImage(catalog, image) {
  * holds the counts the CLI prints.
  */
 export function discover(root, catalog = loadCatalog()) {
-  const want = (n) =>
+  const want = (n, rel = n) =>
+    (SOURCE.test(n) && !NOT_SOURCE.test(rel)) ||
     n === "package.json" ||
     n === "requirements.txt" ||
     n === "pyproject.toml" ||
@@ -96,9 +102,15 @@ export function discover(root, catalog = loadCatalog()) {
   const dockerEvidence = []; // { dir, ev }
   let projectName = "";
 
+  const sources = []; // JavaScript and TypeScript files, comments masked, read for edge candidates
   for (const rel of files) {
     const base = path.posix.basename(rel);
     const dir = dirOf(rel);
+    if (SOURCE.test(base)) {
+      const t = text(rel);
+      if (t !== null) sources.push({ rel, text: maskComments(t) });
+      continue;
+    }
     if (base === "package.json") {
       const t = text(rel);
       if (t === null) continue;
@@ -413,10 +425,12 @@ export function discover(root, catalog = loadCatalog()) {
     project: (projectName || path.basename(path.resolve(root))).slice(0, 80),
     nodes,
     edges,
+    candidates: [],
     flows: [],
     risks: [],
     inferred: [],
   };
+  model.candidates = findCandidates({ nodes, edges, sources, catalog });
   return { model, report: { read, stats, notes } };
 }
 
@@ -438,6 +452,7 @@ function run(argv) {
   extra.push(...report.notes);
   const summary = [
     `Found ${model.nodes.length} components and ${model.edges.length} links; read ${report.read.length} files.`,
+    `${model.candidates.length} edge candidate(s) to confirm or drop (${["high", "medium", "low"].map((c) => `${model.candidates.filter((x) => x.confidence === c).length} ${c}`).join(", ")}).`,
     ...extra.slice(0, 6),
     `Draft written to ${path.relative(process.cwd(), out) || out}`,
   ].join("\n");

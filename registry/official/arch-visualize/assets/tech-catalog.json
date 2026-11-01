@@ -695,5 +695,51 @@
       "role": "external",
       "label": "Stripe"
     }
-  }
+  },
+  "hostPatterns": [
+    {
+      "host": "api.stripe.com",
+      "tech": "stripe"
+    },
+    {
+      "host": "api.resend.com",
+      "tech": "resend"
+    },
+    {
+      "host": "api.sendgrid.com",
+      "tech": "sendgrid"
+    },
+    {
+      "host": "api.twilio.com",
+      "tech": "twilio"
+    },
+    {
+      "host": "api.openai.com",
+      "tech": "openai"
+    },
+    {
+      "host": "api.anthropic.com",
+      "tech": "anthropic"
+    },
+    {
+      "host": "generativelanguage.googleapis.com",
+      "tech": "gemini"
+    },
+    {
+      "host": "api.mistral.ai",
+      "tech": "mistral"
+    },
+    {
+      "host": "api.github.com",
+      "tech": "github"
+    },
+    {
+      "host": "api.cloudinary.com",
+      "tech": "cloudinary"
+    },
+    {
+      "host": "api.algolia.net",
+      "tech": "algolia"
+    }
+  ]
 }

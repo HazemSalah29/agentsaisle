@@ -63,8 +63,10 @@ export function listFiles(root, want) {
       }
       stats.visited++;
       if (isSecretFile(e.name)) stats.skippedSecret++;
-      else if (want(e.name))
-        found.push(path.relative(root, path.join(dir, e.name)).split(path.sep).join("/"));
+      else {
+        const rel = path.relative(root, path.join(dir, e.name)).split(path.sep).join("/");
+        if (want(e.name, rel)) found.push(rel);
+      }
     }
   };
   visit(root);
