@@ -422,6 +422,29 @@ describe("arch-visualize model v2", () => {
     expect(ps).toEqual([]);
   });
 
+  it("lists AI tools only with evidence, and accepts fixes on a risk", async () => {
+    expect(
+      await problems((m) => (node(m, "api").ai = { kind: "agent", tools: ["Read", "Bash"] })),
+    ).toEqual([]);
+    const noEvidence = await problems((m) => {
+      node(m, "worker").ai = { kind: "skill", tools: ["Write"] };
+      delete node(m, "worker").evidence;
+      m.inferred.push("node:worker");
+    });
+    expect(noEvidence.join()).toContain("ai.tools needs evidence");
+    expect(
+      (
+        await problems((m) => (node(m, "api").ai = { kind: "agent", tools: ["x".repeat(41)] }))
+      ).join(),
+    ).toContain("longer than 40");
+    const risk = (fixes: unknown) => (m: Loose) => {
+      m.risks = [{ id: "AV-R01", severity: "warn", nodes: ["db"], why: "w", check: "c", fixes }];
+    };
+    expect(await problems(risk([{ text: "Add a replica", tradeoff: "Costs money" }]))).toEqual([]);
+    expect((await problems(risk(Array(4).fill({ text: "x" })))).join()).toContain("at most 3");
+    expect((await problems(risk([{ tradeoff: "no text" }]))).join()).toContain('missing "text"');
+  });
+
   it("checks groups, zones, data labels and view focus", async () => {
     expect(await problems((m) => (node(m, "api").group = "nope"))).toEqual([
       expect.stringContaining("not declared"),

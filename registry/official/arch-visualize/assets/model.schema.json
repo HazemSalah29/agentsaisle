@@ -222,6 +222,15 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 200
+            },
+            "tools": {
+              "type": "array",
+              "maxItems": 20,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
             }
           }
         },
@@ -367,6 +376,25 @@
         },
         "source": {
           "enum": ["rule", "agent"]
+        },
+        "fixes": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["text"],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "tradeoff": {
+                "type": "string",
+                "maxLength": 240
+              }
+            }
+          }
         }
       }
     }

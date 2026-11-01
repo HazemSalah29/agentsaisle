@@ -127,6 +127,8 @@ function checkV2(model, nodeIds, root, problems) {
       problems.push(`${at}: group "${n.group}" is not declared`);
     if (typeof n.replicas === "number" && !hasEvidence(n))
       problems.push(`${at}: replicas needs evidence, or use "unknown"`);
+    if (n.ai?.tools?.length && !hasEvidence(n))
+      problems.push(`${at}: ai.tools needs evidence (the file that lists the tools)`);
     if (n.ai?.auditGrade && !n.ai.auditSource)
       problems.push(`${at}: ai.auditGrade needs ai.auditSource (an aisle audit JSON file)`);
     if (n.ai?.auditSource) {
