@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { skillFile } from "./load";
 
 const hasPython = spawnSync("python3", ["--version"]).status === 0;
-const PROVIDERS = ["tts_kokoro.py"];
+const PROVIDERS = ["tts_kokoro.py", "tts_arab3.py"];
 
 describe.each(PROVIDERS)("python provider %s: source", (file) => {
   const src = readFileSync(skillFile("video-voice", `providers/${file}`), "utf8");
@@ -29,7 +29,10 @@ describe.each(PROVIDERS)("python provider %s: source", (file) => {
   it("forces offline mode before importing any model library", () => {
     const offline = src.indexOf('os.environ["HF_HUB_OFFLINE"] = "1"');
     expect(offline).toBeGreaterThan(-1);
-    expect(offline).toBeLessThan(src.indexOf("from kokoro"));
+    const firstImport = [src.indexOf("from kokoro"), src.indexOf("import infer")].filter(
+      (i) => i > -1,
+    )[0]!;
+    expect(offline).toBeLessThan(firstImport);
   });
 
   it("takes the text from a file, never from an argument", () => {
@@ -75,5 +78,40 @@ describe.skipIf(!hasPython)("python provider tts_kokoro.py: arguments", () => {
       encoding: "utf8",
     });
     expect(r.status).toBe(2);
+  });
+});
+
+describe.skipIf(!hasPython)("python provider tts_arab3.py: arguments", () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "video-py-"));
+  const text = path.join(dir, "t.txt");
+  writeFileSync(text, "مرحبا");
+  const home = mkdtempSync(path.join(os.tmpdir(), "home-"));
+  const run = (...a: string[]) =>
+    spawnSync(
+      "python3",
+      [
+        skillFile("video-voice", "providers/tts_arab3.py"),
+        "--text-file",
+        text,
+        "--out",
+        path.join(dir, "o.wav"),
+        ...a,
+      ],
+      { encoding: "utf8", env: { ...process.env, HOME: home } },
+    );
+
+  it("wants the voice described in Arabic, of a sensible length", () => {
+    const latin = run("--voice", "calm adult woman");
+    expect(latin.status).toBe(2);
+    expect(latin.stderr).toMatch(/voice must be described in Arabic/);
+    expect(run("--voice", "ص").status).toBe(2);
+    expect(run("--voice", "ص".repeat(200)).status).toBe(2);
+    expect(run("--voice", "صوت هادئ", "--speed", "3").status).toBe(2);
+  });
+
+  it("exits 3 and says what is missing when it is not set up", () => {
+    const r = run("--voice", "صوت هادئ وواضح");
+    expect(r.status).toBe(3);
+    expect(r.stderr).toMatch(/3arab-tts is not set up: tools\.json needs arab3 .* and arab3Model/);
   });
 });

@@ -120,7 +120,7 @@ export const PROVIDERS = {
     "3arab",
     "tts_arab3.py",
     ["ar"],
-    "calm adult voice, Modern Standard Arabic",
+    "صوت هادئ وواضح بلهجة فصحى",
     "Apache-2.0 (3arab-TTS-500M-v2); output carries a SilentCipher watermark",
   ),
 };
