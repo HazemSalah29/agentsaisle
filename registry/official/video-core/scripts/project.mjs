@@ -108,9 +108,13 @@ export function buildParts({
   const assets = new Map();
   const media = [];
   for (const s of video.scenes) {
-    if (s.kind !== "broll" && s.kind !== "screen") continue;
-    for (const key of ["asset", "pip"]) {
-      const a = (video.assets ?? []).find((x) => x.id === s.props?.[key]);
+    if (s.kind !== "broll" && s.kind !== "screen" && s.kind !== "shot") continue;
+    const ids =
+      s.kind === "shot"
+        ? (s.props?.layers ?? []).map((l) => l?.asset)
+        : ["asset", "pip"].map((key) => s.props?.[key]);
+    for (const id of ids) {
+      const a = (video.assets ?? []).find((x) => x.id === id);
       if (!a || assets.has(a.id)) continue;
       const file = `${a.id}${path.extname(a.path).toLowerCase()}`;
       assets.set(a.id, { file });

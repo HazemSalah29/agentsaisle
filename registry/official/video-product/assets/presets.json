@@ -1,0 +1,97 @@
+{
+  "snap": {
+    "description": "Fast punch-ins, whip and flash cuts, bold slammed type, a speed ramp inside the move: a launch or drop.",
+    "hook": 1.0,
+    "cta": 2.0,
+    "shot": [0.9, 1.5],
+    "minShot": 0.6,
+    "snapTolerance": 0.22,
+    "moves": ["push", "whip-r", "pan-l", "pull", "push", "tilt-up"],
+    "ease": "snap",
+    "zoom": [1.0, 1.22],
+    "ramp": [0.3, 0.55, 2.4],
+    "grade": "punch",
+    "grain": true,
+    "vignette": true,
+    "hookEnter": "zoom",
+    "enters": ["whip-l", "flash", "whip-r", "zoom"],
+    "flashEvery": 3,
+    "shakeOnBeat": true,
+    "glitchOnBeat": false,
+    "type": {
+      "hook": "slam",
+      "feature": "slam",
+      "cta": "tag"
+    },
+    "sfx": {
+      "enter": ["whoosh", -8],
+      "hook": ["impact", -4],
+      "flash": ["impact", -9],
+      "beat": ["tick", -14],
+      "cta": ["swell", -12],
+      "riser": ["riser", -10]
+    }
+  },
+  "glide": {
+    "description": "Slow parallax glides, soft warm grade, quiet stagger type and plenty of space: a premium or lifestyle product.",
+    "hook": 1.6,
+    "cta": 2.4,
+    "shot": [2.0, 3.2],
+    "minShot": 1.2,
+    "snapTolerance": 0.3,
+    "moves": ["pan-r", "push", "tilt-up", "pan-l", "pull"],
+    "ease": "inOut",
+    "zoom": [1.0, 1.12],
+    "ramp": null,
+    "grade": "warm",
+    "grain": true,
+    "vignette": true,
+    "hookEnter": "cut",
+    "enters": ["cut", "zoom"],
+    "flashEvery": 0,
+    "shakeOnBeat": false,
+    "glitchOnBeat": false,
+    "type": {
+      "hook": "stagger",
+      "feature": "stagger",
+      "cta": "tag"
+    },
+    "sfx": {
+      "enter": ["whoosh", -15],
+      "hook": ["swell", -12],
+      "cta": ["swell", -12]
+    }
+  },
+  "glitch": {
+    "description": "Hard cuts, RGB-ghost glitches on the beat, mono grade and glitch type: a tech or streetwear product.",
+    "hook": 0.9,
+    "cta": 1.8,
+    "shot": [0.7, 1.2],
+    "minShot": 0.5,
+    "snapTolerance": 0.18,
+    "moves": ["hold", "push", "hold", "pull"],
+    "ease": "expo",
+    "zoom": [1.0, 1.15],
+    "ramp": null,
+    "grade": "mono",
+    "grain": true,
+    "vignette": false,
+    "hookEnter": "glitch",
+    "enters": ["glitch", "flash", "glitch"],
+    "flashEvery": 4,
+    "shakeOnBeat": false,
+    "glitchOnBeat": true,
+    "type": {
+      "hook": "glitch",
+      "feature": "glitch",
+      "cta": "tag"
+    },
+    "sfx": {
+      "enter": ["glitch", -9],
+      "hook": ["impact", -5],
+      "flash": ["impact", -10],
+      "beat": ["tick", -14],
+      "cta": ["swell", -13]
+    }
+  }
+}

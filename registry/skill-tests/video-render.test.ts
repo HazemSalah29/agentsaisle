@@ -25,6 +25,7 @@ type Render = {
   findHyperframes: (o: Loose, fs?: Loose) => { bin: string; version: string } | null;
   muxArgs: (o: Loose) => string[];
   voicePlacements: (v: Loose, t: Loose, dir: string) => { file: string; ms: number }[];
+  sfxPlacements: (v: Loose, dir: string) => { file: string; ms: number; gainDb: number }[];
 };
 type Timing = { buildTiming: (v: Loose, m: (id: string) => number, pad?: number) => Loose };
 
@@ -190,6 +191,56 @@ describe("video-core render helpers", () => {
       seconds: 4,
     }).join(" ");
     expect(silent).not.toContain("loudnorm");
+  });
+
+  it("places sound effects on top of the mix, delayed and not ducked, and keeps them inside the folder", async () => {
+    const { muxArgs, sfxPlacements } = await loadScript<Render>("video-core", "scripts/render.mjs");
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sfx-"));
+    fs.mkdirSync(path.join(dir, "audio"));
+    fs.writeFileSync(path.join(dir, "audio", "hit.wav"), "x");
+    const found = sfxPlacements(
+      {
+        sfx: [
+          { file: "audio/hit.wav", at: 1.5, gainDb: -3 },
+          { file: "audio/hit.wav", at: 0.5 },
+          { file: "../evil.wav", at: 1 },
+          { file: "audio/missing.wav", at: 1 },
+          { file: "audio/hit.wav", at: -1 },
+        ],
+      },
+      dir,
+    );
+    expect(found.map((x) => [x.ms, x.gainDb])).toEqual([
+      [500, -6],
+      [1500, -3],
+    ]);
+    const args = muxArgs({
+      silent: "/s.mp4",
+      out: "/o.mp4",
+      voice: [{ file: "/v.wav", ms: 0 }],
+      music: "/m.mp3",
+      sfx: found,
+      seconds: 4,
+    });
+    expect(args.filter((a) => a === "-i")).toHaveLength(5); // video, voice, music, two effects
+    const graph = args[args.indexOf("-filter_complex") + 1]!;
+    expect(graph).toContain("[3:a]adelay=500|500,aresample=48000,volume=-6dB[x0]");
+    expect(graph).toContain("[4:a]adelay=1500|1500,aresample=48000,volume=-3dB[x1]");
+    expect(graph).toContain("[x0][x1]amix=inputs=2:normalize=0:dropout_transition=0[sfx]");
+    expect(graph).toContain("[mix][sfx]amix=inputs=2:normalize=0:dropout_transition=0[withsfx]");
+    expect(graph.indexOf("[withsfx]")).toBeLessThan(graph.indexOf("loudnorm"));
+    const only = muxArgs({
+      silent: "/s.mp4",
+      out: "/o.mp4",
+      voice: [],
+      music: null,
+      sfx: found,
+      seconds: 4,
+    });
+    expect(only[only.indexOf("-filter_complex") + 1]).toContain("[sfx]loudnorm");
   });
 
   it("skips loudness normalisation for digital silence, which loudnorm turns into NaN", async () => {

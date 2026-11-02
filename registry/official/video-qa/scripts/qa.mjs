@@ -202,7 +202,7 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
   // Text near the edges. Scenes with full-frame media are skipped; the rest should leave the margins empty.
   const zone = rules.zones[plat?.zone ?? "wide"];
   const skip = (timing?.scenes ?? []).filter((s) =>
-    ["broll", "puppet"].includes(video.scenes.find((v) => v.id === s.id)?.kind),
+    ["broll", "puppet", "shot"].includes(video.scenes.find((v) => v.id === s.id)?.kind),
   );
   const inSkip = (t) => skip.some((s) => t >= s.start && t < s.start + s.seconds);
   const hits = [];

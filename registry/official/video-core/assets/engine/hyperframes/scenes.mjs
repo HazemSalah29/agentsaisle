@@ -9,6 +9,7 @@ import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
 import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { screen, screenCss } from "./screen.mjs";
 import { sequence, sequenceCss } from "./sequence.mjs";
+import { shot, shotCss } from "./shot.mjs";
 import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
 import { timeline, timelineCss } from "./timeline.mjs";
 
@@ -27,6 +28,7 @@ export const KINDS = [
   "puppet",
   "timeline",
   "calligraphy",
+  "shot",
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -201,6 +203,7 @@ const BUILDERS = {
   puppet,
   timeline,
   calligraphy,
+  shot,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
@@ -212,7 +215,8 @@ export const kindCss = (brand, vertical) =>
   screenCss(brand) +
   puppetCss() +
   timelineCss(brand) +
-  calligraphyCss(brand);
+  calligraphyCss(brand) +
+  shotCss(brand);
 
 /**
  * Markup and animations for one scene.

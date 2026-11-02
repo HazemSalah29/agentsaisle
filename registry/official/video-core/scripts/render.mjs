@@ -111,6 +111,26 @@ export function voicePlacements(video, timing, dir) {
 }
 
 /**
+ * Sound effects from `video.sfx` ({ file, at, gainDb }) that exist inside the project folder, in time order:
+ * [{ file, ms, gainDb }]. A path that escapes the folder or a missing file is skipped. Pure apart from the file check.
+ */
+export function sfxPlacements(video, dir) {
+  const out = [];
+  for (const s of video.sfx ?? []) {
+    if (typeof s?.file !== "string" || !isInside(s.file) || !Number.isFinite(s.at) || s.at < 0)
+      continue;
+    const file = path.join(dir, s.file);
+    if (!existsSync(file)) continue;
+    out.push({
+      file,
+      ms: Math.round(s.at * 1000),
+      gainDb: Number.isFinite(s.gainDb) ? s.gainDb : -6,
+    });
+  }
+  return out.sort((a, b) => a.ms - b.ms);
+}
+
+/**
  * ffmpeg arguments that mux silent video with the mixed audio. `voice` is from voicePlacements, `music` the
  * absolute music path or null. Without any audio the video is only remuxed. `draft` scales down to 540 px high.
  */
@@ -144,6 +164,7 @@ export function muxArgs({
   out,
   voice,
   music,
+  sfx = [],
   duckDb = -14,
   seconds,
   draft,
@@ -152,6 +173,7 @@ export function muxArgs({
   const args = ["-y", "-v", "error", "-i", silent];
   voice.forEach((v) => args.push("-i", v.file));
   if (music) args.push("-i", music);
+  sfx.forEach((x) => args.push("-i", x.file));
   const filters = [];
   voice.forEach((v, i) =>
     filters.push(`[${i + 1}:a]adelay=${v.ms}|${v.ms},aresample=48000[v${i}]`),
@@ -177,6 +199,22 @@ export function muxArgs({
       filters.push(`${base}[mix]`);
       map = "[mix]";
     }
+  }
+  if (sfx.length) {
+    // Short effects sit on top of the voice and music mix and are not ducked.
+    const first = voice.length + (music ? 1 : 0) + 1;
+    sfx.forEach((x, i) =>
+      filters.push(
+        `[${first + i}:a]adelay=${x.ms}|${x.ms},aresample=48000,volume=${x.gainDb}dB[x${i}]`,
+      ),
+    );
+    filters.push(
+      `${sfx.map((_, i) => `[x${i}]`).join("")}amix=inputs=${sfx.length}:normalize=0:dropout_transition=0[sfx]`,
+    );
+    if (map) {
+      filters.push(`${map}[sfx]amix=inputs=2:normalize=0:dropout_transition=0[withsfx]`);
+      map = "[withsfx]";
+    } else map = "[sfx]";
   }
   if (map && normalize) {
     // One last stage so the voice and music land at the target level whatever they were recorded at.
@@ -391,7 +429,9 @@ function main() {
   const voice = voicePlacements(video, timing, dir);
   const musicAsset = video.music?.asset;
   const music = musicAsset && isInside(musicAsset) ? path.join(dir, musicAsset) : null;
-  const audible = Boolean(music) || voice.some((v) => !wavIsSilent(readFileSync(v.file)));
+  const sfx = sfxPlacements(video, dir);
+  const audible =
+    Boolean(music) || sfx.length > 0 || voice.some((v) => !wavIsSilent(readFileSync(v.file)));
   const m = run(
     "ffmpeg",
     muxArgs({
@@ -401,6 +441,7 @@ function main() {
       out,
       voice,
       music,
+      sfx,
       duckDb: video.music?.duckUnderVoiceDb ?? -14,
       seconds: timing.totalSeconds,
       draft: flags.draft,
@@ -414,7 +455,7 @@ function main() {
   console.log(
     capLines(
       notes.map((n) => `note: ${n}`),
-      `Rendered ${path.relative(dir, out)}: ${timing.totalSeconds}s, ${flags.draft ? "540p draft" : built.size.join("x")}, ${voice.length} voice line(s)${music ? ", music" : ""}, ${(statSync(out).size / 1024).toFixed(0)} KB.`,
+      `Rendered ${path.relative(dir, out)}: ${timing.totalSeconds}s, ${flags.draft ? "540p draft" : built.size.join("x")}, ${voice.length} voice line(s)${music ? ", music" : ""}${sfx.length ? `, ${sfx.length} sound effect(s)` : ""}, ${(statSync(out).size / 1024).toFixed(0)} KB.`,
     ),
   );
 }

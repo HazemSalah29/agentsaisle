@@ -10,6 +10,7 @@ import { puppetProblems } from "../assets/engine/hyperframes/puppet.mjs";
 import { loadRigs } from "./puppet-data.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
 import { calligraphyProblems } from "../assets/engine/hyperframes/calligraphy.mjs";
+import { shotProblems } from "../assets/engine/hyperframes/shot.mjs";
 import { timelineProblems } from "../assets/engine/hyperframes/timeline.mjs";
 import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
 import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
@@ -112,6 +113,12 @@ export function checkProject(video, dir, schema = loadSchema()) {
       problems.push(...calligraphyProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "timeline")
       problems.push(...timelineProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
+    if (s.kind === "shot") {
+      problems.push(...shotProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
+      for (const l of s.props?.layers ?? [])
+        if (l?.asset && !assetIds.has(l.asset))
+          problems.push(`${at}.props.layers: asset "${l.asset}" is not listed in assets`);
+    }
     if (s.kind === "code")
       problems.push(
         ...codeProblems(s.props ?? {}, s.narration?.length ?? 0).map((p) => `${at}.props.${p}`),
