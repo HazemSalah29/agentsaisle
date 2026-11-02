@@ -1,12 +1,24 @@
 {
   "note": "A guess. Open trace-sheet.svg, then fix which region ids are which. Leave a part out if the drawing has none.",
   "parts": {
-    "body": ["r1"],
-    "head": ["r2"],
-    "leg-l": ["r3"],
-    "leg-r": ["r4"],
-    "arm-l": ["r5"],
-    "arm-r": ["r6"]
+    "body": [
+      "r1"
+    ],
+    "head": [
+      "r2"
+    ],
+    "leg-l": [
+      "r3"
+    ],
+    "leg-r": [
+      "r4"
+    ],
+    "arm-l": [
+      "r5"
+    ],
+    "arm-r": [
+      "r6"
+    ]
   },
   "extras": [],
   "face": {

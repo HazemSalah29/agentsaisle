@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Dot tries again",
+    "type": "kids",
+    "format": "reel-9x16",
+    "fps": 30,
+    "lang": "en",
+    "audience": "kids-3-5"
+  },
+  "script": "script.md",
+  "captions": {
+    "style": "kids",
+    "burn": true,
+    "safeZone": "reel",
+    "maxWordsPerLine": 3
+  },
+  "scenes": [
+    {
+      "id": "meet",
+      "kind": "puppet",
+      "props": {
+        "backdrop": {
+          "preset": "meadow"
+        },
+        "cast": [
+          {
+            "rig": "dot",
+            "x": 0.5,
+            "y": 0.58,
+            "height": 0.4,
+            "speaks": [
+              "d1",
+              "d2"
+            ],
+            "acts": [
+              {
+                "at": 0.4,
+                "do": "wave"
+              },
+              {
+                "at": 4,
+                "do": "nod"
+              }
+            ]
+          }
+        ]
+      },
+      "narration": [
+        "d1",
+        "d2"
+      ]
+    },
+    {
+      "id": "fall",
+      "kind": "puppet",
+      "props": {
+        "backdrop": {
+          "preset": "meadow"
+        },
+        "cast": [
+          {
+            "rig": "dot",
+            "x": 0.5,
+            "y": 0.58,
+            "height": 0.4,
+            "speaks": [
+              "d3",
+              "d4"
+            ],
+            "acts": [
+              {
+                "at": 0.6,
+                "do": "jump"
+              },
+              {
+                "at": 2.4,
+                "do": "emote",
+                "mood": "sad"
+              },
+              {
+                "at": 5,
+                "do": "jump"
+              }
+            ]
+          }
+        ]
+      },
+      "narration": [
+        "d3",
+        "d4"
+      ]
+    },
+    {
+      "id": "win",
+      "kind": "puppet",
+      "props": {
+        "backdrop": {
+          "preset": "meadow"
+        },
+        "cast": [
+          {
+            "rig": "dot",
+            "x": 0.5,
+            "y": 0.58,
+            "height": 0.4,
+            "speaks": [
+              "d5",
+              "d6",
+              "d7"
+            ],
+            "acts": [
+              {
+                "at": 0.3,
+                "do": "emote",
+                "mood": "happy"
+              },
+              {
+                "at": 0.6,
+                "do": "jump"
+              },
+              {
+                "at": 6,
+                "do": "nod"
+              },
+              {
+                "at": 8,
+                "do": "dance",
+                "dur": 3
+              }
+            ]
+          }
+        ]
+      },
+      "narration": [
+        "d5",
+        "d6",
+        "d7"
+      ]
+    }
+  ],
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "af_heart",
+    "speed": 0.65
+  }
+}
