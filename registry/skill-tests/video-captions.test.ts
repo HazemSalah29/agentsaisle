@@ -200,6 +200,31 @@ describe("video-captions build", () => {
     });
   });
 
+  it("the kids style is big, on a panel, and breaks every three words", async () => {
+    const { buildCaptions, loadStyles } = await load();
+    expect(loadStyles().kids.size).toBeGreaterThanOrEqual(0.06);
+    const { captions } = buildCaptions({
+      video: video(),
+      words: wordsJson(),
+      timing,
+      styles: loadStyles(),
+      brand: {},
+      name: "kids",
+    });
+    expect(captions.style).toMatchObject({ name: "kids", background: "panel", highlight: "word" });
+    for (const g of captions.groups) expect(g.words.length).toBeLessThanOrEqual(3);
+    const four = buildCaptions({
+      video: video(),
+      words: wordsJson(),
+      timing,
+      styles: loadStyles(),
+      brand: {},
+      name: "kids",
+      max: 4,
+    }).captions.groups;
+    expect(Math.max(...four.map((g: Loose) => g.words.length))).toBeLessThanOrEqual(4);
+  });
+
   it("ends each caption after its last word, before the next one starts and inside its scene", async () => {
     const { buildCaptions, loadStyles } = await load();
     const g = buildCaptions({
