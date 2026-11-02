@@ -141,4 +141,26 @@ describe("session.mjs", () => {
     expect(run(["--log", path.join(ok, "s.log"), "--out", out]).status).toBe(0);
     expect(run(["--log", path.join(ok, "s.log"), "--out", out]).stderr).toContain("exists");
   });
+
+  it("names checks (vitest), never shows raw commands, and drops repeated passes", async () => {
+    const { parseSession, pickMoments } = await loadScript<{
+      parseSession: (t: string) => Loose;
+      pickMoments: (e: Loose[]) => Loose[];
+    }>("video-session", "scripts/session.mjs");
+    const log = [
+      "10:00:00 Start",
+      "10:00:05 $ cd ~/secret-project && sed -n 1,5p notes.txt",
+      "10:00:10 $ pnpm vitest run",
+      "10:00:20 passed",
+      "10:00:30 $ pnpm vitest run",
+      "10:00:40 passed",
+      "10:00:50 Done, all green.",
+    ].join("\n");
+    const moments = pickMoments(parseSession(log).events);
+    const labels = moments.map((m) => m.label).join("|");
+    expect(labels).toContain("Passes: vitest");
+    expect(labels.match(/Passes: vitest/g)).toHaveLength(1);
+    expect(labels).not.toContain("sed");
+    expect(labels).not.toContain("secret-project");
+  });
 });

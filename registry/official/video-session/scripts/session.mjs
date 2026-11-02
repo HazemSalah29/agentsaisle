@@ -45,11 +45,16 @@ const LANG_BY_EXT = {
   ".py": "python",
 };
 /** True when a segment of the command starts with a test/build runner (not just mentions the word later). */
-const isCheck = (cmd) =>
-  String(cmd)
+const checkName = (cmd) => {
+  for (const seg of String(cmd)
     .split("\n")[0]
-    .split(/&&|;|\|\|/)
-    .some((seg) => TEST_CMD.test(seg.trim().split(/\s+/).slice(0, 3).join(" ")));
+    .split(/&&|;|\|\|/)) {
+    const m = TEST_CMD.exec(seg.trim().split(/\s+/).slice(0, 3).join(" "));
+    if (m) return m[1];
+  }
+  return null;
+};
+const isCheck = (cmd) => checkName(cmd) !== null;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /** Redacts one string; `counter.n` counts replacements. Pure apart from the counter. */
@@ -70,7 +75,7 @@ export function redact(text, counter = { n: 0 }, home = os.homedir()) {
 }
 
 const clean = (t, max, counter) =>
-  redact(t, counter).replace(/[`*_]/g, "").replace(/\s+/g, " ").trim().slice(0, max);
+  redact(t, counter).replace(/[`*]/g, "").replace(/\s+/g, " ").trim().slice(0, max);
 const baseName = (p) => (typeof p === "string" ? path.basename(p.replace(/\\/g, "/")) : "");
 const ts = (v) => {
   const n = typeof v === "string" ? Date.parse(v) : NaN;
@@ -145,7 +150,8 @@ export function parseSession(text, counter = { n: 0 }) {
               });
             else if (b.name === "Bash" && typeof inp.command === "string") {
               const c = clean(inp.command.split("\n")[0], 50, counter);
-              const rec = { text: c, test: isCheck(inp.command) };
+              const name = checkName(inp.command);
+              const rec = { text: name ?? c, test: name !== null };
               if (b.id) cmdById.set(b.id, rec);
               events.push({ t, kind: "command", ...rec });
             }
@@ -170,7 +176,8 @@ export function parseSession(text, counter = { n: 0 }) {
     const body = m[2];
     if (/^\$\s+/.test(body)) {
       const c = clean(body.replace(/^\$\s+/, ""), 50, counter);
-      events.push({ t, kind: "command", text: c, test: isCheck(c) });
+      const name = checkName(c);
+      events.push({ t, kind: "command", text: name ?? c, test: name !== null });
     } else if (/\b(error|failed|fail)\b/i.test(body)) {
       const last = [...events].reverse().find((e) => e.kind === "command");
       events.push({
@@ -264,6 +271,7 @@ export function pickMoments(events) {
   });
   flush();
   const failed = new Set();
+  const passed = new Set();
   events.forEach((e, i) => {
     if (e.kind === "error" && e.test) {
       failed.add(e.text);
@@ -276,6 +284,8 @@ export function pickMoments(events) {
       });
     } else if (e.kind === "ok" && e.test) {
       const fixed = failed.delete(e.text);
+      if (!fixed && passed.has(e.text)) return; // a repeated pass says nothing new
+      passed.add(e.text);
       cands.push({
         i,
         p: fixed ? 8 : 4,
