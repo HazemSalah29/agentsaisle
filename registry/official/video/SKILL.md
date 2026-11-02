@@ -1,6 +1,6 @@
 ---
 name: video
-description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour, /video changes, /video incident, /video doc, /video batch or /video calligraphy. Don't use to upload a finished video.
+description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour, /video changes, /video incident, /video doc, /video batch, /video calligraphy or /video interactive. Don't use to upload a finished video.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Bash(node *)
 ---
@@ -22,6 +22,7 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 - The user runs `/video doc <file>` or asks to turn a README or document into a video: hand over to the `video-doc` skill and stop; it does not read PDFs.
 - The user runs `/video batch` or wants many personalised versions from the user's own CSV: hand over to the `video-batch` skill and stop.
 - The user runs `/video calligraphy` or asks for animated Arabic quotes or titles: hand over to the `video-calligraphy` skill and stop; it takes the user's own text and never rewrites it.
+- The user runs `/video interactive <project>` or wants a page the viewer can steer, pause or slow down: hand over to the `video-interactive` skill and stop; it needs a checked project and never uploads.
 - The user runs `/video ingest <url or file>` or asks to download or import footage: hand over to the `video-ingest` skill and stop. It asks for the rights basis itself; never suggest one.
 - The user runs `/video showcase` (an app demo): hand over to the `video-showcase` skill and stop; it has its own steps.
 - The user runs `/video explain "<topic>"` (options `--format reel|short|youtube|square`, `--lang en|ar`, `--length 30s|60s`) or asks for an explainer video.

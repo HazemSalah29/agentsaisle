@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "branches": [
+    {
+      "id": "pick",
+      "after": "s2",
+      "question": "Which one do you want to see?",
+      "options": [
+        { "label": "Token bucket", "from": "s3", "to": "s4" },
+        { "label": "Sliding window", "from": "s5", "to": "s6" }
+      ],
+      "then": "s7"
+    }
+  ]
+}

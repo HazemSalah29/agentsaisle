@@ -27,6 +27,7 @@ The engine under the video library. A project is a folder with a `video.json` (t
 4. Run `node <skill>/scripts/render.mjs <project> --draft` first (540p), then without `--draft` for the final. Output: `<project>/out/<folder-name>.mp4`. HyperFrames is the default; add `--engine remotion` only if the user asked for it and installed it (its company licence is shown at render).
 5. Run `node <skill>/scripts/credits.mjs <project>`. It writes `credits.json` and `CREDITS.txt` and fails if an asset has no licence or `disclosure` says less than the assets imply.
 6. If render says HyperFrames or Remotion is not installed, tell the user to install it (command in `references/runner.md`) and stop (`references/runner.md`).
+7. An interactive page instead of an MP4 (pause, scrub, speed, branch questions): `node <skill>/scripts/export-html.mjs <project> [--out folder] [--audio mix.wav]`; branches are set up by `video-interactive`. It refuses video clips and 3D puppets.
 
 ## Budget
 
