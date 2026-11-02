@@ -111,7 +111,7 @@ export function buildChanges(files, { title, items, maxFiles = 4, format = "shor
   };
 
   const totalFact = fact(
-    `${plural(files.length, "file", "files")} changed, ${added} lines added and ${removed} removed.`,
+    `${plural(files.length, "file", "files")} changed, ${plural(added, "line", "lines")} added and ${removed} removed.`,
     "the diff (counted)",
   );
   scenes.push({
@@ -127,13 +127,13 @@ export function buildChanges(files, { title, items, maxFiles = 4, format = "shor
       heading: "The size of it",
       items: [
         `${plural(files.length, "file", "files")} changed`,
-        `${added} lines added`,
-        `${removed} lines removed`,
+        `${plural(added, "line", "lines")} added`,
+        `${plural(removed, "line", "lines")} removed`,
       ],
     },
     narration: [
       line(
-        `${plural(files.length, "file changed", "files changed")}: ${added} lines added, ${removed} removed.`,
+        `${plural(files.length, "file changed", "files changed")}: ${plural(added, "line", "lines")} added, ${removed} removed.`,
         "step",
         totalFact,
       ),

@@ -100,4 +100,19 @@ describe("changes.mjs", () => {
       ["src/wide.ts", 1, 1],
     ]);
   });
+
+  it("says '1 line', not '1 lines'", async () => {
+    const m = await loadScript<{ buildChanges: (f: Loose[], o: Loose) => Loose }>(
+      "video-changes",
+      "scripts/changes.mjs",
+    );
+    const r = m.buildChanges([{ file: "a.txt", added: 1, removed: 1, hunks: [] }], {
+      title: "t",
+      items: [],
+    });
+    const list = r.video.scenes.find((s: Loose) => s.props.heading === "The size of it");
+    expect(list.props.items).toEqual(["1 file changed", "1 line added", "1 line removed"]);
+    expect(r.script).toContain("1 line added");
+    expect(r.script).not.toContain("1 lines");
+  });
 });
