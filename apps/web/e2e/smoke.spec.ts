@@ -6,10 +6,12 @@ import path from "node:path";
 const registry = JSON.parse(
   readFileSync(path.join(__dirname, "..", "public", "registry.json"), "utf8"),
 ) as {
-  skills: Array<{ source: string }>;
+  skills: Array<{ source: string; partOf?: string }>;
 };
-const TOTAL = registry.skills.length;
-const OFFICIAL = registry.skills.filter((s) => s.source === "official").length;
+// The catalog shows a library once; its parts are listed on the library's own page.
+const listed = registry.skills.filter((s) => !s.partOf);
+const TOTAL = listed.length;
+const OFFICIAL = listed.filter((s) => s.source === "official").length;
 
 test.describe("home", () => {
   test("renders and searches into the catalog", async ({ page }) => {

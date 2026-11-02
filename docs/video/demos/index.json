@@ -4,7 +4,6 @@
       "id": "rate-limit",
       "title": "How a rate limit really works",
       "type": "Explainer",
-      "route": "/video explain",
       "summary": "Ten requests get through a limit of five: a token bucket on random traffic, the bucket in code, and a fixed window against a sliding window on the same burst.",
       "note": "The traffic is a real simulator run (seed 42 and 1), not a drawing.",
       "video": "rate-limit.mp4",
@@ -16,13 +15,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Explain how a rate limit really works, with a real simulation."
     },
     {
       "id": "request-flow",
       "title": "What aisle add does",
       "type": "Explainer",
-      "route": "/video explain",
       "summary": "One step per line of Agent Aisle's own source, drawn from an architecture model of the install path.",
       "note": "Every step cites a file and line from the model.",
       "video": "request-flow.mp4",
@@ -34,13 +33,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Show what aisle add does, step by step, from our own code."
     },
     {
       "id": "tour",
       "title": "A tour of the code",
       "type": "Codebase tour",
-      "route": "/video tour",
       "summary": "The same install path as a narrated tour, built straight from the architecture model.",
       "note": "Only the aisle add flow, not the whole repository.",
       "video": "tour.mp4",
@@ -52,13 +51,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Give me a narrated tour of how aisle add works in this repo."
     },
     {
       "id": "live-data",
       "title": "This week in npm downloads",
       "type": "Live data",
-      "route": "/video data",
       "summary": "A chart video from three real npm download counts, fetched on the day, with the source and date on screen.",
       "note": "Numbers are as the npm API returned them; two big jumps are unchecked against another source.",
       "video": "live-data.mp4",
@@ -70,13 +69,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Make a chart video of this week's npm downloads for commander, zod and tsup."
     },
     {
       "id": "incident",
       "title": "A checkout slowdown",
       "type": "Incident replay",
-      "route": "/video incident",
       "summary": "An animated timeline of an outage with the minutes between events computed from the times.",
       "note": "The incident is fictional.",
       "video": "incident.mp4",
@@ -88,13 +87,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Make an incident replay video from this postmortem."
     },
     {
       "id": "changes",
       "title": "video-core 0.6.0",
       "type": "PR and release",
-      "route": "/video changes",
       "summary": "A what-changed video from a real diff of this repository, with every number counted from the diff.",
       "note": "",
       "video": "changes.mp4",
@@ -106,13 +105,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Make a what-changed video for this diff."
     },
     {
       "id": "doc",
       "title": "Agent Aisle, from its README",
       "type": "Doc explainer",
-      "route": "/video doc",
       "summary": "Every spoken line is a sentence from the README, and every fact cites its line.",
       "note": "",
       "video": "doc.mp4",
@@ -124,13 +123,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Turn our README into a short video."
     },
     {
       "id": "kids",
       "title": "Nour learns to share",
       "type": "Kids",
-      "route": "/video kids",
       "summary": "A short cartoon for ages 3 to 5 with two original puppet characters and a learning goal.",
       "note": "The voices are adult voices pitch-shifted to sound younger, not real children.",
       "video": "kids.mp4",
@@ -142,13 +141,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "A cartoon for kids aged 3 to 5 about sharing, with two original characters."
     },
     {
       "id": "kids-3d",
       "title": "Nour learns to share (3D)",
       "type": "Kids",
-      "route": "/video kids",
       "summary": "The same story with the optional lit, clay-style 3D look.",
       "note": "Same voices as the flat version.",
       "video": "kids-3d.mp4",
@@ -160,13 +159,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "The same kids cartoon in a lit 3D look."
     },
     {
       "id": "drawing",
       "title": "Dot tries again",
       "type": "Kids from a drawing",
-      "route": "/video drawing",
       "summary": "A character traced from a drawing (here a synthetic one, not a child's) is rigged and stars in a story about trying again.",
       "note": "The drawing is synthetic; tracing a real crayon drawing gives a cruder result.",
       "video": "drawing.mp4",
@@ -178,13 +177,13 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Make my child's drawing into a character and tell a story about trying again."
     },
     {
       "id": "calligraphy",
       "title": "Arabic proverbs",
       "type": "Arabic lettering",
-      "route": "/video calligraphy",
       "summary": "Three Arabic proverbs set as kinetic lettering, uncovered a word at a time with the letters joined by the browser.",
       "note": "The translations are an unreviewed draft: a native reader should check them.",
       "video": "calligraphy.mp4",
@@ -196,7 +195,8 @@
         "facts.md",
         "credits.json",
         "captions.srt"
-      ]
+      ],
+      "prompt": "Animate these Arabic proverbs as kinetic lettering."
     }
   ],
   "coming": [

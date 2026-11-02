@@ -62,9 +62,10 @@ export default function DemosPage() {
               {d.qa?.seconds ? ` · ${Math.round(d.qa.seconds)} s` : ""}
               {d.qa?.size ? ` · ${d.qa.size}` : ""}
             </p>
-            {d.route ? (
-              <p className="hud-label text-muted">
-                Made with <span className="text-ink">{d.route}</span>
+            {d.prompt ? (
+              <p className="text-sm text-muted">
+                <span className="hud-label">You would type</span>{" "}
+                <span className="text-ink">/video {d.prompt}</span>
               </p>
             ) : null}
             {d.files.length ? (

@@ -8,7 +8,7 @@ vi.mock("../../lib/demos-data", () => ({
         id: "incident",
         title: "A checkout slowdown",
         type: "Incident replay",
-        route: "/video incident",
+        prompt: "Make an incident replay video from this postmortem.",
         summary: "A <b>timeline</b>.",
         note: "The incident is fictional.",
         video: "incident.mp4",
@@ -34,6 +34,7 @@ describe("demos page", () => {
     expect(html).toContain("QA passed, no warnings");
     expect(html).toContain("35 s");
     expect(html).toContain("The incident is fictional.");
+    expect(html).toContain("/video Make an incident replay video from this postmortem.");
     expect(html).toContain("does not judge whether a video is any good");
   });
   it("escapes text and lists what is not shown", () => {

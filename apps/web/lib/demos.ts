@@ -3,7 +3,8 @@ export interface DemoEntry {
   id: string;
   title: string;
   type: string;
-  route: string;
+  /** The plain request that would make this video. */
+  prompt: string;
   summary: string;
   note: string;
   video: string;
@@ -56,7 +57,7 @@ export function parseIndex(raw: string): { demos: DemoEntry[]; coming: ComingEnt
       id,
       title,
       type: text(r.type, 40) ?? "Video",
-      route: text(r.route, 40) ?? "",
+      prompt: text(r.prompt, 200) ?? "",
       summary: text(r.summary, 400) ?? "",
       note: text(r.note, 300) ?? "",
       video,

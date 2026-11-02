@@ -40,7 +40,7 @@ export function inAisle(skill: RegistrySkill, aisle: Aisle): boolean {
 }
 
 export function groupAisle(aisle: Aisle, index: RegistryIndex): AisleGroup {
-  const here = index.skills.filter((s) => inAisle(s, aisle));
+  const here = index.skills.filter((s) => !s.partOf && inAisle(s, aisle));
   const official = here.filter((s) => s.source === "official").sort(byTierThenName);
   const verified = here.filter((s) => s.source === "community" && s.verified).sort(byName);
   const community = here.filter((s) => s.source === "community" && !s.verified).sort(byName);

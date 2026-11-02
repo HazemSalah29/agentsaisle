@@ -9,7 +9,7 @@ const entry = (over: Record<string, unknown> = {}) => ({
   id: "incident",
   title: "A checkout slowdown",
   type: "Incident replay",
-  route: "/video incident",
+  prompt: "Make an incident replay video from this postmortem.",
   summary: "A timeline.",
   video: "incident.mp4",
   poster: "poster.jpg",

@@ -138,4 +138,12 @@ describe("summarizeAisle", () => {
     expect(summarizeAisle(groupAisle(media, index([])))).toBe("Coming later");
     expect(summarizeAisle(groupAisle(db, index([], { elsewhere: [e] })))).toBe("1 elsewhere");
   });
+
+  it("shows a library on its aisle and leaves its parts to the library's page", () => {
+    const video: Aisle = { id: "video", name: "Video", description: "d", niches: ["video"] };
+    const lib = skill("video", { niche: "video", requires: ["video-core"] });
+    const part = skill("video-core", { niche: "video", partOf: "video" });
+    const g = groupAisle(video, index([lib, part]));
+    expect(g.official.map((s) => s.name)).toEqual(["video"]);
+  });
 });
