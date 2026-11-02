@@ -12,7 +12,7 @@ Groups the words, keeps them inside the platform safe zone and writes `captions.
 ## Use when
 
 - A project has `voice/words.json` and `timing.json` and needs captions.
-- The user runs `/video-captions [--style karaoke|pop|clean|kids] [--max-words 4] [--burn|--srt|--both]`.
+- The user runs `/video-captions [--style karaoke|pop|clean|kids] [--max-words 4] [--bilingual translations.json] [--burn|--srt|--both]`.
 
 ## Don't use when
 
@@ -26,7 +26,8 @@ Groups the words, keeps them inside the platform safe zone and writes `captions.
 2. Run `node <skill>/scripts/captions.mjs <project> --style <name>`. `--srt` writes subtitle files without burning them; the default also burns them in the next render.
 3. Arabic or other right-to-left text: the layout flips by itself. Check `brand/fonts` has a font with the script (for example Cairo); run `video-brand` check with `--lang ar`.
 4. Render with `node <video-core>/scripts/render.mjs <project> --draft`, then look at the result before the final render.
-5. Read `references/styles.md` only if the user asks to change a style (size, weight, panel, stroke).
+5. Bilingual learning video (a translation under each caption): write `translations.json` as `{"lang": "ar", "lines": {"l1": "..."}}` with one entry per captioned line (a draft: say a native speaker should review Arabic), then add `--bilingual translations.json`. The second line fades in with its line; it is not highlighted word by word because the translation is not spoken (`references/styles.md`).
+6. Read `references/styles.md` only if the user asks to change a style (size, weight, panel, stroke).
 
 ## Budget
 

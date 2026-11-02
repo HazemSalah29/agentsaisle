@@ -369,6 +369,34 @@ describe("video-captions pipeline", () => {
       checkProject: (v: unknown, d: string) => string[];
     }>("video-core", "scripts/check.mjs");
     expect(checkProject(video, dir)).toEqual([]);
+    const lineIds = [...f.script.matchAll(/^\[(l\d+)\]/gm)].map((m) => m[1]);
+    const t = path.join(dir, "translations.json");
+    writeFileSync(
+      t,
+      JSON.stringify({
+        lang: "ar",
+        lines: Object.fromEntries(lineIds.slice(1).map((id) => [id, "نص"])),
+      }),
+    );
+    const bad = spawnSync(
+      "node",
+      [skillFile("video-captions", "scripts/captions.mjs"), dir, "--bilingual", t],
+      { encoding: "utf8" },
+    );
+    expect(bad.status).toBe(2);
+    expect(bad.stderr).toContain("No translation");
+    writeFileSync(
+      t,
+      JSON.stringify({ lang: "ar", lines: Object.fromEntries(lineIds.map((id) => [id, "نص"])) }),
+    );
+    const bi = step("video-captions", "captions.mjs", "--bilingual", t);
+    expect(bi.stdout).toContain("translation, not word-timed");
+    const withSecond = JSON.parse(readFileSync(path.join(dir, "captions.json"), "utf8"));
+    expect(withSecond.secondary.length).toBe(lineIds.length);
+    expect(readFileSync(path.join(dir, "captions.ar.vtt"), "utf8")).toMatch(/^WEBVTT/);
+    expect(
+      checkProject(JSON.parse(readFileSync(path.join(dir, "video.json"), "utf8")), dir),
+    ).toEqual([]);
     step("video-captions", "captions.mjs", "--srt");
     expect(JSON.parse(readFileSync(path.join(dir, "video.json"), "utf8")).captions.burn).toBe(
       false,
@@ -386,5 +414,108 @@ describe("video-captions pipeline", () => {
     expect(run(dir).stderr).toMatch(/Missing video\.json/);
     expect(run(dir, "--style", "neon").status).toBe(2);
     expect(run(dir, "--max-words", "1").status).toBe(2);
+  });
+});
+
+describe("video-captions bilingual", () => {
+  const groups = [
+    { id: "c1", line: "l1", start: 0.1, end: 1.2, words: [{ text: "Hi", start: 0.1, end: 0.4 }] },
+    {
+      id: "c2",
+      line: "l1",
+      start: 1.2,
+      end: 2.5,
+      words: [{ text: "there", start: 1.2, end: 1.5 }],
+    },
+    { id: "c3", line: "l2", start: 3, end: 4, words: [{ text: "Bye", start: 3, end: 3.4 }] },
+  ];
+  type Sec = { buildSecondary: (o: Loose) => Loose[] };
+  const sec = () => loadScript<Sec>("video-captions", "scripts/captions.mjs");
+
+  it("spans each line's captions with its translation and sets the direction", async () => {
+    const { buildSecondary } = await sec();
+    const r = buildSecondary({
+      groups,
+      translations: { lang: "ar", lines: { l1: "مرحبا بك", l2: "إلى اللقاء" } },
+    });
+    expect(r.map((x) => [x.line, x.start, x.end, x.dir])).toEqual([
+      ["l1", 0.1, 2.5, "rtl"],
+      ["l2", 3, 4, "rtl"],
+    ]);
+  });
+
+  it("stops on a missing or too long translation and strips control characters", async () => {
+    const { buildSecondary } = await sec();
+    expect(() =>
+      buildSecondary({ groups, translations: { lang: "fr", lines: { l1: "Salut" } } }),
+    ).toThrow("l2");
+    expect(() =>
+      buildSecondary({
+        groups,
+        translations: { lang: "fr", lines: { l1: "x".repeat(121), l2: "b" } },
+      }),
+    ).toThrow("longer");
+    const r = buildSecondary({
+      groups,
+      translations: { lang: "fr", lines: { l1: "Sa\u0007lut", l2: "b" } },
+    });
+    expect(r[0].text).toBe("Sa lut");
+    expect(r[0].dir).toBe("ltr");
+  });
+
+  it("is drawn by video-core with its own direction, escaped, and keeps scenes clear of it", async () => {
+    const caps = await loadScript<{
+      renderCaptions: (o: Loose) => { html: string; css: string; plan: Loose[] };
+      captionClearance: (c: Loose, size: number[]) => number;
+      captionProblem: (c: Loose, fps: number, total: number) => string | null;
+    }>("video-core", "assets/engine/hyperframes/captions.mjs");
+    const style = {
+      size: 0.05,
+      weight: 800,
+      highlight: "word",
+      wordIn: "none",
+      lineIn: "fade",
+      background: "none",
+      stroke: 0.07,
+    };
+    const base = {
+      fps: 30,
+      style,
+      safeZone: { bottom: 0.22, side: 0.08 },
+      groups: groups.slice(0, 1).map((g) => ({ ...g })),
+    };
+    const withSec = {
+      ...base,
+      secondary: [
+        {
+          id: "t1",
+          line: "l1",
+          start: 0.1,
+          end: 2.5,
+          text: "<b>مرحبا</b>",
+          lang: "ar",
+          dir: "rtl",
+        },
+      ],
+    };
+    const out = caps.renderCaptions({
+      captions: withSec,
+      brand: { colors: { fg: "#fff", bg: "#000", accent: "#f00" } },
+      size: [1080, 1920],
+    });
+    expect(out.html).toContain('dir="rtl"');
+    expect(out.html).toContain("&lt;b&gt;");
+    expect(out.html).not.toContain("<b>");
+    expect(caps.captionClearance(withSec, [1080, 1920])).toBeGreaterThan(
+      caps.captionClearance(base, [1080, 1920]),
+    );
+    expect(
+      caps.captionProblem(
+        { ...withSec, secondary: [{ id: "t1", start: 5, end: 1, text: "x" }] },
+        30,
+        10,
+      ),
+    ).toContain("t1");
+    expect(caps.captionProblem(withSec, 30, 10)).toBeNull();
   });
 });

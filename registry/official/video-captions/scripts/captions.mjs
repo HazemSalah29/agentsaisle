@@ -88,10 +88,67 @@ const pick = (o = {}) =>
 const dirOf = (video) =>
   video.meta.dir ?? (/^(ar|he|fa|ur)\b/.test(video.meta.lang) ? "rtl" : "ltr");
 
+const UNSAFE = new RegExp("[\\p{Cc}\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069]", "gu");
+const RTL_LANG = /^(ar|he|fa|ur)\b/;
+export const MAX_SECONDARY = 120;
+
+/**
+ * A second caption line under the main one, from a translations file `{ lang, lines: { <line id>: text } }`.
+ * One entry per narration line, shown for as long as that line's captions are. The text is a translation, so it
+ * is not spoken and has no per-word timing: it is never highlighted word by word (that would be invented).
+ * Throws a sentence when a captioned line has no translation or a text is too long.
+ */
+export function buildSecondary({ groups, translations }) {
+  if (
+    !translations ||
+    typeof translations.lang !== "string" ||
+    typeof translations.lines !== "object"
+  )
+    throw new Error(
+      'The translations file must look like { "lang": "ar", "lines": { "l1": "..." } }.',
+    );
+  const byLine = new Map();
+  for (const g of groups) {
+    const e = byLine.get(g.line) ?? { line: g.line, start: g.start, end: g.end };
+    e.start = Math.min(e.start, g.start);
+    e.end = Math.max(e.end, g.end);
+    byLine.set(g.line, e);
+  }
+  const missing = [...byLine.keys()].filter(
+    (id) => typeof translations.lines[id] !== "string" || !translations.lines[id].trim(),
+  );
+  if (missing.length)
+    throw new Error(
+      `No translation for line(s): ${missing.slice(0, 8).join(", ")}. Every captioned line needs one.`,
+    );
+  const lang = translations.lang.slice(0, 8);
+  return [...byLine.values()]
+    .sort((a, b) => a.start - b.start)
+    .map((e, i) => {
+      const text = String(translations.lines[e.line])
+        .replace(UNSAFE, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (text.length > MAX_SECONDARY)
+        throw new Error(
+          `Translation of ${e.line} is longer than ${MAX_SECONDARY} characters; shorten it.`,
+        );
+      return {
+        id: `t${i + 1}`,
+        line: e.line,
+        start: e.start,
+        end: r3(e.end),
+        text,
+        lang,
+        dir: RTL_LANG.test(lang) ? "rtl" : "ltr",
+      };
+    });
+}
+
 /**
  * captions.json from words.json and timing.json. Lines belonging to a scene with `captions: "off"` are skipped.
  */
-export function buildCaptions({ video, words, timing, styles, brand, name, max }) {
+export function buildCaptions({ video, words, timing, styles, brand, name, max, translations }) {
   const cfg = video.captions ?? {};
   const style = name ?? cfg.style ?? brand?.captions?.style ?? "karaoke";
   const maxWords =
@@ -150,6 +207,7 @@ export function buildCaptions({ video, words, timing, styles, brand, name, max }
     style: resolved,
     groups: groups.map(({ id, start, end, words: w }) => ({ id, start, end, words: w })),
   };
+  if (translations) out.secondary = buildSecondary({ groups, translations });
   return { captions: out, notes, skipped };
 }
 
@@ -174,12 +232,23 @@ export const toSrt = (c) =>
 export const toVtt = (c) =>
   `WEBVTT\n\n${c.groups.map((g) => `${g.id}\n${stamp(g.start, ".")} --> ${stamp(g.end, ".")}\n${cueText(g).replace(/&/g, "&amp;").replace(/</g, "&lt;")}\n`).join("\n")}`;
 
+/** SubRip and WebVTT for the second line. */
+export const secondarySrt = (c) =>
+  c.secondary
+    .map(
+      (g, i) =>
+        `${i + 1}\n${stamp(g.start, ",")} --> ${stamp(g.end, ",")}\n${g.text.replace(/-->/g, "→")}\n`,
+    )
+    .join("\n");
+export const secondaryVtt = (c) =>
+  `WEBVTT\n\n${c.secondary.map((g) => `${g.id}\n${stamp(g.start, ".")} --> ${stamp(g.end, ".")}\n${g.text.replace(/-->/g, "→").replace(/&/g, "&amp;").replace(/</g, "&lt;")}\n`).join("\n")}`;
+
 function main() {
   let parsed;
   try {
     parsed = parseArgs(process.argv.slice(2), {
       booleans: ["burn", "srt", "both"],
-      strings: ["style", "max-words"],
+      strings: ["style", "max-words", "bilingual"],
     });
   } catch (e) {
     console.error(e.message);
@@ -188,7 +257,7 @@ function main() {
   const { flags, positional } = parsed;
   if (!positional[0] || [flags.burn, flags.srt, flags.both].filter(Boolean).length > 1) {
     console.error(
-      "Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean|kids] [--max-words 4] [--burn|--srt|--both]",
+      "Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean|kids] [--max-words 4] [--bilingual translations.json] [--burn|--srt|--both]",
     );
     process.exit(2);
   }
@@ -215,18 +284,40 @@ function main() {
     console.error(`Unknown caption style "${flags.style}" (have: ${STYLE_NAMES.join(", ")}).`);
     process.exit(2);
   }
-  const { captions, notes, skipped } = buildCaptions({
-    video,
-    words,
-    timing,
-    styles: loadStyles(),
-    brand,
-    name: flags.style,
-    max,
-  });
+  let translations;
+  if (flags.bilingual) {
+    try {
+      translations = JSON.parse(readFileSync(path.resolve(flags.bilingual), "utf8"));
+    } catch {
+      console.error(`Cannot read the translations file ${flags.bilingual} as JSON.`);
+      process.exit(2);
+    }
+  }
+  let built;
+  try {
+    built = buildCaptions({
+      video,
+      words,
+      timing,
+      styles: loadStyles(),
+      brand,
+      name: flags.style,
+      max,
+      translations,
+    });
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
+  }
+  const { captions, notes, skipped } = built;
   writeFileSync(path.join(dir, "captions.json"), `${JSON.stringify(captions, null, 2)}\n`);
   writeFileSync(path.join(dir, "captions.srt"), toSrt(captions));
   writeFileSync(path.join(dir, "captions.vtt"), toVtt(captions));
+  if (captions.secondary) {
+    const l = captions.secondary[0]?.lang ?? "xx";
+    writeFileSync(path.join(dir, `captions.${l}.srt`), secondarySrt(captions));
+    writeFileSync(path.join(dir, `captions.${l}.vtt`), secondaryVtt(captions));
+  }
   video.captions = {
     ...video.captions,
     style: captions.style.name,
@@ -245,7 +336,7 @@ function main() {
   console.log(
     capLines(
       extra.map((n) => `note: ${n}`),
-      `Wrote captions.json, captions.srt, captions.vtt: ${captions.groups.length} captions, style ${captions.style.name}, ${captions.dir}, ${video.captions.burn ? "burned into the render" : "subtitle files only"}.`,
+      `Wrote captions.json, captions.srt, captions.vtt: ${captions.groups.length} captions, style ${captions.style.name}, ${captions.dir}, ${video.captions.burn ? "burned into the render" : "subtitle files only"}${captions.secondary ? `, plus a ${captions.secondary[0]?.lang} line under each (translation, not word-timed)` : ""}.`,
     ),
   );
 }
