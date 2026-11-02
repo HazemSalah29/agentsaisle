@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Prints where a video project stands and the next command, from the files in its folder. Read-only: it runs
 // nothing and installs nothing; it only looks at which files exist and which are newer than which.
-// Usage: node pipeline.mjs <project-dir>
+// Usage: node pipeline.mjs <project-dir> [--kids]   (--kids is for a new folder that has no brief yet)
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, skillDir } from "./_lib.mjs";
@@ -15,6 +15,7 @@ const FILLED = {
 };
 const STEP_SKILLS = [
   "video-write",
+  "video-kids",
   "video-explain",
   "video-voice",
   "video-core",
@@ -39,11 +40,28 @@ export function installedSkills(root = path.join(skillDir(), "..")) {
   );
 }
 
+/** Whether the project is a kids' video: its brief or its video.json says so. */
+export const isKidsProject = (dir) =>
+  readJson(path.join(dir, "brief.json"))?.mode === "kids" ||
+  readJson(path.join(dir, "video.json"))?.meta?.type === "kids";
+
+/** Characters that have a bible and a rig: names of folders in characters/. */
+const readyCharacters = (dir) => {
+  const root = path.join(dir, "characters");
+  return existsSync(root)
+    ? readdirSync(root).filter(
+        (n) =>
+          existsSync(path.join(root, n, "bible.md")) &&
+          existsSync(path.join(root, n, "puppet.json")),
+      )
+    : [];
+};
+
 /**
- * The steps of an explainer, each { id, name, status: "done" | "todo" | "stale" | "blocked", note, next }.
+ * The steps of an explainer or a kids' video, each { id, name, status: "done" | "todo" | "stale" | "blocked", note, next }.
  * `installed` says which skills exist; a step whose skill is missing is "blocked".
  */
-export function pipelineState(dir, installed) {
+export function pipelineState(dir, installed, opts = {}) {
   const f = (...p) => path.join(dir, ...p);
   const video = readJson(f("video.json"));
   const steps = [];
@@ -56,15 +74,48 @@ export function pipelineState(dir, installed) {
       next,
     });
 
-  const written = ["brief.json", "script.md", "facts.md", "storyboard.md"].filter(
-    (n) => !existsSync(f(n)),
-  );
+  const kids = opts.kids ?? isKidsProject(dir);
+  const used = [
+    ...new Set(
+      (video?.scenes ?? []).flatMap((s) =>
+        s.kind === "puppet" ? (s.props?.cast ?? []).map((c) => c.rig) : [],
+      ),
+    ),
+  ];
+  if (kids) {
+    const ready = readyCharacters(dir);
+    const lacking = used.filter((n) => !ready.includes(n));
+    step(
+      "characters",
+      "characters",
+      !ready.length || lacking.length ? "todo" : "done",
+      !ready.length
+        ? "no character with a bible and a puppet yet"
+        : lacking.length
+          ? `no bible or puppet for: ${lacking.join(", ")}`
+          : `${ready.join(", ")} ready`,
+      "/video-kids new-character (bible, then puppet scaffold and sheet)",
+      "video-kids",
+    );
+  }
+
+  const written = (
+    kids
+      ? ["brief.json", "script.md", "storyboard.md"]
+      : ["brief.json", "script.md", "facts.md", "storyboard.md"]
+  ).filter((n) => !existsSync(f(n)));
   step(
     "write",
     "write",
     written.length ? "todo" : "done",
-    written.length ? `missing ${written.join(", ")}` : "script, facts, storyboard written",
-    `/video-write explain "<topic>"`,
+    written.length
+      ? `missing ${written.join(", ")}`
+      : kids
+        ? "script and storyboard written"
+        : "script, facts, storyboard written",
+    kids
+      ? `/video-write kids "<idea>" (audience kids-3-5 or kids-6-9)`
+      : `/video-write explain "<topic>"`,
     "video-write",
   );
 
@@ -81,24 +132,26 @@ export function pipelineState(dir, installed) {
     "video-write",
   );
 
-  const open = (video?.scenes ?? []).filter(
-    (s) => FILLED[s.kind] && !(s.props && FILLED[s.kind] in s.props),
-  );
-  const technical = (video?.scenes ?? []).filter((s) => FILLED[s.kind]).length;
-  step(
-    "scenes",
-    "diagram scenes",
-    !video ? "todo" : open.length ? "todo" : "done",
-    !video
-      ? "needs video.json"
-      : open.length
-        ? `to fill: ${open.map((s) => s.id).join(", ")}`
-        : technical
-          ? `${technical} filled`
-          : "none needed",
-    `/video-explain for ${open.map((s) => s.id).join(", ")}`,
-    "video-explain",
-  );
+  if (!kids) {
+    const open = (video?.scenes ?? []).filter(
+      (s) => FILLED[s.kind] && !(s.props && FILLED[s.kind] in s.props),
+    );
+    const technical = (video?.scenes ?? []).filter((s) => FILLED[s.kind]).length;
+    step(
+      "scenes",
+      "diagram scenes",
+      !video ? "todo" : open.length ? "todo" : "done",
+      !video
+        ? "needs video.json"
+        : open.length
+          ? `to fill: ${open.map((s) => s.id).join(", ")}`
+          : technical
+            ? `${technical} filled`
+            : "none needed",
+      `/video-explain for ${open.map((s) => s.id).join(", ")}`,
+      "video-explain",
+    );
+  }
 
   const lines = [...new Set((video?.scenes ?? []).flatMap((s) => s.narration ?? []))];
   const voiced = video?.voice?.provider && video.voice.provider !== "none";
@@ -117,6 +170,34 @@ export function pipelineState(dir, installed) {
     "/video-voice (then align the words)",
     "video-voice",
   );
+
+  const speaking = (video?.scenes ?? []).some((s) =>
+    (s.props?.cast ?? []).some((c) => c.speaks?.length),
+  );
+  const visemes = mtime(f("voice", "visemes.json"));
+  if (kids)
+    step(
+      "visemes",
+      "mouth shapes",
+      !video || !speaking
+        ? "done"
+        : !visemes
+          ? "todo"
+          : visemes < mtime(f("voice", "words.json"))
+            ? "stale"
+            : "done",
+      !video
+        ? "needs video.json"
+        : !speaking
+          ? "no speaking characters"
+          : !visemes
+            ? "voice/visemes.json missing"
+            : visemes < mtime(f("voice", "words.json"))
+              ? "the words changed since"
+              : "mouth shapes made",
+      `node <video-kids>/scripts/visemes.mjs ${dir}`,
+      "video-kids",
+    );
 
   const stamp = Math.max(
     mtime(f("video.json")),
@@ -158,7 +239,7 @@ export function pipelineState(dir, installed) {
       .map((n) => mtime(path.join(outDir, n)))
       .sort()
       .at(-1) ?? 0;
-  const need = Math.max(stamp, timing, cap);
+  const need = Math.max(stamp, timing, cap, visemes);
   step(
     "render",
     "render",
@@ -215,13 +296,18 @@ export function pipelineState(dir, installed) {
 }
 
 function main() {
-  const target = process.argv[2];
+  const args = process.argv.slice(2);
+  const target = args.find((a) => !a.startsWith("--"));
   const dir = target && path.resolve(target);
   if (!dir || !existsSync(dir) || !statSync(dir).isDirectory()) {
-    console.error("Usage: node pipeline.mjs <project-dir>");
+    console.error("Usage: node pipeline.mjs <project-dir> [--kids]");
     process.exit(2);
   }
-  const steps = pipelineState(dir, installedSkills());
+  const steps = pipelineState(
+    dir,
+    installedSkills(),
+    args.includes("--kids") ? { kids: true } : {},
+  );
   const mark = { done: "done   ", todo: "todo   ", stale: "stale  ", blocked: "blocked" };
   const lines = steps.map((s, i) => `${i + 1}. ${s.name.padEnd(14)} ${mark[s.status]} ${s.note}`);
   const next =

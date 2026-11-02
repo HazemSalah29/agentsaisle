@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
+import { GOOD } from "./video-puppet-fixtures";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Bible = {
@@ -12,22 +13,6 @@ type Bible = {
   contrast: (a: string, b: string) => number;
 };
 const mod = () => loadScript<Bible>("video-kids", "scripts/bible-check.mjs");
-
-export const GOOD = `# Nour the turtle
-
-- Name: Nour
-- Species: turtle
-- Shape language: round
-- Palette: #3f9f6b, #f2c94c, #ffffff, #3a2a4d
-- Outfits: a small red scarf in cold weather
-- Catchphrase: "Slow and steady, side by side!"
-- Personality: Gentle, curious and a little shy.
-
-## Never
-
-- Never shouts at or teases anyone.
-- Never looks like Bluey or any other known character.
-`;
 
 describe("bible", () => {
   it("reads keys, the palette and the never list", async () => {
