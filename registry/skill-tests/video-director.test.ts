@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { PAUSED_VIDEO_PARTS } from "../lint-skills";
 import { skillFile } from "./load";
 
 const official = path.dirname(skillFile("video", "SKILL.md")).replace(/\/video$/, "");
@@ -25,7 +26,10 @@ describe("the video director", () => {
     expect(fm("video")).not.toMatch(/user-invocable: false|disable-model-invocation/);
     for (const part of parts) {
       expect(fm(part), part).toMatch(/^user-invocable: false$/m);
-      expect(fm(part), part).not.toMatch(/disable-model-invocation/);
+      // Paused parts (kids' cartoons, drawing characters) are off for Claude too.
+      if (PAUSED_VIDEO_PARTS.includes(part))
+        expect(fm(part), part).toMatch(/^disable-model-invocation: true$/m);
+      else expect(fm(part), part).not.toMatch(/disable-model-invocation/);
     }
   });
 
@@ -46,5 +50,12 @@ describe("the video director", () => {
     expect(skill).toMatch(/typed approval of that exact number/);
     expect(skill).toMatch(/never suggest one/);
     expect(skill).toMatch(/never upload/i);
+  });
+
+  it("does not offer kids' cartoons or drawing characters while they are paused", () => {
+    const skill = text("SKILL.md");
+    expect(skill).toMatch(/Those are paused/);
+    expect(skill).not.toMatch(/follow the recipe.*kids|`kids\.md`/);
+    expect(text("references/choose.md")).toMatch(/Kids \(paused\)/);
   });
 });

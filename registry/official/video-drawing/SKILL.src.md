@@ -1,7 +1,8 @@
 ---
 name: video-drawing
-description: "Part of the video library, used by the video skill (not run directly). Turn a child's drawing (never a photo) into an original puppet character: trace the shapes, the parent confirms head, body, arms and legs, rig eyes and mouths; the drawing stays in a private folder and can be deleted. Don't use for photos of children, known characters, or a drawing the user does not own."
+description: "Paused part of the video library: not offered right now. Turn a child's drawing (never a photo) into an original puppet character: trace the shapes, the parent confirms head, body, arms and legs, rig eyes and mouths; the drawing stays in a private folder and can be deleted. Don't use for photos of children, known characters, or a drawing the user does not own."
 user-invocable: false
+disable-model-invocation: true
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 

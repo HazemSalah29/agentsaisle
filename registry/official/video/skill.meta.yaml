@@ -40,7 +40,6 @@ requires:
   - video-write
 can_do:
   - "Explain an idea, algorithm or API in a short video, with real simulations and code"
-  - "Make a kids' cartoon with original characters, or turn your child's drawing into one"
   - "Make a showcase or demo video of your app or brand"
   - "Cut, caption, reframe and clean up footage you already have"
   - "Turn a README, a repo, a pull request, an outage or live data into a video"

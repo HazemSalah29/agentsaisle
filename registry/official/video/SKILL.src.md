@@ -1,6 +1,6 @@
 ---
 name: video
-description: Make any video from a plain request, such as "a cartoon for kids about sharing", "a showcase video for my brand", "explain how rate limits work", "cut this footage from a URL into a 30 second short" or "turn my README into a video". Chooses the format, picks the right parts of the video library itself and runs them. Use whenever the user asks to make, edit, caption, dub or publish a video. Don't use to upload a finished video.
+description: Make any video from a plain request, such as "a showcase video for my brand", "explain how rate limits work", "cut this footage from a URL into a 30 second short" or "turn my README into a video". Chooses the format, picks the right parts of the video library itself and runs them. Use whenever the user asks to make, edit, caption, dub or publish a video. Don't use to upload a finished video.
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -10,13 +10,14 @@ One command: the user says what video they want, in their own words, and you mak
 
 ## Use when
 
-- The user asks for any video: an explainer, a kids' cartoon, a story, a showcase or demo of their app or brand, a tour of a repository, a PR or release video, an outage replay, a chart video from data, Arabic lettering, a video from a document or a drawing, one video per row of a CSV.
+- The user asks for any video: an explainer, a story, a showcase or demo of their app or brand, a tour of a repository, a PR or release video, an outage replay, a chart video from data, Arabic lettering, a video from a document, one video per row of a CSV.
 - The user brings footage (a file, or a link they have the right to use) to cut, caption, reframe, dub or publish.
 - The user asks what is possible, or why a render tool is missing (run `doctor`).
 - `/video init` and `/video doctor` still work as shortcuts for the studio folder and the machine check.
 
 ## Don't use when
 
+- The request is for a kids' cartoon or a character made from a child's drawing. Those are paused: say so in one sentence and offer an explainer, a story short or a brand video instead. Never run `video-kids` or `video-drawing`.
 - The user wants a video uploaded. The last step prepares a pack to upload by hand; nothing is ever uploaded.
 - The folder is a code project that should not get video folders. Ask for an empty folder first.
 - The request is for a known character, a real person's likeness, or footage the user has no right to use. Say no in one sentence and offer an original alternative.
@@ -26,7 +27,7 @@ One command: the user says what video they want, in their own words, and you mak
 1. Read the request. Pick the recipe in `references/choose.md` and tell the user the plan in at most three short lines: what you will make, the length and format, and what you will need from them. Never ask them to name a skill or type a command.
 2. First use in a folder: run `node <skill>/scripts/doctor.mjs`; if there is no studio folder yet, run `node <skill>/scripts/init.mjs` (it never overwrites). Report only what is missing and its install line; never install anything yourself, and never read, print or ask for an API key.
 3. Ask only for what the request lacks and the recipe needs (the topic, the audience or age, the language, a brand or colours, the footage or link, the app to show). At most three questions, in plain words, with a sensible default offered for each. Defaults: vertical 9:16, 30 to 60 seconds, English, `$0` budget (local tools, no paid service).
-4. Make `projects/<slug>/` (lowercase, hyphens) and follow the recipe by loading the parts it names. The explainer, kids and story chains are in `references/explain.md`, `kids.md` and `story.md`; run `node <skill>/scripts/pipeline.mjs projects/<slug>` before and after each step of those.
+4. Make `projects/<slug>/` (lowercase, hyphens) and follow the recipe by loading the parts it names. The explainer and story chains are in `references/explain.md` and `story.md`; run `node <skill>/scripts/pipeline.mjs projects/<slug>` before and after each step of those.
 5. Pause only where the user must decide: the storyboard, a character sheet, a quote for any paid call (`video-generate` prints the total and needs the user's typed approval of that exact number), and the rights basis for footage (`video-ingest` asks for it itself; never suggest one). Do not pause for anything else.
 6. Never skip QA (`video-qa`). If it fails, name the failing check and the step that fixes it, then go back. Look at the contact sheet before saying a video is good.
 7. When QA passes, offer the publish pack (`video-publish`), show the MP4 path, the contact sheet, the QA lines and the credits, and tell the user to read each `disclosure.md`. Stop; never upload.

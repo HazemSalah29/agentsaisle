@@ -1,7 +1,8 @@
 ---
 name: video-kids
-description: "Part of the video library, used by the video skill (not run directly). Make original cartoon characters for children's videos and put them in a story: character bible, shaded SVG puppet (optional 3D), contact sheet, lip-sync mouth shapes, acts and backdrop. Use for kids' animation. Don't use for known characters or songs, photos of real children, or realistic stories."
+description: "Paused part of the video library: not offered right now. Make original cartoon characters for children's videos and put them in a story: character bible, shaded SVG puppet (optional 3D), contact sheet, lip-sync mouth shapes, acts and backdrop. Use for kids' animation. Don't use for known characters or songs, photos of real children, or realistic stories."
 user-invocable: false
+disable-model-invocation: true
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
