@@ -116,6 +116,10 @@ Demo: [`docs/video/demos/kids/`](demos/kids) holds "Nour learns to share" (two c
 
 `/video story "<premise>"` plans a short from original characters shown in images: a style bible, a reference pack per character (made first, so every shot starts from the same look), a shot list of 3 to 8 seconds per shot, and a continuity log (outfit, props, place, time of day). With `--generator stills-only` the images get a slow push-in and no video is generated. `/video-generate image|video` makes the images or clips. Its only offline provider is `test` (a coloured gradient, to try the flow); real providers go in `providers.yaml`, which has no keys (the key is read from an environment variable such as `GEMINI_API_KEY`). The two real adapters (`gemini-image` and `veo`) were written without access to the providers' documents and are marked `TODO(verify)`: run one cheap call and check before you rely on them. Results can miss; the skill makes one try per shot and asks before any retry. Music, sound effects and lip sync are not built.
 
+### Arabic and English versions (localize)
+
+`/video localize <project> --to ar` (or `en`) makes a sibling folder, `<project>.ar/`, so both versions stay editable. Claude translates the script and on-screen text into `translate.json`; a script checks the result (length limits, brand names, no digits in Arabic narration). Then the usual voice, timing, captions, render and QA steps run in the new folder, and the scenes retime to the new audio. Puppet characters are mirrored for right-to-left. Read `translation-review.md`: the translation is a machine draft that needs a native speaker before you publish. Not built: lip sync, cloning your own voice, and languages other than Arabic and English.
+
 ## 5. Troubleshooting
 
 - **"FFmpeg not found"**: run `/video doctor`.
