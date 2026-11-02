@@ -1,6 +1,6 @@
 ---
 name: video
-description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour, /video changes, /video incident, /video session, /video doc, /video batch, /video calligraphy or /video interactive. Don't use to upload a finished video.
+description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour, /video changes, /video incident, /video session, /video drawing, /video doc, /video batch, /video calligraphy or /video interactive. Don't use to upload a finished video.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Bash(node *)
 ---
@@ -20,6 +20,7 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 - The user runs `/video changes` or asks for a PR or release video: hand over to the `video-changes` skill and stop; it needs a saved git diff.
 - The user runs `/video incident` or asks for an outage or postmortem video: hand over to the `video-incident` skill and stop; it needs a postmortem with timed events.
 - The user runs `/video session` or asks for a timelapse of an AI coding session: hand over to the `video-session` skill and stop; it needs a saved session log with times, and the user's yes that the session is theirs to show.
+- The user runs `/video drawing` or wants a child's drawing as a character: hand over to the `video-drawing` skill and stop; it needs the parent's yes that it is a drawing, not a photo.
 - The user runs `/video doc <file>` or asks to turn a README or document into a video: hand over to the `video-doc` skill and stop; it does not read PDFs.
 - The user runs `/video batch` or wants many personalised versions from the user's own CSV: hand over to the `video-batch` skill and stop.
 - The user runs `/video calligraphy` or asks for animated Arabic quotes or titles: hand over to the `video-calligraphy` skill and stop; it takes the user's own text and never rewrites it.

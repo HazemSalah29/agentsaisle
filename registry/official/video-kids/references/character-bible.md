@@ -37,4 +37,4 @@ One file per character: `characters/<name>/bible.md`, where `<name>` is lower-ca
 
 - Never recreate, resemble or wink at a known character, show, game or toy. `bible-check.mjs` refuses a list of well-known names found anywhere outside the "Never" list. It cannot know every character, so you also refuse a lookalike: the same species with the same colours and outfit as a famous one is a lookalike.
 - If the user asks for a known character, say no in one sentence and offer to design an original with a new name, a different shape language and a different palette.
-- Never base a character on a real child. A parent's child's drawing is not handled by this version.
+- Never base a character on a real child. A child's drawing, with the parent's yes, goes through `video-drawing`; a photo never does.
