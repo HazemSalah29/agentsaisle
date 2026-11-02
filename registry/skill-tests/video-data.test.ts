@@ -233,6 +233,26 @@ describe("live.mjs", () => {
     expect(r.facts).not.toContain("svelte is");
     expect(r.facts).toContain("https://api.npmjs.org");
   });
+  it("says big numbers in words and keeps the exact figure in the facts", async () => {
+    const { spoken, buildLive } = await live();
+    expect(spoken(728_183_686)).toBe("728 million");
+    expect(spoken(12_761_050)).toBe("12.8 million");
+    expect(spoken(2_100_000_000)).toBe("2.1 billion");
+    expect(spoken(7700)).toBe("7,700");
+    const r = buildLive(
+      data({
+        items: [
+          { label: "a", value: 728_183_686, previous: 351_373_857 },
+          { label: "b", value: 12_761_050 },
+        ],
+      }),
+      config,
+    );
+    expect(r.script).toContain("a leads with 728 million, ahead of b with 12.8 million");
+    expect(r.script).not.toContain("728,183,686");
+    expect(r.facts).toContain("728,183,686 (728 million)");
+    expect(r.facts).toContain("from 351,373,857 (351 million) to 728,183,686 (728 million)");
+  });
   it("refuses stale, thin and mismatched data", async () => {
     const { dataProblems } = await live();
     expect(dataProblems(data())).toEqual([]);

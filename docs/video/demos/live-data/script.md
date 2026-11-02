@@ -3,19 +3,19 @@
 [l1] This week in npm downloads: here is what the npm registry says, as of 2026-11-01.
   beat: hook
 
-[l2] commander leads with 728,183,686, ahead of zod with 292,002,822.
+[l2] commander leads with 728 million, ahead of zod with 292 million.
   beat: setup
   fact: f1
 
-[l3] commander is up 107% from 351,373,857 to 728,183,686.
+[l3] commander is up 107% from 351 million to 728 million.
   beat: step
   fact: f2
 
-[l4] tsup is up 102% from 6,312,850 to 12,761,050.
+[l4] tsup is up 102% from 6.3 million to 12.8 million.
   beat: step
   fact: f3
 
-[l5] zod is up 28% from 227,988,303 to 292,002,822.
+[l5] zod is up 28% from 228 million to 292 million.
   beat: step
   fact: f4
 

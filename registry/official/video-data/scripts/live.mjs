@@ -14,6 +14,15 @@ const FORMATS = ["reel-9x16", "short-9x16", "youtube-16x9", "square-1x1"];
 const SOURCE_NAME = { npm: "the npm registry", github: "GitHub", url: "a public data file" };
 const SOURCE_SHORT = { npm: "npm", github: "GitHub", url: "public data" };
 const fmt = (n) => new Intl.NumberFormat("en-US").format(n);
+/** How a number is said aloud: millions and billions in words (a voice reads 728,183,686 digit by digit). Pure. */
+export function spoken(n) {
+  const words = (v, name) => `${v >= 100 ? Math.round(v) : Math.round(v * 10) / 10} ${name}`;
+  if (Math.abs(n) >= 1e9) return words(n / 1e9, "billion");
+  if (Math.abs(n) >= 1e6) return words(n / 1e6, "million");
+  return fmt(n);
+}
+/** The same number for facts.md: the exact figure, plus the spoken form when it differs. */
+const both = (n) => (spoken(n) === fmt(n) ? fmt(n) : `${fmt(n)} (${spoken(n)})`);
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const num = (v) => typeof v === "number" && Number.isFinite(v);
 
@@ -96,12 +105,12 @@ export function buildLive(data, config) {
   const top = items[0];
   const second = items[1];
   const topFact = fact(
-    `${top.label} leads with ${fmt(top.value)}${unit} ${metric.toLowerCase()}, ahead of ${second.label} with ${fmt(second.value)}${unit}.`,
+    `${top.label} leads with ${both(top.value)}${unit} ${metric.toLowerCase()}, ahead of ${second.label} with ${both(second.value)}${unit}.`,
     src,
   );
   const chartLines = [
     line(
-      `${top.label} leads with ${fmt(top.value)}${unit}, ahead of ${second.label} with ${fmt(second.value)}${unit}.`,
+      `${top.label} leads with ${spoken(top.value)}${unit}, ahead of ${second.label} with ${spoken(second.value)}${unit}.`,
       "setup",
       topFact,
     ),
@@ -132,13 +141,14 @@ export function buildLive(data, config) {
   const changeItems = [];
   const changeLines = [];
   for (const m of moves.slice(0, 3)) {
-    const text = `${m.i.label} is ${signed(m.p)} from ${fmt(m.i.previous)} to ${fmt(m.i.value)}.`;
+    const text = `${m.i.label} is ${signed(m.p)} from ${spoken(m.i.previous)} to ${spoken(m.i.value)}.`;
+    const exact = `${m.i.label} is ${signed(m.p)} from ${both(m.i.previous)} to ${both(m.i.value)}.`;
     changeItems.push(`${m.i.label}: ${signed(m.p)}`);
     changeLines.push(
       line(
         text,
         "step",
-        fact(text, `${src}; change computed from the previous value in the same source`),
+        fact(exact, `${src}; change computed from the previous value in the same source`),
       ),
     );
   }

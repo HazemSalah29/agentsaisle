@@ -17,7 +17,9 @@
         "text": "This week in npm downloads",
         "subtitle": "npm, as of 2026-11-01"
       },
-      "narration": ["l1"]
+      "narration": [
+        "l1"
+      ]
     },
     {
       "id": "s2",
@@ -40,25 +42,51 @@
           }
         ]
       },
-      "narration": ["l2"]
+      "narration": [
+        "l2"
+      ]
     },
     {
       "id": "s3",
       "kind": "list",
       "props": {
         "heading": "What changed",
-        "items": ["commander: up 107%", "tsup: up 102%", "zod: up 28%"]
+        "items": [
+          "commander: up 107%",
+          "tsup: up 102%",
+          "zod: up 28%"
+        ]
       },
-      "narration": ["l3", "l4", "l5"]
+      "narration": [
+        "l3",
+        "l4",
+        "l5"
+      ]
     },
     {
       "id": "s4",
       "kind": "list",
       "props": {
         "heading": "Where this comes from",
-        "items": ["the npm registry", "Fetched 2026-11-01"]
+        "items": [
+          "the npm registry",
+          "Fetched 2026-11-01"
+        ]
       },
-      "narration": ["l6"]
+      "narration": [
+        "l6"
+      ]
     }
-  ]
+  ],
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "af_heart",
+    "speed": 1
+  },
+  "captions": {
+    "style": "clean",
+    "maxWordsPerLine": 4,
+    "safeZone": "reel",
+    "burn": true
+  }
 }
