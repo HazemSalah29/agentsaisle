@@ -17,7 +17,7 @@ describe("puppet rig SVG fragments", () => {
     const { fragmentProblems } = await rigMod();
     expect(
       fragmentProblems(
-        '<g transform="translate(5, 5) rotate(10)"><path d="M0 0 L10 10 Z" fill="#fff" stroke="none"/><rect x="1" y="2" width="3" height="4"/></g>',
+        '<g transform="translate(5, 5) rotate(10)"><path d="M0 0 L10 10 Z" fill="#fff" stroke="none"/><rect x="1" y="2" width="3" height="4"/><line x1="1" y1="2" x2="3" y2="4" stroke="#000" stroke-width="2"/></g>',
       ),
     ).toEqual([]);
   });
@@ -34,6 +34,7 @@ describe("puppet rig SVG fragments", () => {
     ["text outside tags", 'hello<circle cx="1" cy="1" r="1"/>'],
     ["an unclosed group", '<g><circle cx="1" cy="1" r="1"/>'],
     ["an entity", '<circle cx="1" cy="1" r="1" fill="&#35;fff"/>'],
+    ["a bad number in a digit attribute", '<line x1="a" y1="2" x2="3" y2="4"/>'],
     ["a non-number size", '<circle cx="1" cy="1" r="big"/>'],
     ["an empty string", ""],
     ["a non-string", 5],

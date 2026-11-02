@@ -64,9 +64,10 @@ export function fragmentProblems(svg) {
       break;
     }
     if (lt === -1) break;
-    const m = /^<(\/?)([A-Za-z][A-Za-z0-9]*)((?:\s+[A-Za-z-]+="[^"<>&]*")*)\s*(\/?)>/.exec(
-      rest.slice(lt),
-    );
+    const m =
+      /^<(\/?)([A-Za-z][A-Za-z0-9]*)((?:\s+[A-Za-z][A-Za-z0-9-]*="[^"<>&]*")*)\s*(\/?)>/.exec(
+        rest.slice(lt),
+      );
     if (!m) {
       out.push("has markup that is not a plain shape tag with quoted attributes");
       break;
@@ -81,7 +82,7 @@ export function fragmentProblems(svg) {
       if (stack.pop() !== name) out.push(`closes <${name}> that is not open`);
       continue;
     }
-    for (const [, key, value] of attrs.matchAll(/([A-Za-z-]+)="([^"]*)"/g)) {
+    for (const [, key, value] of attrs.matchAll(/([A-Za-z][A-Za-z0-9-]*)="([^"]*)"/g)) {
       if (NUMERIC.has(key)) {
         if (!NUM.test(value)) out.push(`${key} must be a number`);
       } else if (COLOR.has(key)) {
