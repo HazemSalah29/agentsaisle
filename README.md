@@ -241,7 +241,7 @@ The CLI shows it as **unverified** and asks before it copies anything.
 | **Frontend**              | Web performance and related skills.                                                                                               |
 | **Database**              | Schema design, migrations, query tuning and seed data.                                                                            |
 | **Testing and debugging** | Writing tests, fixing failing tests, reading logs and stack traces.                                                               |
-| **Media**                 | Coming later: images and video.                                                                                                   |
+| **Video**                 | One command, `/video`: describe the video you want and Claude uses the library's parts. `aisle add video` installs it.            |
 
 ### Kits
 
