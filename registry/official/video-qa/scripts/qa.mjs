@@ -8,13 +8,18 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
+  applyLessons,
   contrast,
+  fastRuns,
   flashes,
+  hardSwaps,
+  idleStretches,
   parseBlack,
   parseEbur128,
   parseFreeze,
   parseSignalstats,
   sheetTimes,
+  shortScenes,
   textProblems,
 } from "./_checks.mjs";
 import { run } from "./run.mjs";
@@ -70,8 +75,17 @@ const strips = (z) => ({
  * Run every check. `dir` is the project; `file` the rendered video. Returns { results, facts } where a result is
  * { id, level: "pass" | "warn" | "fail", text }.
  */
-export async function qaProject({ dir, file, draft = false }, rules = loadRules()) {
+export async function qaProject({ dir, file, draft = false }, baseRules = loadRules()) {
   const video = JSON.parse(readFileSync(path.join(dir, "video.json"), "utf8"));
+  // The project's own lessons (lessons.json: flat numbers) change the motion limits; anything else is ignored and said so.
+  const lfile = path.join(dir, "lessons.json");
+  let lessons;
+  try {
+    lessons = existsSync(lfile) ? JSON.parse(readFileSync(lfile, "utf8")) : null;
+  } catch {
+    lessons = {};
+  }
+  const { rules, applied, ignored } = applyLessons(baseRules, lessons);
   const tfile = path.join(dir, "timing.json");
   const timing = existsSync(tfile) ? JSON.parse(readFileSync(tfile, "utf8")) : null;
   const results = [];
@@ -198,6 +212,92 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
       ? `${fl.worst} flashes in one second at ${r1(fl.at)} s (limit ${flashRule.maxPerSecond}${kids ? ", the stricter limit for children" : ""})`
       : "no fast flashing",
   );
+
+  // Motion: how the picture moves, from the average change between frames (10 a second).
+  const mo = rules.motion;
+  const total = timing?.totalSeconds ?? info.seconds;
+  const motion = parseSignalstats(
+    ff([
+      "-i",
+      file,
+      "-an",
+      "-vf",
+      `fps=${mo.sampleFps},scale=64:36,format=gray,tblend=all_mode=difference,signalstats,metadata=mode=print:key=lavfi.signalstats.YAVG:file=-`,
+      "-f",
+      "null",
+      "-",
+    ]).stdout,
+  );
+  const kindOf = (id) => video.scenes.find((v) => v.id === id)?.kind;
+  const sceneSpans = (kinds) =>
+    (timing?.scenes ?? [])
+      .filter((s) => kinds.includes(kindOf(s.id)))
+      .map((s) => [s.start, s.start + s.seconds]);
+  const veil = (timing?.scenes ?? []).slice(1).map((s) => {
+    const t = video.scenes.find((v) => v.id === s.id)?.transitionSeconds;
+    return [s.start - 0.1, s.start + Math.max(1, t ?? 0)];
+  });
+  if (motion.length < 3) add("motion", "warn", "could not measure motion (the video is too short)");
+  else {
+    const idle = idleStretches(motion, {
+      epsilon: mo.idle.epsilon,
+      minSeconds: mo.idle.maxSeconds,
+      ignore: [...sceneSpans(["broll"]), [total - mo.idle.endHoldSeconds, total + 1]],
+      dt: 1 / mo.sampleFps,
+    });
+    if (idle.length)
+      add(
+        "idle",
+        "warn",
+        `nothing moves for ${r1(idle[0].seconds)} s from ${r1(idle[0].start)} s${idle.length > 1 ? ` (and ${idle.length - 1} more place(s))` : ""}; give it a slow push, a highlight or the next item (limit ${mo.idle.maxSeconds} s)`,
+      );
+    else add("idle", "pass", `something moves at least every ${mo.idle.maxSeconds} s`);
+    const fast = fastRuns(motion, {
+      limit: mo.fast.limit,
+      minSamples: mo.fast.minSamples,
+      ignore: [...veil, ...sceneSpans(["shot"])],
+      dt: 1 / mo.sampleFps,
+    });
+    if (fast.length)
+      add(
+        "speed",
+        "warn",
+        `a move is too fast to follow at ${r1(fast[0].start)} s (${r1(fast[0].seconds)} s of large change${fast.length > 1 ? `, ${fast.length} places` : ""}); slow it or give it longer`,
+      );
+    else add("speed", "pass", "no move is too fast to follow");
+    const boundaries = (timing?.scenes ?? [])
+      .slice(1)
+      .map((s) => ({ t: s.start, id: s.id }))
+      .filter((b) => {
+        const v = video.scenes.find((x) => x.id === b.id);
+        return !v?.transitionIn || v.transitionIn === "cut";
+      });
+    const swaps = hardSwaps(motion, boundaries, mo.swap);
+    if (swaps.length)
+      add(
+        "joins",
+        "warn",
+        `the picture swaps in one frame at ${swaps.map((x) => `${r1(x.t)} s`).join(", ")}; use a transition there, or keep the cut on purpose`,
+      );
+    else add("joins", "pass", "no unplanned one-frame swaps between scenes");
+  }
+  const brief = shortScenes(timing, mo.minSceneSeconds);
+  if (brief.length)
+    add(
+      "scene-length",
+      brief.some((b) => b.seconds < 1) ? "fail" : "warn",
+      `scene ${brief.map((b) => `${b.id} (${r1(b.seconds)} s)`).join(", ")} is under ${mo.minSceneSeconds} s; merge it with its neighbour or give it more narration`,
+    );
+  else if (timing)
+    add("scene-length", "pass", `every scene lasts at least ${mo.minSceneSeconds} s`);
+  if (lessons)
+    add(
+      "lessons",
+      ignored.length ? "warn" : "pass",
+      ignored.length
+        ? `lessons.json: ignored ${ignored.join(", ")} (unknown or out of range)`
+        : `lessons applied: ${applied.join(", ") || "none"}`,
+    );
 
   // Text near the edges. Scenes with full-frame media are skipped; the rest should leave the margins empty.
   const zone = rules.zones[plat?.zone ?? "wide"];

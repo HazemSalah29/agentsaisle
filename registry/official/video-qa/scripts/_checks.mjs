@@ -103,3 +103,107 @@ export function sheetTimes(timing, max = 24) {
   const picked = Array.from({ length: room }, (_, i) => rest[Math.floor(i * step)]);
   return [...keep, ...picked].sort((a, b) => a - b).slice(0, max);
 }
+
+const inside = (t, ranges) => ranges.some(([a, b]) => t >= a && t <= b);
+
+/**
+ * Stretches where nothing moves: `motion` is [{ t, YAVG }], the average difference between each frame and the one
+ * before it (0 to 255) sampled every `dt` seconds. Returns [{ start, seconds }] for runs of at least `minSeconds`
+ * whose difference stays under `epsilon`; samples inside `ignore` ranges ([[from, to]]) end a run.
+ */
+export function idleStretches(motion, { epsilon, minSeconds, ignore = [], dt = 0.1 }) {
+  const out = [];
+  let run = [];
+  const close = () => {
+    if (run.length * dt >= minSeconds)
+      out.push({ start: Math.round((run[0].t - dt) * 100) / 100, seconds: run.length * dt });
+    run = [];
+  };
+  for (const m of motion) {
+    if (m.YAVG < epsilon && !inside(m.t, ignore)) run.push(m);
+    else close();
+  }
+  close();
+  return out;
+}
+
+/**
+ * Moves too fast to follow: runs of at least `minSamples` samples all above `limit`. A single big sample is a cut
+ * (looked at by `hardSwaps`), not a move. Samples inside `ignore` ranges (transitions) are not counted.
+ */
+export function fastRuns(motion, { limit, minSamples, ignore = [], dt = 0.1 }) {
+  const out = [];
+  let run = [];
+  const close = () => {
+    if (run.length >= minSamples)
+      out.push({
+        start: Math.round((run[0].t - dt) * 100) / 100,
+        seconds: run.length * dt,
+        peak: Math.max(...run.map((m) => m.YAVG)),
+      });
+    run = [];
+  };
+  for (const m of motion) {
+    if (m.YAVG > limit && !inside(m.t, ignore)) run.push(m);
+    else close();
+  }
+  close();
+  return out;
+}
+
+/**
+ * Scene changes where one frame swaps the picture: at each boundary ({ t, id }) the difference spikes to at least
+ * `floor` while the samples right before and after it are quiet (under 1/`ratio` of the spike). A transition spreads the change over
+ * several samples, so it is not reported.
+ */
+export function hardSwaps(motion, boundaries, { floor, ratio }) {
+  return boundaries.filter(({ t }) => {
+    let peak = -1;
+    motion.forEach((m, i) => {
+      if (m.t >= t - 0.05 && m.t <= t + 0.15 && (peak < 0 || m.YAVG > motion[peak].YAVG)) peak = i;
+    });
+    if (peak < 0 || motion[peak].YAVG < floor) return false;
+    const near = [motion[peak - 1]?.YAVG ?? 0, motion[peak + 1]?.YAVG ?? 0];
+    return Math.max(...near) * ratio < motion[peak].YAVG;
+  });
+}
+
+/** Scenes shorter than `min` seconds: [{ id, seconds }]. */
+export const shortScenes = (timing, min) =>
+  (timing?.scenes ?? [])
+    .filter((s) => s.seconds < min)
+    .map((s) => ({ id: s.id, seconds: s.seconds }));
+
+const LESSON_LIMITS = {
+  minSceneSeconds: [0.5, 10],
+  maxIdleSeconds: [0.5, 10],
+  maxFastDiff: [10, 120],
+};
+
+/**
+ * Rules changed by a project's lessons.json (flat numbers, see LESSON_LIMITS). Anything unknown or out of range is
+ * ignored and listed, never applied. Returns { rules, applied: string[], ignored: string[] }.
+ */
+export function applyLessons(rules, lessons) {
+  const applied = [];
+  const ignored = [];
+  const motion = {
+    ...rules.motion,
+    idle: { ...rules.motion.idle },
+    fast: { ...rules.motion.fast },
+  };
+  for (const [key, value] of Object.entries(
+    lessons && typeof lessons === "object" ? lessons : {},
+  )) {
+    const range = LESSON_LIMITS[key];
+    if (!range || typeof value !== "number" || !(value >= range[0] && value <= range[1])) {
+      ignored.push(key);
+      continue;
+    }
+    if (key === "minSceneSeconds") motion.minSceneSeconds = value;
+    if (key === "maxIdleSeconds") motion.idle.maxSeconds = value;
+    if (key === "maxFastDiff") motion.fast.limit = value;
+    applied.push(`${key}=${value}`);
+  }
+  return { rules: { ...rules, motion }, applied, ignored };
+}

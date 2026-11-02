@@ -1,6 +1,6 @@
 ---
 name: video-qa
-description: "Part of the video library, used by the video skill (not run directly). Check a rendered video against its project: format, loudness, clipping, black or frozen stretches, flashing, text in the margins, caption size, missing voice lines, licences, placeholders; makes a contact sheet. Use before anything ships. Don't use to fix the video or judge taste."
+description: "Part of the video library, used by the video skill (not run directly). Check a rendered video against its project: format, loudness, clipping, black or frozen stretches, nothing moving for too long, moves too fast to follow, one-frame swaps between scenes, very short scenes, flashing, text in the margins, caption size, missing voice lines, licences, placeholders; makes a contact sheet. Use before anything ships. Don't use to fix the video or judge taste."
 user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---
@@ -23,6 +23,7 @@ Runs the automatic checks on a rendered MP4 and tells you what to fix. The scrip
 
 ## Steps
 
+0. If `<project>/lessons.md` exists, read it first and follow it; `lessons.json` changes the limits for this project.
 1. Run `node <skill>/scripts/qa.mjs <project>` (add `--draft` for a 540p draft). It needs `ffmpeg` and `ffprobe` on the PATH and the `video-core` skill installed next to this one.
 2. Read the output. Every `FAIL` blocks publishing; every `WARN` needs a decision from you or the user.
 3. Open `<project>/qa/contact-sheet.png` with the Read tool and look at it once: is anything cut off, unreadable or empty? Say what you see.

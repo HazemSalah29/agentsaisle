@@ -79,9 +79,9 @@
       "follow me",
       "follow us",
       "don't forget to like",
-      "اشترك",
-      "اشتركوا",
-      "فعل الجرس"
+      "\u0627\u0634\u062a\u0631\u0643",
+      "\u0627\u0634\u062a\u0631\u0643\u0648\u0627",
+      "\u0641\u0639\u0644 \u0627\u0644\u062c\u0631\u0633"
     ],
     "unkind": [
       "stupid",
@@ -91,10 +91,10 @@
       "hate you",
       "ugly",
       "loser",
-      "غبي",
-      "أحمق",
-      "اخرس",
-      "قبيح"
+      "\u063a\u0628\u064a",
+      "\u0623\u062d\u0645\u0642",
+      "\u0627\u062e\u0631\u0633",
+      "\u0642\u0628\u064a\u062d"
     ],
     "frightening": [
       "kill",
@@ -109,11 +109,29 @@
       "shoot",
       "scream",
       "nightmare",
-      "اقتل",
-      "قتل",
-      "موت",
-      "دم",
-      "كابوس"
+      "\u0627\u0642\u062a\u0644",
+      "\u0642\u062a\u0644",
+      "\u0645\u0648\u062a",
+      "\u062f\u0645",
+      "\u0643\u0627\u0628\u0648\u0633"
     ]
+  },
+  "motion": {
+    "note": "TODO(verify): working defaults for how a picture moves. Differences are the average change between frames sampled at 10 per second (0 to 255).",
+    "sampleFps": 10,
+    "minSceneSeconds": 2,
+    "idle": {
+      "epsilon": 0.3,
+      "maxSeconds": 1.2,
+      "endHoldSeconds": 2
+    },
+    "fast": {
+      "limit": 30,
+      "minSamples": 3
+    },
+    "swap": {
+      "floor": 20,
+      "ratio": 4
+    }
   }
 }

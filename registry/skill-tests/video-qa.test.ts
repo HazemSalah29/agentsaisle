@@ -15,10 +15,78 @@ type Checks = {
   contrast: (a: string, b: string) => number;
   textProblems: (s: string) => { level: string; text: string }[];
   sheetTimes: (t: Loose, max?: number) => number[];
+  idleStretches: (m: Loose[], o: Loose) => Loose[];
+  fastRuns: (m: Loose[], o: Loose) => Loose[];
+  hardSwaps: (m: Loose[], b: Loose[], o: Loose) => Loose[];
+  shortScenes: (t: Loose | null, min: number) => Loose[];
+  applyLessons: (r: Loose, l: unknown) => { rules: Loose; applied: string[]; ignored: string[] };
 };
 type Qa = { qaProject: (o: Loose) => Promise<{ results: Loose[]; facts: Loose }> };
 const checks = () => loadScript<Checks>("video-qa", "scripts/_checks.mjs");
 const qa = () => loadScript<Qa>("video-qa", "scripts/qa.mjs");
+
+describe("video-qa motion checks", () => {
+  const m = (ys: number[], dt = 0.1) => ys.map((YAVG, i) => ({ t: (i + 1) * dt, YAVG }));
+  it("finds a long run with no change, but not a short one, an ignored one or the end hold", async () => {
+    const { idleStretches } = await checks();
+    const moving = Array(10).fill(2);
+    const rows = m([...moving, ...Array(15).fill(0.05), ...moving]);
+    expect(idleStretches(rows, { epsilon: 0.3, minSeconds: 1.2 })).toEqual([
+      { start: 1, seconds: expect.closeTo(1.5) },
+    ]);
+    expect(idleStretches(rows, { epsilon: 0.3, minSeconds: 1.6 })).toEqual([]);
+    expect(idleStretches(rows, { epsilon: 0.3, minSeconds: 1.2, ignore: [[1.5, 2.6]] })).toEqual(
+      [],
+    );
+  });
+  it("tells a sustained fast move from a single cut", async () => {
+    const { fastRuns } = await checks();
+    const rows = m([1, 1, 90, 1, 1, 60, 70, 65, 1, 1]);
+    const out = fastRuns(rows, { limit: 30, minSamples: 3 });
+    expect(out).toHaveLength(1);
+    expect(out[0].start).toBeCloseTo(0.5);
+    expect(fastRuns(rows, { limit: 30, minSamples: 3, ignore: [[0.6, 0.8]] })).toEqual([]);
+  });
+  it("reports a one-frame swap but not a transition spread over several samples", async () => {
+    const { hardSwaps } = await checks();
+    const rule = { floor: 20, ratio: 4 };
+    const cut = m([1, 1, 1, 1, 1, 80, 1, 1, 1, 1, 1, 1]);
+    expect(hardSwaps(cut, [{ t: 0.6, id: "b" }], rule)).toHaveLength(1);
+    const wipe = m([1, 1, 1, 1, 30, 40, 35, 30, 1, 1, 1, 1]);
+    expect(hardSwaps(wipe, [{ t: 0.6, id: "b" }], rule)).toEqual([]);
+  });
+  it("lists short scenes", async () => {
+    const { shortScenes } = await checks();
+    const timing = {
+      scenes: [
+        { id: "a", seconds: 1.4 },
+        { id: "b", seconds: 3 },
+      ],
+    };
+    expect(shortScenes(timing, 2)).toEqual([{ id: "a", seconds: 1.4 }]);
+    expect(shortScenes(null, 2)).toEqual([]);
+  });
+  it("applies only known, in-range lessons", async () => {
+    const { applyLessons } = await checks();
+    const rules = JSON.parse(
+      readFileSync(
+        path.join(__dirname, "..", "official", "video-qa", "assets", "rules.json"),
+        "utf8",
+      ),
+    );
+    const out = applyLessons(rules, {
+      maxIdleSeconds: 2,
+      minSceneSeconds: 99,
+      nope: 1,
+      maxFastDiff: "x",
+    });
+    expect(out.rules.motion.idle.maxSeconds).toBe(2);
+    expect(out.rules.motion.minSceneSeconds).toBe(2); // 99 is out of range
+    expect(out.ignored.sort()).toEqual(["maxFastDiff", "minSceneSeconds", "nope"]);
+    expect(rules.motion.idle.maxSeconds).toBe(1.2); // the originals are untouched
+    expect(applyLessons(rules, null).applied).toEqual([]);
+  });
+});
 
 describe("video-qa parsers", () => {
   it("reads loudness and true peak from an ebur128 summary", async () => {
@@ -103,7 +171,8 @@ const W = 304;
 const H = 540;
 const seg = (i: number, extra = "", color = "0x0F1115") =>
   `color=c=${color}:s=${W}x${H}:r=30:d=2,drawbox=x=${60 + i * 50}:y=200:w=60:h=60:color=white:t=fill${extra}[v${i}]`;
-const GOOD_V = `${seg(0)};${seg(1)};${seg(2)};[v0][v1][v2]concat=n=3:v=1:a=0[v]`;
+// A box that swings side to side for the whole six seconds: always moving, no swap between scenes.
+const GOOD_V = `color=c=0x0F1115:s=${W}x${H}:r=30:d=6[bg];color=c=white:s=60x60:r=30:d=6[sq];[bg][sq]overlay=x='100+80*sin(PI*t)':y=200[v]`;
 
 function fixture(name: string, o: { graph?: string; audio?: string | null; voice?: boolean } = {}) {
   const dir = mkdtempSync(path.join(os.tmpdir(), `qa-${name}-`));
@@ -193,6 +262,41 @@ describe.skipIf(!FF || !x264)("video-qa on fixture videos", () => {
     expect(bad, JSON.stringify(bad)).toEqual([]);
     expect(existsSync(path.join(f.dir, "qa", "contact-sheet.png"))).toBe(true);
     expect(r.facts.sheet.times.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it(
+    "warns when nothing moves, and when the picture swaps in one frame",
+    { timeout: 120_000 },
+    async () => {
+      const still = await go(
+        fixture("still", {
+          graph: `color=c=0x0F1115:s=${W}x${H}:r=30:d=6,drawbox=x=100:y=200:w=60:h=60:color=white:t=fill[v]`,
+        }),
+      );
+      expect(levels(still, "idle")).toContain("warn");
+      const swap = await go(
+        fixture("swap", {
+          graph: `${seg(0)};${seg(1, "", "0xE0E0E0")};${seg(2)};[v0][v1][v2]concat=n=3:v=1:a=0[v]`,
+        }),
+      );
+      expect(levels(swap, "joins")).toContain("warn");
+      expect(levels(await go(fixture("clean-motion")), "idle")).toEqual(["pass"]);
+      expect(levels(await go(fixture("clean-joins")), "joins")).toEqual(["pass"]);
+    },
+  );
+
+  it("applies the project's lessons and says what it ignored", { timeout: 120_000 }, async () => {
+    const f = fixture("lessons", {
+      graph: `color=c=0x0F1115:s=${W}x${H}:r=30:d=6,drawbox=x=100:y=200:w=60:h=60:color=white:t=fill[v]`,
+    });
+    writeFileSync(
+      path.join(f.dir, "lessons.json"),
+      JSON.stringify({ maxIdleSeconds: 9, minSceneSeconds: 3, bogus: 1 }),
+    );
+    const r = await go(f);
+    expect(levels(r, "idle")).toEqual(["pass"]);
+    expect(levels(r, "scene-length")).toEqual(["warn"]); // the three scenes last 2 s each
+    expect(r.results.find((x) => x.id === "lessons")!.text).toContain("bogus");
   });
 
   it("catches a black stretch", { timeout: 120_000 }, async () => {
