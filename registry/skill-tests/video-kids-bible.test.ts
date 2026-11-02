@@ -96,6 +96,27 @@ describe("bible-check.mjs and puppet.mjs", () => {
     expect(again.stderr).toMatch(/never overwritten/);
     expect(run("puppet.mjs", "scaffold", dir, "--character", "nour", "--force").status).toBe(0);
   });
+  it("scaffold draws a shaded rig by default and a flat one with --flat", () => {
+    const dir = dirWith(GOOD);
+    expect(run("puppet.mjs", "scaffold", dir, "--character", "nour").status).toBe(0);
+    const file = path.join(dir, "characters", "nour", "puppet.json");
+    const shaded = JSON.parse(readFileSync(file, "utf8"));
+    expect(Object.keys(shaded.gradients)).toEqual(
+      expect.arrayContaining(["skin", "shadow", "gloss", "eye"]),
+    );
+    expect(shaded.parts.map((p: Loose) => p.id)).toContain("shadow");
+    expect(shaded.parts.find((p: Loose) => p.id === "arm-l").svg).not.toContain("<line");
+    for (const shape of ["round", "square", "triangle"]) {
+      const d = dirWith(GOOD.replace("round", shape));
+      expect(run("puppet.mjs", "scaffold", d, "--character", "nour").status).toBe(0);
+      expect(run("puppet.mjs", "check", d, "--character", "nour").status).toBe(0);
+      expect(run("puppet.mjs", "sheet", d, "--character", "nour").status).toBe(0);
+    }
+    expect(
+      run("puppet.mjs", "scaffold", dir, "--character", "nour", "--force", "--flat").status,
+    ).toBe(0);
+    expect(JSON.parse(readFileSync(file, "utf8")).gradients).toBeUndefined();
+  });
   it("scaffold varies with the shape language and species", () => {
     const sq = dirWith(
       GOOD.replace("round", "square").replace("Species: turtle", "Species: rabbit"),

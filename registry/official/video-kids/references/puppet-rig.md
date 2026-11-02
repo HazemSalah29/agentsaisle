@@ -26,6 +26,10 @@
 | `fv`        | top teeth on the lower lip    | f, v                     |
 | `l`         | open with the tongue up       | l, n, t, d, th           |
 
+## The shaded look
+
+`scaffold` draws a rounded, shaded character by default (`--flat` gives the plain one). The volume comes from gradients kept in the rig: `"gradients": { "skin": { "type": "radial", "fx": 0.35, "fy": 0.3, "stops": [{"o": 0, "c": "#hex"}, {"o": 1, "c": "#hex", "a": 0.5}] } }` (up to 16 gradients, 2 to 6 stops each, positions 0 to 1 across the shape; `a` is opacity). A part uses one as `fill="url(#g:skin)"`; a name the rig does not define is refused. Limbs are closed capsule paths, not stroked lines, because a gradient cannot paint across a line of no width. A soft `shadow` part under the feet and white `gloss` ellipses give the rest. This is a pseudo-3D illustration look, not a 3D model.
+
 ## What the checker allows
 
-Only these SVG shapes: `g`, `path`, `circle`, `ellipse`, `rect`, `line`, `polyline`, `polygon`; with number attributes, `fill` and `stroke` as `#hex` or `none`, simple `transform`, and `d` or `points` made of numbers. No scripts, links, images, text, styles, gradients, filters or entities. Each part is at most 3,000 characters; the whole rig at most 60,000. A user's own SVG goes in as parts the same way: split it into the required parts, then run `check`.
+Only these SVG shapes: `g`, `path`, `circle`, `ellipse`, `rect`, `line`, `polyline`, `polygon`; with number attributes (each written once), `fill` and `stroke` as `#hex`, `none` or `url(#g:name)`, simple `transform`, and `d` or `points` made of numbers. No scripts, links, images, text, styles, filters or entities, and no gradient defined inside a part (they live in the rig). Each part is at most 3,000 characters; the whole rig at most 60,000. A user's own SVG goes in as parts the same way: split it into the required parts, then run `check`.

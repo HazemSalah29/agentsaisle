@@ -15,7 +15,16 @@ export const REQUIRED = [
   "eyes-closed",
   ...VISEMES.map((v) => `mouth-${v}`),
 ];
-export const LIMITS = { parts: 40, fragment: 3000, total: 60000, box: 2000 };
+export const LIMITS = {
+  parts: 40,
+  fragment: 3000,
+  total: 60000,
+  box: 2000,
+  gradients: 16,
+  stops: 6,
+};
+const GRAD_NAME = /^[a-z][a-z0-9-]{0,15}$/;
+const GRAD_REF = /^url\(#g:([a-z][a-z0-9-]{0,15})\)$/;
 
 const ID = /^[a-z][a-z0-9-]{0,23}$/;
 const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -50,7 +59,7 @@ const FREE = {
 };
 
 /** Problems with one SVG fragment (markup of shapes only), as readable strings. */
-export function fragmentProblems(svg) {
+export function fragmentProblems(svg, gradients = new Set()) {
   if (typeof svg !== "string" || !svg.trim()) return ["is empty"];
   if (svg.length > LIMITS.fragment) return [`is longer than ${LIMITS.fragment} characters`];
   const out = [];
@@ -82,11 +91,19 @@ export function fragmentProblems(svg) {
       if (stack.pop() !== name) out.push(`closes <${name}> that is not open`);
       continue;
     }
+    const keys = [...attrs.matchAll(/([A-Za-z][A-Za-z0-9-]*)="/g)].map((m) => m[1]);
+    for (const k of new Set(keys.filter((x, i) => keys.indexOf(x) !== i)))
+      out.push(`attribute ${k} is written twice`);
     for (const [, key, value] of attrs.matchAll(/([A-Za-z][A-Za-z0-9-]*)="([^"]*)"/g)) {
       if (NUMERIC.has(key)) {
         if (!NUM.test(value)) out.push(`${key} must be a number`);
       } else if (COLOR.has(key)) {
-        if (value !== "none" && !HEX.test(value)) out.push(`${key} must be #hex or none`);
+        const ref = GRAD_REF.exec(value);
+        if (ref) {
+          if (!gradients.has(ref[1]))
+            out.push(`${key} uses gradient "${ref[1]}", which the rig does not define`);
+        } else if (value !== "none" && !HEX.test(value))
+          out.push(`${key} must be #hex, none or url(#g:name) of a gradient in the rig`);
       } else if (FREE[key]) {
         if (!FREE[key].test(value))
           out.push(`${key} has characters or functions that are not allowed`);
@@ -97,6 +114,78 @@ export function fragmentProblems(svg) {
   if (stack.length) out.push(`leaves <${stack[stack.length - 1]}> open`);
   return [...new Set(out)];
 }
+
+/**
+ * Problems with the rig's gradients: { name: { type: "radial" | "linear", stops: [{ o, c, a? }], cx, cy, r, fx, fy
+ * or x1, y1, x2, y2 } }, all positions as 0 to 1 across the shape the gradient paints.
+ */
+export function gradientProblems(g) {
+  if (g === undefined) return [];
+  if (!g || typeof g !== "object" || Array.isArray(g)) return ["gradients: must be an object"];
+  const out = [];
+  const names = Object.keys(g);
+  if (names.length > LIMITS.gradients) out.push(`gradients: at most ${LIMITS.gradients}`);
+  const unit = (v) => typeof v === "number" && Number.isFinite(v) && v >= -1 && v <= 2;
+  for (const name of names.slice(0, LIMITS.gradients)) {
+    const d = g[name];
+    const at = `gradients.${name}`;
+    if (!GRAD_NAME.test(name)) out.push(`${at}: name is lower-case letters, digits and hyphens`);
+    if (!d || !["radial", "linear"].includes(d.type)) {
+      out.push(`${at}.type: radial or linear`);
+      continue;
+    }
+    const keys = d.type === "radial" ? ["cx", "cy", "r", "fx", "fy"] : ["x1", "y1", "x2", "y2"];
+    for (const k of keys)
+      if (d[k] !== undefined && !unit(d[k])) out.push(`${at}.${k}: a number from 0 to 1`);
+    if (!Array.isArray(d.stops) || d.stops.length < 2 || d.stops.length > LIMITS.stops) {
+      out.push(`${at}.stops: 2 to ${LIMITS.stops} stops`);
+      continue;
+    }
+    let last = -1;
+    for (const st of d.stops) {
+      if (
+        !st ||
+        !(st.o >= 0 && st.o <= 1) ||
+        st.o < last ||
+        !HEX.test(st.c ?? "") ||
+        (st.a !== undefined && !(st.a >= 0 && st.a <= 1))
+      )
+        out.push(`${at}.stops: each needs o (0 to 1, rising), c (#hex) and optional a (0 to 1)`);
+      last = st?.o ?? last;
+    }
+  }
+  return [...new Set(out)];
+}
+
+/** `<defs>` for the rig's gradients, ids prefixed so two characters on a page never share one. */
+export function gradientDefs(g = {}, prefix) {
+  const n = (v) => (v === undefined ? "" : v);
+  const body = Object.entries(g)
+    .map(([name, d]) => {
+      const pos =
+        d.type === "radial"
+          ? ["cx", "cy", "r", "fx", "fy"]
+              .map((k) => (d[k] === undefined ? "" : ` ${k}="${n(d[k])}"`))
+              .join("")
+          : ["x1", "y1", "x2", "y2"]
+              .map((k) => (d[k] === undefined ? "" : ` ${k}="${n(d[k])}"`))
+              .join("");
+      const stops = d.stops
+        .map(
+          (st) =>
+            `<stop offset="${st.o}" stop-color="${st.c}"${st.a === undefined ? "" : ` stop-opacity="${st.a}"`}/>`,
+        )
+        .join("");
+      const tag = d.type === "radial" ? "radialGradient" : "linearGradient";
+      return `<${tag} id="${prefix}-g-${name}"${pos}>${stops}</${tag}>`;
+    })
+    .join("");
+  return body ? `<defs>${body}</defs>` : "";
+}
+
+/** A part's SVG with its gradient references pointed at this character's ids. */
+export const bindGradients = (svg, prefix) =>
+  svg.replace(/url\(#g:([a-z][a-z0-9-]*)\)/g, `url(#${prefix}-g-$1)`);
 
 /** Problems with a whole rig, as readable strings. An empty list means the renderer can use it. */
 export function rigProblems(rig) {
@@ -109,6 +198,7 @@ export function rigProblems(rig) {
   const pal = rig.palette;
   if (!Array.isArray(pal) || pal.length < 3 || pal.length > 5 || !pal.every((c) => HEX.test(c)))
     out.push("palette: 3 to 5 colours written as #hex");
+  out.push(...gradientProblems(rig.gradients));
   if (!Array.isArray(rig.parts)) return [...out, "parts: must be a list"];
   if (rig.parts.length > LIMITS.parts) out.push(`parts: at most ${LIMITS.parts}`);
   const ids = new Set();
@@ -130,7 +220,8 @@ export function rigProblems(rig) {
       (box && (pv[0] < 0 || pv[0] > box.w || pv[1] < 0 || pv[1] > box.h))
     )
       out.push(`${at}.pivot: [x, y] inside the box`);
-    for (const f of fragmentProblems(p.svg)) out.push(`${at} (${p.id}) svg ${f}`);
+    for (const f of fragmentProblems(p.svg, new Set(Object.keys(rig.gradients ?? {}))))
+      out.push(`${at} (${p.id}) svg ${f}`);
     total += typeof p.svg === "string" ? p.svg.length : 0;
   }
   if (total > LIMITS.total)

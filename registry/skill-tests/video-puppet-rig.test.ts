@@ -10,6 +10,12 @@ type Rig = {
   rigProblems: (r: unknown) => string[];
   partTree: (r: Loose) => Loose[];
 };
+type Rig2 = Rig & {
+  fragmentProblems: (s: unknown, g?: Set<string>) => string[];
+  gradientDefs: (g: Loose, p: string) => string;
+  bindGradients: (s: string, p: string) => string;
+};
+const rigMod2 = () => loadScript<Rig2>("video-core", "assets/puppet/rig.mjs");
 const rigMod = () => loadScript<Rig>("video-core", "assets/puppet/rig.mjs");
 
 describe("puppet rig SVG fragments", () => {
@@ -35,6 +41,11 @@ describe("puppet rig SVG fragments", () => {
     ["an unclosed group", '<g><circle cx="1" cy="1" r="1"/>'],
     ["an entity", '<circle cx="1" cy="1" r="1" fill="&#35;fff"/>'],
     ["a bad number in a digit attribute", '<line x1="a" y1="2" x2="3" y2="4"/>'],
+    [
+      "an attribute written twice",
+      '<circle cx="1" cy="1" r="1" stroke-width="2" stroke-width="3"/>',
+    ],
+    ["a gradient the rig does not define", '<circle cx="1" cy="1" r="1" fill="url(#g:nope)"/>'],
     ["a non-number size", '<circle cx="1" cy="1" r="big"/>'],
     ["an empty string", ""],
     ["a non-string", 5],
@@ -93,5 +104,58 @@ describe("puppet rig", () => {
     const { rigProblems } = await rigMod();
     expect(rigProblems(null)).toHaveLength(1);
     expect(rigProblems({ ...sampleRig(), parts: "x" }).join()).toMatch(/parts/);
+  });
+});
+
+describe("puppet rig gradients", () => {
+  const grad = {
+    type: "radial",
+    stops: [
+      { o: 0, c: "#ffffff" },
+      { o: 1, c: "#000000", a: 0.5 },
+    ],
+  };
+  it("accepts a defined gradient and builds ids that cannot collide", async () => {
+    const { rigProblems, fragmentProblems, gradientDefs, bindGradients } = await rigMod2();
+    const rig = sampleRig({ gradients: { skin: grad } });
+    rig.parts[0].svg = '<circle cx="10" cy="10" r="5" fill="url(#g:skin)"/>';
+    expect(rigProblems(rig)).toEqual([]);
+    expect(
+      fragmentProblems('<circle cx="1" cy="1" r="1" fill="url(#g:skin)"/>', new Set(["skin"])),
+    ).toEqual([]);
+    expect(gradientDefs(rig.gradients, "c0")).toContain('<radialGradient id="c0-g-skin">');
+    expect(gradientDefs(rig.gradients, "c0")).toContain('stop-opacity="0.5"');
+    expect(bindGradients('fill="url(#g:skin)"', "c1")).toBe('fill="url(#c1-g-skin)"');
+  });
+  it("refuses undefined or malformed gradients", async () => {
+    const { rigProblems } = await rigMod2();
+    const missing = sampleRig();
+    missing.parts[0].svg = '<circle cx="10" cy="10" r="5" fill="url(#g:skin)"/>';
+    expect(rigProblems(missing).join()).toMatch(/does not define/);
+    expect(rigProblems(sampleRig({ gradients: { Bad: grad } })).join()).toMatch(
+      /name is lower-case/,
+    );
+    expect(
+      rigProblems(sampleRig({ gradients: { a: { type: "conic", stops: [] } } })).join(),
+    ).toMatch(/type/);
+    expect(
+      rigProblems(sampleRig({ gradients: { a: { ...grad, stops: [grad.stops[0]] } } })).join(),
+    ).toMatch(/stops/);
+    expect(
+      rigProblems(
+        sampleRig({
+          gradients: {
+            a: {
+              ...grad,
+              stops: [
+                { o: 0.8, c: "#fff" },
+                { o: 0.2, c: "#000" },
+              ],
+            },
+          },
+        }),
+      ).join(),
+    ).toMatch(/rising/);
+    expect(rigProblems(sampleRig({ gradients: { a: { ...grad, cx: 99 } } })).join()).toMatch(/cx/);
   });
 });

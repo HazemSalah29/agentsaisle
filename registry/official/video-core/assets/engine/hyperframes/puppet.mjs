@@ -4,7 +4,7 @@
 // voice. The motion is sampled into keyframes, one animation per element, so a frame depends on the clock
 // alone. Rig SVG is checked by rig.mjs before it gets here; all other text is escaped.
 import { PRESETS, backdropLayers } from "./backdrop.mjs";
-import { VISEMES, partTree, rigProblems } from "../../puppet/rig.mjs";
+import { VISEMES, bindGradients, gradientDefs, partTree, rigProblems } from "../../puppet/rig.mjs";
 import { esc } from "./shared.mjs";
 
 export const ACTS = ["walk", "wave", "jump", "nod", "dance", "emote"];
@@ -244,7 +244,7 @@ function partMarkup(node, base) {
   const hidden =
     node.id === "eyes-closed" || (node.id.startsWith("mouth-") && node.id !== "mouth-rest");
   const style = hidden ? ' style="opacity:0"' : "";
-  return `<g id="${base}-${node.id}"${style}>${node.svg}${node.children.map((c) => partMarkup(c, base)).join("")}</g>`;
+  return `<g id="${base}-${node.id}"${style}>${bindGradients(node.svg, base)}${node.children.map((c) => partMarkup(c, base)).join("")}</g>`;
 }
 
 function renderCharacter(char, index, rig, ctx) {
@@ -255,7 +255,7 @@ function renderCharacter(char, index, rig, ctx) {
   const k = H / rig.box.h;
   const left = char.x * w - W / 2;
   const top = char.y * h - H;
-  const html = `<div id="${base}" class="pup" style="left:${r2(left)}px;top:${r2(top)}px;width:${r2(W)}px;height:${r2(H)}px"><svg viewBox="0 0 ${rig.box.w} ${rig.box.h}" aria-hidden="true">${partTree(
+  const html = `<div id="${base}" class="pup" style="left:${r2(left)}px;top:${r2(top)}px;width:${r2(W)}px;height:${r2(H)}px"><svg viewBox="0 0 ${rig.box.w} ${rig.box.h}" aria-hidden="true">${gradientDefs(rig.gradients, base)}${partTree(
     rig,
   )
     .map((n) => partMarkup(n, base))

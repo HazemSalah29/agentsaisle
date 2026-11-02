@@ -1,0 +1,153 @@
+{
+  "ok": true,
+  "file": "out/kids.mp4",
+  "facts": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "codec": "h264",
+    "pixFmt": "yuv420p",
+    "audio": true,
+    "seconds": 30.7,
+    "sheet": {
+      "file": "qa/contact-sheet.png",
+      "times": [
+        1,
+        3,
+        4.97,
+        5,
+        7,
+        9,
+        11,
+        13,
+        13.19,
+        15,
+        17,
+        19,
+        21,
+        23,
+        25,
+        26.21,
+        27,
+        29
+      ]
+    }
+  },
+  "results": [
+    {
+      "id": "resolution",
+      "level": "pass",
+      "text": "1080x1920"
+    },
+    {
+      "id": "fps",
+      "level": "pass",
+      "text": "30 fps (project says 30)"
+    },
+    {
+      "id": "codec",
+      "level": "pass",
+      "text": "h264, yuv420p"
+    },
+    {
+      "id": "duration",
+      "level": "pass",
+      "text": "30.7 s"
+    },
+    {
+      "id": "loudness",
+      "level": "pass",
+      "text": "-15.3 LUFS (target -14, working default)"
+    },
+    {
+      "id": "clipping",
+      "level": "pass",
+      "text": "true peak -1.5 dBTP (limit -1)"
+    },
+    {
+      "id": "black",
+      "level": "pass",
+      "text": "no black stretch"
+    },
+    {
+      "id": "freeze",
+      "level": "pass",
+      "text": "something changes at least every 3 s"
+    },
+    {
+      "id": "flashing",
+      "level": "pass",
+      "text": "no fast flashing"
+    },
+    {
+      "id": "safe-zone",
+      "level": "pass",
+      "text": "margins are clear"
+    },
+    {
+      "id": "caption-size",
+      "level": "pass",
+      "text": "captions are 6.5% of the height (at least 6% for children)"
+    },
+    {
+      "id": "project",
+      "level": "pass",
+      "text": "video.json passes check.mjs (props, assets, licences)"
+    },
+    {
+      "id": "disclosure",
+      "level": "pass",
+      "text": "disclosure flags match the assets"
+    },
+    {
+      "id": "voiced",
+      "level": "pass",
+      "text": "every narration line is voiced"
+    },
+    {
+      "id": "text",
+      "level": "pass",
+      "text": "no placeholders or doubled words"
+    },
+    {
+      "id": "kids-audience",
+      "level": "pass",
+      "text": "audience kids-3-5: the made-for-kids answer is \"yes\" in the publish pack"
+    },
+    {
+      "id": "kids-pace",
+      "level": "pass",
+      "text": "slowest line check: at most 1.9 words a second (limit 2)"
+    },
+    {
+      "id": "kids-sentences",
+      "level": "pass",
+      "text": "sentences are at most 9 words"
+    },
+    {
+      "id": "kids-pressure",
+      "level": "pass",
+      "text": "no like, subscribe or follow pressure"
+    },
+    {
+      "id": "kids-language",
+      "level": "pass",
+      "text": "no unkind or frightening words from the list"
+    },
+    {
+      "id": "kids-cuts",
+      "level": "pass",
+      "text": "every scene lasts at least 3 s"
+    },
+    {
+      "id": "kids-caption-size",
+      "level": "pass",
+      "text": "captions are 6.5% of the height (at least 6% for children)"
+    },
+    {
+      "id": "kids-characters",
+      "level": "pass",
+      "text": "every character has a bible (nour, pip)"
+    }
+  ]
+}

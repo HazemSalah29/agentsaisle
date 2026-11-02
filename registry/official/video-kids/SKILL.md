@@ -27,7 +27,7 @@ Makes the cast and the acting for a children's video. Everything is drawn in cod
 3. `node <skill>/scripts/puppet.mjs scaffold <project> --character <name>`, then `sheet`. Tell the user to open `characters/<name>/sheet.svg` in a browser and wait for their yes. Change the drawing by editing `puppet.json` (`references/puppet-rig.md`), then `puppet.mjs check`. A rig the user supplies goes through `check` too.
 4. Episode: make sure each character has a ready bible and puppet (`status.mjs`). Then hand writing to `video-write` in kids mode (one learning goal, age band, `puppet` scenes) and stop for the user to approve the storyboard.
 5. Set the acting in each `puppet` scene's props with `references/acting.md`: backdrop, where each character stands, which lines each one says, and the acts. `--song`: write original lyrics as narration lines; no music is made.
-6. After `video-voice` has voiced and aligned the lines: `node <skill>/scripts/visemes.mjs <project>`.
+6. After `video-voice` has voiced the lines: `node <skill>/scripts/kidvoice.mjs <project>` (a younger-sounding pitch from each bible's `Voice pitch`; say plainly that it is an adult voice made to sound younger, never a real child), then align the words with `video-voice` and run `node <skill>/scripts/visemes.mjs <project>`.
 7. `node <video-core>/scripts/check.mjs <project>`, `timing.mjs`, `video-captions --style kids --burn`, `render.mjs --draft`. Look at one frame per scene, then render, run `video-qa`, then `video-publish`.
 
 ## Budget

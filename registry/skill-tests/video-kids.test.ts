@@ -41,6 +41,9 @@ describe("the skill itself", () => {
     expect(readFileSync(skillFile("video-kids", "scripts/_lib.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "scripts/_lib.mjs"), "utf8"),
     );
+    expect(readFileSync(skillFile("video-kids", "scripts/run.mjs"), "utf8")).toBe(
+      readFileSync(skillFile("video-core", "scripts/run.mjs"), "utf8"),
+    );
     expect(readFileSync(skillFile("video-kids", "scripts/_rig.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "assets/puppet/rig.mjs"), "utf8"),
     );
@@ -48,7 +51,9 @@ describe("the skill itself", () => {
     for (const f of readdirSync(dir).filter((n) => n.endsWith(".mjs"))) {
       const text = readFileSync(path.join(dir, f), "utf8");
       expect(text, f).not.toMatch(/\bfetch\s*\(|node:https?|node:net|\bcurl\b|\bwget\b/);
-      expect(text, f).not.toMatch(/node:child_process|shell:\s*true|\beval\s*\(|new Function/);
+      expect(text, f).not.toMatch(/shell:\s*true|\beval\s*\(|new Function/);
+      // Only run.mjs (the allow-listed runner, a copy of video-core's) may start programs.
+      if (f !== "run.mjs") expect(text, f).not.toMatch(/node:child_process/);
     }
   });
   it("keeps the rig reference in step with the required parts and mouth shapes", async () => {

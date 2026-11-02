@@ -11,6 +11,7 @@ One file per character: `characters/<name>/bible.md`, where `<name>` is lower-ca
 - Palette: #3f9f6b, #f2c94c, #ffffff, #3a2a4d
 - Outfits: a small red scarf in cold weather
 - Catchphrase: "Slow and steady, side by side!"
+- Voice pitch: 4
 - Personality: Gentle, curious and a little shy; she learns by trying things at her own pace.
 
 ## Never
@@ -21,15 +22,16 @@ One file per character: `characters/<name>/bible.md`, where `<name>` is lower-ca
 
 ## What each field is for
 
-| Field          | Rule                                                                                                                                                       |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Name, Species  | The name is new. The species may be common (turtle, fox); the character is not.                                                                            |
-| Shape language | `round` (soft, friendly), `square` (steady, sturdy) or `triangle` (quick, bright). It sets the body and head the starter puppet draws.                     |
-| Palette        | 3 to 5 colours as `#hex`. The first is the body, the second the accent (cheeks, shell), the third the belly. Two of them must differ enough to read (3:1). |
-| Outfits        | What they wear, as words. The starter rig has no clothes; add them as parts.                                                                               |
-| Catchphrase    | A short phrase for the `button` beat. Original: never a known show's line.                                                                                 |
-| Personality    | One or two sentences. Kind by default.                                                                                                                     |
-| Never          | At least two things the character never does. They keep later scripts consistent and gentle.                                                               |
+| Field          | Rule                                                                                                                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Name, Species  | The name is new. The species may be common (turtle, fox); the character is not.                                                                                                                                    |
+| Shape language | `round` (soft, friendly), `square` (steady, sturdy) or `triangle` (quick, bright). It sets the body and head the starter puppet draws.                                                                             |
+| Palette        | 3 to 5 colours as `#hex`. The first is the body, the second the accent (cheeks, shell), the third the belly. Two of them must differ enough to read (3:1).                                                         |
+| Outfits        | What they wear, as words. The starter rig has no clothes; add them as parts.                                                                                                                                       |
+| Catchphrase    | A short phrase for the `button` beat. Original: never a known show's line.                                                                                                                                         |
+| Voice pitch    | Optional, 0 to 8 semitones. `kidvoice.mjs` raises this character's voice by that much and shifts its formants too (3 to 6 sounds like a young child, more like a cartoon). Give each character a different number. |
+| Personality    | One or two sentences. Kind by default.                                                                                                                                                                             |
+| Never          | At least two things the character never does. They keep later scripts consistent and gentle.                                                                                                                       |
 
 ## Originality
 
