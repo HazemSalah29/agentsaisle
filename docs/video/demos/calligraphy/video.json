@@ -25,6 +25,32 @@
         "reveal": "wipe"
       },
       "transitionIn": "cut"
+    },
+    {
+      "id": "s2",
+      "kind": "calligraphy",
+      "durationFrom": "fixed",
+      "seconds": 4,
+      "props": {
+        "text": "الصبر مفتاح الفرج",
+        "translation": "Patience is the key to relief",
+        "by": "مثل عربي",
+        "reveal": "wipe"
+      },
+      "transitionIn": "fade"
+    },
+    {
+      "id": "s3",
+      "kind": "calligraphy",
+      "durationFrom": "fixed",
+      "seconds": 4,
+      "props": {
+        "text": "من جد وجد",
+        "translation": "Whoever strives, finds",
+        "by": "مثل عربي",
+        "reveal": "wipe"
+      },
+      "transitionIn": "fade"
     }
   ]
 }
