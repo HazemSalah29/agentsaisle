@@ -114,6 +114,7 @@ export function buildProject({
 
   const plan = [];
   let body = "";
+  let roots = "";
   video.scenes.forEach((s, i) => {
     const t = timing.scenes[i];
     const first = i === 0;
@@ -133,6 +134,7 @@ export function buildProject({
       assets,
     });
     plan.push(...r.plan);
+    roots += r.root ?? "";
     if (transition === "fade" && !first)
       plan.push({
         id: prefix,
@@ -143,6 +145,8 @@ export function buildProject({
       });
     body += `<section id="${prefix}" class="clip scene scene-${s.kind}" data-start="${t.start}" data-duration="${t.seconds}">${r.html}</section>\n`;
   });
+
+  body += roots;
 
   // Scenes keep clear of burned captions: their bottom padding is at least the caption zone.
   const basePad = (w / 100) * (vertical ? 16 : 6);

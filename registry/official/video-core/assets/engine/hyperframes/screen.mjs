@@ -92,19 +92,34 @@ export function cameraFrames(zoom, seconds) {
   return frames;
 }
 
-/** Sizes in units of 1% of the frame width: the screen's width, its frame padding, and the outer box. */
+/** Padding of the device body around its screen, in units of 1% of the frame width. */
+const PAD = {
+  phone: { x: 2.4, top: 2.4, bottom: 2.4, r: 5, rs: 3 },
+  laptop: { x: 1.6, top: 1.6, bottom: 3.4, r: 1.6, rs: 0.4 },
+  browser: { x: 0.3, top: 3.8, bottom: 0.3, r: 1.2, rs: 0 },
+  none: { x: 0, top: 0, bottom: 0, r: 0, rs: 0 },
+};
+const BODY = { phone: "#0c0d10", laptop: "#14161a", browser: "#1d2026", none: "none" };
+
+/** The largest screen of aspect `ar` that fits `availW` x `availH` with the device padding around it. */
 function fit(device, ar, availW, availH) {
-  const pad = {
-    phone: { x: 2.4, top: 2.4, bottom: 2.4 },
-    laptop: { x: 1.6, top: 1.6, bottom: 3.4 },
-    browser: { x: 0.3, top: 3.8, bottom: 0.3 },
-    none: { x: 0, top: 0, bottom: 0 },
-  }[device];
+  const pad = PAD[device];
   const sw = Math.min(availW - pad.x * 2, (availH - pad.top - pad.bottom) * ar);
   const sh = sw / ar;
   return { pad, sw: r2(sw), sh: r2(sh), w: r2(sw + pad.x * 2), h: r2(sh + pad.top + pad.bottom) };
 }
 
+/** Path of a rounded rectangle (units of 1% of the frame width). */
+const rr = (x, y, w, h, r) => {
+  const k = Math.min(r, w / 2, h / 2);
+  return `M${r2(x + k)} ${r2(y)}H${r2(x + w - k)}A${k} ${k} 0 0 1 ${r2(x + w)} ${r2(y + k)}V${r2(y + h - k)}A${k} ${k} 0 0 1 ${r2(x + w - k)} ${r2(y + h)}H${r2(x + k)}A${k} ${k} 0 0 1 ${r2(x)} ${r2(y + h - k)}V${r2(y + k)}A${k} ${k} 0 0 1 ${r2(x + k)} ${r2(y)}Z`;
+};
+
+/**
+ * HyperFrames wants a <video> to be its own timed clip, not inside the timed scene section, so the recording is
+ * returned as `root` (placed at the top level of the page) and the section holds a mask: a layer in the page
+ * colour with a hole where the screen is, the device body around it, and the cursor and ripples under the mask.
+ */
 export function screen(s, ctx) {
   const bad = screenProblems(s.props);
   if (bad.length) throw new Error(`Screen scene cannot be drawn: ${bad[0]}`);
@@ -113,16 +128,26 @@ export function screen(s, ctx) {
   const vp = p.viewport ?? { w: 1280, h: 720 };
   const device = p.device ?? "browser";
   const [W, H] = ctx.size ?? [1080, 1920];
+  const H100 = r2((H / W) * 100);
   const vertical = H > W;
   const heading = p.title ? 8 : 0;
-  const availW = vertical ? 92 : 86;
-  const availH = (H / W) * 100 - 2 * 4 - (vertical ? 18 : 8) - heading;
-  const f = fit(device, vp.w / vp.h, availW, availH);
+  const top0 = 4 + heading;
+  const region = H100 - (vertical ? 18 : 8) - 4 - top0;
+  const f = fit(device, vp.w / vp.h, vertical ? 92 : 86, region);
+  const left = r2((100 - f.w) / 2);
+  const top = r2(top0 + Math.max(0, (region - f.h) / 2));
+  const sx = r2(left + f.pad.x);
+  const sy = r2(top + f.pad.top);
+  const pad = PAD[device];
+  const hole = rr(sx, sy, f.sw, f.sh, pad.rs);
+  const rect = (x, y, w, h) =>
+    `left:calc(var(--u)*${x});top:calc(var(--u)*${y});width:calc(var(--u)*${w});height:calc(var(--u)*${h})`;
+  const screenBox = rect(sx, sy, f.sw, f.sh);
+
   const id = `${ctx.prefix}-cam`;
+  const vid = `${ctx.prefix}-vid`;
+  const isVideo = VIDEO_EXT.test(asset.file);
   const src = `assets/media/${esc(asset.file)}`;
-  const media = VIDEO_EXT.test(asset.file)
-    ? `<video class="scr-media" src="${src}" muted playsinline></video>`
-    : `<img class="scr-media" src="${src}" alt="">`;
   const cursorId = `${ctx.prefix}-cur`;
   const cursor = p.cursor?.length
     ? `<svg id="${cursorId}" class="scr-cursor" viewBox="0 0 12 18" aria-hidden="true"><path d="M1 1 L1 14 L4.4 11 L6.8 16.6 L9 15.6 L6.6 10.2 L11 10 Z"/></svg>`
@@ -133,45 +158,49 @@ export function screen(s, ctx) {
         `<span id="${ctx.prefix}-rp${i}" class="scr-ripple" style="left:${r4(r.x * 100)}%;top:${r4(r.y * 100)}%"></span>`,
     )
     .join("");
-  let pip = "";
-  if (p.pip) {
-    const a = ctx.assets.get(p.pip);
-    pip = `<video class="scr-pip" src="assets/media/${esc(a.file)}" muted playsinline></video>`;
+  const still = isVideo ? "" : `<img class="scr-media" src="${src}" alt="">`;
+
+  let svg = `<path class="scr-bgfill" fill-rule="evenodd" d="M0 0H100V${H100}H0Z${hole}"/>`;
+  if (device !== "none") {
+    svg += `<path fill="${BODY[device]}" fill-rule="evenodd" d="${rr(left, top, f.w, f.h, pad.r)}${hole}"/>`;
+    if (device === "phone")
+      svg += `<path fill="none" stroke="#2b2e35" stroke-width="0.25" d="${rr(left, top, f.w, f.h, pad.r)}"/>`;
+    if (device === "laptop")
+      svg += `<path fill="#2b2e35" d="${rr(left - 2, top + f.h, f.w + 4, 1.2, 0.6)}"/>`;
+    if (device === "browser") {
+      for (let k = 0; k < 3; k++)
+        svg += `<circle cx="${r2(left + 1.7 + k * 1.8)}" cy="${r2(top + 1.9)}" r="0.5" fill="#5a5f69"/>`;
+      svg += `<path fill="#2b2e35" d="${rr(left + 7.4, top + 1, f.w - 9, 1.8, 0.9)}"/>`;
+    }
   }
   const title = p.title ? `<p class="scr-title">${esc(p.title)}</p>` : "";
-  const chrome =
-    device === "browser"
-      ? `<div class="scr-bar"><i></i><i></i><i></i><b></b></div>`
-      : device === "laptop"
-        ? `<div class="scr-base"></div>`
-        : "";
   const html =
-    title +
-    `<div class="scr-dev scr-${device}" style="width:calc(var(--u)*${f.w});height:calc(var(--u)*${f.h});padding:calc(var(--u)*${f.pad.top}) calc(var(--u)*${f.pad.x}) calc(var(--u)*${f.pad.bottom})">` +
-    chrome +
-    `<div class="scr-view"><div id="${id}" class="scr-pan">${media}${ripples}${cursor}</div></div></div>` +
-    pip;
+    `<div class="scr-view" style="${screenBox}"><div id="${id}" class="scr-pan">${still}${ripples}${cursor}</div></div>` +
+    `<svg class="scr-over" viewBox="0 0 100 ${H100}" preserveAspectRatio="none" aria-hidden="true">${svg}</svg>` +
+    title;
+
+  let root = "";
+  if (isVideo)
+    root += `<video id="${vid}" class="clip scr-vid" data-start="${ctx.at}" data-duration="${ctx.seconds}" data-track-index="2" src="${src}" muted playsinline style="${screenBox}"></video>`;
+  if (p.pip) {
+    const a = ctx.assets.get(p.pip);
+    root += `<video id="${ctx.prefix}-pip" class="clip scr-pip" data-start="${ctx.at}" data-duration="${ctx.seconds}" data-track-index="3" src="assets/media/${esc(a.file)}" muted playsinline></video>`;
+  }
 
   const plan = [];
-  if (p.zoom?.length)
-    plan.push({
-      id,
-      frames: cameraFrames(p.zoom, ctx.seconds),
-      at: ctx.at,
-      dur: ctx.seconds,
-      ease: "linear",
-    });
+  if (p.zoom?.length) {
+    const frames = cameraFrames(p.zoom, ctx.seconds);
+    for (const target of isVideo ? [id, vid] : [id])
+      plan.push({ id: target, frames, at: ctx.at, dur: ctx.seconds, ease: "linear" });
+  }
   if (p.cursor?.length) {
     const pts = p.cursor.filter((c) => c.t <= ctx.seconds);
     if (pts.length) {
+      const pos = (c) => ({ left: `${r4(c.x * 100)}%`, top: `${r4(c.y * 100)}%` });
       const frames = [
-        { offset: 0, left: `${r4(pts[0].x * 100)}%`, top: `${r4(pts[0].y * 100)}%` },
-        ...pts.map((c) => ({
-          offset: r4(Math.min(1, c.t / ctx.seconds)),
-          left: `${r4(c.x * 100)}%`,
-          top: `${r4(c.y * 100)}%`,
-        })),
-        { offset: 1, left: `${r4(pts.at(-1).x * 100)}%`, top: `${r4(pts.at(-1).y * 100)}%` },
+        { offset: 0, ...pos(pts[0]) },
+        ...pts.map((c) => ({ offset: r4(Math.min(1, c.t / ctx.seconds)), ...pos(c) })),
+        { offset: 1, ...pos(pts.at(-1)) },
       ];
       plan.push({ id: cursorId, frames, at: ctx.at, dur: ctx.seconds, ease: "linear" });
     }
@@ -189,26 +218,19 @@ export function screen(s, ctx) {
       ease: "out",
     });
   });
-  return { html, plan };
+  return { html, plan, root };
 }
 
 export const screenCss = (brand) => `
-.scene-screen{align-items:center;gap:calc(var(--u)*2)}
-.scr-title{margin:0;font-size:calc(var(--u)*4.6);font-weight:700;line-height:1.15;text-align:center}
-.scr-dev{position:relative;box-sizing:border-box;flex:none;background:#14161a;border-radius:calc(var(--u)*1.4);box-shadow:0 calc(var(--u)*1.6) calc(var(--u)*5) rgba(0,0,0,.35)}
-.scr-phone{border-radius:calc(var(--u)*5);background:#0c0d10;border:calc(var(--u)*.25) solid #2b2e35}
-.scr-phone .scr-view{border-radius:calc(var(--u)*3)}
-.scr-laptop{border-radius:calc(var(--u)*1.6) calc(var(--u)*1.6) 0 0}
-.scr-base{position:absolute;left:-4%;right:-4%;bottom:calc(var(--u)*-1.2);height:calc(var(--u)*1.2);background:#2b2e35;border-radius:0 0 calc(var(--u)*1.4) calc(var(--u)*1.4)}
-.scr-browser{background:#1d2026}
-.scr-bar{position:absolute;inset:0 0 auto 0;height:calc(var(--u)*3.8);display:flex;align-items:center;gap:calc(var(--u)*.7);padding:0 calc(var(--u)*1.4)}
-.scr-bar i{width:calc(var(--u)*1);height:calc(var(--u)*1);border-radius:50%;background:#5a5f69}
-.scr-bar b{flex:1;height:calc(var(--u)*1.7);margin-inline-start:calc(var(--u)*1.4);border-radius:calc(var(--u)*.9);background:#2b2e35}
-.scr-none{background:none;box-shadow:none}
-.scr-view{position:relative;width:100%;height:100%;overflow:hidden;background:#000;direction:ltr}
-.scr-pan{position:absolute;inset:0;transform-origin:0 0;will-change:transform}
+.scene-screen{padding:0;z-index:2}
+.scr-over{position:absolute;inset:0;width:100%;height:100%}
+.scr-bgfill{fill:${brand.colors.bg}}
+.scr-title{position:absolute;inset-inline:0;top:calc(var(--u)*4);margin:0;font-size:calc(var(--u)*4.6);font-weight:700;line-height:1.15;text-align:center}
+.scr-view{position:absolute;overflow:hidden;direction:ltr}
+.scr-pan{position:absolute;inset:0;transform-origin:0 0}
+.scr-vid{position:absolute;z-index:1;transform-origin:0 0;object-fit:fill}
 .scr-media{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
 .scr-cursor{position:absolute;left:0;top:0;width:calc(var(--u)*1.9);height:calc(var(--u)*2.8);fill:#fff;stroke:#000;stroke-width:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
 .scr-ripple{position:absolute;width:calc(var(--u)*5);height:calc(var(--u)*5);border-radius:50%;border:calc(var(--u)*.4) solid ${brand.colors.accent};background:rgba(255,255,255,.18);opacity:0}
-.scr-pip{position:absolute;inset-inline-end:calc(var(--u)*4);bottom:calc(var(--u)*20);width:calc(var(--u)*20);height:calc(var(--u)*20);border-radius:50%;object-fit:cover;border:calc(var(--u)*.5) solid ${brand.colors.accent}}
+.scr-pip{position:absolute;z-index:3;inset-inline-end:calc(var(--u)*4);bottom:calc(var(--u)*20);width:calc(var(--u)*20);height:calc(var(--u)*20);border-radius:50%;object-fit:cover;border:calc(var(--u)*.5) solid ${brand.colors.accent}}
 `;

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { loadScript } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-type Scenes = { renderScene: (scene: Loose, ctx: Loose) => { html: string; plan: Loose[] } };
+type Scenes = {
+  renderScene: (scene: Loose, ctx: Loose) => { html: string; plan: Loose[]; root?: string };
+};
 type Screen = {
   screenProblems: (p: Loose) => string[];
   cameraTransform: (x: number, y: number, s: number) => string;
@@ -92,16 +94,21 @@ describe("camera", () => {
 });
 
 describe("screen renderer", () => {
-  it("draws the frame, the media, a cursor and one ripple", async () => {
+  it("draws the mask, a cursor and one ripple, with the recording as its own top-level clip", async () => {
     const { renderScene } = await scenes();
     const r = renderScene({ id: "a", kind: "screen", props: props() }, ctx());
-    expect(r.html).toContain("scr-browser");
-    expect(r.html).toContain('src="assets/media/rec.mp4"');
+    expect(r.html).toContain("scr-over");
     expect(r.html).toContain("scr-cursor");
     expect(r.html).toContain("sc-a-rp0");
+    expect(r.html).not.toContain("<video");
+    expect(r.root).toMatch(
+      /<video id="sc-a-vid" class="clip scr-vid" data-start="1" data-duration="10"/,
+    );
+    expect(r.root).toContain('src="assets/media/rec.mp4"');
     const ids = r.plan.map((p) => p.id);
-    expect(ids).toEqual(["sc-a-cam", "sc-a-cur", "sc-a-rp0"]);
-    expect(r.plan[2].at).toBe(3);
+    expect(ids).toEqual(["sc-a-cam", "sc-a-vid", "sc-a-cur", "sc-a-rp0"]);
+    expect(r.plan[3].at).toBe(3);
+    expect(r.plan[0].frames).toEqual(r.plan[1].frames);
   });
   it("is the same output twice", async () => {
     const { renderScene } = await scenes();
@@ -126,10 +133,16 @@ describe("screen renderer", () => {
         [1920, 1080],
       ]) {
         const r = renderScene({ id: "a", kind: "screen", props: props({ device }) }, ctx({ size }));
-        const w = Number(/width:calc\(var\(--u\)\*([\d.]+)\)/.exec(r.html)![1]);
-        const h = Number(/height:calc\(var\(--u\)\*([\d.]+)\)/.exec(r.html)![1]);
-        expect(w).toBeLessThanOrEqual(92);
-        expect(h).toBeLessThanOrEqual((size[1] / size[0]) * 100);
+        const m =
+          /left:calc\(var\(--u\)\*([\d.]+)\);top:calc\(var\(--u\)\*([\d.]+)\);width:calc\(var\(--u\)\*([\d.]+)\);height:calc\(var\(--u\)\*([\d.]+)\)/.exec(
+            r.root!,
+          )!;
+        const [x, y, w, h] = m.slice(1).map(Number);
+        expect(x).toBeGreaterThanOrEqual(0);
+        expect(y).toBeGreaterThanOrEqual(0);
+        expect(x + w).toBeLessThanOrEqual(100);
+        expect(y + h).toBeLessThanOrEqual((size[1] / size[0]) * 100);
+        expect(w / h).toBeCloseTo(1280 / 720, 1);
       }
     }
   });
