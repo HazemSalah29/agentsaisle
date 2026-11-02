@@ -74,7 +74,7 @@ export function renderCaptions({ captions, brand, size }) {
       : "";
   const css = `.cap-group{position:absolute;inset-inline:${side}px;bottom:${bottom + lift}px;text-align:center;z-index:20;overflow-wrap:anywhere;font-size:${px}px;font-weight:${Number(s.weight) || 700};line-height:1.25;color:${color(fg, "#fff")};${shadow}}
 .cap-line{display:inline-block;max-width:100%;${panel}${s.uppercase ? "text-transform:uppercase;" : ""}}
-.cap-w{display:inline-block;white-space:pre}
+.cap-w{display:inline-block;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere}
 .cap-sec{position:absolute;inset-inline:${side}px;bottom:${bottom}px;text-align:center;z-index:20;font-size:${secPx}px;font-weight:${Math.min(Number(s.weight) || 700, 700)};line-height:1.3;color:${color(fg, "#fff")};opacity:.92;${shadow.replace(/\$\{px\}/g, String(secPx))}}
 .cap-sec span{display:inline-block;max-width:100%;${panel}}
 `;
