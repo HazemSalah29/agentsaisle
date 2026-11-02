@@ -1,0 +1,419 @@
+{
+  "version": 1,
+  "lang": "en",
+  "dir": "ltr",
+  "format": "reel-9x16",
+  "fps": 30,
+  "approximate": true,
+  "maxWordsPerLine": 3,
+  "safeZone": {
+    "name": "reel",
+    "bottom": 0.22,
+    "side": 0.08
+  },
+  "style": {
+    "name": "kids",
+    "description": "Big, bold words on a dark panel, three words to a line, the spoken word highlighted. For young readers.",
+    "weight": 800,
+    "size": 0.065,
+    "highlight": "word",
+    "wordIn": "none",
+    "lineIn": "fade",
+    "background": "panel",
+    "stroke": 0,
+    "uppercase": false,
+    "maxWords": 3
+  },
+  "groups": [
+    {
+      "id": "c1",
+      "start": 0.35,
+      "end": 2.156,
+      "words": [
+        {
+          "text": "Hello,",
+          "start": 0.35,
+          "end": 1.061
+        },
+        {
+          "text": "friends!",
+          "start": 1.061,
+          "end": 2.156
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "start": 2.156,
+      "end": 3.45,
+      "words": [
+        {
+          "text": "I",
+          "start": 2.156,
+          "end": 2.265
+        },
+        {
+          "text": "am",
+          "start": 2.265,
+          "end": 2.484
+        },
+        {
+          "text": "Nour.",
+          "start": 2.484,
+          "end": 3.25
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "start": 3.6,
+      "end": 4.253,
+      "words": [
+        {
+          "text": "I",
+          "start": 3.6,
+          "end": 3.731
+        },
+        {
+          "text": "have",
+          "start": 3.731,
+          "end": 4.253
+        }
+      ]
+    },
+    {
+      "id": "c4",
+      "start": 4.253,
+      "end": 5.233,
+      "words": [
+        {
+          "text": "one",
+          "start": 4.253,
+          "end": 4.645
+        },
+        {
+          "text": "big,",
+          "start": 4.645,
+          "end": 5.233
+        }
+      ]
+    },
+    {
+      "id": "c5",
+      "start": 5.233,
+      "end": 7,
+      "words": [
+        {
+          "text": "yummy",
+          "start": 5.233,
+          "end": 5.886
+        },
+        {
+          "text": "leaf.",
+          "start": 5.886,
+          "end": 6.8
+        }
+      ]
+    },
+    {
+      "id": "c6",
+      "start": 7.45,
+      "end": 8.21,
+      "words": [
+        {
+          "text": "I",
+          "start": 7.45,
+          "end": 7.577
+        },
+        {
+          "text": "eat",
+          "start": 7.577,
+          "end": 7.957
+        },
+        {
+          "text": "it",
+          "start": 7.957,
+          "end": 8.21
+        }
+      ]
+    },
+    {
+      "id": "c7",
+      "start": 8.21,
+      "end": 9.603,
+      "words": [
+        {
+          "text": "all",
+          "start": 8.21,
+          "end": 8.59
+        },
+        {
+          "text": "alone.",
+          "start": 8.59,
+          "end": 9.603
+        }
+      ]
+    },
+    {
+      "id": "c8",
+      "start": 9.603,
+      "end": 11.45,
+      "words": [
+        {
+          "text": "Not",
+          "start": 9.603,
+          "end": 9.983
+        },
+        {
+          "text": "much",
+          "start": 9.983,
+          "end": 10.49
+        },
+        {
+          "text": "fun.",
+          "start": 10.49,
+          "end": 11.25
+        }
+      ]
+    },
+    {
+      "id": "c9",
+      "start": 11.61,
+      "end": 12.358,
+      "words": [
+        {
+          "text": "I",
+          "start": 11.61,
+          "end": 11.735
+        },
+        {
+          "text": "eat",
+          "start": 11.735,
+          "end": 12.109
+        },
+        {
+          "text": "it",
+          "start": 12.109,
+          "end": 12.358
+        }
+      ]
+    },
+    {
+      "id": "c10",
+      "start": 12.358,
+      "end": 13.73,
+      "words": [
+        {
+          "text": "all",
+          "start": 12.358,
+          "end": 12.732
+        },
+        {
+          "text": "again.",
+          "start": 12.732,
+          "end": 13.73
+        }
+      ]
+    },
+    {
+      "id": "c11",
+      "start": 13.73,
+      "end": 15.675,
+      "words": [
+        {
+          "text": "Still",
+          "start": 13.73,
+          "end": 14.353
+        },
+        {
+          "text": "not",
+          "start": 14.353,
+          "end": 14.727
+        },
+        {
+          "text": "fun.",
+          "start": 14.727,
+          "end": 15.475
+        }
+      ]
+    },
+    {
+      "id": "c12",
+      "start": 16.13,
+      "end": 17.861,
+      "words": [
+        {
+          "text": "Look!",
+          "start": 16.13,
+          "end": 16.887
+        },
+        {
+          "text": "Here",
+          "start": 16.887,
+          "end": 17.32
+        },
+        {
+          "text": "comes",
+          "start": 17.32,
+          "end": 17.861
+        }
+      ]
+    },
+    {
+      "id": "c13",
+      "start": 17.861,
+      "end": 19.575,
+      "words": [
+        {
+          "text": "my",
+          "start": 17.861,
+          "end": 18.077
+        },
+        {
+          "text": "friend",
+          "start": 18.077,
+          "end": 18.726
+        },
+        {
+          "text": "Pip.",
+          "start": 18.726,
+          "end": 19.375
+        }
+      ]
+    },
+    {
+      "id": "c14",
+      "start": 19.735,
+      "end": 21.193,
+      "words": [
+        {
+          "text": "Let",
+          "start": 19.735,
+          "end": 20.072
+        },
+        {
+          "text": "us",
+          "start": 20.072,
+          "end": 20.296
+        },
+        {
+          "text": "share!",
+          "start": 20.296,
+          "end": 21.193
+        }
+      ]
+    },
+    {
+      "id": "c15",
+      "start": 21.193,
+      "end": 21.754,
+      "words": [
+        {
+          "text": "Now",
+          "start": 21.193,
+          "end": 21.53
+        },
+        {
+          "text": "we",
+          "start": 21.53,
+          "end": 21.754
+        }
+      ]
+    },
+    {
+      "id": "c16",
+      "start": 21.754,
+      "end": 23.3,
+      "words": [
+        {
+          "text": "both",
+          "start": 21.754,
+          "end": 22.203
+        },
+        {
+          "text": "smile.",
+          "start": 22.203,
+          "end": 23.1
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "start": 23.46,
+      "end": 24.744,
+      "words": [
+        {
+          "text": "Sharing",
+          "start": 23.46,
+          "end": 24.209
+        },
+        {
+          "text": "makes",
+          "start": 24.209,
+          "end": 24.744
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "start": 24.744,
+      "end": 26.55,
+      "words": [
+        {
+          "text": "friends",
+          "start": 24.744,
+          "end": 25.494
+        },
+        {
+          "text": "happy.",
+          "start": 25.494,
+          "end": 26.35
+        }
+      ]
+    },
+    {
+      "id": "c19",
+      "start": 26.7,
+      "end": 28.625,
+      "words": [
+        {
+          "text": "Slow",
+          "start": 26.7,
+          "end": 27.231
+        },
+        {
+          "text": "and",
+          "start": 27.231,
+          "end": 27.629
+        },
+        {
+          "text": "steady,",
+          "start": 27.629,
+          "end": 28.625
+        }
+      ]
+    },
+    {
+      "id": "c20",
+      "start": 28.625,
+      "end": 30.55,
+      "words": [
+        {
+          "text": "side",
+          "start": 28.625,
+          "end": 29.155
+        },
+        {
+          "text": "by",
+          "start": 29.155,
+          "end": 29.421
+        },
+        {
+          "text": "side!",
+          "start": 29.421,
+          "end": 30.35
+        }
+      ]
+    }
+  ]
+}

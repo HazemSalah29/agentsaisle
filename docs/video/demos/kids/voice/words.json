@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "approximate": true,
+  "lines": [
+    {
+      "id": "k1",
+      "seconds": 3.25,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "Hello,",
+          "start": 0.35,
+          "end": 1.061
+        },
+        {
+          "text": "friends!",
+          "start": 1.061,
+          "end": 2.156
+        },
+        {
+          "text": "I",
+          "start": 2.156,
+          "end": 2.265
+        },
+        {
+          "text": "am",
+          "start": 2.265,
+          "end": 2.484
+        },
+        {
+          "text": "Nour.",
+          "start": 2.484,
+          "end": 3.25
+        }
+      ]
+    },
+    {
+      "id": "k2",
+      "seconds": 3.55,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "I",
+          "start": 0.35,
+          "end": 0.481
+        },
+        {
+          "text": "have",
+          "start": 0.481,
+          "end": 1.003
+        },
+        {
+          "text": "one",
+          "start": 1.003,
+          "end": 1.395
+        },
+        {
+          "text": "big,",
+          "start": 1.395,
+          "end": 1.983
+        },
+        {
+          "text": "yummy",
+          "start": 1.983,
+          "end": 2.636
+        },
+        {
+          "text": "leaf.",
+          "start": 2.636,
+          "end": 3.55
+        }
+      ]
+    },
+    {
+      "id": "k3",
+      "seconds": 4.15,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "I",
+          "start": 0.35,
+          "end": 0.477
+        },
+        {
+          "text": "eat",
+          "start": 0.477,
+          "end": 0.857
+        },
+        {
+          "text": "it",
+          "start": 0.857,
+          "end": 1.11
+        },
+        {
+          "text": "all",
+          "start": 1.11,
+          "end": 1.49
+        },
+        {
+          "text": "alone.",
+          "start": 1.49,
+          "end": 2.503
+        },
+        {
+          "text": "Not",
+          "start": 2.503,
+          "end": 2.883
+        },
+        {
+          "text": "much",
+          "start": 2.883,
+          "end": 3.39
+        },
+        {
+          "text": "fun.",
+          "start": 3.39,
+          "end": 4.15
+        }
+      ]
+    },
+    {
+      "id": "k4",
+      "seconds": 4.225,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "I",
+          "start": 0.36,
+          "end": 0.485
+        },
+        {
+          "text": "eat",
+          "start": 0.485,
+          "end": 0.859
+        },
+        {
+          "text": "it",
+          "start": 0.859,
+          "end": 1.108
+        },
+        {
+          "text": "all",
+          "start": 1.108,
+          "end": 1.482
+        },
+        {
+          "text": "again.",
+          "start": 1.482,
+          "end": 2.48
+        },
+        {
+          "text": "Still",
+          "start": 2.48,
+          "end": 3.103
+        },
+        {
+          "text": "not",
+          "start": 3.103,
+          "end": 3.477
+        },
+        {
+          "text": "fun.",
+          "start": 3.477,
+          "end": 4.225
+        }
+      ]
+    },
+    {
+      "id": "k5",
+      "seconds": 3.575,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "Look!",
+          "start": 0.33,
+          "end": 1.087
+        },
+        {
+          "text": "Here",
+          "start": 1.087,
+          "end": 1.52
+        },
+        {
+          "text": "comes",
+          "start": 1.52,
+          "end": 2.061
+        },
+        {
+          "text": "my",
+          "start": 2.061,
+          "end": 2.277
+        },
+        {
+          "text": "friend",
+          "start": 2.277,
+          "end": 2.926
+        },
+        {
+          "text": "Pip.",
+          "start": 2.926,
+          "end": 3.575
+        }
+      ]
+    },
+    {
+      "id": "k6",
+      "seconds": 3.725,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "Let",
+          "start": 0.36,
+          "end": 0.697
+        },
+        {
+          "text": "us",
+          "start": 0.697,
+          "end": 0.921
+        },
+        {
+          "text": "share!",
+          "start": 0.921,
+          "end": 1.818
+        },
+        {
+          "text": "Now",
+          "start": 1.818,
+          "end": 2.155
+        },
+        {
+          "text": "we",
+          "start": 2.155,
+          "end": 2.379
+        },
+        {
+          "text": "both",
+          "start": 2.379,
+          "end": 2.828
+        },
+        {
+          "text": "smile.",
+          "start": 2.828,
+          "end": 3.725
+        }
+      ]
+    },
+    {
+      "id": "k7",
+      "seconds": 3.25,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "Sharing",
+          "start": 0.36,
+          "end": 1.109
+        },
+        {
+          "text": "makes",
+          "start": 1.109,
+          "end": 1.644
+        },
+        {
+          "text": "friends",
+          "start": 1.644,
+          "end": 2.394
+        },
+        {
+          "text": "happy.",
+          "start": 2.394,
+          "end": 3.25
+        }
+      ]
+    },
+    {
+      "id": "k8",
+      "seconds": 4,
+      "source": "estimate",
+      "approximate": true,
+      "words": [
+        {
+          "text": "Slow",
+          "start": 0.35,
+          "end": 0.881
+        },
+        {
+          "text": "and",
+          "start": 0.881,
+          "end": 1.279
+        },
+        {
+          "text": "steady,",
+          "start": 1.279,
+          "end": 2.275
+        },
+        {
+          "text": "side",
+          "start": 2.275,
+          "end": 2.805
+        },
+        {
+          "text": "by",
+          "start": 2.805,
+          "end": 3.071
+        },
+        {
+          "text": "side!",
+          "start": 3.071,
+          "end": 4
+        }
+      ]
+    }
+  ]
+}
