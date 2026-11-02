@@ -19,7 +19,6 @@ const r2 = (n) => Math.round(n * 100) / 100;
 const r4 = (n) => Math.round(n * 10000) / 10000;
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 const smooth = (u) => clamp01(u) ** 2 * (3 - 2 * clamp01(u));
-const rad = (deg) => (deg * Math.PI) / 180;
 
 /** Walk length in seconds when the scene gives none: about 3.5 s across the whole stage. */
 const walkDur = (dx) => Math.max(0.8, Math.abs(dx) * 3.5);
