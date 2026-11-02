@@ -163,4 +163,22 @@ describe("session.mjs", () => {
     expect(labels).not.toContain("sed");
     expect(labels).not.toContain("secret-project");
   });
+
+  it("keeps long file names out of the captions", async () => {
+    const { pickMoments } = await loadScript<{ pickMoments: (e: Loose[]) => Loose[] }>(
+      "video-session",
+      "scripts/session.mjs",
+    );
+    const ev = [
+      { t: 0, kind: "prompt", text: "Build it" },
+      { t: 1000, kind: "create", file: "glimmering-zooming-acorn.md" },
+      { t: 2000, kind: "create", file: "a.ts" },
+      { t: 3000, kind: "say", text: "Done." },
+    ];
+    const labels = pickMoments(ev).map((m) => m.label);
+    expect(labels).toContain("Wrote 2 files");
+    expect(pickMoments(ev.slice(0, 2).concat(ev.slice(3))).map((m) => m.label)).toContain(
+      "Wrote a file",
+    );
+  });
 });

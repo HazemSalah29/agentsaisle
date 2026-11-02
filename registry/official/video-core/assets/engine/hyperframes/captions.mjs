@@ -72,7 +72,7 @@ export function renderCaptions({ captions, brand, size }) {
     s.background === "panel"
       ? `background:color-mix(in srgb, ${color(bg, "#000")} 78%, transparent);padding:${(px * 0.3).toFixed(0)}px ${(px * 0.6).toFixed(0)}px;border-radius:${(px * 0.35).toFixed(0)}px;`
       : "";
-  const css = `.cap-group{position:absolute;inset-inline:${side}px;bottom:${bottom + lift}px;text-align:center;z-index:20;font-size:${px}px;font-weight:${Number(s.weight) || 700};line-height:1.25;color:${color(fg, "#fff")};${shadow}}
+  const css = `.cap-group{position:absolute;inset-inline:${side}px;bottom:${bottom + lift}px;text-align:center;z-index:20;overflow-wrap:anywhere;font-size:${px}px;font-weight:${Number(s.weight) || 700};line-height:1.25;color:${color(fg, "#fff")};${shadow}}
 .cap-line{display:inline-block;max-width:100%;${panel}${s.uppercase ? "text-transform:uppercase;" : ""}}
 .cap-w{display:inline-block;white-space:pre}
 .cap-sec{position:absolute;inset-inline:${side}px;bottom:${bottom}px;text-align:center;z-index:20;font-size:${secPx}px;font-weight:${Math.min(Number(s.weight) || 700, 700)};line-height:1.3;color:${color(fg, "#fff")};opacity:.92;${shadow.replace(/\$\{px\}/g, String(secPx))}}

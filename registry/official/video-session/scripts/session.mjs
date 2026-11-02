@@ -256,7 +256,10 @@ export function pickMoments(events) {
       i: group.i,
       p: 3,
       type: "action",
-      label: n === 1 ? `${group.verb} ${[...group.files][0]}` : `${group.verb} ${n} files`,
+      label:
+        n === 1
+          ? `${group.verb} ${[...group.files][0].length <= 18 ? [...group.files][0] : "a file"}`
+          : `${group.verb} ${n} files`,
       where: "files",
     });
     group = null;

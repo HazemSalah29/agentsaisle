@@ -57,7 +57,7 @@ export function timeline(s, ctx) {
   const perLine = ctx.lines.length === n;
   const step = Math.max(0.25, (ctx.seconds - 1.4) / n);
   const when = (i) => ctx.at + (perLine ? ctx.lines[i].start : 0.6 + i * step);
-  html += `<ol class="tl">`;
+  html += `<ol class="${n > 6 ? "tl tl-dense" : "tl"}">`;
   ev.forEach((e, i) => {
     const type = e.type ?? "info";
     html += `<li id="${ctx.prefix}-w${i}"><div id="${ctx.prefix}-e${i}" class="tl-row tl-${type}"><span class="tl-t">${esc(e.at)}</span><span class="tl-dot"></span><span class="tl-b"><span class="tl-k">${TYPES[type]}</span> ${esc(e.label)}${e.where ? `<small>${esc(e.where)}</small>` : ""}</span></div></li>`;
@@ -84,6 +84,8 @@ export function timeline(s, ctx) {
 export const timelineCss = (brand) => `
 .tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:calc(var(--u)*2.6);width:100%}
 .tl-row{display:grid;grid-template-columns:calc(var(--u)*17) calc(var(--u)*3) 1fr;align-items:start;column-gap:calc(var(--u)*2.4);font-size:calc(var(--u)*3.8);line-height:1.25}
+.tl-dense{gap:calc(var(--u)*1.5)}
+.tl-dense .tl-row{font-size:calc(var(--u)*3.2)}
 .tl-t{font-weight:700;color:${brand.colors.muted};text-align:end;font-variant-numeric:tabular-nums}
 .tl-dot{width:calc(var(--u)*2.4);height:calc(var(--u)*2.4);margin-top:calc(var(--u)*.7);border-radius:50%;border:calc(var(--u)*.45) solid ${brand.colors.fg}}
 .tl-failure .tl-dot,.tl-fix .tl-dot{background:${brand.colors.accent};border-color:${brand.colors.accent}}

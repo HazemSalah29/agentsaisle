@@ -406,6 +406,7 @@ describe("video-core caption layer", () => {
   it("makes one timed clip per caption with whole words as text and the safe zone in the css", async () => {
     const { renderCaptions } = await capEngine();
     const r = renderCaptions({ captions: captions(), brand, size: [1080, 1920] });
+    expect(r.css).toContain("overflow-wrap:anywhere"); // a long unbroken word must not run off the frame
     expect(r.html.match(/class="clip cap-group"/g)).toHaveLength(2);
     expect(r.html).toContain(
       'id="cap-c1" class="clip cap-group" data-start="0.5" data-duration="1.1"',

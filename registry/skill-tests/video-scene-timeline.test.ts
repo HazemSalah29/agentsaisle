@@ -66,4 +66,16 @@ describe("timeline scene", () => {
       }),
     ).toHaveLength(2);
   });
+
+  it("uses a denser layout above 6 events so a tall list stays inside the safe area", async () => {
+    const { renderScene } = await scenes();
+    const many = props();
+    many.events = Array.from({ length: 8 }, (_, i) => ({ at: `1${i}:00`, label: `Event ${i}` }));
+    expect(renderScene({ id: "s1", kind: "timeline", props: many }, ctx()).html).toContain(
+      'class="tl tl-dense"',
+    );
+    expect(renderScene({ id: "s1", kind: "timeline", props: props() }, ctx()).html).toContain(
+      'class="tl"',
+    );
+  });
 });
