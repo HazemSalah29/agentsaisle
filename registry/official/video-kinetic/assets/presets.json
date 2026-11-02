@@ -1,0 +1,53 @@
+{
+  "volt": {
+    "description": "Near-black with an electric lime accent: the classic hype look.",
+    "accent": "#c6ff1a",
+    "bg": "#050607",
+    "exits": ["shatter", "slide", "blur", "drop"],
+    "transitions": ["slash", "whip", "shatter", "zoom-through"],
+    "grid": true,
+    "vignette": true,
+    "grain": false,
+    "caption": true,
+    "slabEvery": 3,
+    "sfx": {
+      "cut": ["whoosh", -8],
+      "hit": ["impact", -5],
+      "pop": ["tick", -15]
+    }
+  },
+  "ember": {
+    "description": "Charcoal with a hot orange accent: warm and bold.",
+    "accent": "#ee4f12",
+    "bg": "#0b0b0c",
+    "exits": ["slide", "shatter", "drop", "blur"],
+    "transitions": ["slash", "shatter", "whip", "zoom-through"],
+    "grid": true,
+    "vignette": true,
+    "grain": false,
+    "caption": true,
+    "slabEvery": 3,
+    "sfx": {
+      "cut": ["whoosh", -8],
+      "hit": ["impact", -5],
+      "pop": ["tick", -15]
+    }
+  },
+  "ice": {
+    "description": "Deep navy with a cyan accent: cool and technical.",
+    "accent": "#33d6ff",
+    "bg": "#07101d",
+    "exits": ["blur", "slide", "shatter", "drop"],
+    "transitions": ["whip", "slash", "zoom-through", "shatter"],
+    "grid": true,
+    "vignette": true,
+    "grain": false,
+    "caption": true,
+    "slabEvery": 4,
+    "sfx": {
+      "cut": ["whoosh", -9],
+      "hit": ["impact", -6],
+      "pop": ["tick", -16]
+    }
+  }
+}
