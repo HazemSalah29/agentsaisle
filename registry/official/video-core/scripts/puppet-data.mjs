@@ -4,6 +4,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { rigProblems } from "../assets/puppet/rig.mjs";
+import { rig3dProblems } from "../assets/puppet/rig3d.mjs";
 
 const readJson = (f) => {
   try {
@@ -13,29 +14,36 @@ const readJson = (f) => {
   }
 };
 
-/** Rigs of every character used in puppet scenes: { rigs: Map(name -> rig), problems }. */
+/**
+ * Rigs of every character used in puppet scenes: { rigs: Map(name -> flat rig), rigs3d: Map(name -> 3D rig), problems }.
+ * A scene with look "3d" needs characters/<name>/puppet3d.json; any other needs puppet.json.
+ */
 export function loadRigs(video, dir) {
   const rigs = new Map();
+  const rigs3d = new Map();
   const problems = [];
   video.scenes.forEach((s, i) => {
     if (s?.kind !== "puppet") return;
     for (const [k, c] of (s.props?.cast ?? []).entries()) {
       const name = c?.rig;
-      if (typeof name !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(name) || rigs.has(name))
+      const three = s.props?.look === "3d";
+      const map = three ? rigs3d : rigs;
+      if (typeof name !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(name) || map.has(name))
         continue;
       const at = `$.scenes[${i}].props.cast[${k}].rig`;
-      const file = path.join(dir, "characters", name, "puppet.json");
+      const fname = three ? "puppet3d.json" : "puppet.json";
+      const file = path.join(dir, "characters", name, fname);
       if (!existsSync(file)) {
-        problems.push(`${at}: characters/${name}/puppet.json is missing (video-kids makes it)`);
+        problems.push(`${at}: characters/${name}/${fname} is missing (video-kids makes it)`);
         continue;
       }
       const rig = readJson(file);
-      const bad = rigProblems(rig);
-      if (bad.length) problems.push(`${at}: characters/${name}/puppet.json: ${bad[0]}`);
-      else rigs.set(name, rig);
+      const bad = three ? rig3dProblems(rig) : rigProblems(rig);
+      if (bad.length) problems.push(`${at}: characters/${name}/${fname}: ${bad[0]}`);
+      else map.set(name, rig);
     }
   });
-  return { rigs, problems };
+  return { rigs, rigs3d, problems };
 }
 
 /** voice/visemes.json -> Map(line id -> [{ t, v }]). A missing or unreadable file gives an empty map. */

@@ -74,6 +74,7 @@ export function buildProject({
   assetPaths = new Map(),
   captions = null,
   rigs = new Map(),
+  rigs3d = new Map(),
   visemes = new Map(),
 }) {
   const [w, h] = SIZES[video.meta.format];
@@ -115,6 +116,7 @@ export function buildProject({
   }
 
   const plan = [];
+  const gls = [];
   let body = "";
   let roots = "";
   video.scenes.forEach((s, i) => {
@@ -135,9 +137,12 @@ export function buildProject({
       size: [w, h],
       assets,
       rigs,
+      rigs3d,
       visemes,
+      fps,
     });
     plan.push(...r.plan);
+    if (r.gl) gls.push(r.gl);
     roots += r.root ?? "";
     if (transition === "fade" && !first)
       plan.push({
@@ -177,11 +182,26 @@ export function buildProject({
 <div id="root" dir="${dir}" data-composition-id="main" data-start="0" data-duration="${timing.totalSeconds}" data-width="${w}" data-height="${h}" data-fps="${fps}">
 ${body}</div>
 <script>${tween}</script>
-<script>window.__timelines = window.__timelines || {};
-window.__timelines["main"] = VT.run(${planJson}, { id: "main", duration: ${timing.totalSeconds} });</script>
+${
+  gls.length
+    ? `<script type="module">
+import { mount } from "./assets/3d/puppet3d-page.mjs";
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = mount(VT.run(${planJson}, { id: "main", duration: ${timing.totalSeconds} }), ${JSON.stringify(gls).replace(/</g, "\\u003c")});
+</script>`
+    : `<script>window.__timelines = window.__timelines || {};
+window.__timelines["main"] = VT.run(${planJson}, { id: "main", duration: ${timing.totalSeconds} });</script>`
+}
 </body>
 </html>
 `;
+  // 3D scenes load the vendored three.js and the page code from the project's own folder; nothing is fetched.
+  if (gls.length)
+    for (const name of ["vendor/three.mjs", "engine/hyperframes/puppet3d-page.mjs"])
+      media.push({
+        from: path.join(skillDir(), "assets", name),
+        to: `assets/3d/${path.basename(name)}`,
+      });
   return {
     files: { "index.html": index },
     media,

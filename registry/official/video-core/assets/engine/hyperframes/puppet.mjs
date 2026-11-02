@@ -5,6 +5,7 @@
 // alone. Rig SVG is checked by rig.mjs before it gets here; all other text is escaped.
 import { PRESETS, backdropLayers } from "./backdrop.mjs";
 import { VISEMES, bindGradients, gradientDefs, partTree, rigProblems } from "../../puppet/rig.mjs";
+import { puppet3d } from "./puppet3d.mjs";
 import { esc } from "./shared.mjs";
 
 export const ACTS = ["walk", "wave", "jump", "nod", "dance", "emote"];
@@ -81,6 +82,8 @@ export function puppetProblems(props, lineIds = null) {
   const bd = props.backdrop;
   if (bd !== undefined && !(bd && PRESETS.includes(bd.preset)))
     out.push(`backdrop: {preset} one of ${PRESETS.join(", ")}`);
+  if (props.look !== undefined && !["2d", "3d"].includes(props.look))
+    out.push('look: "2d" (flat drawing) or "3d"');
   const cast = props.cast;
   if (!Array.isArray(cast) || cast.length < 1 || cast.length > LIMITS.cast)
     return [...out, `cast: 1 to ${LIMITS.cast} characters`];
@@ -336,6 +339,7 @@ function renderCharacter(char, index, rig, ctx) {
 
 export function puppet(s, ctx) {
   const props = s.props;
+  if (props.look === "3d") return puppet3d(s, ctx);
   const layers = backdropLayers(props.backdrop?.preset ?? "meadow");
   const plan = [];
   // A tall film burns its captions into the lower fifth, so the whole backdrop is lifted to keep the ground
@@ -378,6 +382,7 @@ export function puppet(s, ctx) {
 export const puppetCss = () => `
 .scene-puppet{padding:0;z-index:2;overflow:hidden}
 .pup-stage{position:absolute;inset:0;overflow:hidden;direction:ltr}
+.pup-gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 .pup-bg{position:absolute;inset:0;width:100%;height:100%}
 .pup{position:absolute;transform-origin:50% 100%}
 .pup svg{display:block;width:100%;height:100%;overflow:visible}

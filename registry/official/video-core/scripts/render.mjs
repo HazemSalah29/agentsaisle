@@ -303,6 +303,7 @@ function main() {
       assetPaths,
       captions,
       rigs: loadRigs(video, dir).rigs,
+      rigs3d: loadRigs(video, dir).rigs3d,
       visemes: loadVisemes(dir),
     });
   } catch (e) {
