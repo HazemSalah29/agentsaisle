@@ -11,3 +11,4 @@ permissions:
   runs_scripts: true
   network: true
   needs_api_keys: []
+part_of: video
