@@ -10,6 +10,7 @@ A `puppet` scene is one backdrop with up to four characters. The props live in `
 
 - `x`: across the stage, 0 to 1. `y`: where the feet are, 0.2 to 1 (keep 0.8 or less on a 9:16 film so captions clear the feet). `height`: the share of the scene height. `flip`: face left at the start.
 - `speaks`: narration line ids of this scene. The mouth follows `voice/visemes.json` for those lines only, so make it after voicing.
+- `look`: `"2d"` (default, flat) or `"3d"` (needs `puppet3d.json` for each character; see `puppet-rig.md`). Everything else on this page is the same. A 3D film renders as fast as a flat one with a GPU and about 6 times slower without one, so offer it, do not default to it. In 3D, `x` and `y` are where the character stands on the screen, and it gets smaller higher up, as in real perspective.
 - Backdrops: `meadow` (day), `room` (indoors), `night`. Their layers drift slowly, so the picture is never still.
 - Blinks happen by themselves. The body breathes a little at rest.
 

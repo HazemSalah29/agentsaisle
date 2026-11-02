@@ -33,3 +33,21 @@
 ## What the checker allows
 
 Only these SVG shapes: `g`, `path`, `circle`, `ellipse`, `rect`, `line`, `polyline`, `polygon`; with number attributes (each written once), `fill` and `stroke` as `#hex`, `none` or `url(#g:name)`, simple `transform`, and `d` or `points` made of numbers. No scripts, links, images, text, styles, filters or entities, and no gradient defined inside a part (they live in the rig). Each part is at most 3,000 characters; the whole rig at most 60,000. A user's own SVG goes in as parts the same way: split it into the required parts, then run `check`.
+
+## The 3D rig (optional look)
+
+`puppet3d.mjs scaffold` writes `characters/<name>/puppet3d.json`: the same required parts (body, head, arms, legs, two eye states, eight mouths) built from primitives instead of SVG, so a scene with `"look": "3d"` uses the same acts, moods and speech. It is a plain-data scene graph, drawn with three.js in the rendered page:
+
+```
+{ "name": "nour", "height": 2.7,
+  "materials": { "skin": { "color": "#3f9f6b", "roughness": 0.42, "clearcoat": 0.35, "sheen": 0.6 } },
+  "parts": [ { "id": "arm-r", "parent": "body", "pivot": [0.62, 0.42, 0],
+               "shape": "capsule", "size": [0.12, 0.38, 1], "position": [-0.04, -0.28, 0],
+               "rotation": [0, 0, -12], "material": "skin" }, ... ] }
+```
+
+- Units are world units: the character stands on `y = 0`, faces `+z`, and is `height` tall. A part's `pivot` is where it turns, in its parent's space; `position` and `rotation` (degrees) place its shape relative to the pivot. A part with no `shape` is just a joint or a group.
+- Shapes: `sphere` (size = the three radii), `capsule` (radius, length, depth scale), `box` (width, height, depth, plus `radius` for the corners), `droplet` (a rounded cone: radius, height, depth scale) and `cylinder` (radius, height, depth scale). Materials: `color`, optional `roughness`, `metalness`, `clearcoat`, `sheen`, `opacity` (all 0 to 1) and `emissive`.
+- Up to 60 parts and 16 materials. No model files, textures or scripts: the checker accepts only these fields, and the page code never loads anything.
+- Eyes and mouths are groups that are shown or hidden (`eyes-open`/`eyes-closed`, `mouth-<shape>`), so give each one its own shapes as children, as the starter does.
+- `puppet3d.mjs check` validates a rig. To see it, render a draft with `"look": "3d"` in the scene props. A GPU and a 3D render give the same look to within a hair (software WebGL differs very slightly, so frames are not byte-identical across GPU and no-GPU machines).
