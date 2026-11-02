@@ -106,6 +106,35 @@ export function tempo(env, hop = 0.01) {
   };
 }
 
+/** The stretches of sound between silences ({ start, end } each), for a clip of `duration` seconds. */
+export function soundSpans(silences, duration) {
+  const out = [];
+  let at = 0;
+  for (const s of silences) {
+    if (s.start - at > 0.05) out.push({ start: r3(at), end: r3(s.start) });
+    at = Math.max(at, s.end);
+  }
+  if (duration - at > 0.05) out.push({ start: r3(at), end: r3(duration) });
+  return out;
+}
+
+/**
+ * Word times from whisper's DTW start where the word before ended, which hides pauses. Trim each word to the sound
+ * that really overlaps it (at least 50 ms); a word over no sound is dropped. Same rule as video-edit's cut.
+ */
+export function trimToSound(words, silences, duration) {
+  const sound = soundSpans(silences, duration);
+  const out = [];
+  for (const w of words) {
+    const hits = sound.filter((s) => Math.min(s.end, w.end) - Math.max(s.start, w.start) >= 0.05);
+    if (!hits.length) continue;
+    const start = Math.max(w.start, hits[0].start);
+    const end = Math.min(w.end, hits[hits.length - 1].end);
+    if (end - start > 0.02) out.push({ ...w, start: r3(start), end: r3(end) });
+  }
+  return out;
+}
+
 /** Speech numbers from words ({ text, start, end }): share of the time spoken, words a minute, sentence timings. */
 export function speechStats(words, seconds) {
   if (!words.length)

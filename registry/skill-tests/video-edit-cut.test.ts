@@ -16,6 +16,8 @@ type Plan = {
   parseSilence: (l: string, d: number) => { start: number; end: number }[];
   speechSpans: (s: Loose[], d: number) => Loose[];
   readWords: (r: unknown) => Loose[];
+  trimToSound: (w: Loose[], s: Loose[], d: number) => Loose[];
+  isWhisperWords: (r: unknown) => boolean;
 };
 type Whisper = {
   dtwPreset: (m: string) => string | null;
@@ -97,6 +99,21 @@ describe("cut planner", () => {
     expect(() => readWords([{ text: "a", start: 2, end: 1 }])).toThrow(/Word 1/);
     expect(() => readWords("x")).toThrow(/list/);
     expect(readWords({ words: [W("a", 0, 1)] })).toHaveLength(1);
+  });
+
+  it("brings pauses back into whisper's chained word times by trimming words to the sound", async () => {
+    const { trimToSound, buildCutPlan, isWhisperWords } = await plan();
+    // "there" is chained to start where "hello" ended, so no gap is visible without trimming
+    const words = [W("hello", 0, 1), W("there", 1, 4)];
+    expect(buildCutPlan(words, { duration: 4 }).removed).toEqual([]);
+    const trimmed = trimToSound(words, [{ start: 1.02, end: 3 }], 4);
+    expect(trimmed).toEqual([W("hello", 0, 1), W("there", 3, 4)]);
+    expect(buildCutPlan(trimmed, { duration: 4 }).removed).toEqual([
+      { start: 1.06, end: 2.94, kind: "pause" },
+    ]);
+    expect(trimToSound([W("ghost", 1.2, 2)], [{ start: 1.02, end: 3 }], 4)).toEqual([]);
+    expect(isWhisperWords({ source: "whisper.cpp", words })).toBe(true);
+    expect(isWhisperWords(words)).toBe(false);
   });
 
   it("builds a render that trims picture and sound at the same times, fading 10 ms at each join", async () => {
@@ -275,7 +292,7 @@ describe.skipIf(!haveFF || !model || !existsSync(demo))("transcribe with real wh
     const t = run("transcribe", "--in", first, "--out", words);
     expect(t.status, t.stderr).toBe(0);
     const heard = JSON.parse(readFileSync(words, "utf8"))
-      .map((w: Loose) => w.text.toLowerCase())
+      .words.map((w: Loose) => w.text.toLowerCase())
       .join(" ");
     expect(heard).toContain("limit");
     expect(heard).toContain("five");

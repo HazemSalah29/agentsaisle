@@ -4,9 +4,11 @@
 
 ## Where the speech comes from
 
-- `--words words.json`: a list of `{ "text", "start", "end" }` in seconds (what `transcribe` writes). Most exact.
+- `--words words.json`: either a list of `{ "text", "start", "end" }` in seconds that you made yourself (used as given), or the file `transcribe` writes (`{ "source": "whisper.cpp", "words": [...] }`).
 - no option: whisper.cpp measures the words (needs `/video doctor` to say whisper.cpp is ready; Arabic with `--lang ar`).
 - `--silence-only`: no transcript. Sound against silence (quieter than -35 dB for the pause length). It cannot tell a filler from a word.
+
+Whisper's word times start where the word before ended, so a pause is hidden inside the next word. For whisper words (measured here or in a `transcribe` file) `cut` therefore also runs silence detection and trims each word to the sound that really overlaps it; pauses are found in the sound, fillers in the words. `--noise -35` sets how quiet counts as silence (in dB, from -80 to -10); raise it (for example `-30`) for a noisy room, lower it if speech is being cut.
 
 ## What is removed
 

@@ -32,6 +32,8 @@ import {
   readWords,
   silenceArgs,
   speechSpans,
+  isWhisperWords,
+  trimToSound,
 } from "./cutplan.mjs";
 import { configuredModel, parseWhisperJson, whisperArgs } from "./_whisper.mjs";
 import { cropSize, describePath, fixedLeft, keyframes, smoothPath } from "./reframe-path.mjs";
@@ -71,6 +73,7 @@ const STRINGS = [
   "mode",
   "size",
   "detections",
+  "noise",
 ];
 
 /** Media files this run asked to create; a failed run removes the half-written ones. */
@@ -114,7 +117,8 @@ function whisperWords(file, lang) {
 function transcribe(file, flags) {
   const words = whisperWords(file, flags.lang ?? "en");
   const out = checkOutput(flags.out ?? "", file, flags.force);
-  writeFileSync(out, `${JSON.stringify(words, null, 2)}\n`);
+  // The source is recorded so cut knows these times start where the word before ended (see trimToSound).
+  writeFileSync(out, `${JSON.stringify({ source: "whisper.cpp", words }, null, 2)}\n`);
   return [`Wrote ${path.basename(out)}: ${words.length} words, measured with whisper.cpp.`];
 }
 
@@ -123,15 +127,25 @@ function cut(file, info, flags, best) {
   const lang = flags.lang ?? "en";
   const pause = flags.pause === undefined ? 0.35 : Number(flags.pause);
   const breath = flags.breath === undefined ? 0.12 : Number(flags.breath);
-  let spans;
-  if (flags["silence-only"]) {
-    spans = speechSpans(
-      parseSilence(ffmpeg(silenceArgs({ file, pause }), { level: "info" }).stderr, info.seconds),
+  const noiseDb = flags.noise === undefined ? -35 : Number(flags.noise);
+  const silences = () =>
+    parseSilence(
+      ffmpeg(silenceArgs({ file, pause, noiseDb }), { level: "info" }).stderr,
       info.seconds,
     );
-  } else if (flags.words)
-    spans = readWords(JSON.parse(readFileSync(checkJson(flags.words, "words"), "utf8")));
-  else spans = whisperWords(file, lang);
+  let spans;
+  if (flags["silence-only"]) spans = speechSpans(silences(), info.seconds);
+  else {
+    let words;
+    let fromWhisper = true;
+    if (flags.words) {
+      const raw = JSON.parse(readFileSync(checkJson(flags.words, "words"), "utf8"));
+      words = readWords(raw);
+      fromWhisper = isWhisperWords(raw);
+    } else words = whisperWords(file, lang);
+    // Whisper's word starts chain to the word before, so pauses must be found in the sound itself.
+    spans = fromWhisper && info.audio ? trimToSound(words, silences(), info.seconds) : words;
+  }
   const fillers =
     flags["silence-only"] || flags["no-fillers"]
       ? new Set()

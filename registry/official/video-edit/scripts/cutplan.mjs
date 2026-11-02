@@ -127,6 +127,7 @@ export function cutArgs({ file, out, keeps, best }, info) {
 
 /** silencedetect arguments: stretches quieter than `noiseDb` for at least `pause` seconds. */
 export function silenceArgs({ file, pause = 0.35, noiseDb = -35 }) {
+  if (!(noiseDb <= -10 && noiseDb >= -80)) throw new Error("--noise must be from -80 to -10 dB.");
   return [
     ...input(file),
     "-vn",
@@ -165,6 +166,24 @@ export function speechSpans(silences, duration) {
   return spans;
 }
 
+/**
+ * Word times from whisper's DTW start where the word before ended, so a pause shows up as the start of the word
+ * after it and no gap is visible. Trimming each word to the sound that really overlaps it (at least 50 ms)
+ * brings the gaps back; a word that overlaps no sound is dropped. `silences` come from silencedetect.
+ */
+export function trimToSound(words, silences, duration) {
+  const sound = speechSpans(silences, duration);
+  const out = [];
+  for (const w of words) {
+    const hits = sound.filter((s) => Math.min(s.end, w.end) - Math.max(s.start, w.start) >= 0.05);
+    if (!hits.length) continue;
+    const start = Math.max(w.start, hits[0].start);
+    const end = Math.min(w.end, hits[hits.length - 1].end);
+    if (end - start > 0.02) out.push({ ...w, start: r3(start), end: r3(end) });
+  }
+  return out;
+}
+
 /** Words from a words.json: a list of { text, start, end } (what `transcribe` writes), validated. */
 export function readWords(raw) {
   const list = Array.isArray(raw) ? raw : raw?.words;
@@ -181,3 +200,6 @@ export function readWords(raw) {
   });
   return list;
 }
+
+/** True when a words file came from whisper.cpp (so its starts are chained and need trimming to the sound). */
+export const isWhisperWords = (raw) => !Array.isArray(raw) && raw?.source === "whisper.cpp";

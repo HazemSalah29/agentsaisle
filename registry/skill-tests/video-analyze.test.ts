@@ -13,6 +13,7 @@ type M = {
   speechStats: (w: Loose[], s: number) => Loose;
   movingShare: (c: number[], f?: number) => number | null;
   buildRecipe: (o: Loose) => Loose;
+  trimToSound: (w: Loose[], s: Loose[], d: number) => Loose[];
 };
 const m = () => loadScript<M>("video-analyze", "scripts/measure.mjs");
 
@@ -64,6 +65,39 @@ describe("analyze measurements", () => {
       lastSentenceStartsAt: 4,
     });
     expect(speechStats([], 10).speechShare).toBeNull();
+  });
+
+  it("trims chained whisper words to the sound, the same way video-edit's cut does", async () => {
+    const { trimToSound, speechStats } = await m();
+    const edit = await loadScript<{ trimToSound: (w: Loose[], s: Loose[], d: number) => Loose[] }>(
+      "video-edit",
+      "scripts/cutplan.mjs",
+    );
+    // whisper starts "there" where "hello" ended (1.0 s) although the speaker was silent from 1.0 to 3.0
+    const words = [
+      { text: "hello", start: 0, end: 1 },
+      { text: "there", start: 1, end: 4 },
+    ];
+    const silences = [{ start: 1.02, end: 3 }];
+    const t = (trimToSound as unknown as (w: Loose[], s: Loose[], d: number) => Loose[])(
+      words,
+      silences,
+      4,
+    );
+    expect(t).toEqual([
+      { text: "hello", start: 0, end: 1 },
+      { text: "there", start: 3, end: 4 },
+    ]);
+    expect(edit.trimToSound(words, silences, 4)).toEqual(t);
+    expect(speechStats(t, 4).speechShare).toBe(0.5);
+    expect(speechStats(words, 4).speechShare).toBe(1);
+    expect(
+      (trimToSound as unknown as (w: Loose[], s: Loose[], d: number) => Loose[])(
+        [{ text: "x", start: 1.2, end: 2 }],
+        silences,
+        4,
+      ),
+    ).toEqual([]);
   });
 
   it("counts the moving share, and keeps only numbers in the recipe (no words, no pixels)", async () => {

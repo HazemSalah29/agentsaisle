@@ -9,7 +9,15 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import os from "node:os";
 import path from "node:path";
 import { checkOutput, checkPath, ffmpeg, input, probe } from "./ffwrap.mjs";
-import { buildRecipe, envelope, movingShare, palette, speechStats, tempo } from "./measure.mjs";
+import {
+  buildRecipe,
+  envelope,
+  movingShare,
+  palette,
+  speechStats,
+  tempo,
+  trimToSound,
+} from "./measure.mjs";
 import { configuredModel, parseWhisperJson, whisperArgs } from "./_whisper.mjs";
 import { run } from "./run.mjs";
 import { capLines, isEntry, parseArgs } from "./_lib.mjs";
@@ -63,8 +71,9 @@ function motionOf(file) {
   return [...r.stdout.matchAll(/signalstats\.YAVG=([\d.]+)/g)].map((m) => Number(m[1])).slice(1);
 }
 
-/** The share of time that is not silence (quieter than -35 dB for 0.35 s). */
-function soundShare(file, seconds) {
+/** Silences ({ start, end }) quieter than -35 dB for 0.35 s, in the first ten minutes. */
+function silencesOf(file, seconds) {
+  const span = Math.min(seconds, MAX_ANALYSED);
   const log = ffmpeg(
     [
       ...input(file),
@@ -79,18 +88,25 @@ function soundShare(file, seconds) {
     ],
     { level: "info" },
   ).stderr;
-  let quiet = 0;
+  const out = [];
   let open = null;
   for (const m of log.matchAll(/silence_(start|end): (-?[\d.]+)/g)) {
     if (m[1] === "start") open = Math.max(0, Number(m[2]));
     else if (open !== null) {
-      quiet += Number(m[2]) - open;
+      out.push({ start: open, end: Number(m[2]) });
       open = null;
     }
   }
-  if (open !== null) quiet += Math.min(seconds, MAX_ANALYSED) - open;
-  return Math.round((1 - quiet / Math.min(seconds, MAX_ANALYSED)) * 1000) / 1000;
+  if (open !== null) out.push({ start: open, end: span });
+  return out;
 }
+
+/** The share of time that is not silence. */
+const soundShare = (silences, seconds) => {
+  const span = Math.min(seconds, MAX_ANALYSED);
+  const quiet = silences.reduce((n, s) => n + (s.end - s.start), 0);
+  return Math.round((1 - quiet / span) * 1000) / 1000;
+};
 
 /** Run ffmpeg into a temp file and read it back as bytes (the runner returns text, which would damage raw data). */
 function rawOut(args, ext) {
@@ -196,7 +212,8 @@ export function analyze({ file, name, rights, transcript = true, lang = "en" }) 
   const notes = [];
   const scenes = scenesOf(abs, info.seconds);
   const moving = movingShare(motionOf(abs));
-  const sound = info.audio ? soundShare(abs, info.seconds) : null;
+  const silences = info.audio ? silencesOf(abs, info.seconds) : [];
+  const sound = info.audio ? soundShare(silences, info.seconds) : null;
   const colors = palette(pixelsOf(abs, info.seconds));
   const beat = info.audio
     ? tempo(envelope(samplesOf(abs)))
@@ -206,7 +223,8 @@ export function analyze({ file, name, rights, transcript = true, lang = "en" }) 
     words = wordsOf(abs, lang);
     if (!words) notes.push("speech not measured: whisper.cpp is not set up (see /video doctor)");
   }
-  const speech = speechStats(words ?? [], Math.min(info.seconds, MAX_ANALYSED));
+  const span = Math.min(info.seconds, MAX_ANALYSED);
+  const speech = speechStats(words ? trimToSound(words, silences, span) : [], span);
   if (info.seconds > MAX_ANALYSED)
     notes.push(`only the first ${MAX_ANALYSED / 60} minutes were measured`);
   const sha256 = createHash("sha256").update(readFileSync(abs)).digest("hex");
