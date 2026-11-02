@@ -115,6 +115,27 @@ describe("video-core check", () => {
     expect(check.checkProject(v, dir).join("\n")).toMatch(/"zz" is not listed in assets/);
   });
 
+  it("checks a screen scene's props and that its assets are listed", () => {
+    put("assets/rec.webm");
+    const v = base();
+    v.assets = [{ id: "rec", path: "assets/rec.webm", source: "user", licence: "own work" }];
+    v.scenes = [
+      {
+        id: "d",
+        kind: "screen",
+        durationFrom: "fixed",
+        seconds: 6,
+        props: { asset: "rec", zoom: [{ at: 1, dur: 1, x: 0.5, y: 0.5, scale: 2 }] },
+      },
+    ];
+    expect(check.checkProject(v, dir)).toEqual([]);
+    v.scenes[0].props.zoom[0].scale = 9;
+    v.scenes[0].props.pip = "zz";
+    const out = check.checkProject(v, dir).join("\n");
+    expect(out).toMatch(/props\.zoom\[0\]\.scale/);
+    expect(out).toMatch(/props\.pip: "zz" is not listed in assets/);
+  });
+
   it("requires music to exist and to be listed with a licence", () => {
     const v = base();
     v.music = { asset: "assets/m.mp3" };

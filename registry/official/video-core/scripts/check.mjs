@@ -5,6 +5,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { codeProblems } from "../assets/engine/hyperframes/code.mjs";
+import { screenProblems } from "../assets/engine/hyperframes/screen.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
 import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
 import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
@@ -109,6 +110,12 @@ export function checkProject(video, dir, schema = loadSchema()) {
       );
     if (s.kind === "broll" && s.props?.asset && !assetIds.has(s.props.asset))
       problems.push(`${at}.props.asset: "${s.props.asset}" is not listed in assets`);
+    if (s.kind === "screen") {
+      problems.push(...screenProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
+      for (const key of ["asset", "pip"])
+        if (s.props?.[key] && !assetIds.has(s.props[key]))
+          problems.push(`${at}.props.${key}: "${s.props[key]}" is not listed in assets`);
+    }
   });
 
   for (const [at, text] of strings(video))

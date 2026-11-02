@@ -102,12 +102,14 @@ export function buildProject({
   const assets = new Map();
   const media = [];
   for (const s of video.scenes) {
-    if (s.kind !== "broll") continue;
-    const a = (video.assets ?? []).find((x) => x.id === s.props.asset);
-    if (!a || assets.has(a.id)) continue;
-    const file = `${a.id}${path.extname(a.path).toLowerCase()}`;
-    assets.set(a.id, { file });
-    media.push({ from: assetPaths.get(a.id) ?? a.path, to: `assets/media/${file}` });
+    if (s.kind !== "broll" && s.kind !== "screen") continue;
+    for (const key of ["asset", "pip"]) {
+      const a = (video.assets ?? []).find((x) => x.id === s.props?.[key]);
+      if (!a || assets.has(a.id)) continue;
+      const file = `${a.id}${path.extname(a.path).toLowerCase()}`;
+      assets.set(a.id, { file });
+      media.push({ from: assetPaths.get(a.id) ?? a.path, to: `assets/media/${file}` });
+    }
   }
 
   const plan = [];
@@ -127,6 +129,7 @@ export function buildProject({
       lang,
       first,
       rise: Math.round((w / 100) * 2.4),
+      size: [w, h],
       assets,
     });
     plan.push(...r.plan);

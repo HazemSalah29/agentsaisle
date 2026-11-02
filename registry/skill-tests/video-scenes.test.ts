@@ -40,6 +40,7 @@ describe("video-core scenes", () => {
       "code",
       "sequence",
       "request-flow",
+      "screen",
     ]);
   });
 

@@ -5,6 +5,7 @@
 import { code, codeCss } from "./code.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
 import { requestFlow, requestFlowCss } from "./request-flow.mjs";
+import { screen, screenCss } from "./screen.mjs";
 import { sequence, sequenceCss } from "./sequence.mjs";
 import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
 
@@ -19,6 +20,7 @@ export const KINDS = [
   "code",
   "sequence",
   "request-flow",
+  "screen",
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -189,11 +191,16 @@ const BUILDERS = {
   code,
   sequence,
   "request-flow": requestFlow,
+  screen,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
 export const kindCss = (brand, vertical) =>
-  rateLimitCss(brand, vertical) + codeCss(brand) + sequenceCss(brand) + requestFlowCss(brand);
+  rateLimitCss(brand, vertical) +
+  codeCss(brand) +
+  sequenceCss(brand) +
+  requestFlowCss(brand) +
+  screenCss(brand);
 
 /**
  * Markup and animations for one scene.

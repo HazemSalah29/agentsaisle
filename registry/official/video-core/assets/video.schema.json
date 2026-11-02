@@ -83,6 +83,7 @@
             "code",
             "sequence",
             "request-flow",
+            "screen",
             "custom"
           ]
         },
@@ -213,6 +214,20 @@
         "properties": {
           "source": { "type": "string", "minLength": 1, "maxLength": 1200 },
           "title": { "type": "string", "maxLength": 120 }
+        }
+      },
+      "screen": {
+        "type": "object",
+        "required": ["asset"],
+        "properties": {
+          "asset": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
+          "pip": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
+          "device": { "enum": ["phone", "laptop", "browser", "none"] },
+          "title": { "type": "string", "maxLength": 120 },
+          "viewport": { "type": "object", "required": ["w", "h"] },
+          "zoom": { "type": "array", "maxItems": 40, "items": { "type": "object" } },
+          "cursor": { "type": "array", "maxItems": 600, "items": { "type": "object" } },
+          "ripples": { "type": "array", "maxItems": 60, "items": { "type": "object" } }
         }
       },
       "request-flow": {

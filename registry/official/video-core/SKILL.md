@@ -1,6 +1,6 @@
 ---
 name: video-core
-description: Check, time and render a video.json project to an MP4 with HyperFrames, and write its credits and disclosure notes. Scene kinds are title, quote, list, chart, broll, rate-limit, code, sequence and request-flow. Use when the user wants to render or re-render a video.json, check one, or get its CREDITS.txt. Don't use for writing the script, making voice audio, captions or editing footage; those are other video skills.
+description: Check, time and render a video.json project to an MP4 with HyperFrames, and write its credits and disclosure notes. Scene kinds are title, quote, list, chart, broll, rate-limit, code, sequence, request-flow and screen. Use when the user wants to render or re-render a video.json, check one, or get its CREDITS.txt. Don't use for writing the script, making voice audio, captions or editing footage; those are other video skills.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
