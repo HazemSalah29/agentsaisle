@@ -592,7 +592,7 @@ Each starts in plan mode and ends with **built / tested / decisions needed**.
 
 ## 14. Definition of done (library 1.0)
 
-- Every skill passes the house checks and its tests. `aisle audit` grades every skill A or B, and only `video-generate` and `video-ingest` use the network.
+- Every skill passes the house checks and its tests. `aisle audit` grades every skill A or B, and only `video-generate`, `video-ingest` and `video-data` (an approved addition for live-data shorts) use the network.
 - `/video` makes a QA-passing video for each type (explainer, kids, story, showcase, edit) on the $0 tier, with stills-only stories and puppet-based kids' videos.
 - Every output has an editable script, storyboard, `video.json`, captions, credits and disclosure guidance.
 - A public demo page shows one video per type, each with its `video.json` and credits, so people can see it is real and reproducible.

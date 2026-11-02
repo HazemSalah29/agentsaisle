@@ -38,6 +38,9 @@ export default tseslint.config(
         URL: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
+        // Node 18+ globals used by video-data (the only skill that fetches, through an injectable function).
+        fetch: "readonly",
+        AbortSignal: "readonly",
         // Used inside page.evaluate(), which runs in the browser.
         window: "readonly",
         document: "readonly",
