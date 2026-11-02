@@ -1,4 +1,4 @@
-# Agent Aisle video library: user guide (draft, M4)
+# Agent Aisle video library: user guide (draft, M5)
 
 This is a draft. In this version you can set up a studio folder, write a script and storyboard, add animated diagrams and code scenes, make a voice track and captions, render a video and have it checked automatically, edit footage you already have, prepare a video for posting, and measure how a reference video is paced. Other video types (kids, story, showcase) and uploading come in later versions or never: nothing here uploads for you. `/video explain "<topic>"` walks an explainer through all of it.
 
@@ -76,6 +76,14 @@ The same project and assets always give the same video, byte for byte.
 - `cut` tightens a talking clip: it shrinks long pauses and takes out "um"s (Arabic fillers too). It is a dry run first and prints what it would remove; add `--apply --out tight.mp4` to render it. On the rate-limit demo it found 16 pauses worth 11 seconds. Without whisper.cpp use `--silence-only`.
 - `reframe` turns 16:9 into 9:16. With OpenCV installed (`/video doctor` says) it follows the speaker's face; otherwise use `--mode center|left|right|x=0.4`. It tells you how often a face was found, and it can miss profiles and several people.
 - `audio` brings the sound to -14 LUFS without squashing it (two passes), with optional `--denoise` and music under the voice. `color` has three looks (warm, cool, film), your own `.cube` LUT, and an automatic white balance. `stabilize`, `jumpcut` (eased zooms at times you give), `trim`, `join`, `speed`, `gif` and `scenes` are there too.
+
+### Showcase: a demo of your own app
+
+`/video-showcase` turns a short demo script into a polished screen demo. You write `demo.md` (one step a line: `go /`, `click "Start free trial"`, `type #email "me@example.com"`, `scroll down 600`, `wait 1`; the agent can draft it, you approve it). `capture.mjs` plays it on your app in a headless browser and records the screen plus an interaction log of every click, keystroke and scroll. `plan.mjs` then cuts waiting over 1.2 seconds, plays typing three times faster, eases a camera in on each click, draws a smooth cursor with a click ripple, and puts the recording in an original, generic phone, laptop or browser frame (a `screen` scene). `beats.mjs --audio track --snap` finds the beat of a music track (60 to 180 BPM) and moves scene cuts to the nearest beat.
+
+One-time setup for capture (you run this yourself; the skills never install anything): `npm install --prefix ~/.aisle-video playwright-core`, plus a Chromium it can start (`/video doctor` shows a `playwright` line). Without it, record your screen yourself and give `plan.mjs` a log.
+
+What it will not do: record a site that is not yours (localhost only, or `--own-site --rights "why"`; requests to other addresses are blocked while recording), type into password, card or key fields, or record a native desktop app. The cursor is drawn from the log, not recorded, and the camera follows the log, not what is on screen. Beat detection can be wrong on complex music, so check by ear.
 
 ### Publishing
 
