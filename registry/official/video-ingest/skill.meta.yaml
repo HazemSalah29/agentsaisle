@@ -1,0 +1,13 @@
+version: 0.1.0
+category: [video]
+clients: [claude-code]
+runs_scripts: true
+niche: video
+kind: quality
+tier: specialty
+permissions:
+  tools: [Read, Write, Glob, Grep, Bash]
+  writes_files: true
+  runs_scripts: true
+  network: true
+  needs_api_keys: []

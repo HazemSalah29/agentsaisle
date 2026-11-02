@@ -37,6 +37,12 @@ Our own code (the tween helper, scene kinds, scripts) is written for this reposi
 
 The offline `test` provider needs nothing. Nothing is installed by our scripts, and no new npm or Python package was added for generation (it uses Node's `fetch`).
 
+## Ingest (optional, installed by the user)
+
+| Name   | Used by        | Licence                                  | Notes                                                                                                                                                                               |
+| ------ | -------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| yt-dlp | `video-ingest` | Unlicense (`TODO(verify)` current terms) | Not bundled and never installed by our scripts. Started only by `video-ingest`'s own runner with `--ignore-config --no-exec --no-playlist`, a 500 MB cap and an https URL. Network. |
+
 ## Vendored in the repository
 
 | Name     | Version | Licence | Size                                       | Where                                                    | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

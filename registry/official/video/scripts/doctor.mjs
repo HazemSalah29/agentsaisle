@@ -34,6 +34,13 @@ export const TOOLS = [
     need: "core",
     why: "QA checks (ships with FFmpeg)",
   },
+  {
+    id: "yt-dlp",
+    cmd: "yt-dlp",
+    args: ["--version"],
+    need: "optional",
+    why: "downloading footage with video-ingest (network)",
+  },
   { id: "python", cmd: "python3", args: ["--version"], need: "optional", why: "TTS models, Manim" },
   { id: "manim", cmd: "manim", args: ["--version"], need: "optional", why: "maths scenes" },
   {
