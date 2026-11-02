@@ -23,6 +23,14 @@ const FRAMINGS = [
   { focus: [16, 0], zoom: 1.5 },
   { focus: [-16, 6], zoom: 1.5 },
 ];
+/** For screenshots the card must stay in frame, so the looks are gentle shifts, not deep crops. */
+const FRAMINGS_SCREENS = [
+  null,
+  { focus: [0, 9], zoom: 1.2 },
+  { focus: [0, -9], zoom: 1.2 },
+  { focus: [8, 0], zoom: 1.22 },
+  { focus: [-8, 4], zoom: 1.22 },
+];
 const r2 = (n) => Math.round(n * 100) / 100;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -126,7 +134,7 @@ export function planEdit(i, presets) {
   const last = lengths.length - 1;
   const lines = i.lines ?? [];
   const flashes = []; // film-wide, to keep flashes apart across shots
-  const flashOk = (t) => flashes.every((f) => Math.abs(f - t) >= 0.45);
+  const flashOk = (t) => flashes.every((f) => Math.abs(f - t) >= 0.9);
   const sfx = [];
   const cue = (name, gain, at) => {
     if (at < 0 || at > seconds - 0.05) return;
@@ -140,7 +148,8 @@ export function planEdit(i, presets) {
           { asset: `${photo.id}-subject`, role: "subject" },
         ]
       : [{ asset: photo.id, role: "bg" }];
-  const alt = (k) => (k % 2 ? "top" : "bottom");
+  // Screenshots sit on a card in the middle, so type goes above and below it instead of over it.
+  const alt = (k) => (i.screens ? (k % 2 ? "head" : "foot") : k % 2 ? "top" : "bottom");
   const uses = new Map();
 
   const scenes = lengths.map((len, k) => {
@@ -148,7 +157,9 @@ export function planEdit(i, presets) {
     const framing =
       k === 0 || k === last
         ? null
-        : FRAMINGS[Math.min(uses.get(photo.id) ?? 0, FRAMINGS.length - 1)];
+        : (i.screens ? FRAMINGS_SCREENS : FRAMINGS)[
+            Math.min(uses.get(photo.id) ?? 0, FRAMINGS.length - 1)
+          ];
     if (k !== 0 && k !== last) uses.set(photo.id, (uses.get(photo.id) ?? 0) + 1);
     const hookShot = k === 0;
     const ctaShot = k === last;
@@ -196,12 +207,34 @@ export function planEdit(i, presets) {
     const type = [];
     const cards = [];
     if (hookShot)
-      type.push({ text: i.product, at: 0.15, style: preset.type.hook, anchor: "center" });
+      type.push({
+        text: i.product,
+        at: 0.15,
+        style: preset.type.hook,
+        anchor: i.screens ? "head" : "center",
+      });
     else if (ctaShot) {
-      if (i.price) type.push({ text: i.price, at: 0.2, style: "price", anchor: "center" });
-      if (i.cta) type.push({ text: i.cta, at: 0.5, style: preset.type.cta, anchor: "bottom" });
+      if (i.price)
+        type.push({
+          text: i.price,
+          at: 0.2,
+          style: "price",
+          anchor: i.screens ? "head" : "center",
+        });
+      if (i.cta)
+        type.push({
+          text: i.cta,
+          at: 0.5,
+          style: preset.type.cta,
+          anchor: i.screens ? "foot" : "bottom",
+        });
       if (!i.price && !i.cta)
-        type.push({ text: i.product, at: 0.2, style: preset.type.hook, anchor: "center" });
+        type.push({
+          text: i.product,
+          at: 0.2,
+          style: preset.type.hook,
+          anchor: i.screens ? "head" : "center",
+        });
     } else if (lines.length) {
       type.push({
         text: lines[(k - 1) % lines.length],

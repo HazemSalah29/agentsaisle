@@ -7,6 +7,10 @@
 - Keep the product away from the edges: the camera pushes in and shakes, which crops the frame by up to 20%.
 - A person in a photo needs the person's permission to appear in an ad. Ask; do not guess.
 
+## Screenshots (apps and websites)
+
+- For a product that is an app or a site, give screenshots (phone-sized ones work best) and add `--screens` to `plan.mjs`: each goes on a rounded card with a shadow over a dark gradient with a glow in the accent colour, as two layers for parallax, and type goes above and below the card. No cutout is needed. Capture them yourself (they show your own product); never use another product's screens.
+
 ## Words
 
 - Product name up to 30 characters, up to 3 lines of up to 36, a call to action up to 24, a price up to 12 characters. They are shown exactly as the user wrote them. Never add a claim ("best", "#1", a percentage, a date) the user did not give.

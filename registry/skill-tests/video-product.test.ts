@@ -110,7 +110,7 @@ describe("planEdit", () => {
       flashes.sort((a, b) => a - b);
       flashes.forEach(
         (f, i) =>
-          i && expect(f - flashes[i - 1]!, `${name} flash gap`).toBeGreaterThanOrEqual(0.44),
+          i && expect(f - flashes[i - 1]!, `${name} flash gap`).toBeGreaterThanOrEqual(0.89),
       );
       for (const x of r.video.sfx) {
         expect(x.at).toBeGreaterThanOrEqual(0);
@@ -253,5 +253,64 @@ describe.skipIf(!haveCv)("cutout and plan.mjs (needs OpenCV in the video venv)",
     expect(
       node("plan.mjs", [...args, "--own-photos", "--music", path.join(dir, "x.mp3")]).stderr,
     ).toContain("licence");
+  });
+
+  it("compose.mjs puts a screenshot on a card over a styled background, in the frame's size", () => {
+    const shot = path.join(dir, "screen.png");
+    spawnSync(PY, [
+      "-c",
+      `import cv2,numpy as np;cv2.imwrite(${JSON.stringify(shot)},np.full((844,390,3),(30,30,30),np.uint8))`,
+    ]);
+    const out = path.join(dir, "card");
+    const r = node("compose.mjs", [
+      shot,
+      "--out",
+      out,
+      "--format",
+      "reel-9x16",
+      "--accent",
+      "#ee4f12",
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    for (const f of ["bg.jpg", "subject.png", "photo.jpg"])
+      expect(existsSync(path.join(out, f)), f).toBe(true);
+    const png = readFileSync(path.join(out, "subject.png"));
+    expect(png.readUInt32BE(16)).toBe(1080); // width
+    expect(png.readUInt32BE(20)).toBe(1920); // height
+    expect(node("compose.mjs", [shot, "--out", out, "--format", "wide"]).stderr).toContain(
+      "--format",
+    );
+    expect(node("compose.mjs", [shot, "--out", out, "--accent", "red"]).stderr).toContain(
+      "--accent",
+    );
+  });
+  it("plan.mjs --screens makes a project of cards, with type above and below them", () => {
+    const shot = path.join(dir, "screen.png");
+    const proj = path.join(dir, "screens-proj");
+    const r = node("plan.mjs", [
+      "--project",
+      proj,
+      "--photos",
+      shot,
+      "--preset",
+      "snap",
+      "--product",
+      "Agent Aisle",
+      "--lines",
+      "Check a skill",
+      "--cta",
+      "Run an audit",
+      "--screens",
+      "--own-photos",
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const video = JSON.parse(readFileSync(path.join(proj, "video.json"), "utf8")) as Loose;
+    const anchors = video.scenes.flatMap((s: Loose) => s.props.type.map((t: Loose) => t.anchor));
+    expect(new Set(anchors)).toEqual(new Set(["head", "foot"]));
+    expect(video.scenes[0].props.layers).toHaveLength(2);
+    const chk = spawnSync(process.execPath, [skillFile("video-core", "scripts/check.mjs"), proj], {
+      encoding: "utf8",
+    });
+    expect(chk.stdout + chk.stderr).toContain("OK");
   });
 });

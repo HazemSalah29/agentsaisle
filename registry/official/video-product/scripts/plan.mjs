@@ -4,6 +4,7 @@
 // writes video.json (shot scenes with camera moves, type, effects and sound cues) and brand/brand.json (an accent
 // taken from the product). Nothing is fetched or uploaded. The user must confirm the photos (and music) are theirs
 // to use with --own-photos; the licence of the music is recorded in the credits.
+// With --screens the photos are screenshots of an app or website: each goes on a card over a styled background.
 // Usage: node plan.mjs --project projects/<slug> --photos a.jpg|b.jpg|c.jpg --preset snap|glide|glitch --product "Name"
 //        [--lines "line one|line two"] [--cta "Shop now"] [--price "$18"] [--seconds 15] [--accent #e8542a]
 //        [--music track.mp3 --music-licence "own"] [--recipe recipe.json] [--format reel-9x16] --own-photos
@@ -84,7 +85,7 @@ function main() {
         "recipe",
         "format",
       ],
-      booleans: ["own-photos"],
+      booleans: ["own-photos", "screens"],
     });
     if (!flags.project || !flags.photos || !flags.preset || !flags.product)
       throw new Error(
@@ -133,13 +134,54 @@ function main() {
         licence: "own",
       });
       const out = path.join(project, "assets", `${id}-cut`);
-      const r = run(
-        "node",
-        [path.join(skillDir(), "scripts", "cutout.mjs"), path.resolve(file), "--out", out],
-        { timeoutMs: 240_000 },
-      );
+      // Screenshots are not cut out: each goes on a card over a styled background, as two layers.
+      const r = flags.screens
+        ? run(
+            "node",
+            [
+              path.join(skillDir(), "scripts", "compose.mjs"),
+              path.resolve(file),
+              "--out",
+              out,
+              "--format",
+              flags.format ?? "reel-9x16",
+              "--accent",
+              flags.accent ?? "#e8542a",
+            ],
+            { timeoutMs: 120_000 },
+          )
+        : run(
+            "node",
+            [path.join(skillDir(), "scripts", "cutout.mjs"), path.resolve(file), "--out", out],
+            { timeoutMs: 240_000 },
+          );
       let layers = "photo";
-      if (r.status === 0 && existsSync(path.join(out, "cutout.json"))) {
+      if (flags.screens && r.status === 0 && existsSync(path.join(out, "subject.png"))) {
+        copyFileSync(path.join(out, "photo.jpg"), path.join(project, "assets", `${id}.jpg`));
+        assets[assets.length - 1].path = `assets/${id}.jpg`;
+        copyFileSync(
+          path.join(out, "subject.png"),
+          path.join(project, "assets", `${id}-subject.png`),
+        );
+        copyFileSync(path.join(out, "bg.jpg"), path.join(project, "assets", `${id}-bg.jpg`));
+        assets.push(
+          {
+            id: `${id}-subject`,
+            path: `assets/${id}-subject.png`,
+            kind: "image",
+            source: "user",
+            licence: "own",
+          },
+          {
+            id: `${id}-bg`,
+            path: `assets/${id}-bg.jpg`,
+            kind: "image",
+            source: "user",
+            licence: "own",
+          },
+        );
+        layers = "cutout";
+      } else if (r.status === 0 && existsSync(path.join(out, "cutout.json"))) {
         const report = JSON.parse(readFileSync(path.join(out, "cutout.json"), "utf8"));
         if (report.ok) {
           copyFileSync(
@@ -209,6 +251,7 @@ function main() {
         preset: flags.preset,
         seconds: flags.seconds === undefined ? undefined : Number(flags.seconds),
         accent,
+        screens: Boolean(flags.screens),
         format: flags.format,
         beats,
         recipe: recipe

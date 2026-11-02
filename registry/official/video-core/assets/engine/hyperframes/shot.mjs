@@ -29,7 +29,7 @@ export const MOVES = [
 ];
 export const ROLES = ["bg", "subject", "overlay"];
 export const TYPE_STYLES = ["slam", "stagger", "glitch", "tag", "price"];
-export const ANCHORS = ["top", "center", "bottom"];
+export const ANCHORS = ["head", "top", "center", "bottom", "foot"];
 export const GRADES = ["none", "punch", "warm", "cool", "mono", "film"];
 export const ENTERS = ["cut", "flash", "whip-l", "whip-r", "zoom", "glitch"];
 export const EASES = ["linear", "out", "inOut", "in", "expo", "snap", "spring", "outBack"];
@@ -255,6 +255,17 @@ const GRAIN_SVG = encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>",
 );
 
+/**
+ * A type size (in units of 1% of the frame width) that keeps a text to two lines or fewer: the style's own size for
+ * short text, smaller for long. Pure.
+ */
+export function autoSize(style, text) {
+  const base = { slam: 13, stagger: 9, glitch: 11, tag: 5.2, price: 18 }[style];
+  if (style === "tag") return base;
+  const fit = (86 * 2) / (0.75 * Math.max(1, String(text).length));
+  return Math.round(Math.max(4.5, Math.min(base, fit)) * 10) / 10;
+}
+
 /** The scene's markup and its animation plan. */
 export function shot(s, ctx) {
   const props = s.props;
@@ -395,7 +406,7 @@ export function shot(s, ctx) {
     for (const t of [...flashAt].sort((a, b) => a - b))
       frames.push(
         { offset: o(Math.max(0, t - 0.001)), opacity: 0 },
-        { offset: o(t + 0.04), opacity: 0.85 },
+        { offset: o(t + 0.04), opacity: 0.6 },
         { offset: o(t + 0.22), opacity: 0 },
       );
     frames.push({ offset: 1, opacity: 0 });
@@ -403,11 +414,11 @@ export function shot(s, ctx) {
   }
 
   // Type: one idea at a time; each style has its own entrance.
-  const anchorTop = { top: "13%", center: "44%", bottom: "64%" };
+  const anchorTop = { head: "5%", top: "13%", center: "44%", bottom: "64%", foot: "80%" };
   (props.type ?? []).forEach((t, i) => {
     const id = `${P}-t${i}`;
     const top = anchorTop[t.anchor ?? "center"];
-    const size = t.size ?? { slam: 13, stagger: 9, glitch: 11, tag: 5.2, price: 18 }[t.style];
+    const size = t.size ?? autoSize(t.style, t.text);
     const at = ctx.at + t.at;
     if (t.style === "stagger") {
       const words = t.text.trim().split(/\s+/);

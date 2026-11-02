@@ -124,6 +124,14 @@ describe("shot scene", () => {
     expect(Math.abs(jitterAt(1.01, [1], []).x)).toBeLessThanOrEqual(0.9);
   });
 
+  it("sizes long type down so it stays on two lines", async () => {
+    const { autoSize } = await shotMod();
+    expect(autoSize("slam", "AGENT AISLE")).toBe(13);
+    expect(autoSize("slam", "Check a skill before you trust it")).toBeLessThan(9);
+    expect(autoSize("slam", "x".repeat(48))).toBeGreaterThanOrEqual(4.5);
+    expect(autoSize("tag", "Shop now")).toBe(5.2);
+  });
+
   it("lists problems, including unsafe fast flashing", async () => {
     const { shotProblems } = await shotMod();
     expect(shotProblems(props(), 3)).toEqual([]);
