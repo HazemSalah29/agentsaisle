@@ -54,7 +54,8 @@ const checkName = (cmd) => {
   }
   return null;
 };
-const isCheck = (cmd) => checkName(cmd) !== null;
+/** At most 60 characters, cut at a word end with an ellipsis. */
+const fit = (t) => (t.length <= 60 ? t : `${t.slice(0, 57).replace(/\s+\S*$/, "")}...`);
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /** Redacts one string; `counter.n` counts replacements. Pure apart from the counter. */
@@ -244,7 +245,7 @@ export function pickMoments(events) {
       i: first,
       p: 9,
       type: "action",
-      label: `Ask: ${events[first].text}`.slice(0, 60),
+      label: fit(`Ask: ${events[first].text}`),
       where: "you",
     });
   let group = null;
@@ -279,7 +280,7 @@ export function pickMoments(events) {
         i,
         p: 8,
         type: "failure",
-        label: `Failed: ${e.text}`.slice(0, 60),
+        label: fit(`Failed: ${e.text}`),
         where: "check",
       });
     } else if (e.kind === "ok" && e.test) {
@@ -290,7 +291,7 @@ export function pickMoments(events) {
         i,
         p: fixed ? 8 : 4,
         type: fixed ? "fix" : "info",
-        label: `${fixed ? "Fixed, passes" : "Passes"}: ${e.text}`.slice(0, 60),
+        label: fit(`${fixed ? "Fixed, passes" : "Passes"}: ${e.text}`),
         where: "check",
       });
     }
@@ -304,7 +305,7 @@ export function pickMoments(events) {
       i: last,
       p: 9,
       type: "info",
-      label: `Result: ${events[last].text}`.slice(0, 60),
+      label: fit(`Result: ${events[last].text}`),
       where: "agent",
     });
   const kept = cands
