@@ -143,6 +143,9 @@ export function engineLines(cfg, { run = spawnSync, exists = existsSync } = {}) 
     `  kokoro      ${pyOk && ok(py, ["-c", "import kokoro"]) !== null ? "ready (English voice)" : "not installed (English voice: use --provider test or add audio yourself)"}`,
   );
   lines.push(
+    `  opencv      ${pyOk && ok(py, ["-c", "import cv2"]) !== null ? "ready (face tracking for reframe)" : "not installed (reframe: use --mode center, left, right or x=0.4)"}`,
+  );
+  lines.push(
     `  3arab-tts   ${typeof cfg.arab3 === "string" && exists(cfg.arab3) && typeof cfg.arab3Model === "string" && exists(cfg.arab3Model) ? "set up (Arabic voice)" : "not set up (Arabic voice)"}`,
   );
   const wc =

@@ -118,6 +118,7 @@ describe("video doctor engines", () => {
     expect(text).toMatch(/python venv not set up/);
     expect(text).toMatch(/kokoro +not installed/);
     expect(text).toMatch(/3arab-tts +not set up/);
+    expect(text).toMatch(/opencv +not installed \(reframe: use --mode center/);
     expect(text).toMatch(/whisper.cpp +not set up \(captions use ESTIMATED word times\)/);
   });
 
@@ -125,11 +126,13 @@ describe("video doctor engines", () => {
     const run = fake({
       "/v/bin/python3.12 --version": { status: 0, out: "Python 3.12.4\n" },
       "/v/bin/python3.12 -c import kokoro": { status: 0 },
+      "/v/bin/python3.12 -c import cv2": { status: 0 },
       "/b/whisper-cli --help": { status: 0 },
     });
     const text = e()
       .engineLines(cfg, { run, exists: () => true })
       .join("\n");
+    expect(text).toMatch(/opencv +ready \(face tracking for reframe\)/);
     expect(text).toMatch(/python venv found 3\.12\.4/);
     expect(text).toMatch(/kokoro +ready/);
     expect(text).toMatch(/3arab-tts +set up/);
