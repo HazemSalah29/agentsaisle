@@ -130,6 +130,7 @@ Demo: [`docs/video/demos/kids/`](demos/kids) holds "Nour learns to share" (two c
 - **`reframe` says no face was found**: OpenCV may not be installed (`/video doctor`), or the face is small or sideways. Use `--mode center`, `left`, `right` or `x=0.4`.
 - **`/video-publish` refuses**: read each `REFUSED` line; it names the missing QA, credits or copy, the wrong shape for the platform, or a number that is not in your script.
 - **"HyperFrames is not installed"**: run the install line it prints.
+- **A second renderer (Remotion).** `--engine remotion` is optional and you install it yourself (`remotion` and `@remotion/cli`, version 4.x, same version). It draws the same scenes, so nothing in your project changes. Remotion's licence is free for individuals and companies of up to 3 people and paid above that; the note is printed each time. This adapter has not been tried against a real Remotion install yet, so treat the first render as a test.
 - **A code scene looks different on another computer**: it uses that computer's monospace font; the colours and layout are the same.
 - **`/video-qa` says "could not run video-core checks"**: install `video-core` next to `video-qa` in the same skills folder.
 - **A QA failure on loudness or clipping after you changed the voice**: render again; the mix is rebalanced at render time.

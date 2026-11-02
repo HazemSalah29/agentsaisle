@@ -8,6 +8,10 @@ Every program starts through `scripts/run.mjs`: only `ffmpeg`, `ffprobe` and `no
 
 `render.mjs` looks for an installed HyperFrames (`--hyperframes <package-dir>`, `node_modules` next to the project, the global install beside this Node, the npx cache) and runs its `check` and `render`. It never installs or downloads it. The tested version is 0.8.226; install it with `npm install --global hyperframes@0.8.226`. HyperFrames itself may fetch Google Fonts and send usage data (`TODO(verify)` how to switch both off); our scripts make no network calls.
 
+## Remotion (second engine)
+
+`render.mjs --engine remotion` builds a Remotion project in `out/rm/` from the same scene markup, stylesheet and animation plan as HyperFrames (so every scene kind works in both), renders a silent MP4 with `remotion render`, and then the same ffmpeg step mixes voice and music. It looks for `@remotion/cli` and `remotion` (`--remotion <cli-package-dir>`, `node_modules` next to the project, global, npx cache) and never installs them. Supported: Remotion 4.x with both packages at one version: `npm install remotion@<4.x> @remotion/cli@<4.x> react react-dom` next to the project. The adapter has **not been tested against a real Remotion install yet** (`TODO(verify)` CLI flags and `staticFile` paths). Remotion downloads its own headless browser on first render; our scripts make no network calls. Remotion's licence is free for individuals and companies of up to 3 people, paid above that (`TODO(verify)`), and the note is printed at every Remotion render.
+
 ## Animation
 
 No GSAP. Scenes use `assets/lib/tween.js`: paused Web Animations placed at absolute times, plus a small timeline object registered on `window.__timelines["main"]`. HyperFrames seeks each frame itself, so a frame depends only on the clock. `check` passes with this setup but prints a "nested structure" warning per scene (each scene is a `<section>` in `index.html`, not a sub-composition); the warning is expected for now.
@@ -18,4 +22,4 @@ Two renders of the same project give byte-identical files (tested). Video is ren
 
 ## Not built yet
 
-Captions, the `custom` kind, transitions other than cut and fade, engines other than HyperFrames, loudness normalisation, and the voice step itself (voice files come from `video-voice` or from the user).
+Captions, the `custom` kind, transitions other than cut and fade, engines other than HyperFrames and Remotion, loudness normalisation, and the voice step itself (voice files come from `video-voice` or from the user).

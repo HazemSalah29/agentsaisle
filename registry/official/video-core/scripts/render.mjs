@@ -2,7 +2,7 @@
 // Renders a project: check -> HyperFrames project in out/hf -> render -> mix voice and music -> out/<name>.mp4.
 // Every program is started through run.mjs (allow-list, argument arrays, no shell). HyperFrames itself is never
 // installed or downloaded here; if it is missing the script prints the install line and stops.
-// Usage: node render.mjs <project-dir> [--engine hyperframes] [--draft] [--hyperframes <path-to-package>]
+// Usage: node render.mjs <project-dir> [--engine hyperframes|remotion] [--draft] [--hyperframes <package-dir>] [--remotion <cli-package-dir>]
 import {
   copyFileSync,
   existsSync,
@@ -16,8 +16,15 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { checkProject } from "./check.mjs";
+import { buildRemotionProject } from "../assets/engine/remotion/build.mjs";
 import { buildProject } from "./project.mjs";
 import { loadRigs, loadVisemes } from "./puppet-data.mjs";
+import {
+  REMOTION_LICENCE_NOTE,
+  findRemotion,
+  remotionArgs,
+  remotionProblems,
+} from "./render-remotion.mjs";
 import { run } from "./run.mjs";
 import { buildTiming } from "./timing.mjs";
 import { capLines, isEntry, isInside, parseArgs } from "./_lib.mjs";
@@ -224,16 +231,20 @@ function main() {
   try {
     parsed = parseArgs(process.argv.slice(2), {
       booleans: ["draft"],
-      strings: ["engine", "hyperframes"],
+      strings: ["engine", "hyperframes", "remotion"],
     });
   } catch (e) {
     fail(e.message, 2);
   }
   const { flags, positional } = parsed;
-  if ((flags.engine ?? "hyperframes") !== "hyperframes")
-    fail(`Engine "${flags.engine}" is not built yet (have: hyperframes).`, 2);
+  const engine = flags.engine ?? "hyperframes";
+  if (engine !== "hyperframes" && engine !== "remotion")
+    fail(`Engine "${String(engine).slice(0, 30)}" is not known (have: hyperframes, remotion).`, 2);
   if (!positional[0])
-    fail("Usage: node render.mjs <project-dir> [--draft] [--hyperframes <package-dir>]", 2);
+    fail(
+      "Usage: node render.mjs <project-dir> [--engine hyperframes|remotion] [--draft] [--hyperframes <package-dir>] [--remotion <package-dir>]",
+      2,
+    );
   const dir = path.resolve(positional[0]);
   const vfile = path.join(dir, "video.json");
   if (!existsSync(vfile)) fail(`No video.json in ${dir}.`, 2);
@@ -274,13 +285,30 @@ function main() {
       notes.push("caption times are estimated, not measured, so they may drift from the voice");
   }
 
-  const hf = findHyperframes({ explicit: flags.hyperframes, dir });
-  if (!hf)
-    fail(
-      `HyperFrames is not installed. Install the npm package "hyperframes" at version ${PINNED_HYPERFRAMES} (the command is in references/runner.md), then run again.`,
+  const hf =
+    engine === "hyperframes" ? findHyperframes({ explicit: flags.hyperframes, dir }) : null;
+  const rm = engine === "remotion" ? findRemotion({ explicit: flags.remotion, dir }) : null;
+  if (engine === "hyperframes") {
+    if (!hf)
+      fail(
+        `HyperFrames is not installed. Install the npm package "hyperframes" at version ${PINNED_HYPERFRAMES} (the command is in references/runner.md), then run again.`,
+      );
+    if (hf.version !== PINNED_HYPERFRAMES)
+      notes.push(
+        `HyperFrames ${hf.version} found; this skill was tested with ${PINNED_HYPERFRAMES}`,
+      );
+  } else {
+    if (!rm)
+      fail(
+        `Remotion is not installed. Install "remotion" and "@remotion/cli" at one 4.x version next to the project (the command is in references/runner.md), then run again. ${REMOTION_LICENCE_NOTE}`,
+      );
+    const bad = remotionProblems(rm);
+    if (bad.length) fail(bad.join("\n"));
+    notes.push(REMOTION_LICENCE_NOTE);
+    notes.push(
+      `Remotion ${rm.version}: this adapter has not been tested against a real Remotion install yet`,
     );
-  if (hf.version !== PINNED_HYPERFRAMES)
-    notes.push(`HyperFrames ${hf.version} found; this skill was tested with ${PINNED_HYPERFRAMES}`);
+  }
 
   const brandRel = video.meta.brand;
   let brand = {};
@@ -295,7 +323,7 @@ function main() {
   const assetPaths = new Map((video.assets ?? []).map((a) => [a.id, path.join(dir, a.path)]));
   let built;
   try {
-    built = buildProject({
+    built = (engine === "remotion" ? buildRemotionProject : buildProject)({
       video,
       timing,
       brand,
@@ -311,37 +339,52 @@ function main() {
   }
   notes.push(...built.notes);
 
-  const work = path.join(dir, "out", "hf");
+  const work = path.join(dir, "out", engine === "remotion" ? "rm" : "hf");
   rmSync(work, { recursive: true, force: true });
   mkdirSync(work, { recursive: true });
-  for (const [rel, text] of Object.entries(built.files)) writeFileSync(path.join(work, rel), text);
+  for (const [rel, text] of Object.entries(built.files)) {
+    mkdirSync(path.dirname(path.join(work, rel)), { recursive: true });
+    writeFileSync(path.join(work, rel), text);
+  }
   for (const m of [...built.media, ...built.fonts]) {
     mkdirSync(path.dirname(path.join(work, m.to)), { recursive: true });
     copyFileSync(m.from, path.join(work, m.to));
   }
 
-  const check = run("node", [hf.bin, "check", work]);
-  if (check.status !== 0)
-    fail(
-      capLines(
-        (check.stdout + check.stderr).split("\n").filter(Boolean).slice(-30),
-        "HyperFrames check failed.",
-      ),
-    );
-
   const silent = path.join(work, "silent.mp4");
-  const r = run(
-    "node",
-    [hf.bin, "render", work, "-o", silent, "-q", flags.draft ? "draft" : "looks"],
-    { cwd: work },
-  );
-  if (r.status !== 0 || !existsSync(silent))
-    fail(
-      capLines(
-        (r.stdout + r.stderr).split("\n").filter(Boolean).slice(-30),
-        "HyperFrames render failed.",
-      ),
+  if (engine === "hyperframes") {
+    const check = run("node", [hf.bin, "check", work]);
+    if (check.status !== 0)
+      fail(
+        capLines(
+          (check.stdout + check.stderr).split("\n").filter(Boolean).slice(-30),
+          "HyperFrames check failed.",
+        ),
+      );
+    const r = run(
+      "node",
+      [hf.bin, "render", work, "-o", silent, "-q", flags.draft ? "draft" : "looks"],
+      { cwd: work },
     );
+    if (r.status !== 0 || !existsSync(silent))
+      fail(
+        capLines(
+          (r.stdout + r.stderr).split("\n").filter(Boolean).slice(-30),
+          "HyperFrames render failed.",
+        ),
+      );
+  } else {
+    const r = run("node", remotionArgs({ bin: rm.bin, out: silent, draft: flags.draft }), {
+      cwd: work,
+    });
+    if (r.status !== 0 || !existsSync(silent))
+      fail(
+        capLines(
+          (r.stdout + r.stderr).split("\n").filter(Boolean).slice(-30),
+          "Remotion render failed.",
+        ),
+      );
+  }
 
   const name = path.basename(dir).replace(/[^A-Za-z0-9._-]/g, "-") || "video";
   const out = path.join(dir, "out", `${name}${flags.draft ? "-draft" : ""}.mp4`);
