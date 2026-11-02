@@ -149,7 +149,7 @@ describe("qa.mjs uses the kids rules", () => {
     expect(src).toContain("rules.kids.flash");
     expect(src).toContain("rules.kids.captionMinSize");
     expect(src).toContain("rules.kids.contrastMin");
-    expect(src).toContain('["broll", "puppet", "shot"]');
+    expect(src).toContain('["broll", "puppet", "shot", "kinetic"]');
     expect(src).toContain("kidsChecks(");
   });
   it("has kids numbers that are stricter than the general ones", () => {

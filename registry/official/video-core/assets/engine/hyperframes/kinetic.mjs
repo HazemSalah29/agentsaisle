@@ -23,7 +23,7 @@ export const LIMITS = {
 export const BGS = ["black", "dark", "accent"];
 export const EXITS = ["slide", "drop", "blur", "shatter", "none"];
 export const POP = 0.22;
-const BASE_SIZE = { 1: 22, 2: 17, 3: 13, 4: 10 };
+const BASE_SIZE = { 1: 26, 2: 20, 3: 15, 4: 12 };
 const num = (v) => typeof v === "number" && Number.isFinite(v);
 const norm = (w) =>
   String(w)
@@ -169,7 +169,7 @@ export function phraseSize(texts, slab = false) {
   const longest = Math.max(...texts.map((t) => t.length));
   const fit = 84 / (0.52 * Math.max(1, longest));
   const base = BASE_SIZE[n] * (slab ? 1.15 : 1);
-  return Math.round(clamp(Math.min(base, fit), 6, 26) * 10) / 10;
+  return Math.round(clamp(Math.min(base, fit), 6, slab ? 32 : 26) * 10) / 10;
 }
 
 const popFrames = () =>
@@ -214,21 +214,34 @@ export function kinetic(s, ctx) {
   const words = wordsOf(props, ctx.words, T);
   const groups = groupWords(words, props.phrases);
   const emph = new Set((props.emph ?? []).map(norm));
-  const exit = props.exit ?? "slide";
+  // Phrases that never left would pile up on each other: with more than one phrase, "none" means slide.
+  const exit =
+    props.exit === "none" && groupWords(words, props.phrases).length > 1
+      ? "slide"
+      : (props.exit ?? "slide");
   const holdLast = props.holdLast !== false;
   const slab = bg === "accent";
   let html = `<div class="kn-root kn-bg-${bg}">`;
+  if (bg !== "accent") html += `<div class="kn-glow"></div>`;
   if (props.grid) html += `<div class="kn-grid"></div>`;
   if (props.vignette) html += `<div class="kn-vignette"></div>`;
 
   // Phrases and their words.
   const y = props.y ?? (props.cards?.length || props.flow ? 24 : 46);
+  const aspect = ctx.size ? ctx.size[1] / ctx.size[0] : 16 / 9; // frame height over width
+  // Two slots, one above the other: the next phrase arrives in the free slot while the last one is still readable.
+  const shownTexts = groups.map((g) => g.map((w) => shown(w.text)));
+  const sizes = shownTexts.map((t) => phraseSize(t, slab));
+  const heights = shownTexts.map(
+    (t, j) => Math.max(1, Math.ceil((t.join(" ").length * 0.52 * sizes[j]) / 84)) * sizes[j],
+  );
+  const gap = Math.max(...heights, 0) / aspect / 2 + 4;
+  const slotY = (j) => clamp(groups.length > 1 ? y + (j % 2 ? gap : -gap) : y, 14, 86);
   let n = 0;
   groups.forEach((g, j) => {
-    const texts = g.map((w) => shown(w.text));
-    const size = phraseSize(texts, slab);
+    const texts = shownTexts[j];
+    const size = sizes[j];
     const pid = `${P}-p${j}`;
-    const nextStart = groups[j + 1]?.[0]?.start;
     const lastEnd = g[g.length - 1].end;
     const wantsExit = exit !== "none" && !(holdLast && j === groups.length - 1);
     const shatter = wantsExit && exit === "shatter" && texts.join("").length <= LIMITS.letters;
@@ -264,13 +277,11 @@ export function kinetic(s, ctx) {
         });
       }
     });
-    html += `<div class="kn-pos" style="top:${y}%"><div id="${pid}" class="kn-phrase" style="font-size:calc(var(--u)*${size})">${inner.trim()}</div></div>`;
+    html += `<div class="kn-pos" style="top:${r3(slotY(j))}%"><div id="${pid}" class="kn-phrase" style="font-size:calc(var(--u)*${size})">${inner.trim()}</div></div>`;
     if (wantsExit) {
-      const tExit = clamp(
-        Math.min(lastEnd + 0.2, (nextStart ?? T) - 0.2),
-        g[g.length - 1].start + 0.25,
-        T - 0.05,
-      );
+      // Leave when the slot is needed again (two phrases on), or a little after the last word is said.
+      const slotNeeded = groups[j + 2]?.[0]?.start ?? T;
+      const tExit = clamp(Math.min(lastEnd + 0.5, slotNeeded - 0.05), lastEnd + 0.12, T - 0.05);
       if (shatter) {
         g.forEach((w, i) => {
           const k = n - g.length + i;
@@ -422,6 +433,7 @@ export const kineticCss = (brand) => {
 .kn-bg-black{background:#050607}
 .kn-bg-dark{background:${brand.colors.bg}}
 .kn-bg-accent{background:${a};color:#08090a}
+.kn-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 44%,${a}40,transparent 62%)}
 .kn-grid{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1.5px);background-size:calc(var(--u)*5) calc(var(--u)*5);opacity:.55}
 .kn-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.65) 100%)}
 .kn-grain{position:absolute;inset:0;opacity:.06;background-image:radial-gradient(rgba(255,255,255,.9) 1px,transparent 1px);background-size:calc(var(--u)*.7) calc(var(--u)*.7)}
@@ -444,6 +456,6 @@ export const kineticCss = (brand) => {
 .kn-flow{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:calc(var(--u)*4);align-items:center}
 .kn-flow-line{position:absolute;top:0;bottom:0;left:50%;width:calc(var(--u)*.35);transform:translateX(-50%);background:linear-gradient(${a}88,${a}22)}
 .kn-dot{position:absolute;left:50%;top:0;width:calc(var(--u)*2.2);height:calc(var(--u)*2.2);transform:translate(-50%,-50%);border-radius:50%;background:${a};box-shadow:0 0 calc(var(--u)*3) ${a},0 0 calc(var(--u)*7) ${a}aa;opacity:0;z-index:2}
-.kn-node{position:relative;z-index:1;padding:calc(var(--u)*1.2) calc(var(--u)*3.4);border:calc(var(--u)*.3) solid ${a};background:#090a0c;color:#fff;font-family:'Inter',sans-serif;font-weight:800;font-size:calc(var(--u)*3);text-transform:uppercase;letter-spacing:.06em;opacity:0}
+.kn-node{position:relative;z-index:1;padding:calc(var(--u)*1.2) calc(var(--u)*3.4);border:calc(var(--u)*.3) solid ${a};background:#090a0c;color:#fff;font-family:'Inter',sans-serif;font-weight:800;font-size:calc(var(--u)*3.8);text-transform:uppercase;letter-spacing:.06em;opacity:0}
 `;
 };

@@ -8,6 +8,12 @@ import {
   renderCaptions,
 } from "../assets/engine/hyperframes/captions.mjs";
 import { KINDS, esc, kindCss, renderScene } from "../assets/engine/hyperframes/scenes.mjs";
+import {
+  MIN_SLASH_GAP,
+  TRANSITIONS,
+  transitionCss,
+  transitionParts,
+} from "../assets/engine/hyperframes/transitions.mjs";
 import { skillDir } from "./_lib.mjs";
 
 export const SIZES = {
@@ -16,7 +22,7 @@ export const SIZES = {
   "youtube-16x9": [1920, 1080],
   "square-1x1": [1080, 1080],
 };
-export const BUILT_TRANSITIONS = ["cut", "fade"];
+export const BUILT_TRANSITIONS = ["cut", "fade", ...TRANSITIONS];
 const FADE_FRAMES = 8;
 
 export const DEFAULT_BRAND = Object.freeze({
@@ -60,7 +66,7 @@ html,body{margin:0;background:${brand.colors.bg}}
 .scene-broll{padding:0;gap:0}
 .media{position:absolute;inset:0;width:100%;height:100%}
 .media-cap{position:absolute;inset-inline:calc(var(--u)*7);bottom:calc(var(--u)*${vertical ? 16 : 6});margin:0;font-size:calc(var(--u)*3.8);font-weight:700}
-${kindCss(brand, vertical, kinds)}`;
+${kindCss(brand, vertical, kinds)}${transitionCss(brand)}`;
 
 /**
  * Everything an engine needs to draw the film, before it is wrapped in a page: the stylesheet, the scene
@@ -134,6 +140,9 @@ export function buildParts({
   const gls = [];
   let body = "";
   let roots = "";
+  let trans = "";
+  let lastSlash = -Infinity;
+  const ctxs = [];
   video.scenes.forEach((s, i) => {
     const t = timing.scenes[i];
     const first = i === 0;
@@ -141,7 +150,7 @@ export function buildParts({
     if (!BUILT_TRANSITIONS.includes(transition))
       notes.push(`scene ${s.id}: transition "${transition}" is not built yet; used cut`);
     const prefix = `sc-${s.id}`;
-    const r = renderScene(s, {
+    const ctx = {
       prefix,
       at: t.start,
       seconds: t.seconds,
@@ -156,7 +165,9 @@ export function buildParts({
       visemes,
       words: words[i] ?? [],
       fps,
-    });
+    };
+    ctxs.push(ctx);
+    const r = renderScene(s, ctx);
     plan.push(...r.plan);
     if (r.gl) gls.push(r.gl);
     roots += r.root ?? "";
@@ -169,9 +180,36 @@ export function buildParts({
         ease: "inOut",
       });
     body += `<section id="${prefix}" class="clip scene scene-${s.kind}" data-start="${t.start}" data-duration="${t.seconds}">${r.html}</section>\n`;
+    // Overlapping transitions: the previous scene is drawn again in its final state and cut or moved away on top.
+    if (!first && TRANSITIONS.includes(transition)) {
+      let style = transition;
+      if (style === "slash" && t.start - lastSlash < MIN_SLASH_GAP) {
+        notes.push(
+          `scene ${s.id}: a slash within ${MIN_SLASH_GAP} s of the last one would strobe; used a whip`,
+        );
+        style = "whip";
+      }
+      if (style === "slash") lastSlash = t.start;
+      const prev = video.scenes[i - 1];
+      const pc = ctxs[i - 1];
+      const tr = transitionParts({
+        style,
+        id: `tr${i}`,
+        kind: prev.kind,
+        copy: (tag) => renderScene(prev, { ...pc, prefix: `${pc.prefix}-t${i}${tag}` }),
+        size: [w, h],
+        at: t.start,
+        dur: s.transitionSeconds,
+        seed: i * 17 + 3,
+        angle: s.transitionAngle ?? (i % 2 ? -62 : 58),
+      });
+      trans += tr.html;
+      plan.push(...tr.plan);
+    }
   });
 
   body += roots;
+  body += trans;
 
   // Scenes keep clear of burned captions: their bottom padding is at least the caption zone.
   const basePad = (w / 100) * (vertical ? 16 : 6);

@@ -96,13 +96,23 @@ describe("kinetic scene", () => {
     expect(html.match(/class="kn-phrase"/g)).toHaveLength(2);
     const exit0 = plan.find((p) => p.id === "sc-a-p0")!;
     expect(exit0.at - 5).toBeGreaterThan(1.0); // after "moly." is said
-    expect(exit0.at - 5).toBeLessThan(1.4); // before "You"
+    // The next phrase arrives in the other slot (one above the other) while this one is still readable.
+    const top = (id: string) =>
+      /id="sc-a-p\d" class="kn-phrase"/.test(html) &&
+      Number(new RegExp(`top:([\\d.]+)%"><div id="${id}"`).exec(html)![1]);
+    expect(top("sc-a-p0")).not.toBe(top("sc-a-p1"));
     expect(plan.find((p) => p.id === "sc-a-p1")).toBeUndefined(); // the last phrase stays for the transition
     expect(
       renderScene(scene({ holdLast: false }), ctx()).plan.find((p) => p.id === "sc-a-p1"),
     ).toBeTruthy();
+    // "none" would pile phrases on each other, so with several phrases it slides; a single phrase may stay.
     expect(
       renderScene(scene({ exit: "none" }), ctx()).plan.find((p) => p.id === "sc-a-p0"),
+    ).toBeTruthy();
+    expect(
+      renderScene(scene({ exit: "none" }), ctx({ words: words.slice(0, 2) })).plan.find(
+        (p) => p.id === "sc-a-p0",
+      ),
     ).toBeUndefined();
   });
   it("shatters a phrase into letters that fly apart, repeatably", async () => {

@@ -112,7 +112,21 @@
           "items": { "type": "string", "pattern": "^[a-z0-9-]{1,32}$" }
         },
         "props": { "type": "object" },
-        "transitionIn": { "enum": ["cut", "fade", "slide", "zoom", "whip", "match"] },
+        "transitionIn": {
+          "enum": [
+            "cut",
+            "fade",
+            "slide",
+            "zoom",
+            "whip",
+            "match",
+            "slash",
+            "shatter",
+            "zoom-through"
+          ]
+        },
+        "transitionSeconds": { "type": "number", "minimum": 0.25, "maximum": 0.8 },
+        "transitionAngle": { "type": "number", "minimum": -85, "maximum": 85 },
         "captions": { "enum": ["auto", "off", "custom"] }
       }
     },

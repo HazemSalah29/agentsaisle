@@ -130,10 +130,10 @@ describe("video-core project builder", () => {
   it("says when a transition is not built yet", async () => {
     const { buildProject } = await project();
     const video: Loose = fixtureVideo();
-    video.scenes[1].transitionIn = "whip";
+    video.scenes[1].transitionIn = "slide";
     const t = await timingFor(video);
     expect(buildProject({ video, timing: t }).notes).toEqual([
-      'scene rules: transition "whip" is not built yet; used cut',
+      'scene rules: transition "slide" is not built yet; used cut',
     ]);
   });
 });
