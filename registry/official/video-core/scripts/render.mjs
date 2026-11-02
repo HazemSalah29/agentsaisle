@@ -2,7 +2,7 @@
 // Renders a project: check -> HyperFrames project in out/hf -> render -> mix voice and music -> out/<name>.mp4.
 // Every program is started through run.mjs (allow-list, argument arrays, no shell). HyperFrames itself is never
 // installed or downloaded here; if it is missing the script prints the install line and stops.
-// Usage: node render.mjs <project-dir> [--engine hyperframes|remotion] [--draft] [--hyperframes <package-dir>] [--remotion <cli-package-dir>]
+// Usage: node render.mjs <project-dir> [--engine hyperframes|remotion] [--draft] [--ignore-approval] [--hyperframes <package-dir>] [--remotion <cli-package-dir>]
 import {
   copyFileSync,
   existsSync,
@@ -26,6 +26,7 @@ import {
   remotionArgs,
   remotionProblems,
 } from "./render-remotion.mjs";
+import { approvalState, writeValidation } from "./review.mjs";
 import { run } from "./run.mjs";
 import { buildTiming } from "./timing.mjs";
 import { capLines, isEntry, isInside, parseArgs } from "./_lib.mjs";
@@ -269,7 +270,7 @@ function main() {
   let parsed;
   try {
     parsed = parseArgs(process.argv.slice(2), {
-      booleans: ["draft"],
+      booleans: ["draft", "ignore-approval"],
       strings: ["engine", "hyperframes", "remotion"],
     });
   } catch (e) {
@@ -347,6 +348,17 @@ function main() {
     notes.push(
       `Remotion ${rm.version}: this adapter has not been tested against a real Remotion install yet`,
     );
+  }
+
+  // A final render never runs on a draft that was approved for an older version of the project.
+  if (!flags.draft) {
+    const ap = approvalState(dir);
+    if (ap.state === "stale" && !flags["ignore-approval"])
+      fail(
+        `The approved draft is out of date (${ap.reason}). Render a new draft (--draft), look at it, run review.mjs approve, then render the final. To render anyway, add --ignore-approval.`,
+      );
+    if (ap.state === "current")
+      notes.push(`the approved draft matches this project (${ap.approval.draft})`);
   }
 
   const brandRel = video.meta.brand;
@@ -454,12 +466,29 @@ function main() {
       capLines((m.stdout + m.stderr).split("\n").filter(Boolean).slice(-20), "ffmpeg mux failed."),
     );
 
+  let report;
+  try {
+    report = writeValidation({
+      dir,
+      file: out,
+      video,
+      timing,
+      draft: flags.draft,
+      size: built.size,
+    });
+  } catch (e) {
+    notes.push(`could not write validation.json: ${String(e.message).slice(0, 80)}`);
+  }
+  if (report && !report.ok)
+    for (const c of report.checks.filter((x) => x.level === "fail"))
+      notes.push(`validation: ${c.id}: ${c.text}`);
   console.log(
     capLines(
       notes.map((n) => `note: ${n}`),
       `Rendered ${path.relative(dir, out)}: ${timing.totalSeconds}s, ${flags.draft ? "540p draft" : built.size.join("x")}, ${voice.length} voice line(s)${music ? ", music" : ""}${sfx.length ? `, ${sfx.length} sound effect(s)` : ""}, ${(statSync(out).size / 1024).toFixed(0)} KB.`,
     ),
   );
+  if (report && !report.ok) process.exit(1);
 }
 
 if (isEntry(import.meta.url)) main();
