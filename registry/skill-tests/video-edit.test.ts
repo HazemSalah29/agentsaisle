@@ -198,3 +198,17 @@ describe.skipIf(!haveFF)("video-edit on real files", () => {
     );
   });
 });
+
+describe("the skill itself", () => {
+  it("has no network access, a short SKILL.md and a runner identical to video-core's", () => {
+    const meta = readFileSync(skillFile("video-edit", "skill.meta.yaml"), "utf8");
+    expect(meta).toContain("network: false");
+    expect(
+      readFileSync(skillFile("video-edit", "SKILL.md"), "utf8").split("\n").length,
+    ).toBeLessThanOrEqual(150);
+    for (const f of ["scripts/run.mjs", "scripts/_lib.mjs"])
+      expect(readFileSync(skillFile("video-edit", f), "utf8")).toBe(
+        readFileSync(skillFile("video-core", f), "utf8"),
+      );
+  });
+});
