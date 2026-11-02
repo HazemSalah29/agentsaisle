@@ -66,7 +66,8 @@ describe("video doctor", () => {
     );
   });
 
-  it("never prints a key value, only found or missing", () => {
+  // The real doctor probes the voice and face engines, which import heavy Python libraries: allow it time.
+  it("never prints a key value, only found or missing", { timeout: 60_000 }, () => {
     const secret = "sk-canary-1234567890";
     const keys = Object.fromEntries(d.KEY_NAMES.map((k) => [k, true]));
     const out = d.report({ tools: all(true), keys, platform: "darwin" });

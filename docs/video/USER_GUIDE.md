@@ -1,6 +1,6 @@
-# Agent Aisle video library: user guide (draft, M3)
+# Agent Aisle video library: user guide (draft, M4)
 
-This is a draft. In this version you can set up a studio folder, write a script and storyboard, add animated diagrams and code scenes, make a voice track and captions, render a video and have it checked automatically. Editing footage, other video types and publishing come in later versions. `/video explain "<topic>"` walks an explainer through all of it.
+This is a draft. In this version you can set up a studio folder, write a script and storyboard, add animated diagrams and code scenes, make a voice track and captions, render a video and have it checked automatically, edit footage you already have, prepare a video for posting, and measure how a reference video is paced. Other video types (kids, story, showcase) and uploading come in later versions or never: nothing here uploads for you. `/video explain "<topic>"` walks an explainer through all of it.
 
 ## 1. Where it runs
 
@@ -52,6 +52,8 @@ The same project and assets always give the same video, byte for byte.
 - 3arab-TTS (Arabic voice) is about 1 GB of model plus libraries and runs slowly on a CPU.
 - The exact steps, versions and the measured numbers are in `registry/official/video-voice/references/engines.md`. Voices are machine voices; Arabic text and speech are a draft that a native speaker should review before you publish.
 
+10. **Publish** (`/video-publish --platforms shorts,reels,tiktok`). Prepares one folder per platform. See "Publishing" below.
+
 ### Diagram scenes
 
 ![A token bucket simulated on 60 random requests](images/m3-rate-limit.jpg) ![The bucket in code](images/m3-code.jpg) ![Fixed against sliding window](images/m3-fixed-vs-sliding.jpg) ![A request flow from the code of aisle add](images/m3-request-flow.jpg)
@@ -67,9 +69,29 @@ The same project and assets always give the same video, byte for byte.
 
 ![The contact sheet of the rate-limit demo](images/m3-contact-sheet.png)
 
+### Editing footage
+
+`/video-edit` works on files you already have (a screen recording, a talking clip). Each command reads the original and writes a new file; the original is never changed.
+
+- `cut` tightens a talking clip: it shrinks long pauses and takes out "um"s (Arabic fillers too). It is a dry run first and prints what it would remove; add `--apply --out tight.mp4` to render it. On the rate-limit demo it found 16 pauses worth 11 seconds. Without whisper.cpp use `--silence-only`.
+- `reframe` turns 16:9 into 9:16. With OpenCV installed (`/video doctor` says) it follows the speaker's face; otherwise use `--mode center|left|right|x=0.4`. It tells you how often a face was found, and it can miss profiles and several people.
+- `audio` brings the sound to -14 LUFS without squashing it (two passes), with optional `--denoise` and music under the voice. `color` has three looks (warm, cool, film), your own `.cube` LUT, and an automatic white balance. `stabilize`, `jumpcut` (eased zooms at times you give), `trim`, `join`, `speed`, `gif` and `scenes` are there too.
+
+### Publishing
+
+`/video-publish` needs a final render, a passing check and `credits.json`. You (or the agent) write `publish/copy.json` with a title, description and hashtags; the tool checks it against each platform's limits and refuses any number that is not in your script or facts. Per platform you get the encoded video, three thumbnails and a designed title card, the checked text (with YouTube chapters made from your scenes), captions, credits, a `disclosure.md` with the questions to answer on the platform (including "made for kids"), and `exports/publish.json` with file hashes. It never uploads. The platform limits are unverified (third-party sources disagree, and the smaller limit is used); check each platform's own page before relying on them.
+
+![The thumbnails and card of the rate-limit demo](images/m4-thumbnails.jpg)
+
+### Learning a format
+
+`/video-analyze <file> --name my-format --rights own|permission|cc|public-domain` measures how a video you have the right to use is made: cuts a minute, shot length, hook length, how much moves and how much is speech, five colours and a (rough) tempo guess. It writes `recipes/my-format.json` with numbers only. It never keeps or reuses the footage, sound, words or characters, and it does not measure text on screen or caption style. The rights you state are recorded, not verified.
+
 ## 5. Troubleshooting
 
 - **"FFmpeg not found"**: run `/video doctor`.
+- **`reframe` says no face was found**: OpenCV may not be installed (`/video doctor`), or the face is small or sideways. Use `--mode center`, `left`, `right` or `x=0.4`.
+- **`/video-publish` refuses**: read each `REFUSED` line; it names the missing QA, credits or copy, the wrong shape for the platform, or a number that is not in your script.
 - **"HyperFrames is not installed"**: run the install line it prints.
 - **A code scene looks different on another computer**: it uses that computer's monospace font; the colours and layout are the same.
 - **`/video-qa` says "could not run video-core checks"**: install `video-core` next to `video-qa` in the same skills folder.

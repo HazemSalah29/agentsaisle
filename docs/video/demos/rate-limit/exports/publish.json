@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "project": "rate-limit",
+  "uploaded": false,
+  "source": {
+    "file": "out/rate-limit.mp4",
+    "sha256": "20fd529d6c949de71389208685c736b43e52af208949159327fd46f95d78d17f",
+    "seconds": 52.7
+  },
+  "qa": {
+    "ok": true
+  },
+  "platforms": [
+    {
+      "platform": "shorts",
+      "files": [
+        {
+          "path": "shorts/video.mp4",
+          "bytes": 3088834,
+          "sha256": "792f57ea4a83952ea264b0d12a18dc84d7da6415ddbb9869e5fa9767735eeec2"
+        },
+        {
+          "path": "shorts/thumbnail-1.jpg",
+          "bytes": 77155,
+          "sha256": "8e60c3031403ebdf8d40d00c40444b9d7dde5d7f7774c1e56a87c5044751b9d3"
+        },
+        {
+          "path": "shorts/thumbnail-2.jpg",
+          "bytes": 114806,
+          "sha256": "711cca5da8e259186b47f928a4a0801de67e1408213b1cc4e5a2f5c4226dd431"
+        },
+        {
+          "path": "shorts/thumbnail-3.jpg",
+          "bytes": 110765,
+          "sha256": "373399ffdfdbb908f043eb808eaf9b323d42093a693e6f411803f74a8a5cb17a"
+        },
+        {
+          "path": "shorts/thumbnail-card.jpg",
+          "bytes": 57354,
+          "sha256": "059a152dcc53803d27dcf70181b96330b0a80d5b6552e00e138b6f101730f358"
+        },
+        {
+          "path": "shorts/copy.json",
+          "bytes": 511,
+          "sha256": "959a15c6a563efd22392bf4908aba4514d8d780347ac6e5ed640fcf9110c5d05"
+        },
+        {
+          "path": "shorts/captions.srt",
+          "bytes": 2064,
+          "sha256": "6cd5dd9746dd3a67905d502368802d400f46f14f752c73fb6c6dd103c29651f9"
+        },
+        {
+          "path": "shorts/captions.vtt",
+          "bytes": 2111,
+          "sha256": "b40d8346aff5aa323e99efb408b583e6a7d0ee62497ba5938eddc14066f6beaa"
+        },
+        {
+          "path": "shorts/CREDITS.txt",
+          "bytes": 392,
+          "sha256": "468793a8fec8b2690a3ec9cc6220673b599cfefc9fd7414aff102f31e6084668"
+        },
+        {
+          "path": "shorts/disclosure.md",
+          "bytes": 580,
+          "sha256": "83454d20bd0d799dcfaf9aa780c1ca7ea8e15c89b7f85b3426314fb8d255ae0d"
+        }
+      ]
+    },
+    {
+      "platform": "reels",
+      "files": [
+        {
+          "path": "reels/video.mp4",
+          "bytes": 3088834,
+          "sha256": "792f57ea4a83952ea264b0d12a18dc84d7da6415ddbb9869e5fa9767735eeec2"
+        },
+        {
+          "path": "reels/thumbnail-1.jpg",
+          "bytes": 77155,
+          "sha256": "8e60c3031403ebdf8d40d00c40444b9d7dde5d7f7774c1e56a87c5044751b9d3"
+        },
+        {
+          "path": "reels/thumbnail-2.jpg",
+          "bytes": 114806,
+          "sha256": "711cca5da8e259186b47f928a4a0801de67e1408213b1cc4e5a2f5c4226dd431"
+        },
+        {
+          "path": "reels/thumbnail-3.jpg",
+          "bytes": 110765,
+          "sha256": "373399ffdfdbb908f043eb808eaf9b323d42093a693e6f411803f74a8a5cb17a"
+        },
+        {
+          "path": "reels/thumbnail-card.jpg",
+          "bytes": 57354,
+          "sha256": "059a152dcc53803d27dcf70181b96330b0a80d5b6552e00e138b6f101730f358"
+        },
+        {
+          "path": "reels/copy.json",
+          "bytes": 511,
+          "sha256": "959a15c6a563efd22392bf4908aba4514d8d780347ac6e5ed640fcf9110c5d05"
+        },
+        {
+          "path": "reels/captions.srt",
+          "bytes": 2064,
+          "sha256": "6cd5dd9746dd3a67905d502368802d400f46f14f752c73fb6c6dd103c29651f9"
+        },
+        {
+          "path": "reels/captions.vtt",
+          "bytes": 2111,
+          "sha256": "b40d8346aff5aa323e99efb408b583e6a7d0ee62497ba5938eddc14066f6beaa"
+        },
+        {
+          "path": "reels/CREDITS.txt",
+          "bytes": 392,
+          "sha256": "468793a8fec8b2690a3ec9cc6220673b599cfefc9fd7414aff102f31e6084668"
+        },
+        {
+          "path": "reels/disclosure.md",
+          "bytes": 493,
+          "sha256": "12d1396834ace5f9e05fe19535cf6045ba62fbdf6463103ced8eb8237a86b188"
+        }
+      ]
+    },
+    {
+      "platform": "tiktok",
+      "files": [
+        {
+          "path": "tiktok/video.mp4",
+          "bytes": 3088907,
+          "sha256": "733f639965fb3e5b2515a12c9d88822b3c5b9f8a954194bcc3dcc8aa1a9cb0ed"
+        },
+        {
+          "path": "tiktok/thumbnail-1.jpg",
+          "bytes": 77155,
+          "sha256": "8e60c3031403ebdf8d40d00c40444b9d7dde5d7f7774c1e56a87c5044751b9d3"
+        },
+        {
+          "path": "tiktok/thumbnail-2.jpg",
+          "bytes": 114806,
+          "sha256": "711cca5da8e259186b47f928a4a0801de67e1408213b1cc4e5a2f5c4226dd431"
+        },
+        {
+          "path": "tiktok/thumbnail-3.jpg",
+          "bytes": 110765,
+          "sha256": "373399ffdfdbb908f043eb808eaf9b323d42093a693e6f411803f74a8a5cb17a"
+        },
+        {
+          "path": "tiktok/thumbnail-card.jpg",
+          "bytes": 57354,
+          "sha256": "059a152dcc53803d27dcf70181b96330b0a80d5b6552e00e138b6f101730f358"
+        },
+        {
+          "path": "tiktok/copy.json",
+          "bytes": 511,
+          "sha256": "959a15c6a563efd22392bf4908aba4514d8d780347ac6e5ed640fcf9110c5d05"
+        },
+        {
+          "path": "tiktok/captions.srt",
+          "bytes": 2064,
+          "sha256": "6cd5dd9746dd3a67905d502368802d400f46f14f752c73fb6c6dd103c29651f9"
+        },
+        {
+          "path": "tiktok/captions.vtt",
+          "bytes": 2111,
+          "sha256": "b40d8346aff5aa323e99efb408b583e6a7d0ee62497ba5938eddc14066f6beaa"
+        },
+        {
+          "path": "tiktok/CREDITS.txt",
+          "bytes": 392,
+          "sha256": "468793a8fec8b2690a3ec9cc6220673b599cfefc9fd7414aff102f31e6084668"
+        },
+        {
+          "path": "tiktok/disclosure.md",
+          "bytes": 514,
+          "sha256": "338001d9a2cb97569164c63370b56b888781845a0421b3086aa260f4d5eb041f"
+        }
+      ]
+    },
+    {
+      "platform": "linkedin",
+      "files": [
+        {
+          "path": "linkedin/video.mp4",
+          "bytes": 3088939,
+          "sha256": "bd4daa6350754b8c6c8f35ed595146e45f88d32d08f8ae6122ae1e6b29e19aa1"
+        },
+        {
+          "path": "linkedin/thumbnail-1.jpg",
+          "bytes": 77155,
+          "sha256": "8e60c3031403ebdf8d40d00c40444b9d7dde5d7f7774c1e56a87c5044751b9d3"
+        },
+        {
+          "path": "linkedin/thumbnail-2.jpg",
+          "bytes": 114806,
+          "sha256": "711cca5da8e259186b47f928a4a0801de67e1408213b1cc4e5a2f5c4226dd431"
+        },
+        {
+          "path": "linkedin/thumbnail-3.jpg",
+          "bytes": 110765,
+          "sha256": "373399ffdfdbb908f043eb808eaf9b323d42093a693e6f411803f74a8a5cb17a"
+        },
+        {
+          "path": "linkedin/thumbnail-card.jpg",
+          "bytes": 57354,
+          "sha256": "059a152dcc53803d27dcf70181b96330b0a80d5b6552e00e138b6f101730f358"
+        },
+        {
+          "path": "linkedin/copy.json",
+          "bytes": 511,
+          "sha256": "959a15c6a563efd22392bf4908aba4514d8d780347ac6e5ed640fcf9110c5d05"
+        },
+        {
+          "path": "linkedin/captions.srt",
+          "bytes": 2064,
+          "sha256": "6cd5dd9746dd3a67905d502368802d400f46f14f752c73fb6c6dd103c29651f9"
+        },
+        {
+          "path": "linkedin/captions.vtt",
+          "bytes": 2111,
+          "sha256": "b40d8346aff5aa323e99efb408b583e6a7d0ee62497ba5938eddc14066f6beaa"
+        },
+        {
+          "path": "linkedin/CREDITS.txt",
+          "bytes": 392,
+          "sha256": "468793a8fec8b2690a3ec9cc6220673b599cfefc9fd7414aff102f31e6084668"
+        },
+        {
+          "path": "linkedin/disclosure.md",
+          "bytes": 513,
+          "sha256": "0a0965db6ef6e7b5e6a77d646b75bfcc18bc0d6636a574c9d5712ede074074db"
+        }
+      ]
+    }
+  ],
+  "statement": "Nothing was uploaded. Upload by hand, and answer each platform's own questions using disclosure.md."
+}

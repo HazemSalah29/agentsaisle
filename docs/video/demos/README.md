@@ -35,3 +35,20 @@ For the request flow, replace the two `simulate.mjs` lines with `node <video-exp
 - The code on the `rate-limit` demo's code scene is the token-bucket step of the simulator, simplified, and says so on screen.
 - The request-flow model covers only the install path (5 components, 4 connections); `arch-visualize`'s automatic discovery found 86 components in this repository, mostly test fixtures and skill folders, so the model was scoped by hand. Each line number was checked against the source when it was written. It shows what the code says, not live traffic.
 - The voice is a computer-generated English voice (Kokoro, Apache 2.0). Loudness, margins and caption sizes were checked with `video-qa` using working defaults that are not confirmed platform rules.
+
+## Editing, publishing and analyzing the rate-limit demo (video library, M4)
+
+Run on `rate-limit/rate-limit.mp4` with the real tools on one machine (Apple Silicon, ffmpeg 9.0.2, whisper.cpp base model). These are measurements of that run, not promises for other footage.
+
+| Command                                                         | Result                                                                                                                                                                                                                      |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cut` (dry run, whisper words trimmed to the sound)             | 52.7 s to 41.55 s: 16 pauses, no fillers (the voice is synthetic). `--apply` wrote a 41.64 s file, within 0.1 s of the plan, in about 4 s.                                                                                  |
+| `audio` on the cut file                                         | -14.3 LUFS integrated, the file's length unchanged (target -14, +-1).                                                                                                                                                       |
+| `gif` (12 s to 17 s, width 320)                                 | 5 s, 320x569, 235 KB.                                                                                                                                                                                                       |
+| `scenes`                                                        | 0 cuts. The demo changes scene with fades on a dark background, and the detector looks at brightness, so it misses them; an honest limit of `scenes`, not a property of the video.                                          |
+| `analyze --rights own`                                          | moving 0.37, sound 0.76, speech 0.75; palette #101215 (79%), #222325, #36383a; tempo guess 158 BPM at confidence 0.27 (a heuristic on narration, meaningless here). See [`rate-limit/recipe.json`](rate-limit/recipe.json). |
+| `publish --platforms shorts,reels,tiktok,linkedin` (both demos) | Four packs each, 10 files per platform including a designed thumbnail card; about 30 s per demo. The MP4 in each pack is re-encoded (about 3 MB for rate-limit, 2.4 MB for request-flow).                                   |
+
+What is committed from the packs: [`rate-limit/exports/`](rate-limit/exports) and [`request-flow/exports/`](request-flow/exports) hold `publish.json` (sizes and SHA-256 of every file, including the videos) and, for Shorts, the checked `copy.json`, `disclosure.md`, the four thumbnails, captions and credits. The re-encoded videos are not committed (they would repeat the demo MP4); run `publish` again to regenerate them. The text in `publish/copy.json` was checked by the tool: every number in it appears in the script or facts.
+
+Platform limits used by `publish` are unverified (see `video-publish/assets/platforms.json`).
