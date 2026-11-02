@@ -102,6 +102,10 @@ What it will not do: record a site that is not yours (localhost only, or `--own-
 
 Demo: [`docs/video/demos/kids/`](demos/kids) holds "Nour learns to share" (two characters, three scenes, about 31 seconds): the MP4, its sources and its QA report.
 
+### Agent session timelapse
+
+`/video session` turns a saved Claude Code log (`~/.claude/projects/<project>/<session>.jsonl`) or a timestamped text log into a short with up to 8 key moments, one code diff and "the session in numbers". Idle gaps over a minute count as one second. Secrets, e-mail addresses and home folders are replaced before anything is kept, and tool output is never used, but prompts and code can still be private: read `script.md` before you publish, and only use sessions that are yours to show. Logs up to 100 MB are read; nothing is run or sent anywhere.
+
 ### Publishing
 
 `/video-publish` needs a final render, a passing check and `credits.json`. You (or the agent) write `publish/copy.json` with a title, description and hashtags; the tool checks it against each platform's limits and refuses any number that is not in your script or facts. Per platform you get the encoded video, three thumbnails and a designed title card, the checked text (with YouTube chapters made from your scenes), captions, credits, a `disclosure.md` with the questions to answer on the platform (including "made for kids"), and `exports/publish.json` with file hashes. It never uploads. The platform limits are unverified (third-party sources disagree, and the smaller limit is used); check each platform's own page before relying on them.
