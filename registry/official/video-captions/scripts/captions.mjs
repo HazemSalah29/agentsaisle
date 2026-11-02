@@ -4,7 +4,7 @@
 // long pauses, and respect the platform safe zone. How they look is data: a style from assets/styles.json,
 // adjusted by brand.json and the captions block of video.json. video-core draws them in the browser engine,
 // so Arabic letters join properly.
-// Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean|kids] [--max-words 4] [--burn|--srt|--both]
+// Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean] [--max-words 4] [--burn|--srt|--both]
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
@@ -17,7 +17,7 @@ const HOLD = 0.2; // seconds a caption stays after its last word
 
 export const loadStyles = () =>
   JSON.parse(readFileSync(path.join(skillDir(), "assets", "styles.json"), "utf8"));
-export const STYLE_NAMES = ["karaoke", "pop", "clean", "kids"];
+export const STYLE_NAMES = ["karaoke", "pop", "clean"];
 
 /**
  * Split n items into groups of at most `max`, as even as possible (sizes differ by at most one) and never a
@@ -257,7 +257,7 @@ function main() {
   const { flags, positional } = parsed;
   if (!positional[0] || [flags.burn, flags.srt, flags.both].filter(Boolean).length > 1) {
     console.error(
-      "Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean|kids] [--max-words 4] [--bilingual translations.json] [--burn|--srt|--both]",
+      "Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean] [--max-words 4] [--bilingual translations.json] [--burn|--srt|--both]",
     );
     process.exit(2);
   }

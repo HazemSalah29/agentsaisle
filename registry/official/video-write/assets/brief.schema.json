@@ -20,7 +20,7 @@
       "maxLength": 120
     },
     "mode": {
-      "enum": ["explain", "story", "kids"]
+      "enum": ["explain", "story"]
     },
     "lang": {
       "type": "string",
@@ -59,11 +59,6 @@
     },
     "dialect": {
       "enum": ["msa", "egyptian"]
-    },
-    "learningGoal": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 120
     }
   }
 }

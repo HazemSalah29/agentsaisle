@@ -32,18 +32,6 @@
     "stroke": 0,
     "uppercase": false
   },
-  "kids": {
-    "description": "Big, bold words on a dark panel, three words to a line, the spoken word highlighted. For young readers.",
-    "weight": 800,
-    "size": 0.065,
-    "highlight": "word",
-    "wordIn": "none",
-    "lineIn": "fade",
-    "background": "panel",
-    "stroke": 0,
-    "uppercase": false,
-    "maxWords": 3
-  },
   "safeZones": {
     "reel": {
       "bottom": 0.22,

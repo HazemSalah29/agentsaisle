@@ -150,7 +150,7 @@ const setPath = (obj, pth, value) => {
   if (o != null) o[pth[pth.length - 1]] = value;
 };
 
-/** The translated video: texts replaced, language and direction set, puppets mirrored, stale outputs dropped. */
+/** The translated video: texts replaced, language and direction set, stale outputs dropped. */
 export function localizeVideo(source, doc) {
   const video = JSON.parse(JSON.stringify(source));
   const byKey = new Map(doc.items.map((i) => [i.key, i.target.trim()]));
@@ -159,7 +159,6 @@ export function localizeVideo(source, doc) {
       const v = byKey.get(`scene:${s.id}:${t.path.join(".")}`);
       if (v) setPath(s.props, t.path, v);
     }
-  const fromDir = dirOf(source.meta.lang);
   const toDir = dirOf(doc.to);
   video.meta.lang = doc.to;
   video.meta.dir = toDir;
@@ -167,15 +166,6 @@ export function localizeVideo(source, doc) {
     video.voice = { provider: "3arab", voiceId: VOICES.ar[doc.dialect ?? "msa"] };
   else video.voice = { provider: VOICES.en.provider };
   delete video.captions; // captions.mjs writes them again from the new voice
-  if (fromDir !== toDir)
-    for (const s of video.scenes ?? [])
-      if (s.kind === "puppet")
-        for (const c of s.props?.cast ?? []) {
-          if (typeof c.x === "number") c.x = Math.round((1 - c.x) * 1e4) / 1e4;
-          c.flip = !c.flip;
-          for (const a of c.acts ?? [])
-            if (typeof a.to === "number") a.to = Math.round((1 - a.to) * 1e4) / 1e4;
-        }
   return video;
 }
 
@@ -281,10 +271,7 @@ function main() {
   });
   const [cmd, dir] = positional;
   try {
-    if (flags.lipsync)
-      throw new Error(
-        "--lipsync is not built yet. Lip sync is not available; puppet videos already get mouth shapes from video-kids visemes.mjs.",
-      );
+    if (flags.lipsync) throw new Error("--lipsync is not built yet. Lip sync is not available.");
     if (flags["keep-voice"])
       throw new Error(
         "--keep-voice is not supported: this library does not clone voices. The dub uses a stock voice (video-voice).",

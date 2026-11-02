@@ -17,7 +17,6 @@ import path from "node:path";
 import { branchProblems, resolveBranches } from "../assets/interactive/branches.mjs";
 import { checkProject } from "./check.mjs";
 import { buildParts } from "./project.mjs";
-import { loadRigs, loadVisemes } from "./puppet-data.mjs";
 import { buildTiming } from "./timing.mjs";
 import { capLines, isEntry, isInside, parseArgs, skillDir } from "./_lib.mjs";
 
@@ -175,22 +174,17 @@ function main() {
   }
   let parts;
   try {
-    const { rigs, rigs3d } = loadRigs(video, dir);
     parts = buildParts({
       video,
       timing,
       brand,
       fontFiles,
       captions,
-      rigs,
-      rigs3d,
-      visemes: loadVisemes(dir),
       assetPaths: new Map((video.assets ?? []).map((a) => [a.id, path.join(dir, a.path)])),
     });
   } catch (e) {
     return fail(e.message);
   }
-  if (parts.gls.length) return fail("3D puppet scenes are not supported in the interactive page.");
   if (/<video[\s>]/.test(parts.body))
     return fail(
       "Scenes with video media (b-roll or screen recordings) are not supported in the interactive page: use stills, or export the video instead.",

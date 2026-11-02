@@ -6,7 +6,6 @@ import { calligraphy, calligraphyCss } from "./calligraphy.mjs";
 import { code, codeCss } from "./code.mjs";
 import { DIAGRAM_BUILDERS, DIAGRAM_KINDS, diagramCss } from "./diagrams.mjs";
 import { kinetic, kineticCss } from "./kinetic.mjs";
-import { puppet, puppetCss } from "./puppet.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
 import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { screen, screenCss } from "./screen.mjs";
@@ -27,7 +26,6 @@ export const KINDS = [
   "sequence",
   "request-flow",
   "screen",
-  "puppet",
   "timeline",
   "calligraphy",
   "shot",
@@ -218,7 +216,6 @@ const BUILDERS = {
   sequence,
   "request-flow": requestFlow,
   screen,
-  puppet,
   timeline,
   calligraphy,
   shot,
@@ -233,7 +230,6 @@ export const kindCss = (brand, vertical, kinds) =>
   sequenceCss(brand) +
   requestFlowCss(brand) +
   screenCss(brand) +
-  puppetCss() +
   timelineCss(brand) +
   calligraphyCss(brand) +
   shotCss(brand) +

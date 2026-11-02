@@ -10,7 +10,7 @@ One project, two outputs: the video, and a page where the viewer can pause, scru
 ## Don't use when
 
 - The user wants an MP4: that is `video-core` render.
-- The project has `screen` or video `broll` scenes or 3D puppets: the page refuses them (stills and every drawn scene work).
+- The project has `screen` or video `broll` scenes: the page refuses them (stills and every drawn scene work).
 - The user asks you to host or upload the page. Hand them the folder.
 
 ## Steps

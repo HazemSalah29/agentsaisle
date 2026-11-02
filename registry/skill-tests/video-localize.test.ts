@@ -15,7 +15,6 @@ type Rec = {
     props: {
       text?: string;
       items?: string[];
-      cast?: { x: number; flip: boolean; acts: { to: number }[] }[];
     };
   }[];
 };
@@ -43,13 +42,6 @@ const video = () => ({
       props: { text: "Rate limits", subtitle: "Why" },
     },
     { id: "items", kind: "list", narration: ["l2"], props: { items: ["One", "Two"] } },
-    {
-      id: "walk",
-      kind: "puppet",
-      props: {
-        cast: [{ rig: "nour", x: 0.25, flip: false, acts: [{ type: "walk", to: 0.75, at: 0 }] }],
-      },
-    },
   ],
 });
 const run = (...args: string[]) =>
@@ -117,7 +109,7 @@ describe("localize", () => {
     ).toEqual([]);
   });
 
-  it("sets language, direction and voice, mirrors puppets once, and keeps the source untouched", async () => {
+  it("sets language, direction and voice, and keeps the source untouched", async () => {
     const m = await loadScript<Mod>("video-localize", "scripts/localize.mjs");
     const src = video();
     const doc = fill({
@@ -132,8 +124,6 @@ describe("localize", () => {
     expect(out.captions).toBeUndefined();
     expect(out.scenes[0].props.text).toBe("تحديد المعدل");
     expect(out.scenes[1].props.items).toEqual(["واحد", "اثنان"]);
-    expect(out.scenes[2].props.cast![0]).toMatchObject({ x: 0.75, flip: true });
-    expect(out.scenes[2].props.cast![0].acts[0].to).toBe(0.25);
     expect((src.scenes[0].props as { text: string }).text).toBe("Rate limits");
     expect(m.localizeVideo(src, doc)).toEqual(out); // repeatable
     const script = m.localizeScript(SCRIPT, doc);

@@ -33,7 +33,7 @@ const input = (o: Loose = {}) => ({
 describe("video-product copies", () => {
   it("keeps byte-identical copies", () => {
     same(["video-product", "scripts/_lib.mjs"], ["video-core", "scripts/_lib.mjs"]);
-    same(["video-product", "scripts/run.mjs"], ["video-kids", "scripts/run.mjs"]);
+    same(["video-product", "scripts/run.mjs"], ["video-core", "scripts/run.mjs"]);
     same(["video-product", "scripts/_beats.mjs"], ["video-showcase", "scripts/_beats.mjs"]);
   });
 });

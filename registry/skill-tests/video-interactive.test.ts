@@ -252,7 +252,7 @@ describe("export-html.mjs", () => {
     expect(run([dir, "--audio", "/etc/passwd"]).status).toBe(2);
   });
 
-  it("refuses bad branches, video media and 3D scenes", () => {
+  it("refuses bad branches and video media", () => {
     const bad = good();
     bad.branches[0].then = "s6";
     const r = run([project(bad)]);

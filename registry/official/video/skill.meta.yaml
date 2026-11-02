@@ -1,4 +1,4 @@
-version: 0.22.0
+version: 0.23.0
 category: [video]
 clients: [claude-code]
 runs_scripts: true
@@ -18,12 +18,10 @@ requires:
   - video-captions
   - video-core
   - video-data
-  - video-drawing
   - video-edit
   - video-explain
   - video-generate
   - video-ingest
-  - video-kids
   - video-kinetic
   - video-localize
   - video-product

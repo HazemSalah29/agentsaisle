@@ -1,7 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { PAUSED_VIDEO_PARTS } from "../lint-skills";
 import { skillFile } from "./load";
 
 const official = path.dirname(skillFile("video", "SKILL.md")).replace(/\/video$/, "");
@@ -10,7 +9,6 @@ const text = (f: string) => readFileSync(skillFile("video", f), "utf8");
 const routing = [
   "references/choose.md",
   "references/explain.md",
-  "references/kids.md",
   "references/story.md",
   "references/localize.md",
 ]
@@ -26,10 +24,7 @@ describe("the video director", () => {
     expect(fm("video")).not.toMatch(/user-invocable: false|disable-model-invocation/);
     for (const part of parts) {
       expect(fm(part), part).toMatch(/^user-invocable: false$/m);
-      // Paused parts (kids' cartoons, drawing characters) are off for Claude too.
-      if (PAUSED_VIDEO_PARTS.includes(part))
-        expect(fm(part), part).toMatch(/^disable-model-invocation: true$/m);
-      else expect(fm(part), part).not.toMatch(/disable-model-invocation/);
+      expect(fm(part), part).not.toMatch(/disable-model-invocation/);
     }
   });
 
@@ -52,10 +47,10 @@ describe("the video director", () => {
     expect(skill).toMatch(/never upload/i);
   });
 
-  it("does not offer kids' cartoons or drawing characters while they are paused", () => {
+  it("says character animation is not offered instead of routing to it", () => {
     const skill = text("SKILL.md");
-    expect(skill).toMatch(/Those are paused/);
-    expect(skill).not.toMatch(/follow the recipe.*kids|`kids\.md`/);
-    expect(text("references/choose.md")).toMatch(/Kids \(paused\)/);
+    expect(skill).toMatch(/does not make character animation/);
+    expect(text("references/choose.md")).toMatch(/Not offered/);
+    expect(skill + routing).not.toMatch(/video-kids|video-drawing|puppet/);
   });
 });

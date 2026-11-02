@@ -187,7 +187,6 @@ describe("video-story continuity and reference packs", () => {
         readFileSync(skillFile(b.split(":")[0], `scripts/${b.split(":")[1] ?? f}`), "utf8"),
       );
     same("_lib.mjs", "video-core:_lib.mjs");
-    same("_bible-check.mjs", "video-kids:bible-check.mjs");
     same("_script-parse.mjs", "video-write:script-parse.mjs");
   });
 });

@@ -41,7 +41,6 @@ describe("video-core scenes", () => {
       "sequence",
       "request-flow",
       "screen",
-      "puppet",
       "timeline",
       "calligraphy",
       "shot",

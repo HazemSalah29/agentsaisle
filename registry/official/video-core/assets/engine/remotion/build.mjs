@@ -29,7 +29,6 @@ export function buildRemotionProject(args) {
     css: p.css.replace(/#root\b/g, "#film"),
     body: p.body,
     plan: p.plan,
-    gls: p.gls,
   };
   const tween = readFileSync(path.join(here, "..", "..", "lib", "tween.js"), "utf8");
   const files = {

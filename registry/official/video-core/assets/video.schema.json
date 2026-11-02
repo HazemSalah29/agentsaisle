@@ -10,7 +10,7 @@
       "required": ["title", "type", "format", "fps", "lang"],
       "properties": {
         "title": { "type": "string", "minLength": 1, "maxLength": 120 },
-        "type": { "enum": ["explainer", "kids", "story", "showcase", "edit", "custom"] },
+        "type": { "enum": ["explainer", "story", "showcase", "edit", "custom"] },
         "format": { "enum": ["reel-9x16", "short-9x16", "youtube-16x9", "square-1x1"] },
         "fps": { "enum": [24, 25, 30, 60] },
         "lang": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z]{2,4})?$" },
@@ -59,7 +59,7 @@
     "captions": {
       "type": "object",
       "properties": {
-        "style": { "enum": ["karaoke", "pop", "clean", "cinematic", "kids"] },
+        "style": { "enum": ["karaoke", "pop", "clean", "cinematic"] },
         "maxWordsPerLine": { "type": "integer", "minimum": 1 },
         "safeZone": { "enum": ["reel", "short", "youtube", "none"] },
         "burn": { "type": "boolean" }
@@ -97,7 +97,6 @@
             "sequence",
             "request-flow",
             "screen",
-            "puppet",
             "timeline",
             "calligraphy",
             "shot",
@@ -536,14 +535,6 @@
             "items": { "type": "object", "required": ["id", "from", "to"] }
           },
           "steps": { "type": "array", "minItems": 1, "maxItems": 14, "items": { "type": "object" } }
-        }
-      },
-      "puppet": {
-        "type": "object",
-        "required": ["cast"],
-        "properties": {
-          "backdrop": { "type": "object" },
-          "cast": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "object" } }
         }
       },
       "custom": { "type": "object" }

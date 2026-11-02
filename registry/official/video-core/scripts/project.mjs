@@ -70,7 +70,7 @@ ${kindCss(brand, vertical, kinds)}${transitionCss(brand)}`;
 
 /**
  * Everything an engine needs to draw the film, before it is wrapped in a page: the stylesheet, the scene
- * markup, the animation plan (absolute-time Web Animations), 3D scene specs, the media to copy and the
+ * markup, the animation plan (absolute-time Web Animations), the media to copy and the
  * canvas. Both engines (HyperFrames and Remotion) start from this, so a scene is written once.
  * Build the project (`captions` is a parsed captions.json to draw, or null). Returns { files: { "index.html": text }, media: [{ from, to }], fonts: [{ from, to }],
  * notes: [string] }. `fontFiles` are absolute paths found in brand/fonts; `assetPaths` maps asset id -> abs path.
@@ -82,9 +82,6 @@ export function buildParts({
   fontFiles = [],
   assetPaths = new Map(),
   captions = null,
-  rigs = new Map(),
-  rigs3d = new Map(),
-  visemes = new Map(),
   words = [],
 }) {
   const [w, h] = SIZES[video.meta.format];
@@ -137,9 +134,8 @@ export function buildParts({
   }
 
   const plan = [];
-  const gls = [];
   let body = "";
-  let roots = "";
+  let roots = ""; // video layers a scene needs at the top level of the page (screen recordings)
   let trans = "";
   let lastSlash = -Infinity;
   const ctxs = [];
@@ -160,16 +156,12 @@ export function buildParts({
       rise: Math.round((w / 100) * 2.4),
       size: [w, h],
       assets,
-      rigs,
-      rigs3d,
-      visemes,
       words: words[i] ?? [],
       fps,
     };
     ctxs.push(ctx);
     const r = renderScene(s, ctx);
     plan.push(...r.plan);
-    if (r.gl) gls.push(r.gl);
     roots += r.root ?? "";
     if (transition === "fade" && !first)
       plan.push({
@@ -225,13 +217,6 @@ export function buildParts({
   }
 
   const planJson = JSON.stringify(plan).replace(/</g, "\\u003c");
-  // 3D scenes load the vendored three.js and the page code from the project's own folder; nothing is fetched.
-  if (gls.length)
-    for (const name of ["vendor/three.mjs", "engine/hyperframes/puppet3d-page.mjs"])
-      media.push({
-        from: path.join(skillDir(), "assets", name),
-        to: `assets/3d/${path.basename(name)}`,
-      });
   return {
     css:
       css({
@@ -247,7 +232,6 @@ export function buildParts({
     body,
     plan,
     planJson,
-    gls,
     lang,
     dir,
     fps,
@@ -274,16 +258,9 @@ export function buildProject(args) {
 <div id="root" dir="${p.dir}" data-composition-id="main" data-start="0" data-duration="${p.seconds}" data-width="${w}" data-height="${h}" data-fps="${p.fps}">
 ${p.body}</div>
 <script>${tween}</script>
-${
-  p.gls.length
-    ? `<script type="module">
-import { mount } from "./assets/3d/puppet3d-page.mjs";
-window.__timelines = window.__timelines || {};
-window.__timelines["main"] = mount(VT.run(${p.planJson}, { id: "main", duration: ${p.seconds} }), ${JSON.stringify(p.gls).replace(/</g, "\\u003c")});
-</script>`
-    : `<script>window.__timelines = window.__timelines || {};
-window.__timelines["main"] = VT.run(${p.planJson}, { id: "main", duration: ${p.seconds} });</script>`
-}
+<script>window.__timelines = window.__timelines || {};
+window.__timelines["main"] = VT.run(${p.planJson}, { id: "main", duration: ${p.seconds} });</script>
+
 </body>
 </html>
 `;

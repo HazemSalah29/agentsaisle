@@ -48,8 +48,6 @@ export function guidance(flags, video) {
     out.push("The voice is a clone of the creator's own voice (consent: self).");
   if (flags.voiceClone === "consented")
     out.push("The voice is a clone of another speaker with recorded consent.");
-  if (video.meta?.audience?.startsWith("kids"))
-    out.push('Kids audience: set "made for kids" when publishing.');
   return out;
 }
 

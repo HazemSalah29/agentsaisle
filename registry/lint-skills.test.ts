@@ -186,20 +186,6 @@ describe("lintSkill", () => {
     expect(rules(await lint(director))).not.toContain("invocation");
   });
 
-  it("rule 7c: a paused video part must be off for Claude too", async () => {
-    const meta7 = meta().replace("niche: code", "niche: video");
-    const half = await skill("video-kids", {
-      "SKILL.md": `${frontmatter("video-kids", "user-invocable: false\n")}${body()}`,
-      "skill.meta.yaml": meta7,
-    });
-    expect((await lint(half)).find((f) => f.rule === "invocation")?.message).toMatch(/paused/);
-    const off = await skill("video-drawing", {
-      "SKILL.md": `${frontmatter("video-drawing", "user-invocable: false\ndisable-model-invocation: true\n")}${body()}`,
-      "skill.meta.yaml": meta7,
-    });
-    expect(rules(await lint(off))).not.toContain("invocation");
-  });
-
   it("rule 8: references stay one level deep", async () => {
     const dir = await skill("code-a", {
       "references/deep/more.md": "x\n",

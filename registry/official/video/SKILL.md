@@ -6,7 +6,7 @@ allowed-tools: Read Write Glob Grep Bash(node *)
 
 # Video
 
-One command: the user says what video they want, in their own words, and you make the best one the local tools allow. They never name a part of the library: you read the request, pick a recipe in `references/choose.md`, and load the matching video skills (`video-write`, `video-kids`, `video-ingest`, `video-edit`, ...) yourself. `<skill>` is the folder that holds this SKILL.md; the parts are its sibling `video-...` skills.
+One command: the user says what video they want, in their own words, and you make the best one the local tools allow. They never name a part of the library: you read the request, pick a recipe in `references/choose.md`, and load the matching video skills (`video-write`, `video-voice`, `video-ingest`, `video-edit`, ...) yourself. `<skill>` is the folder that holds this SKILL.md; the parts are its sibling `video-...` skills.
 
 ## Use when
 
@@ -17,7 +17,7 @@ One command: the user says what video they want, in their own words, and you mak
 
 ## Don't use when
 
-- The request is for a kids' cartoon or a character made from a child's drawing. Those are paused: say so in one sentence and offer an explainer, a story short or a brand video instead. Never run `video-kids` or `video-drawing`.
+- The request is for an animated cartoon, a kids' show or a character made from a child's drawing. This library does not make character animation: say so in one sentence and offer an explainer, a kinetic-type video, a story short from stills or a brand video instead.
 - The user wants a video uploaded. The last step prepares a pack to upload by hand; nothing is ever uploaded.
 - The folder is a code project that should not get video folders. Ask for an empty folder first.
 - The request is for a known character, a real person's likeness, or footage the user has no right to use. Say no in one sentence and offer an original alternative.

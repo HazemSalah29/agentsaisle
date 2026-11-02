@@ -8,7 +8,7 @@ import { parseStoryboard } from "./script-parse.mjs";
 import { BUILT_KINDS } from "./write-check.mjs";
 import { capLines, isEntry, parseArgs } from "./_lib.mjs";
 
-const TYPES = { explain: "explainer", story: "story", kids: "kids" };
+const TYPES = { explain: "explainer", story: "story" };
 const TRANSITIONS = ["cut", "fade", "slide", "zoom", "whip", "match"];
 
 /** { video, problems }. `existing` (a parsed video.json) keeps its voice, music, assets and disclosure. */
@@ -53,10 +53,7 @@ export function buildVideo(brief, storyboardText, existing = {}) {
     ...(brief.lang?.startsWith("ar") ? { dir: "rtl" } : {}),
     ...existing.meta,
   };
-  // Children read big, high-contrast captions that stay inside the safe area.
-  const kidsCaptions =
-    brief.mode === "kids" ? { captions: { style: "kids", burn: true, safeZone: "reel" } } : {};
-  const video = { version: 1, meta, script: "script.md", ...kidsCaptions, ...existing, scenes };
+  const video = { version: 1, meta, script: "script.md", ...existing, scenes };
   video.meta = { ...meta, title: brief.title };
   return { video, problems };
 }

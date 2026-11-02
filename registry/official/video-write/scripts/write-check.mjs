@@ -2,7 +2,7 @@
 // Checks the writer's files for a project: brief.json, script.md, facts.md (explain), storyboard.md, hooks.md.
 // Read-only. Errors fail the run (exit 1); warnings are printed but do not.
 // Usage: node write-check.mjs <project-dir> [--json]
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { validate } from "./schema-check.mjs";
 import {
@@ -11,53 +11,18 @@ import {
   parseScript,
   parseStoryboard,
   speechSeconds,
-  wordCount,
 } from "./script-parse.mjs";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 
 export const BEATS = {
   explain: ["hook", "misconception", "analogy", "step", "edge", "takeaway", "cta"],
   story: ["hook", "setup", "turn", "climax", "button", "cta"],
-  kids: ["hook", "setup", "try", "turn", "lesson", "button", "cta"],
 };
 /** The order the required beats must come in (cta may come after the last of them). */
 const ORDER = {
   explain: ["hook", "misconception", "analogy", "step", "edge", "takeaway"],
   story: ["hook", "setup", "turn", "climax", "button"],
-  kids: ["hook", "setup", "try", "turn", "lesson", "button"],
 };
-/** Words a sentence may have, and the words a second to write for, by age band (video-qa checks the same bands). */
-export const KIDS_BANDS = {
-  "3-5": { sentenceWords: 9, wordsPerSecond: 2.0 },
-  "6-9": { sentenceWords: 15, wordsPerSecond: 2.4 },
-};
-/** Asking children to act is refused outright; video-qa's rules.json holds the same phrases (a test keeps them in step). */
-export const KIDS_PRESSURE = [
-  "like and subscribe",
-  "smash that like",
-  "smash the like",
-  "hit the bell",
-  "ring the bell",
-  "subscribe",
-  "follow me",
-  "follow us",
-];
-const KIDS_SCARY = [
-  "kill",
-  "die",
-  "dead",
-  "death",
-  "blood",
-  "murder",
-  "gun",
-  "shoot",
-  "scream",
-  "nightmare",
-];
-const wordIn = (text, word) =>
-  new RegExp(`(?<![\\p{L}\\p{N}])${word.replace(/\s+/g, "\\s+")}(?![\\p{L}\\p{N}])`, "iu").test(
-    text,
-  );
 export const BUILT_KINDS = [
   "title",
   "quote",
@@ -68,7 +33,6 @@ export const BUILT_KINDS = [
   "code",
   "sequence",
   "request-flow",
-  "puppet",
   "timeline",
   "number",
   "callout",
@@ -118,32 +82,7 @@ export function checkWriting(files, schema = loadBriefSchema()) {
   }
   const mode = brief?.mode in BEATS ? brief.mode : "explain";
   const lang = typeof brief?.lang === "string" ? brief.lang : "en";
-  const kids = mode === "kids";
-  const band = kids
-    ? (/(\d)\s*[-–]\s*(\d)/
-        .exec(brief?.audience ?? "")
-        ?.slice(1, 3)
-        .join("-") ?? null)
-    : null;
-  const rule = KIDS_BANDS[band];
-  const secondsOf = (text) =>
-    rule ? wordCount(text) / rule.wordsPerSecond : speechSeconds(text, lang);
-  if (kids) {
-    if (!rule)
-      add(
-        "error",
-        "brief.json",
-        0,
-        'kids mode needs an age band in audience: "kids-3-5" or "kids-6-9"',
-      );
-    if (!brief?.learningGoal)
-      add(
-        "error",
-        "brief.json",
-        0,
-        "kids mode needs one learningGoal (a single thing a child learns)",
-      );
-  }
+  const secondsOf = (text) => speechSeconds(text, lang);
 
   if (files.script === undefined) {
     add("error", "script.md", 0, "missing");
@@ -263,42 +202,6 @@ export function checkWriting(files, schema = loadBriefSchema()) {
       `about ${Math.round(total)} s of speech against a ${brief.lengthSeconds} s brief`,
     );
 
-  // kids: gentle words, short sentences, one pattern repeated, no pressure
-  if (kids) {
-    for (const l of lines) {
-      const pressure = KIDS_PRESSURE.find((w) => wordIn(l.text, w));
-      if (pressure)
-        add("error", "script.md", l.line, `"${pressure}" asks children to act: take it out`);
-      const scary = KIDS_SCARY.filter((w) => wordIn(l.text, w));
-      if (scary.length)
-        add(
-          "warn",
-          "script.md",
-          l.line,
-          `"${scary[0]}" can frighten: keep the story gentle, or say it softly`,
-        );
-      if (rule) {
-        const longest = Math.max(0, ...l.text.split(/(?<=[.!?؟])\s+/).map((x) => wordCount(x)));
-        if (longest > rule.sentenceWords)
-          add(
-            "warn",
-            "script.md",
-            l.line,
-            `line "${l.id}" has a sentence of ${longest} words (at most ${rule.sentenceWords} for ages ${band}): split it`,
-          );
-      }
-    }
-    if (beats.filter((b) => b === "try").length < 2)
-      add(
-        "warn",
-        "script.md",
-        0,
-        'fewer than 2 "try" lines: repeat the pattern (try, try again, then it works) so children can join in',
-      );
-    if (beats.filter((b) => b === "lesson").length > 1)
-      add("warn", "script.md", 0, "one learning goal per video: use a single lesson line");
-  }
-
   // hooks
   if (files.hooks === undefined) add("error", "hooks.md", 0, "missing (5 alternative openings)");
   else if (parseHooks(files.hooks).length < 5)
@@ -323,18 +226,6 @@ export function checkWriting(files, schema = loadBriefSchema()) {
           r.line,
           `scene "${r.scene}": kind "${r.kind}" is not built yet (${BUILT_KINDS.join(", ")})`,
         );
-      if (r.kind === "puppet" && files.characters) {
-        for (const rig of [...JSON.stringify(r.props ?? {}).matchAll(/"rig"\s*:\s*"([^"]+)"/g)].map(
-          (m) => m[1],
-        ))
-          if (!files.characters.includes(rig))
-            add(
-              "error",
-              "storyboard.md",
-              r.line,
-              `scene "${r.scene}": character "${rig}" has no characters/${rig}/bible.md (video-kids writes it)`,
-            );
-      }
       for (const id of (r.narration ?? "")
         .split(",")
         .map((s) => s.trim())
@@ -372,11 +263,6 @@ export const readFiles = (dir) => ({
   facts: read(dir, "facts.md"),
   storyboard: read(dir, "storyboard.md"),
   hooks: read(dir, "hooks.md"),
-  characters: existsSync(path.join(dir, "characters"))
-    ? readdirSync(path.join(dir, "characters")).filter((n) =>
-        existsSync(path.join(dir, "characters", n, "bible.md")),
-      )
-    : [],
 });
 
 function main() {

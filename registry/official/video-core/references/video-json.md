@@ -5,7 +5,7 @@ One file per project, at `projects/<slug>/video.json`. The schema is `assets/vid
 ## Fields
 
 - `version`: always `1`.
-- `meta`: `title`, `type` (explainer, kids, story, showcase, edit, custom), `format` (reel-9x16, short-9x16: 1080x1920; youtube-16x9: 1920x1080; square-1x1: 1080x1080), `fps` (24, 25, 30, 60), `lang` (`en`, `ar`, ...), optional `dir` (`rtl` is assumed for ar, he, fa, ur), `audience`, `brand` (path to a brand.json, relative to the project, for example `../../brand/brand.json`).
+- `meta`: `title`, `type` (explainer, story, showcase, edit, custom), `format` (reel-9x16, short-9x16: 1080x1920; youtube-16x9: 1920x1080; square-1x1: 1080x1080), `fps` (24, 25, 30, 60), `lang` (`en`, `ar`, ...), optional `dir` (`rtl` is assumed for ar, he, fa, ur), `audience`, `brand` (path to a brand.json, relative to the project, for example `../../brand/brand.json`).
 - `script`: path to `script.md`. Narration lines start with their id in square brackets: `[l1] Text of the line.` A scene's `narration` lists line ids.
 - `voice`: `provider` (kokoro, chatterbox, 3arab, elevenlabs, test or none; `test` is a tone, not speech, for offline checks), `voiceId`, `speed`. Audio files are `voice/<line-id>.wav`.
 - `music`: `asset` (path, also listed in `assets` with a licence) and `duckUnderVoiceDb` (music level in dB, default -14; it is also pushed down while the voice speaks).

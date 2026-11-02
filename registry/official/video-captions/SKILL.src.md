@@ -1,6 +1,6 @@
 ---
 name: video-captions
-description: "Part of the video library (loaded by /video, not run directly): captions from word timings (karaoke, pop, clean, kids), SRT/VTT, burned in; Arabic joins correctly."
+description: "Part of the video library (loaded by /video, not run directly): captions from word timings (karaoke, pop, clean), SRT/VTT, burned in; Arabic joins correctly."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
@@ -12,7 +12,7 @@ Groups the words, keeps them inside the platform safe zone and writes `captions.
 ## Use when
 
 - A project has `voice/words.json` and `timing.json` and needs captions.
-- A project has voice and timing and needs captions: `--style karaoke|pop|clean|kids`, `--max-words 4`, `--bilingual translations.json`, `--burn|--srt|--both`.
+- A project has voice and timing and needs captions: `--style karaoke|pop|clean`, `--max-words 4`, `--bilingual translations.json`, `--burn|--srt|--both`.
 
 ## Don't use when
 

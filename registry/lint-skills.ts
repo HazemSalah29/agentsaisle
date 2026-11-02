@@ -21,8 +21,6 @@ export interface LintFinding {
 export const CORE_NICHE = "core";
 export const MAX_LINES = 150;
 export const MAX_DESCRIPTION = 1024;
-/** Video parts switched off for now: kids' cartoons and characters from drawings. Remove a name to bring it back. */
-export const PAUSED_VIDEO_PARTS = ["video-kids", "video-drawing"];
 export const REQUIRED_SECTIONS = [
   "Use when",
   "Don't use when",
@@ -197,15 +195,7 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
   }
 
   // invocation
-  if (PAUSED_VIDEO_PARTS.includes(skill)) {
-    // Paused: neither the user nor Claude may start it until the owner un-pauses it.
-    if (frontmatter["user-invocable"] !== false || frontmatter["disable-model-invocation"] !== true)
-      add(
-        "SKILL.md",
-        "invocation",
-        "a paused video part must set user-invocable: false and disable-model-invocation: true.",
-      );
-  } else if (/^video-/.test(skill)) {
+  if (/^video-/.test(skill)) {
     // The video library is one command, `/video`, that Claude directs: its parts are Claude-only.
     if (frontmatter["user-invocable"] !== false)
       add(

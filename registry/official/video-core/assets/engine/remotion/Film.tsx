@@ -32,13 +32,7 @@ export const Film = () => {
     (async () => {
       for (const el of ref.current.querySelectorAll("[src^='assets/']"))
         el.setAttribute("src", staticFile(el.getAttribute("src")));
-      const tl = window.VT.run(film.plan, { id: "main", duration: film.seconds });
-      if (film.gls.length) {
-        const mod = await import(
-          /* webpackIgnore: true */ staticFile("assets/3d/puppet3d-page.mjs")
-        );
-        mod.mount(tl, film.gls);
-      }
+      window.VT.run(film.plan, { id: "main", duration: film.seconds });
       await document.fonts.ready;
       if (!dead) setReady(true);
     })().catch((e) => cancelRender(e));

@@ -97,12 +97,10 @@ describe("video-core credits", () => {
     expect(buildCredits(project({ disclosure: { realisticSynthetic: true } })).ok).toBe(true);
   });
 
-  it("adds the kids reminder and renders readable text", async () => {
+  it("renders readable text", async () => {
     const { buildCredits, creditsText } = await load();
     const v = project({ assets: [asset({ attribution: "Photo by Sam" })] });
-    v.meta.audience = "kids-3-5";
     const { credits } = buildCredits(v);
-    expect(credits.guidance.join(" ")).toMatch(/made for kids/);
     const txt = creditsText(credits);
     expect(txt).toMatch(
       /assets\/a\.png\n {2}source: user\n {2}licence: own\n {2}attribution: Photo by Sam/,
