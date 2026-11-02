@@ -17892,8 +17892,7 @@ function WebGLAttributes(gl) {
 }
 var alphahash_fragment =
   "#ifdef USE_ALPHAHASH\n	if ( diffuseColor.a < getAlphaHashThreshold( vPosition ) ) discard;\n#endif";
-var alphahash_pars_fragment =
-  `#ifdef USE_ALPHAHASH
+var alphahash_pars_fragment = `#ifdef USE_ALPHAHASH
 	const float ALPHA_HASH_SCALE = 0.05;
 	float hash2D( vec2 value ) {
 		return fract( 1.0e4 * sin( 17.0 * value.x + 0.1 * value.y ) * ( 0.1 + abs( sin( 13.0 * value.y + value.x ) ) ) );
@@ -17932,8 +17931,7 @@ var alphahash_pars_fragment =
 var alphamap_fragment =
   "#ifdef USE_ALPHAMAP\n	diffuseColor.a *= texture2D( alphaMap, vAlphaMapUv ).g;\n#endif";
 var alphamap_pars_fragment = "#ifdef USE_ALPHAMAP\n	uniform sampler2D alphaMap;\n#endif";
-var alphatest_fragment =
-  `#ifdef USE_ALPHATEST
+var alphatest_fragment = `#ifdef USE_ALPHATEST
 	#ifdef ALPHA_TO_COVERAGE
 	diffuseColor.a = smoothstep( alphaTest, alphaTest + fwidth( diffuseColor.a ), diffuseColor.a );
 	if ( diffuseColor.a == 0.0 ) discard;
@@ -17942,8 +17940,7 @@ var alphatest_fragment =
 	#endif
 #endif`;
 var alphatest_pars_fragment = "#ifdef USE_ALPHATEST\n	uniform float alphaTest;\n#endif";
-var aomap_fragment =
-  `#ifdef USE_AOMAP
+var aomap_fragment = `#ifdef USE_AOMAP
 	float ambientOcclusion = ( texture2D( aoMap, vAoMapUv ).r - 1.0 ) * aoMapIntensity + 1.0;
 	reflectedLight.indirectDiffuse *= ambientOcclusion;
 	#if defined( USE_CLEARCOAT ) 
@@ -17959,8 +17956,7 @@ var aomap_fragment =
 #endif`;
 var aomap_pars_fragment =
   "#ifdef USE_AOMAP\n	uniform sampler2D aoMap;\n	uniform float aoMapIntensity;\n#endif";
-var batching_pars_vertex =
-  `#ifdef USE_BATCHING
+var batching_pars_vertex = `#ifdef USE_BATCHING
 	#if ! defined( GL_ANGLE_multi_draw )
 	#define gl_DrawID _gl_DrawID
 	uniform int _gl_DrawID;
@@ -18001,8 +17997,7 @@ var begin_vertex =
   "vec3 transformed = vec3( position );\n#ifdef USE_ALPHAHASH\n	vPosition = vec3( position );\n#endif";
 var beginnormal_vertex =
   "vec3 objectNormal = vec3( normal );\n#ifdef USE_TANGENT\n	vec3 objectTangent = vec3( tangent.xyz );\n#endif";
-var bsdfs =
-  `float G_BlinnPhong_Implicit( ) {
+var bsdfs = `float G_BlinnPhong_Implicit( ) {
 	return 0.25;
 }
 float D_BlinnPhong( const in float shininess, const in float dotNH ) {
@@ -18017,8 +18012,7 @@ vec3 BRDF_BlinnPhong( const in vec3 lightDir, const in vec3 viewDir, const in ve
 	float D = D_BlinnPhong( shininess, dotNH );
 	return F * ( G * D );
 } // validated`;
-var iridescence_fragment =
-  `#ifdef USE_IRIDESCENCE
+var iridescence_fragment = `#ifdef USE_IRIDESCENCE
 	const mat3 XYZ_TO_REC709 = mat3(
 		 3.2404542, -0.9692660,  0.0556434,
 		-1.5371385,  1.8760108, -0.2040259,
@@ -18082,8 +18076,7 @@ var iridescence_fragment =
 		return max( I, vec3( 0.0 ) );
 	}
 #endif`;
-var bumpmap_pars_fragment =
-  `#ifdef USE_BUMPMAP
+var bumpmap_pars_fragment = `#ifdef USE_BUMPMAP
 	uniform sampler2D bumpMap;
 	uniform float bumpScale;
 	vec2 dHdxy_fwd() {
@@ -18105,8 +18098,7 @@ var bumpmap_pars_fragment =
 		return normalize( abs( fDet ) * surf_norm - vGrad );
 	}
 #endif`;
-var clipping_planes_fragment =
-  `#if NUM_CLIPPING_PLANES > 0
+var clipping_planes_fragment = `#if NUM_CLIPPING_PLANES > 0
 	vec4 plane;
 	#ifdef ALPHA_TO_COVERAGE
 		float distanceToPlane, distanceGradient;
@@ -18165,8 +18157,7 @@ var color_pars_fragment =
   "#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA )\n	varying vec4 vColor;\n#endif";
 var color_pars_vertex =
   "#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )\n	varying vec4 vColor;\n#endif";
-var color_vertex =
-  `#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )
+var color_vertex = `#if defined( USE_COLOR ) || defined( USE_COLOR_ALPHA ) || defined( USE_INSTANCING_COLOR ) || defined( USE_BATCHING_COLOR )
 	vColor = vec4( 1.0 );
 #endif
 #ifdef USE_COLOR_ALPHA
@@ -18180,8 +18171,7 @@ var color_vertex =
 #ifdef USE_BATCHING_COLOR
 	vColor *= getBatchingColor( getIndirectIndex( gl_DrawID ) );
 #endif`;
-var common =
-  `#define PI 3.141592653589793
+var common = `#define PI 3.141592653589793
 #define PI2 6.283185307179586
 #define PI_HALF 1.5707963267948966
 #define RECIPROCAL_PI 0.3183098861837907
@@ -18253,8 +18243,7 @@ float F_Schlick( const in float f0, const in float f90, const in float dotVH ) {
 	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );
 	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );
 } // validated`;
-var cube_uv_reflection_fragment =
-  `#ifdef ENVMAP_TYPE_CUBE_UV
+var cube_uv_reflection_fragment = `#ifdef ENVMAP_TYPE_CUBE_UV
 	#define cubeUV_minMipLevel 4.0
 	#define cubeUV_minTileSize 16.0
 	float getFace( vec3 direction ) {
@@ -18348,8 +18337,7 @@ var cube_uv_reflection_fragment =
 		}
 	}
 #endif`;
-var defaultnormal_vertex =
-  `vec3 transformedNormal = objectNormal;
+var defaultnormal_vertex = `vec3 transformedNormal = objectNormal;
 #ifdef USE_TANGENT
 	vec3 transformedTangent = objectTangent;
 #endif
@@ -18380,8 +18368,7 @@ var displacementmap_pars_vertex =
   "#ifdef USE_DISPLACEMENTMAP\n	uniform sampler2D displacementMap;\n	uniform float displacementScale;\n	uniform float displacementBias;\n#endif";
 var displacementmap_vertex =
   "#ifdef USE_DISPLACEMENTMAP\n	transformed += normalize( objectNormal ) * ( texture2D( displacementMap, vDisplacementMapUv ).x * displacementScale + displacementBias );\n#endif";
-var emissivemap_fragment =
-  `#ifdef USE_EMISSIVEMAP
+var emissivemap_fragment = `#ifdef USE_EMISSIVEMAP
 	vec4 emissiveColor = texture2D( emissiveMap, vEmissiveMapUv );
 	#ifdef DECODE_VIDEO_TEXTURE_EMISSIVE
 		emissiveColor = sRGBTransferEOTF( emissiveColor );
@@ -18390,8 +18377,7 @@ var emissivemap_fragment =
 #endif`;
 var emissivemap_pars_fragment = "#ifdef USE_EMISSIVEMAP\n	uniform sampler2D emissiveMap;\n#endif";
 var colorspace_fragment = "gl_FragColor = linearToOutputTexel( gl_FragColor );";
-var colorspace_pars_fragment =
-  `vec4 LinearTransferOETF( in vec4 value ) {
+var colorspace_pars_fragment = `vec4 LinearTransferOETF( in vec4 value ) {
 	return value;
 }
 vec4 sRGBTransferEOTF( in vec4 value ) {
@@ -18400,8 +18386,7 @@ vec4 sRGBTransferEOTF( in vec4 value ) {
 vec4 sRGBTransferOETF( in vec4 value ) {
 	return vec4( mix( pow( value.rgb, vec3( 0.41666 ) ) * 1.055 - vec3( 0.055 ), value.rgb * 12.92, vec3( lessThanEqual( value.rgb, vec3( 0.0031308 ) ) ) ), value.a );
 }`;
-var envmap_fragment =
-  `#ifdef USE_ENVMAP
+var envmap_fragment = `#ifdef USE_ENVMAP
 	#ifdef ENV_WORLDPOS
 		vec3 cameraToFrag;
 		if ( isOrthographic ) {
@@ -18431,8 +18416,7 @@ var envmap_fragment =
 #endif`;
 var envmap_common_pars_fragment =
   "#ifdef USE_ENVMAP\n	uniform float envMapIntensity;\n	uniform mat3 envMapRotation;\n	#ifdef ENVMAP_TYPE_CUBE\n		uniform samplerCube envMap;\n	#else\n		uniform sampler2D envMap;\n	#endif\n#endif";
-var envmap_pars_fragment =
-  `#ifdef USE_ENVMAP
+var envmap_pars_fragment = `#ifdef USE_ENVMAP
 	uniform float reflectivity;
 	#if defined( USE_BUMPMAP ) || defined( USE_NORMALMAP ) || defined( PHONG ) || defined( LAMBERT )
 		#define ENV_WORLDPOS
@@ -18444,8 +18428,7 @@ var envmap_pars_fragment =
 		varying vec3 vReflect;
 	#endif
 #endif`;
-var envmap_pars_vertex =
-  `#ifdef USE_ENVMAP
+var envmap_pars_vertex = `#ifdef USE_ENVMAP
 	#if defined( USE_BUMPMAP ) || defined( USE_NORMALMAP ) || defined( PHONG ) || defined( LAMBERT )
 		#define ENV_WORLDPOS
 	#endif
@@ -18457,8 +18440,7 @@ var envmap_pars_vertex =
 		uniform float refractionRatio;
 	#endif
 #endif`;
-var envmap_vertex =
-  `#ifdef USE_ENVMAP
+var envmap_vertex = `#ifdef USE_ENVMAP
 	#ifdef ENV_WORLDPOS
 		vWorldPosition = worldPosition.xyz;
 	#else
@@ -18478,8 +18460,7 @@ var envmap_vertex =
 #endif`;
 var fog_vertex = "#ifdef USE_FOG\n	vFogDepth = - mvPosition.z;\n#endif";
 var fog_pars_vertex = "#ifdef USE_FOG\n	varying float vFogDepth;\n#endif";
-var fog_fragment =
-  `#ifdef USE_FOG
+var fog_fragment = `#ifdef USE_FOG
 	#ifdef FOG_EXP2
 		float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
 	#else
@@ -18489,8 +18470,7 @@ var fog_fragment =
 #endif`;
 var fog_pars_fragment =
   "#ifdef USE_FOG\n	uniform vec3 fogColor;\n	varying float vFogDepth;\n	#ifdef FOG_EXP2\n		uniform float fogDensity;\n	#else\n		uniform float fogNear;\n		uniform float fogFar;\n	#endif\n#endif";
-var gradientmap_pars_fragment =
-  `#ifdef USE_GRADIENTMAP
+var gradientmap_pars_fragment = `#ifdef USE_GRADIENTMAP
 	uniform sampler2D gradientMap;
 #endif
 vec3 getGradientIrradiance( vec3 normal, vec3 lightDirection ) {
@@ -18507,8 +18487,7 @@ var lightmap_pars_fragment =
   "#ifdef USE_LIGHTMAP\n	uniform sampler2D lightMap;\n	uniform float lightMapIntensity;\n#endif";
 var lights_lambert_fragment =
   "LambertMaterial material;\nmaterial.diffuseColor = diffuseColor.rgb;\nmaterial.specularStrength = specularStrength;";
-var lights_lambert_pars_fragment =
-  `varying vec3 vViewPosition;
+var lights_lambert_pars_fragment = `varying vec3 vViewPosition;
 struct LambertMaterial {
 	vec3 diffuseColor;
 	float specularStrength;
@@ -18523,8 +18502,7 @@ void RE_IndirectDiffuse_Lambert( const in vec3 irradiance, const in vec3 geometr
 }
 #define RE_Direct				RE_Direct_Lambert
 #define RE_IndirectDiffuse		RE_IndirectDiffuse_Lambert`;
-var lights_pars_begin =
-  `uniform bool receiveShadow;
+var lights_pars_begin = `uniform bool receiveShadow;
 uniform vec3 ambientLightColor;
 #if defined( USE_LIGHT_PROBES )
 	uniform vec3 lightProbe[ 9 ];
@@ -18654,8 +18632,7 @@ float getSpotAttenuation( const in float coneCosine, const in float penumbraCosi
 	}
 #endif
 #include <lightprobes_pars_fragment>`;
-var envmap_physical_pars_fragment =
-  `#ifdef USE_ENVMAP
+var envmap_physical_pars_fragment = `#ifdef USE_ENVMAP
 	vec3 getIBLIrradiance( const in vec3 normal ) {
 		#ifdef ENVMAP_TYPE_CUBE_UV
 			vec3 worldNormal = transformNormalByInverseViewMatrix( normal, viewMatrix );
@@ -18714,8 +18691,7 @@ var envmap_physical_pars_fragment =
 	#endif
 #endif`;
 var lights_toon_fragment = "ToonMaterial material;\nmaterial.diffuseColor = diffuseColor.rgb;";
-var lights_toon_pars_fragment =
-  `varying vec3 vViewPosition;
+var lights_toon_pars_fragment = `varying vec3 vViewPosition;
 struct ToonMaterial {
 	vec3 diffuseColor;
 };
@@ -18730,8 +18706,7 @@ void RE_IndirectDiffuse_Toon( const in vec3 irradiance, const in vec3 geometryPo
 #define RE_IndirectDiffuse		RE_IndirectDiffuse_Toon`;
 var lights_phong_fragment =
   "BlinnPhongMaterial material;\nmaterial.diffuseColor = diffuseColor.rgb;\nmaterial.specularColor = specular;\nmaterial.specularShininess = shininess;\nmaterial.specularStrength = specularStrength;";
-var lights_phong_pars_fragment =
-  `varying vec3 vViewPosition;
+var lights_phong_pars_fragment = `varying vec3 vViewPosition;
 struct BlinnPhongMaterial {
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -18749,8 +18724,7 @@ void RE_IndirectDiffuse_BlinnPhong( const in vec3 irradiance, const in vec3 geom
 }
 #define RE_Direct				RE_Direct_BlinnPhong
 #define RE_IndirectDiffuse		RE_IndirectDiffuse_BlinnPhong`;
-var lights_physical_fragment =
-  `PhysicalMaterial material;
+var lights_physical_fragment = `PhysicalMaterial material;
 material.diffuseColor = diffuseColor.rgb;
 material.diffuseContribution = diffuseColor.rgb * ( 1.0 - metalnessFactor );
 material.metalness = metalnessFactor;
@@ -18844,8 +18818,7 @@ material.roughness = min( material.roughness, 1.0 );
 	material.anisotropyT = tbn[ 0 ] * anisotropyV.x + tbn[ 1 ] * anisotropyV.y;
 	material.anisotropyB = tbn[ 1 ] * anisotropyV.x - tbn[ 0 ] * anisotropyV.y;
 #endif`;
-var lights_physical_pars_fragment =
-  `uniform sampler2D dfgLUT;
+var lights_physical_pars_fragment = `uniform sampler2D dfgLUT;
 struct PhysicalMaterial {
 	vec3 diffuseColor;
 	vec3 diffuseContribution;
@@ -19213,8 +19186,7 @@ void RE_IndirectSpecular_Physical( const in vec3 radiance, const in vec3 irradia
 float computeSpecularOcclusion( const in float dotNV, const in float ambientOcclusion, const in float roughness ) {
 	return saturate( pow( dotNV + ambientOcclusion, exp2( - 16.0 * roughness - 1.0 ) ) - 1.0 + ambientOcclusion );
 }`;
-var lights_fragment_begin =
-  `
+var lights_fragment_begin = `
 vec3 geometryPosition = - vViewPosition;
 vec3 geometryNormal = normal;
 vec3 geometryViewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( vViewPosition );
@@ -19363,8 +19335,7 @@ IncidentLight directLight;
 	vec3 radiance = vec3( 0.0 );
 	vec3 clearcoatRadiance = vec3( 0.0 );
 #endif`;
-var lights_fragment_maps =
-  `#if defined( RE_IndirectDiffuse )
+var lights_fragment_maps = `#if defined( RE_IndirectDiffuse )
 	#ifdef USE_LIGHTMAP
 		vec4 lightMapTexel = texture2D( lightMap, vLightMapUv );
 		vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;
@@ -19395,8 +19366,7 @@ var lights_fragment_maps =
 		clearcoatRadiance += getIBLRadiance( geometryViewDir, geometryClearcoatNormal, material.clearcoatRoughness );
 	#endif
 #endif`;
-var lights_fragment_end =
-  `#if defined( RE_IndirectDiffuse )
+var lights_fragment_end = `#if defined( RE_IndirectDiffuse )
 	#if defined( LAMBERT ) || defined( PHONG )
 		irradiance += iblIrradiance;
 	#endif
@@ -19405,8 +19375,7 @@ var lights_fragment_end =
 #if defined( RE_IndirectSpecular )
 	RE_IndirectSpecular( radiance, iblIrradiance, clearcoatRadiance, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
 #endif`;
-var lightprobes_pars_fragment =
-  `#ifdef USE_LIGHT_PROBES_GRID
+var lightprobes_pars_fragment = `#ifdef USE_LIGHT_PROBES_GRID
 uniform highp sampler3D probesSH;
 uniform vec3 probesMin;
 uniform vec3 probesMax;
@@ -19460,8 +19429,7 @@ var logdepthbuf_pars_vertex =
   "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n	varying float vFragDepth;\n	varying float vIsPerspective;\n#endif";
 var logdepthbuf_vertex =
   "#ifdef USE_LOGARITHMIC_DEPTH_BUFFER\n	vFragDepth = 1.0 + gl_Position.w;\n	vIsPerspective = float( isPerspectiveMatrix( projectionMatrix ) );\n#endif";
-var map_fragment =
-  `#ifdef USE_MAP
+var map_fragment = `#ifdef USE_MAP
 	vec4 sampledDiffuseColor = texture2D( map, vMapUv );
 	#ifdef DECODE_VIDEO_TEXTURE
 		sampledDiffuseColor = sRGBTransferEOTF( sampledDiffuseColor );
@@ -19469,8 +19437,7 @@ var map_fragment =
 	diffuseColor *= sampledDiffuseColor;
 #endif`;
 var map_pars_fragment = "#ifdef USE_MAP\n	uniform sampler2D map;\n#endif";
-var map_particle_fragment =
-  `#if defined( USE_MAP ) || defined( USE_ALPHAMAP )
+var map_particle_fragment = `#if defined( USE_MAP ) || defined( USE_ALPHAMAP )
 	#if defined( USE_POINTS_UV )
 		vec2 uv = vUv;
 	#else
@@ -19483,8 +19450,7 @@ var map_particle_fragment =
 #ifdef USE_ALPHAMAP
 	diffuseColor.a *= texture2D( alphaMap, uv ).g;
 #endif`;
-var map_particle_pars_fragment =
-  `#if defined( USE_POINTS_UV )
+var map_particle_pars_fragment = `#if defined( USE_POINTS_UV )
 	varying vec2 vUv;
 #else
 	#if defined( USE_MAP ) || defined( USE_ALPHAMAP )
@@ -19500,16 +19466,14 @@ var map_particle_pars_fragment =
 var metalnessmap_fragment =
   "float metalnessFactor = metalness;\n#ifdef USE_METALNESSMAP\n	vec4 texelMetalness = texture2D( metalnessMap, vMetalnessMapUv );\n	metalnessFactor *= texelMetalness.b;\n#endif";
 var metalnessmap_pars_fragment = "#ifdef USE_METALNESSMAP\n	uniform sampler2D metalnessMap;\n#endif";
-var morphinstance_vertex =
-  `#ifdef USE_INSTANCING_MORPH
+var morphinstance_vertex = `#ifdef USE_INSTANCING_MORPH
 	float morphTargetInfluences[ MORPHTARGETS_COUNT ];
 	float morphTargetBaseInfluence = texelFetch( morphTexture, ivec2( 0, gl_InstanceID ), 0 ).r;
 	for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {
 		morphTargetInfluences[i] =  texelFetch( morphTexture, ivec2( i + 1, gl_InstanceID ), 0 ).r;
 	}
 #endif`;
-var morphcolor_vertex =
-  `#if defined( USE_MORPHCOLORS )
+var morphcolor_vertex = `#if defined( USE_MORPHCOLORS )
 	vColor *= morphTargetBaseInfluence;
 	for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {
 		#if defined( USE_COLOR_ALPHA )
@@ -19519,15 +19483,13 @@ var morphcolor_vertex =
 		#endif
 	}
 #endif`;
-var morphnormal_vertex =
-  `#ifdef USE_MORPHNORMALS
+var morphnormal_vertex = `#ifdef USE_MORPHNORMALS
 	objectNormal *= morphTargetBaseInfluence;
 	for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {
 		if ( morphTargetInfluences[ i ] != 0.0 ) objectNormal += getMorph( gl_VertexID, i, 1 ).xyz * morphTargetInfluences[ i ];
 	}
 #endif`;
-var morphtarget_pars_vertex =
-  `#ifdef USE_MORPHTARGETS
+var morphtarget_pars_vertex = `#ifdef USE_MORPHTARGETS
 	#ifndef USE_INSTANCING_MORPH
 		uniform float morphTargetBaseInfluence;
 		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];
@@ -19542,15 +19504,13 @@ var morphtarget_pars_vertex =
 		return texelFetch( morphTargetsTexture, morphUV, 0 );
 	}
 #endif`;
-var morphtarget_vertex =
-  `#ifdef USE_MORPHTARGETS
+var morphtarget_vertex = `#ifdef USE_MORPHTARGETS
 	transformed *= morphTargetBaseInfluence;
 	for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {
 		if ( morphTargetInfluences[ i ] != 0.0 ) transformed += getMorph( gl_VertexID, i, 0 ).xyz * morphTargetInfluences[ i ];
 	}
 #endif`;
-var normal_fragment_begin =
-  `float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
+var normal_fragment_begin = `float faceDirection = gl_FrontFacing ? 1.0 : - 1.0;
 #ifdef FLAT_SHADED
 	vec3 fdx = dFdx( vViewPosition );
 	vec3 fdy = dFdy( vViewPosition );
@@ -19592,8 +19552,7 @@ var normal_fragment_begin =
 	#endif
 #endif
 vec3 nonPerturbedNormal = normal;`;
-var normal_fragment_maps =
-  `#ifdef USE_NORMALMAP_OBJECTSPACE
+var normal_fragment_maps = `#ifdef USE_NORMALMAP_OBJECTSPACE
 	normal = texture2D( normalMap, vNormalMapUv ).xyz * 2.0 - 1.0;
 	#ifdef FLIP_SIDED
 		normal = - normal;
@@ -19616,8 +19575,7 @@ var normal_pars_fragment =
   "#ifndef FLAT_SHADED\n	varying vec3 vNormal;\n	#ifdef USE_TANGENT\n		varying vec3 vTangent;\n		varying vec3 vBitangent;\n	#endif\n#endif";
 var normal_pars_vertex =
   "#ifndef FLAT_SHADED\n	varying vec3 vNormal;\n	#ifdef USE_TANGENT\n		varying vec3 vTangent;\n		varying vec3 vBitangent;\n	#endif\n#endif";
-var normal_vertex =
-  `#ifndef FLAT_SHADED
+var normal_vertex = `#ifndef FLAT_SHADED
 	vNormal = normalize( transformedNormal );
 	#ifdef USE_TANGENT
 		vTangent = normalize( transformedTangent );
@@ -19627,8 +19585,7 @@ var normal_vertex =
 		#endif
 	#endif
 #endif`;
-var normalmap_pars_fragment =
-  `#ifdef USE_NORMALMAP
+var normalmap_pars_fragment = `#ifdef USE_NORMALMAP
 	uniform sampler2D normalMap;
 	uniform vec2 normalScale;
 #endif
@@ -19653,14 +19610,12 @@ var normalmap_pars_fragment =
 #endif`;
 var clearcoat_normal_fragment_begin =
   "#ifdef USE_CLEARCOAT\n	vec3 clearcoatNormal = nonPerturbedNormal;\n#endif";
-var clearcoat_normal_fragment_maps =
-  `#ifdef USE_CLEARCOAT_NORMALMAP
+var clearcoat_normal_fragment_maps = `#ifdef USE_CLEARCOAT_NORMALMAP
 	vec3 clearcoatMapN = texture2D( clearcoatNormalMap, vClearcoatNormalMapUv ).xyz * 2.0 - 1.0;
 	clearcoatMapN.xy *= clearcoatNormalScale;
 	clearcoatNormal = normalize( tbn2 * clearcoatMapN );
 #endif`;
-var clearcoat_pars_fragment =
-  `#ifdef USE_CLEARCOATMAP
+var clearcoat_pars_fragment = `#ifdef USE_CLEARCOATMAP
 	uniform sampler2D clearcoatMap;
 #endif
 #ifdef USE_CLEARCOAT_NORMALMAP
@@ -19674,8 +19629,7 @@ var iridescence_pars_fragment =
   "#ifdef USE_IRIDESCENCEMAP\n	uniform sampler2D iridescenceMap;\n#endif\n#ifdef USE_IRIDESCENCE_THICKNESSMAP\n	uniform sampler2D iridescenceThicknessMap;\n#endif";
 var opaque_fragment =
   "#ifdef OPAQUE\ndiffuseColor.a = 1.0;\n#endif\n#ifdef USE_TRANSMISSION\ndiffuseColor.a *= material.transmissionAlpha;\n#endif\ngl_FragColor = vec4( outgoingLight, diffuseColor.a );";
-var packing =
-  `vec3 packNormalToRGB( const in vec3 normal ) {
+var packing = `vec3 packNormalToRGB( const in vec3 normal ) {
 	return normalize( normal ) * 0.5 + 0.5;
 }
 vec3 unpackRGBToNormal( const in vec3 rgb ) {
@@ -19757,8 +19711,7 @@ float perspectiveDepthToViewZ( const in float depth, const in float near, const 
 }`;
 var premultiplied_alpha_fragment =
   "#ifdef PREMULTIPLIED_ALPHA\n	gl_FragColor.rgb *= gl_FragColor.a;\n#endif";
-var project_vertex =
-  `vec4 mvPosition = vec4( transformed, 1.0 );
+var project_vertex = `vec4 mvPosition = vec4( transformed, 1.0 );
 #ifdef USE_BATCHING
 	mvPosition = batchingMatrix * mvPosition;
 #endif
@@ -19769,8 +19722,7 @@ mvPosition = modelViewMatrix * mvPosition;
 gl_Position = projectionMatrix * mvPosition;`;
 var dithering_fragment =
   "#ifdef DITHERING\n	gl_FragColor.rgb = dithering( gl_FragColor.rgb );\n#endif";
-var dithering_pars_fragment =
-  `#ifdef DITHERING
+var dithering_pars_fragment = `#ifdef DITHERING
 	vec3 dithering( vec3 color ) {
 		float grid_position = rand( gl_FragCoord.xy );
 		vec3 dither_shift_RGB = vec3( 0.25 / 255.0, -0.25 / 255.0, 0.25 / 255.0 );
@@ -19781,8 +19733,7 @@ var dithering_pars_fragment =
 var roughnessmap_fragment =
   "float roughnessFactor = roughness;\n#ifdef USE_ROUGHNESSMAP\n	vec4 texelRoughness = texture2D( roughnessMap, vRoughnessMapUv );\n	roughnessFactor *= texelRoughness.g;\n#endif";
 var roughnessmap_pars_fragment = "#ifdef USE_ROUGHNESSMAP\n	uniform sampler2D roughnessMap;\n#endif";
-var shadowmap_pars_fragment =
-  `#if NUM_SPOT_LIGHT_COORDS > 0
+var shadowmap_pars_fragment = `#if NUM_SPOT_LIGHT_COORDS > 0
 	varying vec4 vSpotLightCoord[ NUM_SPOT_LIGHT_COORDS ];
 #endif
 #if NUM_SPOT_LIGHT_MAPS > 0
@@ -20034,8 +19985,7 @@ var shadowmap_pars_fragment =
 	#endif
 	#endif
 #endif`;
-var shadowmap_pars_vertex =
-  `#if NUM_SPOT_LIGHT_COORDS > 0
+var shadowmap_pars_vertex = `#if NUM_SPOT_LIGHT_COORDS > 0
 	uniform mat4 spotLightMatrix[ NUM_SPOT_LIGHT_COORDS ];
 	varying vec4 vSpotLightCoord[ NUM_SPOT_LIGHT_COORDS ];
 #endif
@@ -20081,8 +20031,7 @@ var shadowmap_pars_vertex =
 		uniform PointLightShadow pointLightShadows[ NUM_POINT_LIGHT_SHADOWS ];
 	#endif
 #endif`;
-var shadowmap_vertex =
-  `#if ( defined( USE_SHADOWMAP ) && ( NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SUN_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0 ) ) || ( NUM_SPOT_LIGHT_COORDS > 0 )
+var shadowmap_vertex = `#if ( defined( USE_SHADOWMAP ) && ( NUM_DIR_LIGHT_SHADOWS > 0 || NUM_SUN_LIGHT_SHADOWS > 0 || NUM_POINT_LIGHT_SHADOWS > 0 ) ) || ( NUM_SPOT_LIGHT_COORDS > 0 )
 	#ifdef HAS_NORMAL
 		vec3 shadowWorldNormal = transformNormalByInverseViewMatrix( transformedNormal, viewMatrix );
 	#else
@@ -20123,8 +20072,7 @@ var shadowmap_vertex =
 	}
 	#pragma unroll_loop_end
 #endif`;
-var shadowmask_pars_fragment =
-  `float getShadowMask() {
+var shadowmask_pars_fragment = `float getShadowMask() {
 	float shadow = 1.0;
 	#ifdef USE_SHADOWMAP
 	#if NUM_SUN_LIGHT_SHADOWS > 0
@@ -20166,15 +20114,13 @@ var shadowmask_pars_fragment =
 	#endif
 	return shadow;
 }`;
-var skinbase_vertex =
-  `#ifdef USE_SKINNING
+var skinbase_vertex = `#ifdef USE_SKINNING
 	mat4 boneMatX = getBoneMatrix( skinIndex.x );
 	mat4 boneMatY = getBoneMatrix( skinIndex.y );
 	mat4 boneMatZ = getBoneMatrix( skinIndex.z );
 	mat4 boneMatW = getBoneMatrix( skinIndex.w );
 #endif`;
-var skinning_pars_vertex =
-  `#ifdef USE_SKINNING
+var skinning_pars_vertex = `#ifdef USE_SKINNING
 	uniform mat4 bindMatrix;
 	uniform mat4 bindMatrixInverse;
 	uniform highp sampler2D boneTexture;
@@ -20190,8 +20136,7 @@ var skinning_pars_vertex =
 		return mat4( v1, v2, v3, v4 );
 	}
 #endif`;
-var skinning_vertex =
-  `#ifdef USE_SKINNING
+var skinning_vertex = `#ifdef USE_SKINNING
 	vec4 skinVertex = bindMatrix * vec4( transformed, 1.0 );
 	vec4 skinned = vec4( 0.0 );
 	skinned += boneMatX * skinVertex * skinWeight.x;
@@ -20200,8 +20145,7 @@ var skinning_vertex =
 	skinned += boneMatW * skinVertex * skinWeight.w;
 	transformed = ( bindMatrixInverse * skinned ).xyz;
 #endif`;
-var skinnormal_vertex =
-  `#ifdef USE_SKINNING
+var skinnormal_vertex = `#ifdef USE_SKINNING
 	mat4 skinMatrix = mat4( 0.0 );
 	skinMatrix += skinWeight.x * boneMatX;
 	skinMatrix += skinWeight.y * boneMatY;
@@ -20218,8 +20162,7 @@ var specularmap_fragment =
 var specularmap_pars_fragment = "#ifdef USE_SPECULARMAP\n	uniform sampler2D specularMap;\n#endif";
 var tonemapping_fragment =
   "#if defined( TONE_MAPPING )\n	gl_FragColor.rgb = toneMapping( gl_FragColor.rgb );\n#endif";
-var tonemapping_pars_fragment =
-  `#ifndef saturate
+var tonemapping_pars_fragment = `#ifndef saturate
 #define saturate( a ) clamp( a, 0.0, 1.0 )
 #endif
 uniform float toneMappingExposure;
@@ -20317,8 +20260,7 @@ vec3 NeutralToneMapping( vec3 color ) {
 	return mix( color, vec3( newPeak ), g );
 }
 vec3 CustomToneMapping( vec3 color ) { return color; }`;
-var transmission_fragment =
-  `#ifdef USE_TRANSMISSION
+var transmission_fragment = `#ifdef USE_TRANSMISSION
 	material.transmission = transmission;
 	material.transmissionAlpha = 1.0;
 	material.thickness = thickness;
@@ -20340,8 +20282,7 @@ var transmission_fragment =
 	material.transmissionAlpha = mix( material.transmissionAlpha, transmitted.a, material.transmission );
 	totalDiffuse = mix( totalDiffuse, transmitted.rgb, material.transmission );
 #endif`;
-var transmission_pars_fragment =
-  `#ifdef USE_TRANSMISSION
+var transmission_pars_fragment = `#ifdef USE_TRANSMISSION
 	uniform float transmission;
 	uniform float thickness;
 	uniform float attenuationDistance;
@@ -20468,8 +20409,7 @@ var transmission_pars_fragment =
 		return vec4( ( 1.0 - F ) * attenuatedColor, 1.0 - ( 1.0 - transmittedLight.a ) * transmittanceFactor );
 	}
 #endif`;
-var uv_pars_fragment =
-  `#if defined( USE_UV ) || defined( USE_ANISOTROPY )
+var uv_pars_fragment = `#if defined( USE_UV ) || defined( USE_ANISOTROPY )
 	varying vec2 vUv;
 #endif
 #ifdef USE_MAP
@@ -20540,8 +20480,7 @@ var uv_pars_fragment =
 	uniform mat3 thicknessMapTransform;
 	varying vec2 vThicknessMapUv;
 #endif`;
-var uv_pars_vertex =
-  `#if defined( USE_UV ) || defined( USE_ANISOTROPY )
+var uv_pars_vertex = `#if defined( USE_UV ) || defined( USE_ANISOTROPY )
 	varying vec2 vUv;
 #endif
 #ifdef USE_MAP
@@ -20636,8 +20575,7 @@ var uv_pars_vertex =
 	uniform mat3 thicknessMapTransform;
 	varying vec2 vThicknessMapUv;
 #endif`;
-var uv_vertex =
-  `#if defined( USE_UV ) || defined( USE_ANISOTROPY )
+var uv_vertex = `#if defined( USE_UV ) || defined( USE_ANISOTROPY )
 	vUv = vec3( uv, 1 ).xy;
 #endif
 #ifdef USE_MAP
@@ -20709,8 +20647,7 @@ var uv_vertex =
 #ifdef USE_THICKNESSMAP
 	vThicknessMapUv = ( thicknessMapTransform * vec3( THICKNESSMAP_UV, 1 ) ).xy;
 #endif`;
-var worldpos_vertex =
-  `#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0
+var worldpos_vertex = `#if defined( USE_ENVMAP ) || defined( DISTANCE ) || defined ( USE_SHADOWMAP ) || defined ( USE_TRANSMISSION ) || NUM_SPOT_LIGHT_COORDS > 0
 	vec4 worldPosition = vec4( transformed, 1.0 );
 	#ifdef USE_BATCHING
 		worldPosition = batchingMatrix * worldPosition;
@@ -20722,8 +20659,7 @@ var worldpos_vertex =
 #endif`;
 var vertex$h =
   "varying vec2 vUv;\nuniform mat3 uvTransform;\nvoid main() {\n	vUv = ( uvTransform * vec3( uv, 1 ) ).xy;\n	gl_Position = vec4( position.xy, 1.0, 1.0 );\n}";
-var fragment$h =
-  `uniform sampler2D t2D;
+var fragment$h = `uniform sampler2D t2D;
 uniform float backgroundIntensity;
 varying vec2 vUv;
 void main() {
@@ -20736,8 +20672,7 @@ void main() {
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
 }`;
-var vertex$g =
-  `varying vec3 vWorldDirection;
+var vertex$g = `varying vec3 vWorldDirection;
 #include <common>
 void main() {
 	vWorldDirection = transformDirection( position, modelMatrix );
@@ -20745,8 +20680,7 @@ void main() {
 	#include <project_vertex>
 	gl_Position.z = gl_Position.w;
 }`;
-var fragment$g =
-  `#ifdef ENVMAP_TYPE_CUBE
+var fragment$g = `#ifdef ENVMAP_TYPE_CUBE
 	uniform samplerCube envMap;
 #elif defined( ENVMAP_TYPE_CUBE_UV )
 	uniform sampler2D envMap;
@@ -20769,8 +20703,7 @@ void main() {
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
 }`;
-var vertex$f =
-  `varying vec3 vWorldDirection;
+var vertex$f = `varying vec3 vWorldDirection;
 #include <common>
 void main() {
 	vWorldDirection = transformDirection( position, modelMatrix );
@@ -20778,8 +20711,7 @@ void main() {
 	#include <project_vertex>
 	gl_Position.z = gl_Position.w;
 }`;
-var fragment$f =
-  `uniform samplerCube tCube;
+var fragment$f = `uniform samplerCube tCube;
 uniform float tFlip;
 uniform float opacity;
 varying vec3 vWorldDirection;
@@ -20790,8 +20722,7 @@ void main() {
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
 }`;
-var vertex$e =
-  `#include <common>
+var vertex$e = `#include <common>
 #include <batching_pars_vertex>
 #include <uv_pars_vertex>
 #include <displacementmap_pars_vertex>
@@ -20819,8 +20750,7 @@ void main() {
 	#include <clipping_planes_vertex>
 	vHighPrecisionZW = gl_Position.zw;
 }`;
-var fragment$e =
-  `#if DEPTH_PACKING == 3200
+var fragment$e = `#if DEPTH_PACKING == 3200
 	uniform float opacity;
 #endif
 #include <common>
@@ -20859,8 +20789,7 @@ void main() {
 		gl_FragColor = vec4( packDepthToRG( fragCoordZ ), 0.0, 1.0 );
 	#endif
 }`;
-var vertex$d =
-  `#define DISTANCE
+var vertex$d = `#define DISTANCE
 varying vec3 vWorldPosition;
 #include <common>
 #include <batching_pars_vertex>
@@ -20888,8 +20817,7 @@ void main() {
 	#include <clipping_planes_vertex>
 	vWorldPosition = worldPosition.xyz;
 }`;
-var fragment$d =
-  `#define DISTANCE
+var fragment$d = `#define DISTANCE
 uniform vec3 referencePosition;
 uniform float nearDistance;
 uniform float farDistance;
@@ -20915,8 +20843,7 @@ void main() {
 }`;
 var vertex$c =
   "varying vec3 vWorldDirection;\n#include <common>\nvoid main() {\n	vWorldDirection = transformDirection( position, modelMatrix );\n	#include <begin_vertex>\n	#include <project_vertex>\n}";
-var fragment$c =
-  `uniform sampler2D tEquirect;
+var fragment$c = `uniform sampler2D tEquirect;
 varying vec3 vWorldDirection;
 #include <common>
 void main() {
@@ -20926,8 +20853,7 @@ void main() {
 	#include <tonemapping_fragment>
 	#include <colorspace_fragment>
 }`;
-var vertex$b =
-  `uniform float scale;
+var vertex$b = `uniform float scale;
 attribute float lineDistance;
 varying float vLineDistance;
 #include <common>
@@ -20950,8 +20876,7 @@ void main() {
 	#include <clipping_planes_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$b =
-  `uniform vec3 diffuse;
+var fragment$b = `uniform vec3 diffuse;
 uniform float opacity;
 uniform float dashSize;
 uniform float totalSize;
@@ -20980,8 +20905,7 @@ void main() {
 	#include <fog_fragment>
 	#include <premultiplied_alpha_fragment>
 }`;
-var vertex$a =
-  `#include <common>
+var vertex$a = `#include <common>
 #include <batching_pars_vertex>
 #include <uv_pars_vertex>
 #include <envmap_pars_vertex>
@@ -21014,8 +20938,7 @@ void main() {
 	#include <envmap_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$a =
-  `uniform vec3 diffuse;
+var fragment$a = `uniform vec3 diffuse;
 uniform float opacity;
 #ifndef FLAT_SHADED
 	varying vec3 vNormal;
@@ -21064,8 +20987,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 }`;
-var vertex$9 =
-  `#define LAMBERT
+var vertex$9 = `#define LAMBERT
 varying vec3 vViewPosition;
 #include <common>
 #include <batching_pars_vertex>
@@ -21105,8 +21027,7 @@ void main() {
 	#include <shadowmap_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$9 =
-  `#define LAMBERT
+var fragment$9 = `#define LAMBERT
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform float opacity;
@@ -21165,8 +21086,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 }`;
-var vertex$8 =
-  `#define MATCAP
+var vertex$8 = `#define MATCAP
 varying vec3 vViewPosition;
 #include <common>
 #include <batching_pars_vertex>
@@ -21201,8 +21121,7 @@ void main() {
 	#include <fog_vertex>
 	vViewPosition = - mvPosition.xyz;
 }`;
-var fragment$8 =
-  `#define MATCAP
+var fragment$8 = `#define MATCAP
 uniform vec3 diffuse;
 uniform float opacity;
 uniform sampler2D matcap;
@@ -21249,8 +21168,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 }`;
-var vertex$7 =
-  `#define NORMAL
+var vertex$7 = `#define NORMAL
 #if defined( FLAT_SHADED ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP_TANGENTSPACE )
 	varying vec3 vViewPosition;
 #endif
@@ -21284,8 +21202,7 @@ void main() {
 	vViewPosition = - mvPosition.xyz;
 #endif
 }`;
-var fragment$7 =
-  `#define NORMAL
+var fragment$7 = `#define NORMAL
 uniform float opacity;
 #if defined( FLAT_SHADED ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP_TANGENTSPACE )
 	varying vec3 vViewPosition;
@@ -21307,8 +21224,7 @@ void main() {
 		gl_FragColor.a = 1.0;
 	#endif
 }`;
-var vertex$6 =
-  `#define PHONG
+var vertex$6 = `#define PHONG
 varying vec3 vViewPosition;
 #include <common>
 #include <batching_pars_vertex>
@@ -21348,8 +21264,7 @@ void main() {
 	#include <shadowmap_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$6 =
-  `#define PHONG
+var fragment$6 = `#define PHONG
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform vec3 specular;
@@ -21410,8 +21325,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 }`;
-var vertex$5 =
-  `#define STANDARD
+var vertex$5 = `#define STANDARD
 varying vec3 vViewPosition;
 #ifdef USE_TRANSMISSION
 	varying vec3 vWorldPosition;
@@ -21455,8 +21369,7 @@ void main() {
 	vWorldPosition = worldPosition.xyz;
 #endif
 }`;
-var fragment$5 =
-  `#define STANDARD
+var fragment$5 = `#define STANDARD
 #ifdef PHYSICAL
 	#define IOR
 	#define USE_SPECULAR
@@ -21585,8 +21498,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 }`;
-var vertex$4 =
-  `#define TOON
+var vertex$4 = `#define TOON
 varying vec3 vViewPosition;
 #include <common>
 #include <batching_pars_vertex>
@@ -21624,8 +21536,7 @@ void main() {
 	#include <shadowmap_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$4 =
-  `#define TOON
+var fragment$4 = `#define TOON
 uniform vec3 diffuse;
 uniform vec3 emissive;
 uniform float opacity;
@@ -21678,8 +21589,7 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 }`;
-var vertex$3 =
-  `uniform float size;
+var vertex$3 = `uniform float size;
 uniform float scale;
 #include <common>
 #include <color_pars_vertex>
@@ -21711,8 +21621,7 @@ void main() {
 	#include <worldpos_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$3 =
-  `uniform vec3 diffuse;
+var fragment$3 = `uniform vec3 diffuse;
 uniform float opacity;
 #include <common>
 #include <color_pars_fragment>
@@ -21738,8 +21647,7 @@ void main() {
 	#include <fog_fragment>
 	#include <premultiplied_alpha_fragment>
 }`;
-var vertex$2 =
-  `#include <common>
+var vertex$2 = `#include <common>
 #include <batching_pars_vertex>
 #include <fog_pars_vertex>
 #include <morphtarget_pars_vertex>
@@ -21763,8 +21671,7 @@ void main() {
 	#include <shadowmap_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$2 =
-  `uniform vec3 color;
+var fragment$2 = `uniform vec3 color;
 uniform float opacity;
 #include <common>
 #include <fog_pars_fragment>
@@ -21781,8 +21688,7 @@ void main() {
 	#include <fog_fragment>
 	#include <premultiplied_alpha_fragment>
 }`;
-var vertex$1 =
-  `uniform float rotation;
+var vertex$1 = `uniform float rotation;
 uniform vec2 center;
 #include <common>
 #include <uv_pars_vertex>
@@ -21807,8 +21713,7 @@ void main() {
 	#include <clipping_planes_vertex>
 	#include <fog_vertex>
 }`;
-var fragment$1 =
-  `uniform vec3 diffuse;
+var fragment$1 = `uniform vec3 diffuse;
 uniform float opacity;
 #include <common>
 #include <uv_pars_fragment>
@@ -27398,8 +27303,7 @@ function WebGLRenderStates(extensions) {
   };
 }
 var vertex = "void main() {\n	gl_Position = vec4( position, 1.0 );\n}";
-var fragment =
-  `uniform sampler2D shadow_pass;
+var fragment = `uniform sampler2D shadow_pass;
 uniform vec2 resolution;
 uniform float radius;
 void main() {

@@ -9,6 +9,7 @@ import { screenProblems } from "../assets/engine/hyperframes/screen.mjs";
 import { puppetProblems } from "../assets/engine/hyperframes/puppet.mjs";
 import { loadRigs } from "./puppet-data.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
+import { calligraphyProblems } from "../assets/engine/hyperframes/calligraphy.mjs";
 import { timelineProblems } from "../assets/engine/hyperframes/timeline.mjs";
 import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
 import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
@@ -107,6 +108,8 @@ export function checkProject(video, dir, schema = loadSchema()) {
       problems.push(...flowProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "sequence")
       problems.push(...sequenceProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
+    if (s.kind === "calligraphy")
+      problems.push(...calligraphyProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "timeline")
       problems.push(...timelineProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "code")

@@ -2,6 +2,7 @@
 // { html, plan }: markup for one scene and the animations that bring it in. Text is always escaped, so a
 // hostile string in video.json is shown as text and never becomes markup. Nothing here touches the disk.
 
+import { calligraphy, calligraphyCss } from "./calligraphy.mjs";
 import { code, codeCss } from "./code.mjs";
 import { puppet, puppetCss } from "./puppet.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
@@ -25,6 +26,7 @@ export const KINDS = [
   "screen",
   "puppet",
   "timeline",
+  "calligraphy",
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -198,6 +200,7 @@ const BUILDERS = {
   screen,
   puppet,
   timeline,
+  calligraphy,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
@@ -208,7 +211,8 @@ export const kindCss = (brand, vertical) =>
   requestFlowCss(brand) +
   screenCss(brand) +
   puppetCss() +
-  timelineCss(brand);
+  timelineCss(brand) +
+  calligraphyCss(brand);
 
 /**
  * Markup and animations for one scene.

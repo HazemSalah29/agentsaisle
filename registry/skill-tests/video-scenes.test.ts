@@ -43,6 +43,7 @@ describe("video-core scenes", () => {
       "screen",
       "puppet",
       "timeline",
+      "calligraphy",
     ]);
   });
 
