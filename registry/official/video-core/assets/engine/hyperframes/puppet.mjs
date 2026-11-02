@@ -338,7 +338,10 @@ export function puppet(s, ctx) {
   const props = s.props;
   const layers = backdropLayers(props.backdrop?.preset ?? "meadow");
   const plan = [];
-  let bg = `<svg class="pup-bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">`;
+  // A tall film burns its captions into the lower fifth, so the whole backdrop is lifted to keep the ground
+  // (and the characters' feet) above them.
+  const lift = ctx.size[1] > ctx.size[0] ? 180 : 0;
+  let bg = `<svg class="pup-bg" viewBox="0 ${lift} 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">`;
   layers.forEach((layer, i) => {
     const id = `${ctx.prefix}-bg${i}`;
     bg += `<g id="${id}">${layer.svg}</g>`;

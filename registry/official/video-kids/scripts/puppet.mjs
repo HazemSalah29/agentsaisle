@@ -80,7 +80,7 @@ export function scaffold(bible, name) {
       "ears",
       "head",
       [150, 80],
-      `<ellipse cx="118" cy="40" rx="17" ry="46" fill="${body}"/><ellipse cx="182" cy="40" rx="17" ry="46" fill="${body}"/><ellipse cx="118" cy="44" rx="8" ry="30" fill="${accent}"/><ellipse cx="182" cy="44" rx="8" ry="30" fill="${accent}"/>`,
+      `<ellipse cx="116" cy="52" rx="17" ry="42" fill="${body}"/><ellipse cx="184" cy="52" rx="17" ry="42" fill="${body}"/><ellipse cx="116" cy="56" rx="8" ry="27" fill="${accent}"/><ellipse cx="184" cy="56" rx="8" ry="27" fill="${accent}"/>`,
     );
   else if (ears === "round")
     add(
@@ -99,7 +99,7 @@ export function scaffold(bible, name) {
     "brows",
     "head",
     [150, 100],
-    `<line x1="110" y1="98" x2="138" y2="96" ${stroke(line, 5)}/><line x1="162" y1="96" x2="190" y2="98" ${stroke(line, 5)}/>`,
+    `<path d="M110 100 Q124 93 138 97" ${stroke(line, 5)}/><path d="M162 97 Q176 93 190 100" ${stroke(line, 5)}/>`,
   );
   add(
     "eyes-open",
