@@ -1,7 +1,7 @@
 // The `timeline` scene: a vertical timeline of events (an outage, a release, a day), shown one event at a time,
 // each with its narration line when there is one line per event; earlier events dim so one idea moves at a time.
 // The type of an event is also written as a word, so colour is never the only signal. Every string is escaped.
-import { IN, esc, fadeUp } from "./shared.mjs";
+import { IN, LEAD, esc, fadeUp, wordCursor } from "./shared.mjs";
 
 export const LIMITS = { events: 10, at: 12, label: 60, where: 24, title: 80 };
 export const TYPES = {
@@ -31,6 +31,8 @@ export function timelineProblems(props) {
       p.push(`${at}.label: text of 1 to ${LIMITS.label} characters`);
     if (e?.where !== undefined && (typeof e.where !== "string" || e.where.length > LIMITS.where))
       p.push(`${at}.where: text of at most ${LIMITS.where} characters`);
+    if (e?.on !== undefined && (typeof e.on !== "string" || !e.on.trim() || e.on.length > 60))
+      p.push(`${at}.on: the spoken words that bring it in, up to 60 characters`);
     if (e?.type !== undefined && !Object.hasOwn(TYPES, e.type))
       p.push(`${at}.type: one of ${Object.keys(TYPES).join(", ")}`);
   });
@@ -56,7 +58,10 @@ export function timeline(s, ctx) {
   }
   const perLine = ctx.lines.length === n;
   const step = Math.max(0.25, (ctx.seconds - 1.4) / n);
-  const when = (i) => ctx.at + (perLine ? ctx.lines[i].start : 0.6 + i * step);
+  const cursor = wordCursor(ctx);
+  const said = ev.map((e) => cursor.find(e.on ?? e.label));
+  const when = (i) =>
+    said[i] !== null ? said[i] - LEAD : ctx.at + (perLine ? ctx.lines[i].start : 0.6 + i * step);
   html += `<ol class="${n > 6 ? "tl tl-dense" : "tl"}">`;
   ev.forEach((e, i) => {
     const type = e.type ?? "info";

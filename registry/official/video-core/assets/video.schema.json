@@ -175,6 +175,11 @@
             "maxItems": 8,
             "items": { "type": "string", "minLength": 1, "maxLength": 120 }
           },
+          "on": {
+            "type": "array",
+            "maxItems": 8,
+            "items": { "type": "string", "minLength": 1, "maxLength": 60 }
+          },
           "numbered": { "type": "boolean" }
         }
       },
@@ -194,7 +199,8 @@
               "required": ["label", "value"],
               "properties": {
                 "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "value": { "type": "number" }
+                "value": { "type": "number" },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
               }
             }
           }

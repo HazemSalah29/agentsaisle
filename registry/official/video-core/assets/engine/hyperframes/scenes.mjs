@@ -11,7 +11,7 @@ import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { screen, screenCss } from "./screen.mjs";
 import { sequence, sequenceCss } from "./sequence.mjs";
 import { shot, shotCss } from "./shot.mjs";
-import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
+import { IN, LEAD, STAGGER, esc, fadeUp, wordCursor } from "./shared.mjs";
 import { timeline, timelineCss } from "./timeline.mjs";
 
 export { esc };
@@ -87,15 +87,26 @@ function list(s, ctx) {
   }
   const tag = s.props.numbered ? "ol" : "ul";
   html += `<${tag} class="items">`;
+  const cursor = wordCursor(ctx);
+  let prev = -Infinity;
   items.forEach((text, i) => {
     const id = `${ctx.prefix}-i${i}`;
-    // Reveal each item with its narration line when there is one per item; otherwise spread them out.
+    // Each item enters on the word that names it (`on` overrides which words); failing that with its narration
+    // line when there is one per item; otherwise they are spread out.
+    const said = cursor.find(s.props.on?.[i] ?? text);
     const line = ctx.lines.length === items.length ? ctx.lines[i] : null;
-    const at =
-      ctx.at +
-      (line
-        ? line.start
-        : 0.4 + i * Math.max(STAGGER, Math.min(1, (ctx.seconds - 1) / items.length)));
+    const base =
+      said !== null
+        ? said - LEAD
+        : ctx.at +
+          (line
+            ? line.start
+            : 0.4 + i * Math.max(STAGGER, Math.min(1, (ctx.seconds - 1) / items.length)));
+    // Something is on screen from the start: with no heading the first item does not wait for a late word.
+    const first =
+      i === 0 && !s.props.heading && said !== null ? Math.min(base, ctx.at + 0.3) : base;
+    const at = Math.max(first, prev + 0.05);
+    prev = at;
     html += `<li id="${id}">${esc(text)}</li>`;
     plan.push({
       id,
@@ -124,6 +135,8 @@ function chart(s, ctx) {
   const slot = (W - 8) / data.length;
   const cx = (i) => r1(4 + slot * (i + 0.5));
   const plan = [];
+  const cursor = wordCursor(ctx);
+  const said = data.map((d) => cursor.find(d.on ?? d.label));
   let svg = `<svg class="chart" viewBox="0 0 ${W} 58" role="img" aria-label="${esc(s.props.title ?? "Chart")}" dir="ltr">`;
   svg += `<line class="axis" x1="4" x2="${W - 4}" y1="${y0}" y2="${y0}"/>`;
   if (type === "bar") {
@@ -132,7 +145,8 @@ function chart(s, ctx) {
       const id = `${ctx.prefix}-b${i}`;
       const yy = y(d.value);
       svg += `<rect id="${id}" class="bar" x="${r1(cx(i) - bw / 2)}" y="${Math.min(yy, y0)}" width="${bw}" height="${r1(Math.abs(y0 - yy))}" style="transform-origin:0px ${y0}px"/>`;
-      plan.push({ id, frames: grow, at: ctx.at + 0.3 + i * STAGGER, dur: 0.6, ease: "out" });
+      const at = said[i] !== null ? said[i] - LEAD : ctx.at + 0.3 + i * STAGGER;
+      plan.push({ id, frames: grow, at, dur: 0.6, ease: "out" });
     });
   } else {
     const pts = data.map((d, i) => `${cx(i)},${y(d.value)}`).join(" ");
