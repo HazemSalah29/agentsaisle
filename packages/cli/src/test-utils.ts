@@ -41,12 +41,14 @@ export const skillMd = (name: string, extra = "") =>
 /** Serve one tarball for any `/<owner>/<repo>/tar.gz/<sha>` request. */
 export async function serveTarball(
   body: Buffer,
-): Promise<{ url: string; close: () => Promise<void> }> {
+): Promise<{ url: string; close: () => Promise<void>; hits: () => number }> {
+  let hits = 0;
   const server = http.createServer((req, res) => {
     if (!/\/tar\.gz\/[0-9a-f]{40}$/.test(req.url ?? "")) {
       res.writeHead(404).end();
       return;
     }
+    hits++;
     res.writeHead(200, { "content-type": "application/gzip" }).end(body);
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
@@ -54,6 +56,7 @@ export async function serveTarball(
   return {
     url: `http://127.0.0.1:${port}`,
     close: () => new Promise<void>((r) => server.close(() => r())),
+    hits: () => hits,
   };
 }
 

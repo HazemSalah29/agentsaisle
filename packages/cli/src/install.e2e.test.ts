@@ -463,8 +463,10 @@ describe("aisle CLI (end to end, no network)", () => {
 
   it("installs a library with its parts, lists it as one, updates and removes it together", async () => {
     const project = await tmpDir();
+    const before = server.hits();
     const res = await aisle(project, ["add", "lib"]);
     expect(res.code, res.stderr).toBe(0);
+    expect(server.hits() - before, "one download for the library and both parts").toBe(1);
     for (const n of ["part-a", "part-b", "lib"])
       expect(existsSync(path.join(project, ".claude", "skills", n, "SKILL.md")), n).toBe(true);
     expect(res.stdout).toContain("part of lib: Claude uses it, you do not run it");

@@ -72,6 +72,8 @@ async function moveDir(from: string, to: string): Promise<void> {
 export interface InstallOptions {
   /** Replace an existing folder without asking (used by `aisle update`). */
   overwrite?: boolean;
+  /** Where to keep downloaded archives for this command (see downloadSkill). */
+  cacheDir?: string;
 }
 
 export async function installOne(
@@ -107,7 +109,10 @@ export async function installOne(
   const tmp = await mkdtemp(path.join(os.tmpdir(), "aisle-"));
   try {
     const staged = path.join(tmp, "skill");
-    await downloadSkill(p.source, staged, process.env, { links: "keep" });
+    await downloadSkill(p.source, staged, process.env, {
+      links: "keep",
+      ...(options.cacheDir ? { cacheDir: options.cacheDir } : {}),
+    });
     const fm = await validateSkill(staged, p.name);
     const name = fm.name;
 
@@ -183,6 +188,7 @@ export async function installMany(
   let index: Promise<RegistryIndex> | undefined;
   const getIndex = () => (index ??= loadRegistry());
   const failures: string[] = [];
+  const cacheDir = await mkdtemp(path.join(os.tmpdir(), "aisle-cache-"));
   // A library (for example `video`) installs its parts first; if one fails the library itself is not installed.
   const needsIndex = inputs.some((i) => {
     try {
@@ -193,19 +199,23 @@ export async function installMany(
   });
   const known = needsIndex ? await getIndex().catch(() => undefined) : undefined;
   const steps = expandLibraries(inputs, known ?? EMPTY_INDEX);
-  for (const step of steps) {
-    if (step.needs.some((n) => failures.includes(n))) {
-      console.error(`Error (${step.input}): not installed, because a part of it failed.`);
-      failures.push(step.input);
-      continue;
+  try {
+    for (const step of steps) {
+      if (step.needs.some((n) => failures.includes(n))) {
+        console.error(`Error (${step.input}): not installed, because a part of it failed.`);
+        failures.push(step.input);
+        continue;
+      }
+      try {
+        await installOne(step.input, ctx, getIndex, { ...options, cacheDir });
+      } catch (e) {
+        if (!(e instanceof CliError)) throw e;
+        console.error(`Error (${step.input}): ${e.message}`);
+        failures.push(step.input);
+      }
     }
-    try {
-      await installOne(step.input, ctx, getIndex, options);
-    } catch (e) {
-      if (!(e instanceof CliError)) throw e;
-      console.error(`Error (${step.input}): ${e.message}`);
-      failures.push(step.input);
-    }
+  } finally {
+    await rm(cacheDir, { recursive: true, force: true });
   }
   if (failures.length) throw new CliError(`${failures.length} of ${steps.length} installs failed.`);
 }

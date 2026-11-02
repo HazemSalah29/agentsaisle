@@ -1,4 +1,6 @@
 import { LIMITS } from "@agentsaisle/audit";
+import { createHash } from "node:crypto";
+import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import { mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -47,6 +49,11 @@ export interface DownloadOptions {
    * them; the caller must remove them afterwards with `removeSymlinks`.
    */
   links?: "skip" | "keep";
+  /**
+   * A folder to keep downloaded archives in for the length of one command, so installing many skills from one
+   * commit (a library and its parts) downloads the repository once. The caller creates and removes it.
+   */
+  cacheDir?: string;
 }
 
 const mb = (n: number) => `${n / 1024 / 1024} MB`;
@@ -64,18 +71,16 @@ function byteLimit(max: number, message: string): Transform {
 }
 
 /**
- * Download the tarball for `source.sha` and extract only `source.path/` into `destDir`.
- * Files are only written, never executed. Absolute paths, `..`, hardlinks and devices make the
- * download fail; so do archives over 20 MB, more than 2,000 files or any file over 2 MB.
+ * The archive's bytes as a stream. Refuses an archive over the size cap, from its declared length or as it arrives.
+ * With a cache folder the file is saved once and every later call for the same commit reads it from disk.
  */
-export async function downloadSkill(
-  source: SkillSource,
-  destDir: string,
-  env = process.env,
-  options: DownloadOptions = {},
-): Promise<void> {
-  const base = (env.AISLE_CODELOAD_URL ?? CODELOAD).replace(/\/$/, "");
-  const url = `${base}/${source.repo}/tar.gz/${source.sha}`;
+async function openArchive(url: string, source: SkillSource, cacheDir?: string): Promise<Readable> {
+  const tooBig = () =>
+    new CliError(`The archive is larger than ${mb(EXTRACT_LIMITS.maxArchiveBytes)}; refusing it.`);
+  const file = cacheDir
+    ? path.join(cacheDir, `${createHash("sha256").update(url).digest("hex").slice(0, 24)}.tgz`)
+    : undefined;
+  if (file && existsSync(file)) return createReadStream(file);
 
   let res: Response;
   try {
@@ -91,12 +96,38 @@ export async function downloadSkill(
         `Check that the repository is public and the commit exists.`,
     );
   }
-  const declared = Number(res.headers.get("content-length") ?? 0);
-  if (declared > EXTRACT_LIMITS.maxArchiveBytes) {
-    throw new CliError(
-      `The archive is larger than ${mb(EXTRACT_LIMITS.maxArchiveBytes)}; refusing it.`,
-    );
+  if (Number(res.headers.get("content-length") ?? 0) > EXTRACT_LIMITS.maxArchiveBytes)
+    throw tooBig();
+  const body = Readable.fromWeb(res.body as never);
+  const limited = body.pipe(byteLimit(EXTRACT_LIMITS.maxArchiveBytes, tooBig().message));
+  body.on("error", (e) => limited.destroy(e));
+  if (!file) return limited;
+  await mkdir(path.dirname(file), { recursive: true });
+  try {
+    await pipeline(limited, createWriteStream(file));
+  } catch (e) {
+    await rm(file, { force: true });
+    if (e instanceof CliError) throw e;
+    throw new CliError(`The download failed (${(e as Error).message}).`);
   }
+  return createReadStream(file);
+}
+
+/**
+ * Download the tarball for `source.sha` and extract only `source.path/` into `destDir`.
+ * Files are only written, never executed. Absolute paths, `..`, hardlinks and devices make the
+ * download fail; so do archives over 20 MB, more than 2,000 files or any file over 2 MB.
+ */
+export async function downloadSkill(
+  source: SkillSource,
+  destDir: string,
+  env = process.env,
+  options: DownloadOptions = {},
+): Promise<void> {
+  const base = (env.AISLE_CODELOAD_URL ?? CODELOAD).replace(/\/$/, "");
+  const url = `${base}/${source.repo}/tar.gz/${source.sha}`;
+
+  const archive = await openArchive(url, source, options.cacheDir);
 
   const prefix = normalize(source.path);
   const keepLinks = options.links === "keep";
@@ -151,11 +182,7 @@ export async function downloadSkill(
   });
   try {
     await pipeline(
-      Readable.fromWeb(res.body as never),
-      byteLimit(
-        EXTRACT_LIMITS.maxArchiveBytes,
-        `The archive is larger than ${mb(EXTRACT_LIMITS.maxArchiveBytes)}; refusing it.`,
-      ),
+      archive,
       createGunzip(),
       byteLimit(
         EXTRACT_LIMITS.maxUnpackedBytes,
