@@ -1,6 +1,6 @@
 ---
 name: video
-description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase or /video tour. Don't use to upload a finished video.
+description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour or /video changes. Don't use to upload a finished video.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Bash(node *)
 ---
@@ -17,6 +17,7 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 - The user runs `/video story "<premise>"` (options `--length 60s|3m`, `--generator stills-only|veo|kling|ltx|wan`) or asks for a cartoon or cinematic short from images: follow `references/story.md`.
 - The user runs `/video localize <project> --to ar|en` or asks for an Arabic or English version of a finished video: hand over to the `video-localize` skill and stop; it has its own steps (`references/localize.md`).
 - The user runs `/video tour .` or asks for a walkthrough video of a repository: hand over to the `video-tour` skill and stop; it needs `docs/architecture.json`.
+- The user runs `/video changes` or asks for a PR or release video: hand over to the `video-changes` skill and stop; it needs a saved git diff.
 - The user runs `/video ingest <url or file>` or asks to download or import footage: hand over to the `video-ingest` skill and stop. It asks for the rights basis itself; never suggest one.
 - The user runs `/video showcase` (an app demo): hand over to the `video-showcase` skill and stop; it has its own steps.
 - The user runs `/video explain "<topic>"` (options `--format reel|short|youtube|square`, `--lang en|ar`, `--length 30s|60s`) or asks for an explainer video.
