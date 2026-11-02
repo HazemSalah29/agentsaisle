@@ -1,7 +1,7 @@
 ---
 name: video-showcase
-description: Make a product showcase video from the user's own app, which means playing a demo script in a headless browser to record the screen and an interaction log, then cutting waiting, speeding up typing, easing the camera to each click, drawing a smooth cursor and click ripples inside an original device frame, and snapping scene cuts to the music's beats. Use when the user wants an app demo or showcase video or runs /video-showcase. Don't use for apps or sites the user does not own, for native desktop apps, for explainers, or to copy another product's footage or branding.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a product showcase video from the user's own app: play a demo script in a headless browser to record the screen, cut waiting, speed typing, ease the camera to clicks, draw a cursor in an original device frame, snap cuts to music beats. Don't use for apps the user does not own or native apps."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Turns a demo script into a polished screen demo. The recording, cursor path, cam
 ## Use when
 
 - The user has an app running on their machine (or their own deployed site) and wants a demo video of it.
-- The user runs `/video-showcase` or `/video showcase`, or has a screen recording and wants zooms, a cursor, a device frame or beat-timed cuts.
+- The user wants a demo of their own app, or has a screen recording and wants zooms, a cursor, a device frame or beat-timed cuts.
 
 ## Don't use when
 

@@ -1,7 +1,7 @@
 ---
 name: video-doc
-description: Make a short explainer video from a Markdown or text document such as a README, spec or notes, where every spoken line is a sentence or bullet from the file and every fact cites its file and line, and tables with numbers become charts. Use when the user runs /video doc or asks to turn a document into a video. Don't use for PDFs (no parser is installed), to summarise in your own words, or for voice and rendering.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a short explainer from a Markdown or text document (README, spec, notes): every spoken line is a sentence or bullet from the file, every fact cites its line, number tables become charts. Use to explain a document. Don't use for PDFs or to summarise in new words."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Builds the draft project: a title, up to five sections as `list` scenes (bullets
 
 ## Use when
 
-- The user runs `/video doc <file>` or asks for a video of a README, a spec, release notes or a notes file.
+- The user asks for a video of a README, a spec, release notes or a notes file.
 
 ## Don't use when
 

@@ -1,7 +1,7 @@
 ---
 name: video-generate
-description: Make one AI image or short AI video clip for a video project through a provider adapter, with a price quote, a spend cap, a cache and a log of every call. Use when the user wants a generated still or shot for a project, or runs /video-generate. Don't use for music, sound effects or lip sync (not built), for real people's likeness or copyrighted characters, or when the budget is $0.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make one AI image or short AI video clip through a provider adapter, with a price quote, spend cap, cache and call log. It prints the quote and refuses to spend without the user's typed approval of that exact total. Don't use at a $0 budget, for real people's likeness or copyrighted characters."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Makes AI stills and clips and lists them in `video.json` as `aiGenerated`. This 
 
 ## Use when
 
-- The project needs a generated image or short clip, or the user runs `/video-generate image|video`.
+- The project needs a generated image or short clip (`image` or `video`).
 - `video-story` asks for a keyframe or a shot.
 
 ## Don't use when

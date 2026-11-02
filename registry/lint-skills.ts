@@ -195,11 +195,32 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
   }
 
   // invocation
-  if (/^(design|image|video)-/.test(skill) && frontmatter["disable-model-invocation"] !== true) {
+  if (/^video-/.test(skill)) {
+    // The video library is one command, `/video`, that Claude directs: its parts are Claude-only.
+    if (frontmatter["user-invocable"] !== false)
+      add(
+        "SKILL.md",
+        "invocation",
+        "video library parts must set user-invocable: false (users run /video; Claude picks the parts).",
+      );
+    if (frontmatter["disable-model-invocation"] === true)
+      add(
+        "SKILL.md",
+        "invocation",
+        "video library parts must stay invocable by Claude: remove disable-model-invocation.",
+      );
+  } else if (skill === "video") {
+    if (frontmatter["user-invocable"] === false || frontmatter["disable-model-invocation"] === true)
+      add(
+        "SKILL.md",
+        "invocation",
+        "the video skill is the one visible command and must stay invocable.",
+      );
+  } else if (/^(design|image)-/.test(skill) && frontmatter["disable-model-invocation"] !== true) {
     add(
       "SKILL.md",
       "invocation",
-      "style and media skills must set disable-model-invocation: true.",
+      "style and image skills must set disable-model-invocation: true.",
     );
   }
 

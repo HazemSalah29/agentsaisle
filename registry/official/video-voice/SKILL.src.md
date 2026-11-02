@@ -1,7 +1,7 @@
 ---
 name: video-voice
-description: Make a voice track for a video project from its script.md, one WAV per line, with word timings for captions, using local engines (Kokoro for English, 3arab-TTS for Arabic) or an offline test tone. Use when the user wants narration audio or word timings for a project, or runs /video-voice. Don't use to clone a voice, to use a paid voice service, or before the script passes the writer check.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a voice track from script.md, one WAV per line with word timings, using local engines (Kokoro for English, 3arab-TTS for Arabic) or an offline test tone. Use for narration and caption timings. Don't use to clone a voice, to use a paid voice service, or before the script passes the writer check."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Turns `script.md` into audio and word times. Scripts do the work; the engines ru
 ## Use when
 
 - A project has a checked `script.md` and needs narration audio, or word timings for captions.
-- The user runs `/video-voice`, optionally with `--provider`, `--voice`, `--speed`.
+- A project has a checked script and needs narration, optionally with `--provider`, `--voice`, `--speed`.
 
 ## Don't use when
 

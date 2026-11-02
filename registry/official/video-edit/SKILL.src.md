@@ -1,7 +1,7 @@
 ---
 name: video-edit
-description: Edit video and audio files with FFmpeg, covering trim, join, speed, gif, scene cuts, loudness to -14 LUFS, colour looks, stabilize, punch-in zooms, cutting pauses and fillers, and reframing wide video to vertical by following the face. Use when the user wants footage tightened, fixed or reshaped, or runs /video-edit. Don't use to make a video from a script, to lay b-roll over a transcript, to upload, or to change a file in place.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Edit video and audio files with FFmpeg: trim, join, speed, gif, scene cuts, loudness to -14 LUFS, colour looks, stabilize, punch-in zooms, cutting pauses and fillers, transcribe, reframe wide video to vertical. Use to tighten, fix or reshape the user's footage. Never changes a file in place."
+user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Post-production on files the user already has. One script, `edit.mjs`, with a co
 ## Use when
 
 - The user wants footage shortened, joined, sped up, levelled, colour-graded, steadied, made vertical, or made into a gif.
-- The user wants pauses and "um"s taken out of a talking clip, or runs `/video-edit`.
+- The user wants pauses and "um"s taken out of a talking clip.
 
 ## Don't use when
 

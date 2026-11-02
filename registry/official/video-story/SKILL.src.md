@@ -1,7 +1,7 @@
 ---
 name: video-story
-description: Turn a story premise into a shot list, character reference packs, a continuity log and a video.json of broll scenes, with Ken Burns motion on AI or user-made stills for $0 or paid image-to-video clips through video-generate. Use when the user wants a story, cartoon or cinematic short built from generated or supplied images, or runs /video-story. Don't use for explainers, kids' puppet videos, real people's likeness or known characters, or to promise a first-try result.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Turn a story premise into a shot list, character reference packs, a continuity log and broll scenes with Ken Burns motion on stills ($0) or paid clips through video-generate. Use for story or cinematic shorts from images. Don't use for explainers, kids' puppets, real people or known characters."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Plans and assembles a story from stills (and optionally clips). The agent writes
 
 ## Use when
 
-- The user gives a premise and wants a story short, or runs `/video-story "<premise>" [--style ...] [--length 60s|3m] [--generator stills-only|veo|kling|ltx|wan]`.
+- The user gives a premise and wants a story short.
 
 ## Don't use when
 

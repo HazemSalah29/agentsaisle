@@ -1,7 +1,6 @@
 ---
 name: video
 description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour, /video changes, /video incident, /video session, /video drawing, /video data, /video doc, /video batch, /video calligraphy or /video interactive. Don't use to upload a finished video.
-disable-model-invocation: true
 allowed-tools: Read Write Glob Bash(node *)
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: video-ingest
-description: Bring footage into a video project with a recorded rights basis, from an https URL (through yt-dlp) or a local file, and keep a rights ledger. Use when the user wants to download their own upload, Creative Commons or public-domain footage, or a reference copy for analysis, or runs /video-ingest. Don't use for paid, DRM-protected or login-only services, footage the user has no right to use, or when no rights basis is given.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Bring footage into a project with a recorded rights basis, from an https URL (yt-dlp) or a local file, and keep a rights ledger. Asks for the rights basis itself and never suggests one. Use when the user wants to use their own upload, Creative Commons or public-domain footage. Don't use for paid, DRM or login-only services."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: video-localize
-description: Dub a finished video project into Arabic or English as a separate sibling folder - translate the script and on-screen text, re-voice, retime and mirror puppet layouts for right-to-left. Use when the user wants an Arabic or English version of a video, or runs /video-localize. Don't use to translate other languages (no voice exists), to clone the user's voice, for lip sync (not built), or to publish a translation as reviewed.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Dub a finished project into Arabic or English as a separate sibling folder: translate script and on-screen text, re-voice, retime, mirror puppet layouts for right-to-left. Don't use for other languages (no voice exists), voice cloning, or to publish a translation as reviewed."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Makes `<project>.ar/` (or `.en/`) beside the source project. The agent translate
 
 ## Use when
 
-- The user runs `/video-localize <project> --to ar|en [--dialect msa|egyptian]` or asks for an Arabic or English version of a video they made.
+- The user asks for an Arabic or English version of a video they made.
 
 ## Don't use when
 

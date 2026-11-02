@@ -1,7 +1,7 @@
 ---
 name: video-kids
-description: Make original cartoon characters for children's videos and put them in a story. Writes a character bible, draws a shaded SVG puppet from it (head, eyes, brows, eight mouth shapes, arms, legs with pivots) and, if asked, a 3D one, makes a contact sheet to look at, turns the voice into lip-sync mouth shapes, and sets the acts and backdrop of the puppet scene. Use when the user runs /video-kids (new-character or episode) or /video kids, or wants a kids' animation with original characters. Don't use for known characters, shows or songs, for photos of real children, for explainers or realistic stories, or to upload a video.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make original cartoon characters for children's videos and put them in a story: character bible, shaded SVG puppet (optional 3D), contact sheet, lip-sync mouth shapes, acts and backdrop. Use for kids' animation. Don't use for known characters or songs, photos of real children, or realistic stories."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Makes the cast and the acting for a children's video. Everything is drawn in cod
 
 ## Use when
 
-- The user runs `/video-kids new-character` or `/video-kids episode "<idea>" --age 3-5|6-9 [--song] [--lang ar|en]`, or `/video kids`.
+- A kids' video needs a new character (`new-character`) or an episode (`episode "<idea>" --age 3-5|6-9 [--song] [--lang ar|en]`).
 - The user wants a cartoon for children with original characters, or lip sync for a puppet.
 
 ## Don't use when

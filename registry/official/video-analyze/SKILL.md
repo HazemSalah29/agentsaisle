@@ -1,7 +1,7 @@
 ---
 name: video-analyze
-description: Measure how a reference video is made, covering cuts a minute, shot length, hook length, shares of motion and speech, colour palette and a tempo guess, and save a recipe of numbers for a new video to follow. Use when the user wants to learn the pace or look of a format from a video they have the right to analyse, or runs /video-analyze. Don't use on a video without a stated right to analyse it, to copy its footage, audio, words or characters, or to guess what is said or shown.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Measure how a reference video is made (cuts a minute, shot length, hook length, motion and speech shares, palette) and save a recipe of numbers for a new video to follow. Use to learn the pace of a format from a video the user has the right to analyse. Don't use without that right, or to copy footage, audio, words or characters."
+user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Learns a format, not the content. It reads a reference video and writes `recipes
 ## Use when
 
 - The user has a video they made, have permission for, or that is Creative Commons or public domain, and wants to make new videos with a similar pace and look.
-- The user runs `/video-analyze <file>`.
+- A reference video (a file the user has the right to analyse) should set the pace or look of a new one.
 
 ## Don't use when
 

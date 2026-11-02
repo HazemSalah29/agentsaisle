@@ -1,7 +1,7 @@
 ---
 name: video-data
-description: Make a chart video from a fresh public dataset (npm downloads, GitHub stars, or a CSV/JSON file on a host the owner approved) that can be re-run every week. One fetch script writes the data with its source and date; the video shows only those numbers and the changes computed from them. Use when the user runs /video data or asks for a weekly or live-data chart video. Don't use for private or paid data, scraping, or scripts, voice and rendering.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a chart video from a fresh public dataset (npm downloads, GitHub stars, or a CSV/JSON file on a host the user approved), re-runnable weekly. One fetch script (GET, https, no keys) writes data with its source and date. Don't use for private or paid data, or scraping."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Builds a draft project from a dataset fetched today: title, a bar `chart` (sourc
 
 ## Use when
 
-- The user runs `/video data` or wants a "this week in ..." chart video from npm downloads, GitHub stars or a data file they name.
+- The user wants a "this week in ..." chart video from npm downloads, GitHub stars or a data file they name.
 
 ## Don't use when
 

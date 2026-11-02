@@ -1,7 +1,7 @@
 ---
 name: video-tour
-description: Make a narrated codebase tour video from an arch-visualize model, which is an overview of the components plus the busiest request flows, each step shown with its file and line. Use when the user runs /video tour or asks for a walkthrough video of a repository. Don't use without docs/architecture.json, for live traffic or timings, or for scripts, voice and rendering.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a narrated codebase tour from an arch-visualize model: component overview plus the busiest request flows, each step with its file and line. Use for a repository walkthrough. Don't use without docs/architecture.json, or to show live traffic or timings."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Builds the draft project of a tour: a title, an overview of the components by ti
 
 ## Use when
 
-- The user runs `/video tour .` or asks for a video that walks through how a repository works.
+- The user asks for a video that walks through how a repository works.
 - `docs/architecture.json` exists, or the user agrees to run `/arch-visualize` first.
 
 ## Don't use when

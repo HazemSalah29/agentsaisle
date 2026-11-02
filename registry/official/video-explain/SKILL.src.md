@@ -1,7 +1,7 @@
 ---
 name: video-explain
-description: Plan and fill the technical scenes of an explainer video, which are rate-limit animations driven by a real seeded simulation, request flows imported from an arch-visualize model, highlighted code with focus and diff, and sequence diagrams. Use when the user wants an animated diagram, code or algorithm scene in a video.json, or runs /video-explain. Don't use for scripts, voice, captions or rendering, for maths scenes, or to show numbers the simulation did not produce.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Plan and fill the technical scenes of an explainer: rate-limit animations from a real seeded simulation, request flows from an arch-visualize model, highlighted code with focus and diff, sequence diagrams. Use for diagram, code or algorithm scenes. Don't show numbers the simulation did not produce."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Chooses and fills the four technical scene kinds of `video-core` (`rate-limit`, 
 ## Use when
 
 - A storyboard has a beat that explains an algorithm, a request path, a protocol exchange or a piece of code.
-- The user runs `/video-explain` or asks for an animated diagram or code scene in an existing project.
+- The user asks for an animated diagram or code scene in an existing project.
 
 ## Don't use when
 

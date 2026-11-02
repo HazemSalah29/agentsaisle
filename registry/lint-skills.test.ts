@@ -143,7 +143,7 @@ describe("lintSkill", () => {
     );
   });
 
-  it("rule 7: design, image and video skills disable model invocation", async () => {
+  it("rule 7: design and image skills disable model invocation", async () => {
     const dir = await skill("design-motion", {
       "skill.meta.yaml": meta().replace("niche: code", "niche: design"),
     });
@@ -155,6 +155,35 @@ describe("lintSkill", () => {
       "skill.meta.yaml": meta().replace("niche: code", "niche: design"),
     });
     expect(rules(await lint(ok))).not.toContain("invocation");
+  });
+
+  it("rule 7b: video parts are Claude-only and the video skill stays visible", async () => {
+    const meta7 = meta().replace("niche: code", "niche: video");
+    const visible = await skill("video-edit", { "skill.meta.yaml": meta7 });
+    expect((await lint(visible)).find((f) => f.rule === "invocation")?.message).toMatch(
+      /user-invocable: false/,
+    );
+    const userOnly = await skill("video-qa", {
+      "SKILL.md": `${frontmatter("video-qa", "user-invocable: false\ndisable-model-invocation: true\n")}${body()}`,
+      "skill.meta.yaml": meta7,
+    });
+    expect((await lint(userOnly)).find((f) => f.rule === "invocation")?.message).toMatch(
+      /remove disable-model-invocation/,
+    );
+    const part = await skill("video-voice", {
+      "SKILL.md": `${frontmatter("video-voice", "user-invocable: false\n")}${body()}`,
+      "skill.meta.yaml": meta7,
+    });
+    expect(rules(await lint(part))).not.toContain("invocation");
+    const hiddenDirector = await skill("video", {
+      "SKILL.md": `${frontmatter("video", "user-invocable: false\n")}${body()}`,
+      "skill.meta.yaml": meta7,
+    });
+    expect((await lint(hiddenDirector)).find((f) => f.rule === "invocation")?.message).toMatch(
+      /one visible command/,
+    );
+    const director = await skill("video", { "skill.meta.yaml": meta7 });
+    expect(rules(await lint(director))).not.toContain("invocation");
   });
 
   it("rule 8: references stay one level deep", async () => {

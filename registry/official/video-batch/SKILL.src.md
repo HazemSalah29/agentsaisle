@@ -1,7 +1,7 @@
 ---
 name: video-batch
-description: Make one video project per row of a CSV from a template project with {{column}} placeholders, for the user's own data such as per-customer onboarding videos. Dry run by default, local only, prints counts and never cell values. Use when the user runs /video batch or asks for personalised or many versions of one video. Don't use for data the user does not own, for scraping, or for voice and rendering.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make one video project per row of the user's own CSV from a template with {{column}} placeholders (per-customer onboarding videos). Dry run by default, local only, never prints cell values. Use for personalised or many versions of one video. Don't use for data the user does not own or for scraping."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Fills a template project's `video.json` and `script.md` once per CSV row and wri
 
 ## Use when
 
-- The user runs `/video batch` or wants the same video for many people or accounts, with their own list.
+- The user wants the same video for many people or accounts, with their own list.
 - A finished or draft template project exists, with placeholders such as `{{name}}` in its text.
 
 ## Don't use when

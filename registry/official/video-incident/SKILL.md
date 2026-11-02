@@ -1,7 +1,7 @@
 ---
 name: video-incident
-description: Make an incident replay video from the timeline of a postmortem, which is an animated timeline of what failed, when the alert fired and the fix, with only the minutes computed from the times written. Use when the user runs /video incident or asks for an outage or postmortem video. Don't use without times in the postmortem, to assign blame, or for scripts, voice and rendering.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make an incident replay from a postmortem's timeline: an animated timeline of what failed, when the alert fired and the fix, with only minutes computed from the written times. Use for outage or postmortem videos. Don't use without times, or to assign blame."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Builds the draft project from the timeline section of a postmortem: title, a `ti
 
 ## Use when
 
-- The user runs `/video incident` or asks for a video of an outage, a postmortem or a release gone wrong.
+- The user asks for a video of an outage, a postmortem or a release gone wrong.
 - A postmortem exists with a timeline of timed events (`references/incident.md` shows the line format).
 
 ## Don't use when

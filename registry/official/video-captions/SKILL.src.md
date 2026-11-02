@@ -1,7 +1,7 @@
 ---
 name: video-captions
-description: Make captions for a video project from its word timings, in three styles (karaoke, pop, clean), with SRT and VTT files and captions burned into the render in the browser engine so Arabic letters join and right-to-left text reads correctly. Use when the user wants captions or subtitles for a project, or runs /video-captions. Don't use for transcribing the user's own footage or for editing captions by hand-drawn effects.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make captions from a project's word timings in four styles (karaoke, pop, clean, kids), SRT and VTT files, burned into the render so Arabic joins and right-to-left text reads correctly. Use after voice and timing. Don't use to transcribe the user's own footage (video-edit does that)."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Groups the words, keeps them inside the platform safe zone and writes `captions.
 ## Use when
 
 - A project has `voice/words.json` and `timing.json` and needs captions.
-- The user runs `/video-captions [--style karaoke|pop|clean|kids] [--max-words 4] [--bilingual translations.json] [--burn|--srt|--both]`.
+- A project has voice and timing and needs captions: `--style karaoke|pop|clean|kids`, `--max-words 4`, `--bilingual translations.json`, `--burn|--srt|--both`.
 
 ## Don't use when
 

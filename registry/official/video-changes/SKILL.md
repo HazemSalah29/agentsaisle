@@ -1,7 +1,7 @@
 ---
 name: video-changes
-description: Make a short "what changed" video for a pull request or release from a saved git diff and an optional changelog section, which is counted totals plus code diff scenes for the biggest files. Use when the user runs /video changes or asks for a PR or release video. Don't use for scripts, voice and rendering, or when the diff has not been saved to a file.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a short \"what changed\" video for a pull request or release from a saved git diff and an optional changelog section: counted totals plus code diff scenes. Use for PR, release or commit-range videos. Don't use when the diff has not been saved to a file."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Reads a unified diff as text and builds the draft project: title, totals, option
 
 ## Use when
 
-- The user runs `/video changes` or asks for a video of a PR, a release or a commit range.
+- The user asks for a video of a PR, a release or a commit range.
 - CI wants a draft each release (the script has no prompts and exits 0, or 2 with a sentence).
 
 ## Don't use when

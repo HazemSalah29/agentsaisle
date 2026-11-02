@@ -1,7 +1,7 @@
 ---
 name: video-write
-description: Write the script, brief, sourced facts, 5 alternative hooks and storyboard for a short video, in explain mode (misconception, analogy, mechanism, edge case, takeaway) story mode (hook, setup, turn, climax, button) or kids mode (hook, setup, try, turn, lesson, button, for ages 3 to 5 or 6 to 9), in English or Arabic. Use when the user wants a video script or storyboard, or runs /video-write. Don't use for voicing, captions or rendering, for modes other than explain, story and kids, or to invent statistics or testimonials.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Write the script, brief, sourced facts, 5 alternative hooks and storyboard for a short video in explain, story or kids mode, in English or Arabic. Use for any video script or storyboard. Don't use to invent statistics or testimonials."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Writes the text files a video is built from, then checks them with a script. The
 
 ## Use when
 
-- The user wants a script, storyboard or hook for a short video (explainer, story or kids), or runs `/video-write <mode> "<topic>"`.
+- The user wants a script, storyboard or hook for a short video (explainer, story or kids).
 - A `projects/<slug>/` folder has a brief but no `script.md` yet.
 
 ## Don't use when

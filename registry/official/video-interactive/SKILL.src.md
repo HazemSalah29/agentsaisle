@@ -1,7 +1,7 @@
 ---
 name: video-interactive
-description: Export a video project as an interactive web page, a single folder with a player (play, pause, scrub, speed) and optional branch points where the viewer picks a path, such as token bucket or sliding window. Use when the user runs /video interactive or wants a lesson the viewer can steer or slow down. Don't use for a plain video file, for projects with video clips or 3D puppets, or to host or upload the page.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Export a checked video project as an interactive web page: a player (play, pause, scrub, speed) and optional branch points where the viewer picks a path. Use for lessons the viewer can steer or slow down. Don't use for plain video files, video clips or 3D puppets, or to host or upload."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ One project, two outputs: the video, and a page where the viewer can pause, scru
 
 ## Use when
 
-- The user runs `/video interactive <project>` or wants the viewer to choose a path or control the pace.
+- The user wants the viewer to choose a path or control the pace.
 - The project is finished enough to check (`<video-core>/scripts/check.mjs` passes) and has timing.
 
 ## Don't use when

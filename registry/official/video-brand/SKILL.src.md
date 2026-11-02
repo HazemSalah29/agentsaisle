@@ -1,7 +1,7 @@
 ---
 name: video-brand
-description: Create and check the brand file for a video studio (colours, font, logo, caption style) so every video looks like a series, with contrast and font checks. Use when the user wants to set up or change colours, fonts, logo or caption defaults for their videos, or runs /video-brand. Don't use for logos or intro and outro animations, which are not built yet.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Create and check the brand file (colours, font, logo, caption style) so every video looks like a series, with contrast and font checks. Use when the user has brand colours, fonts, a logo or caption defaults, or the video needs a consistent look. Don't use to design logos or intros."
+user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Writes and validates `brand/brand.json` in the studio folder. Every other video 
 
 ## Use when
 
-- The user wants their own colours, font, logo or caption defaults, or runs `/video-brand init` or `/video-brand check`.
+- The user has their own colours, font, logo or caption defaults, or a project needs a consistent look (`init` or `check`).
 - A render shows wrong colours or a missing font.
 
 ## Don't use when

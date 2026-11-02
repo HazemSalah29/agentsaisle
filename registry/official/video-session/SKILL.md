@@ -1,7 +1,7 @@
 ---
 name: video-session
-description: Make a sped-up "watch an AI build this" video from a saved agent session log (Claude Code JSONL or a timestamped text log), with captioned key moments and secrets redacted first. Use when the user runs /video session or asks for a timelapse of a coding session. Don't use without timestamps in the log, on a session the user doesn't own, or for scripts, voice and rendering.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make a sped-up \"watch an AI build this\" video from a saved agent session log (Claude Code JSONL or timestamped text) with captioned key moments and secrets redacted first. Don't use without timestamps, on a session the user does not own, or without the user's OK to show it."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Builds the draft project from a session log: title, a `timeline` of up to 8 key 
 
 ## Use when
 
-- The user runs `/video session` or asks for a timelapse or showcase of an AI coding session.
+- The user asks for a timelapse or showcase of an AI coding session.
 - A saved log exists (`references/session.md` lists the accepted formats).
 
 ## Don't use when

@@ -1,7 +1,7 @@
 ---
 name: video-calligraphy
-description: Make an animated Arabic lettering video from a list of quotes, with each quote revealed word by word in its reading direction, shaped and joined by the browser, with an optional translation line and attribution. Use when the user runs /video calligraphy or asks for kinetic Arabic type, quote cards or animated titles in Arabic. Don't use for narration, for text that must be respelled or stretched, or for other scripts.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Make animated Arabic lettering from a list of quotes, revealed word by word in reading direction, shaped by the browser, with optional translation and attribution. Use for kinetic Arabic type, quote cards or animated Arabic titles. Don't use for narration or text that must be respelled or stretched."
+user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Builds a draft project of up to 8 `calligraphy` scenes, one per quote, without a
 
 ## Use when
 
-- The user runs `/video calligraphy` or wants animated Arabic quotes, titles or sayings.
+- The user wants animated Arabic quotes, titles or sayings.
 - The user gives the Arabic text. Do not write or "improve" a quote: proverbs and verses must be quoted as given, with their source in `by`.
 
 ## Don't use when

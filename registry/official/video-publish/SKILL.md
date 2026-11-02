@@ -1,7 +1,7 @@
 ---
 name: video-publish
-description: Prepare a finished, checked video for posting to YouTube, Shorts, Reels, TikTok or LinkedIn by writing a pack per platform with the encoded file, thumbnails, checked title, description and hashtags, chapters, captions, credits and disclosure notes. Use when the user wants to publish or export a finished video, or runs /video-publish. Don't use to upload anything, to publish a video that failed its check, or to invent figures or claims for the text.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Prepare a finished, checked video for YouTube, Shorts, Reels, TikTok or LinkedIn: a pack per platform with the encoded file, thumbnails, checked title, description, hashtags, chapters, captions, credits and disclosure notes. Never uploads; refuses a video that failed its check."
+user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---
 
@@ -12,7 +12,7 @@ Turns a finished render into something ready to post. It prepares files and chec
 ## Use when
 
 - A project has a final render in `out/`, a passing `video-qa` report and `credits.json`, and the user wants it ready for one or more platforms.
-- The user runs `/video-publish --platforms youtube,shorts,reels,tiktok,linkedin`.
+- A checked video is ready to prepare for `--platforms youtube,shorts,reels,tiktok,linkedin`.
 
 ## Don't use when
 

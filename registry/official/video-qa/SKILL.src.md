@@ -1,7 +1,7 @@
 ---
 name: video-qa
-description: Check a rendered video against its project before it ships, covering format, loudness and clipping, black stretches, frozen pictures, fast flashing, text in the margins, caption size and contrast, missing voice lines, licences and leftover placeholders, and make a contact sheet to look at. Use when the user wants a rendered video checked or runs /video-qa. Don't use to fix the video, to publish it, or to judge taste or accuracy of the content.
-disable-model-invocation: true
+description: "Part of the video library, used by the video skill (not run directly). Check a rendered video against its project: format, loudness, clipping, black or frozen stretches, flashing, text in the margins, caption size, missing voice lines, licences, placeholders; makes a contact sheet. Use before anything ships. Don't use to fix the video or judge taste."
+user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---
 
@@ -11,7 +11,7 @@ Runs the automatic checks on a rendered MP4 and tells you what to fix. The scrip
 
 ## Use when
 
-- A project has a rendered video in `out/` and the user wants it checked, or `/video` reaches its QA step.
+- A project has a rendered video in `out/` and the user wants it checked reaches its QA step.
 - The user asks why a video would be rejected, too quiet, or hard to read on a phone.
 - The project is a kids' video (`meta.type` `kids` or an audience starting with `kids`): the stricter kids' checks run too (`references/checks.md`).
 
