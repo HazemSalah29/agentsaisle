@@ -63,10 +63,13 @@ html,body{margin:0;background:${brand.colors.bg}}
 ${kindCss(brand, vertical)}`;
 
 /**
+ * Everything an engine needs to draw the film, before it is wrapped in a page: the stylesheet, the scene
+ * markup, the animation plan (absolute-time Web Animations), 3D scene specs, the media to copy and the
+ * canvas. Both engines (HyperFrames and Remotion) start from this, so a scene is written once.
  * Build the project (`captions` is a parsed captions.json to draw, or null). Returns { files: { "index.html": text }, media: [{ from, to }], fonts: [{ from, to }],
  * notes: [string] }. `fontFiles` are absolute paths found in brand/fonts; `assetPaths` maps asset id -> abs path.
  */
-export function buildProject({
+export function buildParts({
   video,
   timing,
   brand: rawBrand,
@@ -170,31 +173,7 @@ export function buildProject({
     captionCss = c.css;
   }
 
-  const tween = readFileSync(path.join(skillDir(), "assets", "lib", "tween.js"), "utf8");
   const planJson = JSON.stringify(plan).replace(/</g, "\\u003c");
-  const index = `<!doctype html>
-<html lang="${esc(lang)}">
-<head>
-<meta charset="utf-8">
-<style>${css({ w, h, brand, stack, faces, vertical, bottomPad })}${captionCss}</style>
-</head>
-<body>
-<div id="root" dir="${dir}" data-composition-id="main" data-start="0" data-duration="${timing.totalSeconds}" data-width="${w}" data-height="${h}" data-fps="${fps}">
-${body}</div>
-<script>${tween}</script>
-${
-  gls.length
-    ? `<script type="module">
-import { mount } from "./assets/3d/puppet3d-page.mjs";
-window.__timelines = window.__timelines || {};
-window.__timelines["main"] = mount(VT.run(${planJson}, { id: "main", duration: ${timing.totalSeconds} }), ${JSON.stringify(gls).replace(/</g, "\\u003c")});
-</script>`
-    : `<script>window.__timelines = window.__timelines || {};
-window.__timelines["main"] = VT.run(${planJson}, { id: "main", duration: ${timing.totalSeconds} });</script>`
-}
-</body>
-</html>
-`;
   // 3D scenes load the vendored three.js and the page code from the project's own folder; nothing is fetched.
   if (gls.length)
     for (const name of ["vendor/three.mjs", "engine/hyperframes/puppet3d-page.mjs"])
@@ -203,11 +182,56 @@ window.__timelines["main"] = VT.run(${planJson}, { id: "main", duration: ${timin
         to: `assets/3d/${path.basename(name)}`,
       });
   return {
-    files: { "index.html": index },
+    css: css({ w, h, brand, stack, faces, vertical, bottomPad }) + captionCss,
+    body,
+    plan,
+    planJson,
+    gls,
+    lang,
+    dir,
+    fps,
+    seconds: timing.totalSeconds,
     media,
     fonts: fonts.map(({ from, to }) => ({ from, to })),
     notes,
     size: [w, h],
+  };
+}
+
+/** Build the HyperFrames project: one index.html (see buildParts for the inputs). */
+export function buildProject(args) {
+  const p = buildParts(args);
+  const [w, h] = p.size;
+  const tween = readFileSync(path.join(skillDir(), "assets", "lib", "tween.js"), "utf8");
+  const index = `<!doctype html>
+<html lang="${esc(p.lang)}">
+<head>
+<meta charset="utf-8">
+<style>${p.css}</style>
+</head>
+<body>
+<div id="root" dir="${p.dir}" data-composition-id="main" data-start="0" data-duration="${p.seconds}" data-width="${w}" data-height="${h}" data-fps="${p.fps}">
+${p.body}</div>
+<script>${tween}</script>
+${
+  p.gls.length
+    ? `<script type="module">
+import { mount } from "./assets/3d/puppet3d-page.mjs";
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = mount(VT.run(${p.planJson}, { id: "main", duration: ${p.seconds} }), ${JSON.stringify(p.gls).replace(/</g, "\\u003c")});
+</script>`
+    : `<script>window.__timelines = window.__timelines || {};
+window.__timelines["main"] = VT.run(${p.planJson}, { id: "main", duration: ${p.seconds} });</script>`
+}
+</body>
+</html>
+`;
+  return {
+    files: { "index.html": index },
+    media: p.media,
+    fonts: p.fonts,
+    notes: p.notes,
+    size: p.size,
   };
 }
 

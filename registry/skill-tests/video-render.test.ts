@@ -301,7 +301,7 @@ describe("video-core render helpers", () => {
     expect(r.stderr).toMatch(/problem\(s\)/);
     const none = spawnSync(
       "node",
-      [skillFile("video-core", "scripts/render.mjs"), dir, "--engine", "remotion"],
+      [skillFile("video-core", "scripts/render.mjs"), dir, "--engine", "manim"],
       { encoding: "utf8" },
     );
     expect(none.status).toBe(2);
