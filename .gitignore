@@ -30,3 +30,4 @@ apps/web/public/badges
 .npmrc
 *.pem
 *.key
+apps/web/public/video-demos

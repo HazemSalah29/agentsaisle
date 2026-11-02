@@ -49,9 +49,9 @@ test.describe("catalog", () => {
     const cards = page.getByRole("article");
     await expect(cards).toHaveCount(TOTAL);
 
-    await page.getByLabel("Search skills").fill("brand");
+    await page.getByLabel("Search skills").fill("brand-guidelines");
     await expect(cards).toHaveCount(1);
-    await expect(page).toHaveURL(/q=brand/);
+    await expect(page).toHaveURL(/q=brand-guidelines/);
 
     await page.getByLabel("Search skills").fill("");
     await page.getByRole("button", { name: "git", exact: true }).click();
@@ -158,6 +158,7 @@ test.describe("mobile and keyboard", () => {
     "/aisles/database",
     "/aisles/web-design",
     "/audit",
+    "/demos",
     "/skills/code-quality",
   ]) {
     test(`no horizontal scroll at 360px on ${path}`, async ({ page }) => {
