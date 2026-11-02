@@ -112,6 +112,10 @@ Demo: [`docs/video/demos/kids/`](demos/kids) holds "Nour learns to share" (two c
 
 `/video-analyze <file> --name my-format --rights own|permission|cc|public-domain` measures how a video you have the right to use is made: cuts a minute, shot length, hook length, how much moves and how much is speech, five colours and a (rough) tempo guess. It writes `recipes/my-format.json` with numbers only. It never keeps or reuses the footage, sound, words or characters, and it does not measure text on screen or caption style. The rights you state are recorded, not verified.
 
+### Stories and AI images
+
+`/video story "<premise>"` plans a short from original characters shown in images: a style bible, a reference pack per character (made first, so every shot starts from the same look), a shot list of 3 to 8 seconds per shot, and a continuity log (outfit, props, place, time of day). With `--generator stills-only` the images get a slow push-in and no video is generated. `/video-generate image|video` makes the images or clips. Its only offline provider is `test` (a coloured gradient, to try the flow); real providers go in `providers.yaml`, which has no keys (the key is read from an environment variable such as `GEMINI_API_KEY`). The two real adapters (`gemini-image` and `veo`) were written without access to the providers' documents and are marked `TODO(verify)`: run one cheap call and check before you rely on them. Results can miss; the skill makes one try per shot and asks before any retry. Music, sound effects and lip sync are not built.
+
 ## 5. Troubleshooting
 
 - **"FFmpeg not found"**: run `/video doctor`.
@@ -129,7 +133,7 @@ Demo: [`docs/video/demos/kids/`](demos/kids) holds "Nour learns to share" (two c
 
 ## 6. Costs
 
-Everything in this version is local and free. Paid AI generation does not exist yet; when it arrives it will ask before spending and keep a log in `projects/<slug>/spend.json`.
+Everything is local and free except `/video-generate` with a real provider. Before any paid call it prints the quote (units x price from your `providers.yaml`; no price is built in) and stops. It runs only when you say yes to that exact total and the agent re-runs with `--approve <total>`; there is no `--yes`. It refuses when the project budget (`--budget`) or the monthly cap in `providers.yaml` is 0 or would be passed. A repeat of the same prompt, seed and reference images comes from the cache at no cost. Every call is logged in `projects/<slug>/generation-log.jsonl` (never the key).
 
 ## 7. Rights and labels, in plain words
 

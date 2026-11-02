@@ -51,6 +51,7 @@ export const KEY_NAMES = [
   "ELEVENLABS_API_KEY",
   "KLING_API_KEY",
   "GOOGLE_API_KEY",
+  "GEMINI_API_KEY",
   "RUNWAY_API_KEY",
   "LUMA_API_KEY",
 ];

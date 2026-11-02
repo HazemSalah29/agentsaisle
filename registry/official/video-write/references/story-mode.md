@@ -11,6 +11,6 @@ Write `style-bible.md` next to the script before any visuals:
 - character sheets: name, shape language, colours, outfit, voice, what they never do;
 - original characters only. Never recreate a copyrighted or trademarked character, logo or a real person.
 
-Prefer stylised looks (illustration, paper, claymation-like) over fake photorealism. AI image or video generation is not part of this version; stories here use the five scene kinds.
+Prefer stylised looks (illustration, paper, claymation-like) over fake photorealism. Stories can be built from images by `video-story` (stills with slow motion at $0, or clips from `video-generate`). Keep each beat visual: one clear picture per beat, so a shot list can follow the script.
 
 Facts are optional in story mode, but anything stated as real (a date, a place, a number) still needs a source.
