@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Agent Aisle: aisle add tour",
+    "type": "explainer",
+    "format": "short-9x16",
+    "fps": 30,
+    "lang": "en",
+    "audience": "developers new to this codebase"
+  },
+  "script": "script.md",
+  "scenes": [
+    {
+      "id": "s1",
+      "kind": "title",
+      "props": {
+        "text": "Agent Aisle: aisle add",
+        "subtitle": "a tour from the code"
+      },
+      "narration": [
+        "l1"
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "list",
+      "props": {
+        "heading": "What is in it",
+        "items": [
+          "clients: 1",
+          "edge: 1",
+          "backend: 1",
+          "data: 1",
+          "external: 1"
+        ]
+      },
+      "narration": [
+        "l2"
+      ]
+    },
+    {
+      "id": "s3",
+      "kind": "request-flow",
+      "props": {
+        "title": "What aisle add does",
+        "nodes": [
+          {
+            "id": "cli",
+            "label": "aisle CLI",
+            "role": "client",
+            "tier": "clients"
+          },
+          {
+            "id": "site",
+            "label": "Registry site",
+            "role": "edge",
+            "tier": "edge"
+          },
+          {
+            "id": "audit",
+            "label": "Audit engine",
+            "role": "backend",
+            "tier": "backend"
+          },
+          {
+            "id": "folder",
+            "label": "Your project",
+            "role": "storage",
+            "tier": "data"
+          },
+          {
+            "id": "github",
+            "label": "GitHub codeload",
+            "role": "external",
+            "tier": "external"
+          }
+        ],
+        "edges": [
+          {
+            "id": "cli-site",
+            "from": "cli",
+            "to": "site",
+            "protocol": "HTTPS"
+          },
+          {
+            "id": "cli-github",
+            "from": "cli",
+            "to": "github",
+            "protocol": "HTTPS"
+          },
+          {
+            "id": "cli-audit",
+            "from": "cli",
+            "to": "audit",
+            "protocol": "in-process call"
+          },
+          {
+            "id": "cli-folder",
+            "from": "cli",
+            "to": "folder",
+            "protocol": "file system"
+          }
+        ],
+        "steps": [
+          {
+            "edge": "cli-site",
+            "label": "Fetch the registry",
+            "evidence": "packages/cli/src/registry.ts:56"
+          },
+          {
+            "edge": "cli-site",
+            "reverse": true,
+            "label": "Versions and pinned commits",
+            "evidence": "packages/cli/src/registry.ts:56"
+          },
+          {
+            "edge": "cli-github",
+            "label": "Download that exact commit",
+            "evidence": "packages/cli/src/github.ts:82"
+          },
+          {
+            "edge": "cli-github",
+            "reverse": true,
+            "label": "A tarball; nothing is cloned",
+            "evidence": "packages/cli/src/github.ts:82"
+          },
+          {
+            "edge": "cli-audit",
+            "label": "Audit the files first",
+            "evidence": "packages/cli/src/guard.ts:34"
+          },
+          {
+            "edge": "cli-audit",
+            "reverse": true,
+            "label": "A grade and findings",
+            "evidence": "packages/cli/src/guard.ts:34"
+          },
+          {
+            "edge": "cli-folder",
+            "label": "Move in, update the lockfile",
+            "evidence": "packages/cli/src/install.ts:141"
+          }
+        ],
+        "shown": {
+          "nodes": 5,
+          "of": 5
+        }
+      },
+      "narration": [
+        "l3",
+        "l4",
+        "l5",
+        "l6",
+        "l7",
+        "l8",
+        "l9"
+      ]
+    },
+    {
+      "id": "s4",
+      "kind": "title",
+      "props": {
+        "text": "From the code",
+        "subtitle": "every step has a file and line"
+      },
+      "narration": [
+        "l10"
+      ]
+    }
+  ],
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "af_heart",
+    "speed": 1
+  },
+  "captions": {
+    "style": "clean",
+    "maxWordsPerLine": 4,
+    "safeZone": "reel",
+    "burn": true
+  }
+}
