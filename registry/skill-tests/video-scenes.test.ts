@@ -46,6 +46,14 @@ describe("video-core scenes", () => {
       "calligraphy",
       "shot",
       "kinetic",
+      "number",
+      "callout",
+      "versus",
+      "steps",
+      "cycle",
+      "funnel",
+      "matrix",
+      "nodes",
     ]);
   });
 

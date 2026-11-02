@@ -1,0 +1,195 @@
+{
+  "note": "For each scene kind: when to pick it, in the words a line would use, and the smallest props that work. Read by video-write when it plans a storyboard. Every kind is a pure function of its props; numbers are only ever the ones the author wrote.",
+  "kinds": {
+    "title": {
+      "use_when": ["opening line", "what this video is about", "a new section starts"],
+      "props": {
+        "text": "How a limiter works",
+        "subtitle": "in 40 seconds"
+      }
+    },
+    "quote": {
+      "use_when": ["someone said", "according to", "a real, attributed quote"],
+      "props": {
+        "text": "\u2026",
+        "by": "Name",
+        "source": "Where"
+      }
+    },
+    "list": {
+      "use_when": ["three things", "first, second, third", "the steps are", "a few reasons"],
+      "props": {
+        "heading": "Three rules",
+        "items": ["One", "Two", "Three"],
+        "numbered": true
+      }
+    },
+    "chart": {
+      "use_when": ["it went up", "compared with", "the numbers show", "over time"],
+      "props": {
+        "type": "bar",
+        "data": [
+          {
+            "label": "A",
+            "value": 3
+          },
+          {
+            "label": "B",
+            "value": 5
+          }
+        ]
+      }
+    },
+    "timeline": {
+      "use_when": ["at 9:05", "then", "the outage began", "what happened, in order"],
+      "props": {
+        "events": [
+          {
+            "at": "9:00",
+            "label": "Alert fires"
+          },
+          {
+            "at": "9:05",
+            "label": "Rollback"
+          }
+        ]
+      }
+    },
+    "number": {
+      "use_when": ["one number matters", "it reached", "percent of", "how many", "a total"],
+      "props": {
+        "value": 94.5,
+        "unit": "%",
+        "label": "of requests pass"
+      },
+      "note": "Counts up to the value you give; never invent it."
+    },
+    "callout": {
+      "use_when": [
+        "the headline figure",
+        "three times faster",
+        "one big takeaway",
+        "the one thing to remember"
+      ],
+      "props": {
+        "stat": "3x",
+        "label": "faster than before",
+        "note": "measured on one laptop"
+      },
+      "note": "The stat is text exactly as given (up to 14 characters)."
+    },
+    "versus": {
+      "use_when": [
+        "versus",
+        "compared to",
+        "on one side, on the other",
+        "the difference between",
+        "which is better"
+      ],
+      "props": {
+        "left": {
+          "title": "A",
+          "points": ["\u2026"]
+        },
+        "right": {
+          "title": "B",
+          "points": ["\u2026"]
+        },
+        "verdict": "\u2026"
+      }
+    },
+    "steps": {
+      "use_when": [
+        "step by step",
+        "first \u2026 then \u2026 finally",
+        "how it works",
+        "the process is"
+      ],
+      "props": {
+        "steps": [
+          {
+            "label": "First"
+          },
+          {
+            "label": "Then"
+          },
+          {
+            "label": "Finally"
+          }
+        ]
+      }
+    },
+    "cycle": {
+      "use_when": ["loop", "over and over", "repeats", "feedback", "round and round"],
+      "props": {
+        "nodes": ["Request", "Check", "Block", "Log"],
+        "center": "Gateway"
+      }
+    },
+    "funnel": {
+      "use_when": [
+        "out of all of these, only",
+        "narrows down",
+        "drops at each stage",
+        "conversion"
+      ],
+      "props": {
+        "stages": [
+          {
+            "label": "Received",
+            "value": "1,000"
+          },
+          {
+            "label": "Checked"
+          },
+          {
+            "label": "Allowed",
+            "value": "940"
+          }
+        ]
+      },
+      "note": "Values are text exactly as given."
+    },
+    "matrix": {
+      "use_when": ["on one axis, on the other", "trade-off", "where each one sits", "quadrant"],
+      "props": {
+        "x": {
+          "low": "Cheap",
+          "high": "Costly"
+        },
+        "y": {
+          "low": "Slow",
+          "high": "Fast"
+        },
+        "items": [
+          {
+            "label": "A",
+            "x": 0.2,
+            "y": 0.8
+          }
+        ]
+      }
+    },
+    "nodes": {
+      "use_when": ["how the parts connect", "A talks to B", "the path of", "the architecture is"],
+      "props": {
+        "nodes": [
+          {
+            "id": "a",
+            "label": "Client"
+          },
+          {
+            "id": "b",
+            "label": "Server"
+          }
+        ],
+        "edges": [
+          {
+            "from": "a",
+            "to": "b"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -69,6 +69,15 @@ export const BUILT_KINDS = [
   "sequence",
   "request-flow",
   "puppet",
+  "timeline",
+  "number",
+  "callout",
+  "versus",
+  "steps",
+  "cycle",
+  "funnel",
+  "matrix",
+  "nodes",
 ];
 const WEAK_HOOKS = [
   "you won't believe",

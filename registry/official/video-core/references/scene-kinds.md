@@ -25,3 +25,18 @@ Text is always shown as text, never as HTML. The first scene is fully visible at
 ## Entering on the spoken word
 
 `list`, `chart` (bars) and `timeline` bring each item in on the word that names it, a moment early, in order. The match uses the item's own words (joining words like "the" are ignored) and moves forward only, so a repeated word cannot pull an item back. To pick the word yourself, give `on`: `list.on` (one text per item), `chart.data[].on` or `timeline.events[].on`. With no voice, or no match, the old spacing applies (one narration line per item, else evenly spread).
+
+## Idea kinds
+
+Scenes that show an idea instead of listing it. Each piece enters on the word that names it (or on `on`), the text is only what you wrote, and `video-core/assets/scene-catalog.json` says when to pick each one. Vertical frames get square diagrams; wide frames get landscape ones.
+
+| Kind      | Props                                                                                              | What it shows                                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `number`  | `value` (required), `from`, `unit` (12), `decimals` (0 to 4), `label` (60, required), `on`         | A big number that counts up to exactly `value`, with its label.                                                          |
+| `callout` | `stat` (14 characters, as given), `label` (60), `note` (120), `on`                                 | One huge stat, an underline that draws, the label and an optional note.                                                  |
+| `versus`  | `left` and `right` (`{title, points}`, 1 to 4 points each), `title`, `verdict`                     | Two cards slide in from opposite sides, points enter in order, an optional verdict.                                      |
+| `steps`   | `steps` (2 to 6 of `{label, detail, on}`), `title`                                                 | Numbered rows; the current step is bright, earlier ones dim.                                                             |
+| `cycle`   | `nodes` (3 to 6 labels), `center`, `title`                                                         | A ring that draws round, nodes pop on their words, then a dot circles it.                                                |
+| `funnel`  | `stages` (3 to 5 of `{label, value, on}`; `value` is text as given), `title`                       | Stacked bands that narrow, one per stage.                                                                                |
+| `matrix`  | `x` and `y` (`{low, high}`), `items` (1 to 8 of `{label, x, y, on}`, x and y from 0 to 1), `title` | A 2x2 grid with labelled axes; items drop in at their positions.                                                         |
+| `nodes`   | `nodes` (2 to 7 of `{id, label, on}`), `edges` (1 to 12 of `{from, to}`), `title`                  | A small graph laid out in layers from its edges (top to bottom, or left to right in wide frames), with a travelling dot. |

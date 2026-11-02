@@ -102,6 +102,14 @@
             "calligraphy",
             "shot",
             "kinetic",
+            "number",
+            "callout",
+            "versus",
+            "steps",
+            "cycle",
+            "funnel",
+            "matrix",
+            "nodes",
             "custom"
           ]
         },
@@ -293,6 +301,187 @@
           },
           "cards": { "type": "array", "maxItems": 2, "items": { "type": "object" } },
           "flow": { "type": "object" }
+        }
+      },
+      "number": {
+        "type": "object",
+        "required": ["value", "label"],
+        "properties": {
+          "value": { "type": "number" },
+          "from": { "type": "number" },
+          "unit": { "type": "string", "minLength": 0, "maxLength": 12 },
+          "decimals": { "type": "integer", "minimum": 0, "maximum": 4 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+        }
+      },
+      "callout": {
+        "type": "object",
+        "required": ["stat", "label"],
+        "properties": {
+          "stat": { "type": "string", "minLength": 1, "maxLength": 14 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "note": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+        }
+      },
+      "versus": {
+        "type": "object",
+        "required": ["left", "right"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "left": {
+            "type": "object",
+            "required": ["title", "points"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 40 },
+              "points": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 4,
+                "items": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          },
+          "right": {
+            "type": "object",
+            "required": ["title", "points"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 40 },
+              "points": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 4,
+                "items": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          },
+          "verdict": { "type": "string", "minLength": 1, "maxLength": 100 }
+        }
+      },
+      "steps": {
+        "type": "object",
+        "required": ["steps"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "steps": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "required": ["label"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+                "detail": { "type": "string", "minLength": 1, "maxLength": 80 },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "cycle": {
+        "type": "object",
+        "required": ["nodes"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "center": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "nodes": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 6,
+            "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+          }
+        }
+      },
+      "funnel": {
+        "type": "object",
+        "required": ["stages"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "stages": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "required": ["label"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+                "value": { "type": "string", "minLength": 1, "maxLength": 16 },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "matrix": {
+        "type": "object",
+        "required": ["x", "y", "items"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "x": {
+            "type": "object",
+            "required": ["low", "high"],
+            "properties": {
+              "low": { "type": "string", "minLength": 1, "maxLength": 24 },
+              "high": { "type": "string", "minLength": 1, "maxLength": 24 }
+            }
+          },
+          "y": {
+            "type": "object",
+            "required": ["low", "high"],
+            "properties": {
+              "low": { "type": "string", "minLength": 1, "maxLength": 24 },
+              "high": { "type": "string", "minLength": 1, "maxLength": 24 }
+            }
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": ["label", "x", "y"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1, "maxLength": 24 },
+                "x": { "type": "number", "minimum": 0, "maximum": 1 },
+                "y": { "type": "number", "minimum": 0, "maximum": 1 },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "nodes": {
+        "type": "object",
+        "required": ["nodes", "edges"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "nodes": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z0-9-]{1,16}$" },
+                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          },
+          "edges": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "object",
+              "required": ["from", "to"],
+              "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+            }
+          }
         }
       },
       "timeline": {

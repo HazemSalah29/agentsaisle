@@ -4,6 +4,7 @@
 
 import { calligraphy, calligraphyCss } from "./calligraphy.mjs";
 import { code, codeCss } from "./code.mjs";
+import { DIAGRAM_BUILDERS, DIAGRAM_KINDS, diagramCss } from "./diagrams.mjs";
 import { kinetic, kineticCss } from "./kinetic.mjs";
 import { puppet, puppetCss } from "./puppet.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
@@ -31,6 +32,7 @@ export const KINDS = [
   "calligraphy",
   "shot",
   "kinetic",
+  ...DIAGRAM_KINDS,
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -221,6 +223,7 @@ const BUILDERS = {
   calligraphy,
   shot,
   kinetic,
+  ...DIAGRAM_BUILDERS,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
@@ -234,6 +237,7 @@ export const kindCss = (brand, vertical, kinds) =>
   timelineCss(brand) +
   calligraphyCss(brand) +
   shotCss(brand) +
+  diagramCss(brand, vertical) +
   // The display font is only declared (and so only allowed) when a kinetic scene exists.
   (!kinds || kinds.has("kinetic") ? kineticCss(brand) : "");
 
