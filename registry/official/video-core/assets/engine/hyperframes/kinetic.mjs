@@ -172,6 +172,29 @@ export function phraseSize(texts, slab = false) {
   return Math.round(clamp(Math.min(base, fit), 6, slab ? 32 : 26) * 10) / 10;
 }
 
+/**
+ * When each phrase is on screen: [{ words, start (first word), end (last word said), exitAt (seconds, or null when it
+ * stays) }]. A phrase leaves when its slot is needed again (two phrases on) or half a second after its last word; with
+ * several phrases `exit: "none"` means slide. Used by the scene and by the planner's checks. Pure.
+ */
+export function phraseTimes(props, words, T) {
+  const groups = groupWords(words, props.phrases);
+  const exit = props.exit === "none" && groups.length > 1 ? "slide" : (props.exit ?? "slide");
+  const holdLast = props.holdLast !== false;
+  return groups.map((g, j) => {
+    const end = g[g.length - 1].end;
+    const wants = exit !== "none" && !(holdLast && j === groups.length - 1);
+    const slotNeeded = groups[j + 2]?.[0]?.start ?? T;
+    return {
+      words: g,
+      start: g[0].start,
+      end,
+      exit,
+      exitAt: wants ? clamp(Math.min(end + 0.5, slotNeeded - 0.05), end + 0.12, T - 0.05) : null,
+    };
+  });
+}
+
 const popFrames = () =>
   samples(POP, 40, 9).map((u) => {
     const e = EASE_FN.outBack(u);
@@ -213,13 +236,9 @@ export function kinetic(s, ctx) {
   const bg = props.bg ?? "black";
   const words = wordsOf(props, ctx.words, T);
   const groups = groupWords(words, props.phrases);
+  const times = phraseTimes(props, words, T);
   const emph = new Set((props.emph ?? []).map(norm));
-  // Phrases that never left would pile up on each other: with more than one phrase, "none" means slide.
-  const exit =
-    props.exit === "none" && groupWords(words, props.phrases).length > 1
-      ? "slide"
-      : (props.exit ?? "slide");
-  const holdLast = props.holdLast !== false;
+  const exit = times[0]?.exit ?? props.exit ?? "slide";
   const slab = bg === "accent";
   let html = `<div class="kn-root kn-bg-${bg}">`;
   if (bg !== "accent") html += `<div class="kn-glow"></div>`;
@@ -242,8 +261,7 @@ export function kinetic(s, ctx) {
     const texts = shownTexts[j];
     const size = sizes[j];
     const pid = `${P}-p${j}`;
-    const lastEnd = g[g.length - 1].end;
-    const wantsExit = exit !== "none" && !(holdLast && j === groups.length - 1);
+    const wantsExit = times[j].exitAt !== null;
     const shatter = wantsExit && exit === "shatter" && texts.join("").length <= LIMITS.letters;
     let inner = "";
     g.forEach((w, i) => {
@@ -280,8 +298,7 @@ export function kinetic(s, ctx) {
     html += `<div class="kn-pos" style="top:${r3(slotY(j))}%"><div id="${pid}" class="kn-phrase" style="font-size:calc(var(--u)*${size})">${inner.trim()}</div></div>`;
     if (wantsExit) {
       // Leave when the slot is needed again (two phrases on), or a little after the last word is said.
-      const slotNeeded = groups[j + 2]?.[0]?.start ?? T;
-      const tExit = clamp(Math.min(lastEnd + 0.5, slotNeeded - 0.05), lastEnd + 0.12, T - 0.05);
+      const tExit = times[j].exitAt;
       if (shatter) {
         g.forEach((w, i) => {
           const k = n - g.length + i;
