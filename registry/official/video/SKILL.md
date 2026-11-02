@@ -1,6 +1,6 @@
 ---
 name: video
-description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer video from an idea by running the video skills in order. Use when the user types /video init, /video doctor or /video explain "<topic>". Don't use for kids, story, showcase or edit videos, which are not built yet, or to publish or upload a finished video.
+description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer video from an idea by running the video skills in order. Use when the user types /video init, /video doctor or /video explain "<topic>". Don't use for kids, story or showcase videos, which are not built yet, or to upload a finished video.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Bash(node *)
 ---
@@ -18,7 +18,7 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 ## Don't use when
 
 - The video is kids, story, showcase or edit: say they are not built yet. Do not improvise them with explainer scenes.
-- The user wants to publish or upload. There is no publish step yet; say so.
+- The user wants a video uploaded. The last step prepares a pack to upload by hand; it never uploads.
 - The folder is a code project that should not get video folders. Ask for an empty folder first.
 
 ## Steps
@@ -26,9 +26,9 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 1. For `/video init`: run `node <skill>/scripts/init.mjs` in the folder the user opened (or pass a folder path). It never overwrites a file.
 2. For `/video doctor`: run `node <skill>/scripts/doctor.mjs` and show it as it is. If a tool is missing, give its install line and wait; never install anything yourself. Doctor only says "found" or "missing" for API keys; never read, print or ask for a key value.
 3. For `/video explain "<topic>"`: make `projects/<slug>/` (lowercase, hyphens) with `brief.json` left to the writer. Only `--budget $0` exists: local tools, no paid service. Run `node <skill>/scripts/pipeline.mjs projects/<slug>` before every step and after it.
-4. Do what its `Next:` line says by running that skill (`references/explain.md` has the order and what each step hands over). The order is write, storyboard (stop for the user's approval), diagram scenes, voice, timing, captions, render, QA.
+4. Do what its `Next:` line says by running that skill (`references/explain.md` has the order and what each step hands over). The order is write, storyboard (stop for the user's approval), diagram scenes, voice, timing, captions, render, QA, publish.
 5. Pause at the storyboard, and again before any step that would cost money (none does today). Never skip QA; if it fails, name the failing check and the step that fixes it, then go back.
-6. When every step is done, show the MP4 path, the contact sheet and the QA lines, and stop. Do not publish.
+6. When QA passes, offer the publish step: write `publish/copy.json` from the brief and facts (`video-publish` has the rules), then run `/video-publish`. When every step is done, show the MP4 path, the contact sheet, the QA lines and where the pack is, tell the user to read each `disclosure.md`, and stop. Never upload.
 
 ## Budget
 
@@ -46,5 +46,5 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 
 ## Done when
 
-- `init.mjs` or `doctor.mjs` ran and its output was shown, or the explainer's pipeline shows every step done except publish.
+- `init.mjs` or `doctor.mjs` ran and its output was shown, or the explainer's pipeline shows every step done.
 - Nothing was installed, downloaded, uploaded or overwritten, and the user approved the storyboard before `video.json` existed.

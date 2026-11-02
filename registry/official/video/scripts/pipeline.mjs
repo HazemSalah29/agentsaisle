@@ -20,6 +20,7 @@ const STEP_SKILLS = [
   "video-core",
   "video-captions",
   "video-qa",
+  "video-publish",
 ];
 
 const mtime = (f) => (existsSync(f) ? statSync(f).mtimeMs : 0);
@@ -192,13 +193,24 @@ export function pipelineState(dir, installed) {
     "video-qa",
   );
 
-  steps.push({
-    id: "publish",
-    name: "publish",
-    status: "blocked",
-    note: "not built yet (later milestone); export by hand from out/",
-    next: null,
-  });
+  const pack = mtime(f("exports", "publish.json"));
+  const hasCopy = existsSync(f("publish", "copy.json"));
+  step(
+    "publish",
+    "publish",
+    !pack ? "todo" : pack < final ? "stale" : "done",
+    !pack
+      ? hasCopy
+        ? "no export pack yet"
+        : "write publish/copy.json, then export"
+      : pack < final
+        ? "the render is newer than the export pack"
+        : "pack written (nothing uploaded)",
+    hasCopy
+      ? "/video-publish --platforms shorts,reels,tiktok (never uploads)"
+      : "write publish/copy.json from the brief and facts, then /video-publish",
+    "video-publish",
+  );
   return steps;
 }
 
@@ -214,13 +226,13 @@ function main() {
   const lines = steps.map((s, i) => `${i + 1}. ${s.name.padEnd(14)} ${mark[s.status]} ${s.note}`);
   const next =
     steps.find((s) => s.status === "todo" || s.status === "stale") ??
-    steps.find((s) => s.status === "blocked" && s.id !== "publish");
+    steps.find((s) => s.status === "blocked");
   console.log(
     capLines(
       lines,
       next
         ? `Next: ${next.next ?? next.note}`
-        : "Every step is done. Look at the video and the contact sheet, then export it by hand.",
+        : "Every step is done. Read exports/*/disclosure.md, then upload by hand: nothing was uploaded.",
     ),
   );
 }

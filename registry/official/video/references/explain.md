@@ -12,7 +12,7 @@
 | captions       | `video-captions --burn`                                                    | `captions.json`, `.srt`, `.vtt`                                    |
 | render         | `video-core` `render.mjs` (a `--draft` first)                              | `out/<project>.mp4`                                                |
 | QA             | `video-qa`                                                                 | `qa/report.json`, `qa/contact-sheet.png`                           |
-| publish        | not built yet                                                              |                                                                    |
+| publish        | `video-publish` (never uploads)                                            | `exports/<platform>/`, `exports/publish.json`                      |
 
 A change to `video.json` or to a voice file makes timing, captions, render and QA `stale`; redo them in that order. Captions come before the final render because they are burned into it.
 

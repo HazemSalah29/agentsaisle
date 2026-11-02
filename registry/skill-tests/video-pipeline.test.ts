@@ -19,6 +19,7 @@ const ALL = {
   "video-core": true,
   "video-captions": true,
   "video-qa": true,
+  "video-publish": true,
 };
 
 const tmp = () => mkdtempSync(path.join(os.tmpdir(), "pipeline-"));
@@ -37,12 +38,13 @@ const video = (scenes: Loose[] = [], extra: Loose = {}) => ({
 });
 
 describe("video pipeline", () => {
-  it("starts at write in an empty folder and never marks publish as a step to do", async () => {
+  it("starts at write in an empty folder", async () => {
     const { pipelineState } = await pipe();
     const steps = pipelineState(tmp(), ALL);
     expect(status(steps, "write")).toBe("todo");
     expect(status(steps, "storyboard")).toBe("todo");
-    expect(status(steps, "publish")).toBe("blocked");
+    expect(status(steps, "publish")).toBe("todo");
+    expect(steps.find((x) => x.id === "publish")!.note).toContain("publish/copy.json");
   });
 
   it("waits for approval while there is a storyboard but no video.json", async () => {
@@ -117,6 +119,27 @@ describe("video pipeline", () => {
     const qa = pipelineState(dir, ALL).find((s) => s.id === "qa")!;
     expect(qa.status).toBe("todo");
     expect(qa.note).toBe("1 check(s) failed");
+  });
+
+  it("knows the publish step: to do without a pack, done with a current one, stale after a new render", async () => {
+    const { pipelineState } = await pipe();
+    const dir = tmp();
+    const t = (n: number) => 1_800_000_000 + n;
+    put(dir, "video.json", video([]), t(1));
+    put(dir, "timing.json", {}, t(2));
+    put(dir, "out/p.mp4", "x", t(10));
+    put(dir, "qa/report.json", { ok: true, results: [] }, t(20));
+    expect(pipelineState(dir, ALL).find((x) => x.id === "publish")!.note).toContain(
+      "publish/copy.json",
+    );
+    put(dir, "publish/copy.json", {}, t(21));
+    expect(pipelineState(dir, ALL).find((x) => x.id === "publish")!.note).toBe(
+      "no export pack yet",
+    );
+    put(dir, "exports/publish.json", {}, t(30));
+    expect(status(pipelineState(dir, ALL), "publish")).toBe("done");
+    put(dir, "out/p.mp4", "y", t(40));
+    expect(status(pipelineState(dir, ALL), "publish")).toBe("stale");
   });
 
   it("blocks a step whose skill is not installed", async () => {
