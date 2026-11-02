@@ -22,7 +22,13 @@ const plain = (t, max) =>
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, max);
-const stop = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
+const stop = (t) => (/[.!?]$/.test(t) ? t : `${t.replace(/[:;,\s]+$/, "")}.`);
+/** A line that is only links and separators (a contents list or a nav bar): not narration. */
+const linkOnly = (raw) =>
+  /\]\(/.test(raw) &&
+  !/[\p{L}\p{N}]/u.test(
+    raw.replace(/!?\[[^\]]*\]\([^)]*\)/g, "").replace(/^\s*(?:[-*]|\d+\.)\s+/, ""),
+  );
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /** Sections of a Markdown text: { title, sections: [{ heading, line, bullets: [{text,line}], tables: [] }] }. Pure. */
@@ -72,6 +78,10 @@ export function parseDoc(text) {
       continue;
     }
     const b = /^\s*(?:[-*]|\d+\.)\s+(.*\S)/.exec(raw);
+    if (linkOnly(raw)) {
+      flush();
+      continue;
+    }
     if (b) {
       flush();
       const t = plain(b[1], 400);

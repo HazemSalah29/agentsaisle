@@ -88,4 +88,32 @@ describe("doc.mjs", () => {
     run(["--doc", path.join(ok, "d.md"), "--out", out]);
     expect(run(["--doc", path.join(ok, "d.md"), "--out", out]).stderr).toContain("exists");
   });
+
+  it("skips link-only lines (contents lists, nav bars) and trailing colons", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "video-doc-"));
+    writeFileSync(
+      path.join(dir, "d.md"),
+      `# Tool
+
+[Home](https://example.com) \u00b7 [Docs](https://example.com/docs)
+
+## Contents
+
+1. [What is this?](#what)
+2. [Quick start](#quick)
+
+## What
+
+- Run this to install the tool:
+- A plain bullet about the tool
+`,
+    );
+    const r = run(["--doc", path.join(dir, "d.md"), "--out", path.join(dir, "o")]);
+    expect(r.status).toBe(0);
+    const script = readFileSync(path.join(dir, "o", "script.md"), "utf8");
+    expect(script).not.toContain("What is this?");
+    expect(script).not.toContain("Home");
+    expect(script).toContain("Run this to install the tool.");
+    expect(script).not.toContain(":.");
+  });
 });
