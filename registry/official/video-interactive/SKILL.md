@@ -1,6 +1,6 @@
 ---
 name: video-interactive
-description: "Part of the video library, used by the video skill (not run directly). Export a checked video project as an interactive web page: a player (play, pause, scrub, speed) and optional branch points where the viewer picks a path. Use for lessons the viewer can steer or slow down. Don't use for plain video files, video clips or 3D puppets, or to host or upload."
+description: "Part of the video library (loaded by /video, not run directly): export a checked project as a web page with a player and optional branches."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

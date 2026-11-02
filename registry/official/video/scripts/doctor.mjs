@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // /video doctor: lists which video tools are installed and which hardware tier that allows.
-// Read-only. Runs only allow-listed programs with a fixed `--version` argument list (no shell), and for
+// Read-only (with --cached it also keeps one small file, ~/.aisle-video/doctor-cache.json, so a studio that was
+// checked in the last day prints one line instead of probing every tool again). Runs only allow-listed programs with a fixed `--version` argument list (no shell), and for
 // API keys it reports "found" or "missing" without ever reading or printing a value.
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -213,7 +214,34 @@ export function report({ tools, keys, platform, engines = [] }) {
   return lines.slice(0, MAX_LINES).join("\n");
 }
 
+export const CACHE_HOURS = 24;
+
+/** The one-line answer from a cache file's contents, or null when it is missing, old, broken or "not ready". Pure. */
+export function cachedLine(cache, now = Date.now()) {
+  const at = Date.parse(cache?.at);
+  if (!Number.isFinite(at) || typeof cache?.tier !== "string" || cache.tier === "not ready")
+    return null;
+  const hours = (now - at) / 3_600_000;
+  if (hours < 0 || hours >= CACHE_HOURS) return null;
+  return `doctor (cached, checked ${hours < 1 ? "under an hour" : `${Math.round(hours)} h`} ago): tier ${cache.tier}. Run doctor.mjs without --cached to see every tool.`;
+}
+
 function main() {
+  const cacheFile = path.join(os.homedir(), ".aisle-video", "doctor-cache.json");
+  const useCache = process.argv.includes("--cached");
+  if (useCache) {
+    let cache = null;
+    try {
+      cache = JSON.parse(readFileSync(cacheFile, "utf8"));
+    } catch {
+      /* no cache yet */
+    }
+    const line = cachedLine(cache);
+    if (line) {
+      console.log(line);
+      process.exit(0);
+    }
+  }
   const tools = Object.fromEntries(TOOLS.map((t) => [t.id, probe(t)]));
   const keys = Object.fromEntries(KEY_NAMES.map((k) => [k, Boolean(process.env[k])]));
   console.log(
@@ -224,7 +252,15 @@ function main() {
       engines: [...engineLines(readToolsConfig()), ...sceneLines()],
     }),
   );
-  process.exit(hardwareTier(tools) === "not ready" ? 1 : 0);
+  const tier = hardwareTier(tools);
+  if (useCache && tier !== "not ready")
+    try {
+      mkdirSync(path.dirname(cacheFile), { recursive: true });
+      writeFileSync(cacheFile, `${JSON.stringify({ at: new Date().toISOString(), tier })}\n`);
+    } catch {
+      /* a cache that cannot be written is only a missed shortcut */
+    }
+  process.exit(tier === "not ready" ? 1 : 0);
 }
 
 // realpathSync: a script reached through a symlinked folder must still count as the entry point.

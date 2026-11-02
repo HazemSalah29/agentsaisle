@@ -1,6 +1,6 @@
 ---
 name: video-kinetic
-description: "Part of the video library, used by the video skill (not run directly). Make a punchy speech-synced kinetic-type video from a short script: huge bold words pop in as they are spoken, key words glow with a spark, glowing slash cuts split the screen between beats, with tilted cards and node flows, rendered from HTML to MP4 on the user's computer. Don't use for footage edits, generated people, or claims the user's script does not make."
+description: "Part of the video library (loaded by /video, not run directly): a speech-synced kinetic-type video from a short script: bold words pop as spoken, slash and shatter cuts, cards and flows."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

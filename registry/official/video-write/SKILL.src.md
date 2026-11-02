@@ -1,6 +1,6 @@
 ---
 name: video-write
-description: "Part of the video library, used by the video skill (not run directly). Write the script, brief, sourced facts, 5 alternative hooks and storyboard for a short video in explain, story or kids mode, in English or Arabic. Use for any video script or storyboard. Don't use to invent statistics or testimonials."
+description: "Part of the video library (loaded by /video, not run directly): write the script, sourced facts, hooks and storyboard for a short video (explain, story or kids mode; English or Arabic)."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

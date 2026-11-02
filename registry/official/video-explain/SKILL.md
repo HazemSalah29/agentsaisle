@@ -1,6 +1,6 @@
 ---
 name: video-explain
-description: "Part of the video library, used by the video skill (not run directly). Plan and fill the technical scenes of an explainer: rate-limit animations from a real seeded simulation, request flows from an arch-visualize model, highlighted code with focus and diff, sequence diagrams. Use for diagram, code or algorithm scenes. Don't show numbers the simulation did not produce."
+description: "Part of the video library (loaded by /video, not run directly): technical scenes for an explainer: rate-limit simulations, request flows, code with focus or diff, sequence diagrams."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

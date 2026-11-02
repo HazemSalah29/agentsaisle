@@ -1,6 +1,6 @@
 ---
 name: video-localize
-description: "Part of the video library, used by the video skill (not run directly). Dub a finished project into Arabic or English as a separate sibling folder: translate script and on-screen text, re-voice, retime, mirror puppet layouts for right-to-left. Don't use for other languages (no voice exists), voice cloning, or to publish a translation as reviewed."
+description: "Part of the video library (loaded by /video, not run directly): dub a finished project into Arabic or English as a sibling folder; no other languages, no voice cloning."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

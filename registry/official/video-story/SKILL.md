@@ -1,6 +1,6 @@
 ---
 name: video-story
-description: "Part of the video library, used by the video skill (not run directly). Turn a story premise into a shot list, character reference packs, a continuity log and broll scenes with Ken Burns motion on stills ($0) or paid clips through video-generate. Use for story or cinematic shorts from images. Don't use for explainers, kids' puppets, real people or known characters."
+description: "Part of the video library (loaded by /video, not run directly): turn a story premise into shots, reference packs and continuity for a cinematic short."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

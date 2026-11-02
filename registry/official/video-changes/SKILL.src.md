@@ -1,6 +1,6 @@
 ---
 name: video-changes
-description: "Part of the video library, used by the video skill (not run directly). Make a short \"what changed\" video for a pull request or release from a saved git diff and an optional changelog section: counted totals plus code diff scenes. Use for PR, release or commit-range videos. Don't use when the diff has not been saved to a file."
+description: "Part of the video library (loaded by /video, not run directly): a \"what changed\" video for a PR or release from a saved git diff."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

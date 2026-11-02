@@ -1,6 +1,6 @@
 ---
 name: video-showcase
-description: "Part of the video library, used by the video skill (not run directly). Make a product showcase video from the user's own app: play a demo script in a headless browser to record the screen, cut waiting, speed typing, ease the camera to clicks, draw a cursor in an original device frame, snap cuts to music beats. Don't use for apps the user does not own or native apps."
+description: "Part of the video library (loaded by /video, not run directly): a product showcase from the user's own running app: recorded demo, cursor, device frame, cuts on the beat."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

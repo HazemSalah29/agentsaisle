@@ -1,6 +1,6 @@
 ---
 name: video-qa
-description: "Part of the video library, used by the video skill (not run directly). Check a rendered video against its project: format, loudness, clipping, black or frozen stretches, nothing moving for too long, moves too fast to follow, one-frame swaps between scenes, very short scenes, flashing, text in the margins, caption size, missing voice lines, licences, placeholders; makes a contact sheet. Use before anything ships. Don't use to fix the video or judge taste."
+description: "Part of the video library (loaded by /video, not run directly): check a rendered video: format, loudness, black/idle/fast/swap, flashing, margins, captions, licences; makes a contact sheet. Run before anything ships."
 user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---

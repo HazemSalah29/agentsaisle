@@ -201,3 +201,20 @@ describe("doctor capture line", () => {
     expect(captureLine(home)).toMatch(/unreadable/);
   });
 });
+
+describe("video doctor cache", () => {
+  it("answers in one line when the last check is under a day old and was not 'not ready'", async () => {
+    const { cachedLine } = await loadScript<{
+      cachedLine: (c: unknown, now?: number) => string | null;
+    }>("video", "scripts/doctor.mjs");
+    const now = Date.parse("2026-11-02T12:00:00Z");
+    const at = (h: number) => new Date(now - h * 3_600_000).toISOString();
+    expect(cachedLine({ at: at(3), tier: "ready" }, now)).toContain("tier ready");
+    expect(cachedLine({ at: at(3), tier: "ready" }, now)).toContain("3 h ago");
+    expect(cachedLine({ at: at(25), tier: "ready" }, now)).toBeNull(); // too old
+    expect(cachedLine({ at: at(3), tier: "not ready" }, now)).toBeNull(); // always look again when it was broken
+    expect(cachedLine({ at: at(-2), tier: "ready" }, now)).toBeNull(); // from the future
+    expect(cachedLine({ tier: "ready" }, now)).toBeNull();
+    expect(cachedLine(null, now)).toBeNull();
+  });
+});

@@ -1,6 +1,6 @@
 ---
 name: video-brand
-description: "Part of the video library, used by the video skill (not run directly). Create and check the brand file (colours, font, logo, caption style) so every video looks like a series, with contrast and font checks. Use when the user has brand colours, fonts, a logo or caption defaults, or the video needs a consistent look. Don't use to design logos or intros."
+description: "Part of the video library (loaded by /video, not run directly): create and check the brand file (colours, font, logo, caption style)."
 user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---

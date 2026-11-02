@@ -213,7 +213,7 @@ export function pipelineState(dir, installed, opts = {}) {
       : timing < stamp
         ? "video.json or voice changed since"
         : "scene lengths set",
-    `node <video-core>/scripts/timing.mjs ${dir}`,
+    `node <video-core>/scripts/build.mjs ${dir} --draft (check, timing, render); timing.mjs alone if only the voice changed`,
     "video-core",
   );
 
@@ -251,7 +251,7 @@ export function pipelineState(dir, installed, opts = {}) {
       : final < need
         ? "files changed after the last render"
         : "final render is current",
-    `node <video-core>/scripts/render.mjs ${dir} (--draft first)`,
+    `node <video-core>/scripts/build.mjs ${dir} (a --draft first)`,
     "video-core",
   );
 

@@ -1,6 +1,6 @@
 ---
 name: video-incident
-description: "Part of the video library, used by the video skill (not run directly). Make an incident replay from a postmortem's timeline: an animated timeline of what failed, when the alert fired and the fix, with only minutes computed from the written times. Use for outage or postmortem videos. Don't use without times, or to assign blame."
+description: "Part of the video library (loaded by /video, not run directly): an incident replay from a postmortem timeline (needs written times)."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

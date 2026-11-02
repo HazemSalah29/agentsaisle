@@ -1,6 +1,6 @@
 ---
 name: video-generate
-description: "Part of the video library, used by the video skill (not run directly). Make one AI image or short AI video clip through a provider adapter, with a price quote, spend cap, cache and call log. It prints the quote and refuses to spend without the user's typed approval of that exact total. Don't use at a $0 budget, for real people's likeness or copyrighted characters."
+description: "Part of the video library (loaded by /video, not run directly): one paid AI image or clip through a provider; quotes the price and needs the user's typed approval of the exact total."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

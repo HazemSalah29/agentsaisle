@@ -1,6 +1,6 @@
 ---
 name: video-edit
-description: "Part of the video library, used by the video skill (not run directly). Edit video and audio files with FFmpeg: trim, join, speed, gif, scene cuts, loudness to -14 LUFS, colour looks, stabilize, punch-in zooms, cutting pauses and fillers, transcribe, reframe wide video to vertical. Use to tighten, fix or reshape the user's footage. Never changes a file in place."
+description: "Part of the video library (loaded by /video, not run directly): edit existing video/audio with FFmpeg: trim, join, speed, loudness, colour, stabilize, cut pauses, transcribe, reframe."
 user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---

@@ -1,6 +1,6 @@
 ---
 name: video-captions
-description: "Part of the video library, used by the video skill (not run directly). Make captions from a project's word timings in four styles (karaoke, pop, clean, kids), SRT and VTT files, burned into the render so Arabic joins and right-to-left text reads correctly. Use after voice and timing. Don't use to transcribe the user's own footage (video-edit does that)."
+description: "Part of the video library (loaded by /video, not run directly): captions from word timings (karaoke, pop, clean, kids), SRT/VTT, burned in; Arabic joins correctly."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

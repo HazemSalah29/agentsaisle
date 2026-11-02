@@ -1,6 +1,6 @@
 ---
 name: video-session
-description: "Part of the video library, used by the video skill (not run directly). Make a sped-up \"watch an AI build this\" video from a saved agent session log (Claude Code JSONL or timestamped text) with captioned key moments and secrets redacted first. Don't use without timestamps, on a session the user does not own, or without the user's OK to show it."
+description: "Part of the video library (loaded by /video, not run directly): a sped-up \"watch an AI build this\" video from a saved agent session log, secrets redacted."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

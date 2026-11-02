@@ -1,6 +1,6 @@
 ---
 name: video-data
-description: "Part of the video library, used by the video skill (not run directly). Make a chart video from a fresh public dataset (npm downloads, GitHub stars, or a CSV/JSON file on a host the user approved), re-runnable weekly. One fetch script (GET, https, no keys) writes data with its source and date. Don't use for private or paid data, or scraping."
+description: "Part of the video library (loaded by /video, not run directly): a chart video from fresh public data (npm, GitHub, an approved CSV/JSON host); re-runnable."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

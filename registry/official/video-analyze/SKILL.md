@@ -1,6 +1,6 @@
 ---
 name: video-analyze
-description: "Part of the video library, used by the video skill (not run directly). Measure how a reference video is made (cuts a minute, shot length, hook length, motion and speech shares, palette) and save a recipe of numbers for a new video to follow. Use to learn the pace of a format from a video the user has the right to analyse. Don't use without that right, or to copy footage, audio, words or characters."
+description: "Part of the video library (loaded by /video, not run directly): measure the pace of a reference video (cuts, shot length, hook, palette) into a recipe of numbers; needs the right to analyse it."
 user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---

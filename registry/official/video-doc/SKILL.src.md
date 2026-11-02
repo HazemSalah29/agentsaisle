@@ -1,6 +1,6 @@
 ---
 name: video-doc
-description: "Part of the video library, used by the video skill (not run directly). Make a short explainer from a Markdown or text document (README, spec, notes): every spoken line is a sentence or bullet from the file, every fact cites its line, number tables become charts. Use to explain a document. Don't use for PDFs or to summarise in new words."
+description: "Part of the video library (loaded by /video, not run directly): a short explainer from a Markdown or text document; every line comes from the file."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

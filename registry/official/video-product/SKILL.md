@@ -1,6 +1,6 @@
 ---
 name: video-product
-description: "Part of the video library, used by the video skill (not run directly). Make a fast product or launch edit from the user's own photos: camera moves, 2.5D parallax from a cutout, kinetic type, grain and glitch, cuts on the beat and original sound effects, rendered from HTML to MP4 on the user's computer. Don't use for generated people or characters, other people's photos or footage, or music the user has no right to."
+description: "Part of the video library (loaded by /video, not run directly): a fast product or launch edit from the user's own photos: camera moves, parallax, kinetic type, cuts on the beat."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

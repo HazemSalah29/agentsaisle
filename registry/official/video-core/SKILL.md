@@ -1,6 +1,6 @@
 ---
 name: video-core
-description: "Part of the video library, used by the video skill (not run directly). Check, time and render a video.json project to an MP4 with HyperFrames (or Remotion), and write credits and disclosure notes. Holds every scene kind. Use to check, time or render any project and to get CREDITS.txt. Don't use for scripts, voice, captions or editing footage."
+description: "Part of the video library (loaded by /video, not run directly): check, time and render a video.json to MP4 (build.mjs, render, review, credits); holds every scene kind."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
@@ -22,7 +22,7 @@ The engine under the video library. A project is a folder with a `video.json` (t
 ## Steps
 
 1. Write or edit `<project>/video.json` (`references/video-json.md`; props per kind in `references/scene-kinds.md`; schema in `<skill>/assets/video.schema.json`). Only use the built kinds (`references/scene-kinds.md`); fill `rate-limit` and `request-flow` with `video-explain`, never by hand.
-2. Run `node <skill>/scripts/check.mjs <project>`. Fix every problem it lists, then run it again until it says OK.
+2. Run `node <skill>/scripts/build.mjs <project> --draft` (check, timing and render in one call; add no flag for the final, which also writes credits). It stops at the first step that fails and shows that step's message: fix it and run again. The scripts below are the same steps by hand, for when you need one alone: `check.mjs` (fix every problem it lists until it says OK).
 3. If scenes take their length from the voice: put one audio file per script line at `<project>/voice/<line-id>.wav`, then run `node <skill>/scripts/timing.mjs <project>`. If every scene is fixed, skip this step.
 4. Run `node <skill>/scripts/render.mjs <project> --draft` first (540p). Look at the frames that matter with `node <skill>/scripts/review.mjs stills <project> --words <spoken words>` (or `--at 1.2,5`), once. When the user (or you, for a quick job) accepts the draft, `node <skill>/scripts/review.mjs approve <project>`; the final (`render.mjs` without `--draft`) refuses to run if the project changed since, unless `--ignore-approval`. Every render writes `out/<name>.validation.json` (size, rate, length, frames, audio); fix a failed one. Output: `<project>/out/<folder-name>.mp4`. HyperFrames is the default; add `--engine remotion` only if the user asked for it and installed it (its company licence is shown at render).
 5. Run `node <skill>/scripts/credits.mjs <project>`. It writes `credits.json` and `CREDITS.txt` and fails if an asset has no licence or `disclosure` says less than the assets imply.

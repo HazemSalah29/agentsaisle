@@ -1,6 +1,6 @@
 ---
 name: video-publish
-description: "Part of the video library, used by the video skill (not run directly). Prepare a finished, checked video for YouTube, Shorts, Reels, TikTok or LinkedIn: a pack per platform with the encoded file, thumbnails, checked title, description, hashtags, chapters, captions, credits and disclosure notes. Never uploads; refuses a video that failed its check."
+description: "Part of the video library (loaded by /video, not run directly): a per-platform publish pack for a checked video; never uploads and refuses a video that failed QA."
 user-invocable: false
 allowed-tools: Read Write Glob Bash(node *)
 ---

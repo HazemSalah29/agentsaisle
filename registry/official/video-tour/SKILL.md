@@ -1,6 +1,6 @@
 ---
 name: video-tour
-description: "Part of the video library, used by the video skill (not run directly). Make a narrated codebase tour from an arch-visualize model: component overview plus the busiest request flows, each step with its file and line. Use for a repository walkthrough. Don't use without docs/architecture.json, or to show live traffic or timings."
+description: "Part of the video library (loaded by /video, not run directly): a narrated codebase tour from an arch-visualize model (needs docs/architecture.json)."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

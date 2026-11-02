@@ -1,6 +1,6 @@
 ---
 name: video-batch
-description: "Part of the video library, used by the video skill (not run directly). Make one video project per row of the user's own CSV from a template with {{column}} placeholders (per-customer onboarding videos). Dry run by default, local only, never prints cell values. Use for personalised or many versions of one video. Don't use for data the user does not own or for scraping."
+description: "Part of the video library (loaded by /video, not run directly): one video per row of the user's own CSV from a template; dry run first."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---

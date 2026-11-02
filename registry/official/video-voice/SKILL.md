@@ -1,6 +1,6 @@
 ---
 name: video-voice
-description: "Part of the video library, used by the video skill (not run directly). Make a voice track from script.md, one WAV per line with word timings, using local engines (Kokoro for English, 3arab-TTS for Arabic) or an offline test tone. Use for narration and caption timings. Don't use to clone a voice, to use a paid voice service, or before the script passes the writer check."
+description: "Part of the video library (loaded by /video, not run directly): narration from script.md with local voices (Kokoro English, 3arab Arabic) and word timings; never clones a voice."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
