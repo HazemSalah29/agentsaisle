@@ -86,22 +86,3 @@ for (const skill of await readdir(officialDir, { withFileTypes: true })) {
   }
 }
 console.log(`web: rendered ${demos} live demo page(s) to public/demos/`);
-
-// Demo videos: docs/video/demos/<id>/{<id>.mp4, poster, sources} is served at /video-demos/<id>/*. A missing file
-// is skipped, never an error: the demos page simply shows what is there.
-const { loadDemos } = (await import("../lib/demos-fs.ts")) as typeof import("../lib/demos-fs");
-const videoSrc = path.resolve(here, "../../../docs/video/demos");
-const videoOut = path.resolve(here, "../public/video-demos");
-await rm(videoOut, { recursive: true, force: true });
-let videos = 0;
-const found = loadDemos(videoSrc);
-await mkdir(videoOut, { recursive: true });
-await writeFile(path.join(videoOut, "index.json"), `${JSON.stringify(found)}\n`);
-for (const d of found.demos) {
-  await mkdir(path.join(videoOut, d.id), { recursive: true });
-  for (const f of [d.video, ...(d.poster ? [d.poster] : []), ...d.files]) {
-    await copyFile(path.join(videoSrc, d.id, f), path.join(videoOut, d.id, f)).catch(() => {});
-  }
-  videos++;
-}
-console.log(`web: copied ${videos} demo video(s) to public/video-demos/`);

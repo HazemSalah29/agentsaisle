@@ -30,4 +30,6 @@ apps/web/public/badges
 .npmrc
 *.pem
 *.key
-apps/web/public/video-demos
+
+# Rendered demo videos stay on the maker's machine: a repository archive over 20 MB cannot be installed with the CLI.
+docs/video/demos/**/*.mp4
