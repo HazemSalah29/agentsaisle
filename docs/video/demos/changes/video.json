@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "video-core 0.6.0",
+    "type": "explainer",
+    "format": "short-9x16",
+    "fps": 30,
+    "lang": "en",
+    "audience": "people who use or review this project"
+  },
+  "script": "script.md",
+  "scenes": [
+    {
+      "id": "s1",
+      "kind": "title",
+      "props": {
+        "text": "video-core 0.6.0",
+        "subtitle": "1 file changed"
+      },
+      "narration": [
+        "l1"
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "list",
+      "props": {
+        "heading": "The size of it",
+        "items": [
+          "1 file changed",
+          "5 lines added",
+          "1 line removed"
+        ]
+      },
+      "narration": [
+        "l2"
+      ]
+    },
+    {
+      "id": "s3",
+      "kind": "list",
+      "props": {
+        "heading": "From the changelog",
+        "items": [
+          "A new timeline scene shows events one at a time.",
+          "Each event is labelled with a word, so colour is never the only signal",
+          "Every string is escaped, so hostile text stays text."
+        ],
+        "numbered": false
+      },
+      "narration": [
+        "l3"
+      ]
+    },
+    {
+      "id": "s4",
+      "kind": "code",
+      "props": {
+        "language": "js",
+        "file": "...core/assets/engine/hyperframes/scenes.mjs",
+        "diff": {
+          "before": "import { screen, screenCss } from \"./screen.mjs\";\nimport { sequence, sequenceCss } from \"./sequence.mjs\";\nimport { IN, STAGGER, esc, fadeUp } from \"./shared.mjs\";\n\nexport { esc };\nexport const KINDS = [",
+          "after": "import { screen, screenCss } from \"./screen.mjs\";\nimport { sequence, sequenceCss } from \"./sequence.mjs\";\nimport { IN, STAGGER, esc, fadeUp } from \"./shared.mjs\";\nimport { timeline, timelineCss } from \"./timeline.mjs\";\n\nexport { esc };\nexport const KINDS = ["
+        }
+      },
+      "narration": [
+        "l4"
+      ]
+    },
+    {
+      "id": "s5",
+      "kind": "title",
+      "props": {
+        "text": "video-core 0.6.0",
+        "subtitle": "counted from the diff"
+      },
+      "narration": [
+        "l5"
+      ]
+    }
+  ],
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "af_heart",
+    "speed": 1
+  },
+  "captions": {
+    "style": "clean",
+    "maxWordsPerLine": 4,
+    "safeZone": "reel",
+    "burn": true
+  }
+}
