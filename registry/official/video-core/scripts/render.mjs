@@ -19,6 +19,7 @@ import { checkProject } from "./check.mjs";
 import { buildRemotionProject } from "../assets/engine/remotion/build.mjs";
 import { buildProject } from "./project.mjs";
 import { loadRigs, loadVisemes } from "./puppet-data.mjs";
+import { loadWords, sceneWords } from "./words-data.mjs";
 import {
   REMOTION_LICENCE_NOTE,
   findRemotion,
@@ -371,6 +372,7 @@ function main() {
       rigs: loadRigs(video, dir).rigs,
       rigs3d: loadRigs(video, dir).rigs3d,
       visemes: loadVisemes(dir),
+      words: sceneWords(timing, loadWords(dir)),
     });
   } catch (e) {
     fail(e.message);

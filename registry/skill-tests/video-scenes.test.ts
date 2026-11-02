@@ -45,6 +45,7 @@ describe("video-core scenes", () => {
       "timeline",
       "calligraphy",
       "shot",
+      "kinetic",
     ]);
   });
 

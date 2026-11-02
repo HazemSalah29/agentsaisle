@@ -10,6 +10,7 @@ import { puppetProblems } from "../assets/engine/hyperframes/puppet.mjs";
 import { loadRigs } from "./puppet-data.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
 import { calligraphyProblems } from "../assets/engine/hyperframes/calligraphy.mjs";
+import { kineticProblems } from "../assets/engine/hyperframes/kinetic.mjs";
 import { shotProblems } from "../assets/engine/hyperframes/shot.mjs";
 import { timelineProblems } from "../assets/engine/hyperframes/timeline.mjs";
 import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
@@ -113,6 +114,8 @@ export function checkProject(video, dir, schema = loadSchema()) {
       problems.push(...calligraphyProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "timeline")
       problems.push(...timelineProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
+    if (s.kind === "kinetic")
+      problems.push(...kineticProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "shot") {
       problems.push(...shotProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
       for (const l of s.props?.layers ?? [])

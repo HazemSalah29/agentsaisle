@@ -4,7 +4,10 @@
 // timed to the beat. Everything is CSS and the Web Animations plan (a function of time), with no script and no
 // WebGL in the page. Camera, shake and glitch motion is sampled from pure functions below, so a frame depends on
 // the clock alone and every string is escaped.
+import { EASE_FN, EASE_NAMES, r3, rnd, samples } from "./motion.mjs";
 import { esc } from "./shared.mjs";
+
+export { EASE_FN, rnd };
 
 export const LIMITS = {
   layers: 4,
@@ -32,19 +35,7 @@ export const TYPE_STYLES = ["slam", "stagger", "glitch", "tag", "price"];
 export const ANCHORS = ["head", "top", "center", "bottom", "foot"];
 export const GRADES = ["none", "punch", "warm", "cool", "mono", "film"];
 export const ENTERS = ["cut", "flash", "whip-l", "whip-r", "zoom", "glitch"];
-export const EASES = ["linear", "out", "inOut", "in", "expo", "snap", "spring", "outBack"];
-
-/** Named easing curves as pure functions, so camera moves are sampled instead of handed to the browser. */
-export const EASE_FN = {
-  linear: (t) => t,
-  out: (t) => 1 - (1 - t) ** 5,
-  inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
-  in: (t) => t ** 3,
-  expo: (t) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t)),
-  snap: (t) => 1 - (1 - t) ** 7,
-  spring: (t) => 1 - Math.cos(t * 4.5 * Math.PI) * Math.exp(-6 * t),
-  outBack: (t) => 1 + 2.70158 * (t - 1) ** 3 + 1.70158 * (t - 1) ** 2,
-};
+export const EASES = EASE_NAMES;
 
 const GRADE_CSS = {
   none: "none",
@@ -57,13 +48,6 @@ const GRADE_CSS = {
 const DEFAULT_DEPTH = { bg: 0, subject: 0.6, overlay: 1 };
 const ID = /^[a-z][a-z0-9-]{0,31}$/;
 const num = (v) => typeof v === "number" && Number.isFinite(v);
-const r3 = (n) => Math.round(n * 1000) / 1000;
-/** A repeatable pseudo-random number in [0, 1) for an integer key. */
-export const rnd = (k) => {
-  const x = Math.sin(k * 12.9898 + 78.233) * 43758.5453;
-  return x - Math.floor(x);
-};
-
 const times = (v) => (Array.isArray(v) ? v : []);
 
 /** Problems with a shot scene's props, as readable strings. `seconds` (optional) bounds the effect times. Pure. */
@@ -244,12 +228,6 @@ export function jitterAt(t, shakes, glitches) {
   }
   return { x, y, skew };
 }
-
-/** Evenly spaced samples of [0, seconds] with a hard cap, always including both ends. */
-const samples = (seconds, perSecond = 24, max = 120) => {
-  const n = Math.min(max, Math.max(2, Math.ceil(seconds * perSecond) + 1));
-  return Array.from({ length: n }, (_, i) => i / (n - 1));
-};
 
 const GRAIN_SVG = encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='256' height='256'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>",

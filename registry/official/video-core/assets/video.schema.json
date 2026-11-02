@@ -101,6 +101,7 @@
             "timeline",
             "calligraphy",
             "shot",
+            "kinetic",
             "custom"
           ]
         },
@@ -252,6 +253,26 @@
           "cards": { "type": "array", "maxItems": 3, "items": { "type": "object" } },
           "fx": { "type": "object" },
           "enter": { "type": "object" }
+        }
+      },
+      "kinetic": {
+        "type": "object",
+        "properties": {
+          "bg": { "enum": ["black", "dark", "accent"] },
+          "exit": { "enum": ["slide", "drop", "blur", "shatter", "none"] },
+          "text": { "type": "string", "maxLength": 120 },
+          "phrases": {
+            "type": "array",
+            "maxItems": 12,
+            "items": { "type": "string", "maxLength": 40 }
+          },
+          "emph": {
+            "type": "array",
+            "maxItems": 12,
+            "items": { "type": "string", "maxLength": 24 }
+          },
+          "cards": { "type": "array", "maxItems": 2, "items": { "type": "object" } },
+          "flow": { "type": "object" }
         }
       },
       "timeline": {

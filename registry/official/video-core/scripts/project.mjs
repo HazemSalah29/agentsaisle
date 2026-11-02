@@ -36,7 +36,7 @@ export function cleanBrand(raw) {
   return { colors, font };
 }
 
-const css = ({ w, h, brand, stack, faces, vertical, bottomPad }) => `${faces}
+const css = ({ w, h, brand, stack, faces, vertical, bottomPad, kinds }) => `${faces}
 html,body{margin:0;background:${brand.colors.bg}}
 #root{--u:${w / 100}px;position:relative;width:${w}px;height:${h}px;overflow:hidden;background:${brand.colors.bg};color:${brand.colors.fg};font-family:${stack};}
 .scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*3);box-sizing:border-box;padding:${vertical ? "calc(var(--u)*8)" : "calc(var(--u)*6)"} calc(var(--u)*7) ${bottomPad}}
@@ -60,7 +60,7 @@ html,body{margin:0;background:${brand.colors.bg}}
 .scene-broll{padding:0;gap:0}
 .media{position:absolute;inset:0;width:100%;height:100%}
 .media-cap{position:absolute;inset-inline:calc(var(--u)*7);bottom:calc(var(--u)*${vertical ? 16 : 6});margin:0;font-size:calc(var(--u)*3.8);font-weight:700}
-${kindCss(brand, vertical)}`;
+${kindCss(brand, vertical, kinds)}`;
 
 /**
  * Everything an engine needs to draw the film, before it is wrapped in a page: the stylesheet, the scene
@@ -79,6 +79,7 @@ export function buildParts({
   rigs = new Map(),
   rigs3d = new Map(),
   visemes = new Map(),
+  words = [],
 }) {
   const [w, h] = SIZES[video.meta.format];
   const vertical = h > w;
@@ -92,6 +93,13 @@ export function buildParts({
     const base = path.basename(from);
     return { from, to: `assets/fonts/${base}`, family: path.basename(base, path.extname(base)) };
   });
+  // Kinetic scenes use the display font that ships with this skill (Anton, SIL OFL), copied into the project.
+  if (video.scenes.some((s) => s.kind === "kinetic") && !fonts.some((f) => f.family === "Anton"))
+    fonts.push({
+      from: path.join(skillDir(), "assets", "fonts", "Anton-Regular.ttf"),
+      to: "assets/fonts/Anton-Regular.ttf",
+      family: "Anton",
+    });
   const faces = fonts
     .filter((f) => FAMILY.test(f.family))
     .map((f) => `@font-face{font-family:'${f.family}';src:url('${f.to}');}`)
@@ -146,6 +154,7 @@ export function buildParts({
       rigs,
       rigs3d,
       visemes,
+      words: words[i] ?? [],
       fps,
     });
     plan.push(...r.plan);
@@ -186,7 +195,17 @@ export function buildParts({
         to: `assets/3d/${path.basename(name)}`,
       });
   return {
-    css: css({ w, h, brand, stack, faces, vertical, bottomPad }) + captionCss,
+    css:
+      css({
+        w,
+        h,
+        brand,
+        stack,
+        faces,
+        vertical,
+        bottomPad,
+        kinds: new Set(video.scenes.map((s) => s.kind)),
+      }) + captionCss,
     body,
     plan,
     planJson,
