@@ -8,6 +8,7 @@ import { CliError } from "./errors.js";
 import { auditGuard } from "./guard.js";
 import { downloadSkill, resolveRef, type SkillSource } from "./github.js";
 import { upsertLockEntry } from "./lockfile.js";
+import { expandLibraries } from "./library.js";
 import { loadRegistry, resolveSkill } from "./registry.js";
 import { parseSpec } from "./spec.js";
 import { findScripts, validateSkill } from "./validate.js";
@@ -24,6 +25,10 @@ interface Plan {
   /** Official and verified: a maintainer read every script, so scripts are listed but not asked about. */
   trusted: boolean;
   label: string;
+  /** The library this skill is a part of (Claude uses it; the user does not run it). */
+  partOf?: string;
+  /** For a library: how many parts come with it. */
+  parts?: number;
 }
 
 async function plan(input: string, getIndex: () => Promise<RegistryIndex>): Promise<Plan> {
@@ -38,6 +43,8 @@ async function plan(input: string, getIndex: () => Promise<RegistryIndex>): Prom
       unverified: !skill.verified,
       trusted: skill.source === "official" && skill.verified,
       label: `${skill.name}@${version}`,
+      ...(skill.partOf ? { partOf: skill.partOf } : {}),
+      ...(skill.requires?.length ? { parts: skill.requires.length } : {}),
     };
   }
   const sha = await resolveRef(spec.repo, spec.ref);
@@ -155,11 +162,18 @@ export async function installOne(
 
     ctx.log(`Installed ${name}@${p.version ?? p.source.sha.slice(0, 7)}`);
     ctx.log(`  to ${dest}`);
-    if (ctx.agent === "claude-code") ctx.log(`  try it: /${name}`);
+    if (ctx.agent === "claude-code") {
+      if (p.partOf) ctx.log(`  part of ${p.partOf}: Claude uses it, you do not run it`);
+      else if (p.parts)
+        ctx.log(`  try it: /${name} and say what you want (${p.parts} parts came with it)`);
+      else ctx.log(`  try it: /${name}`);
+    }
   } finally {
     await rm(tmp, { recursive: true, force: true });
   }
 }
+
+const EMPTY_INDEX = { skills: [] } as unknown as RegistryIndex;
 
 export async function installMany(
   inputs: string[],
@@ -169,15 +183,29 @@ export async function installMany(
   let index: Promise<RegistryIndex> | undefined;
   const getIndex = () => (index ??= loadRegistry());
   const failures: string[] = [];
-  for (const input of inputs) {
+  // A library (for example `video`) installs its parts first; if one fails the library itself is not installed.
+  const needsIndex = inputs.some((i) => {
     try {
-      await installOne(input, ctx, getIndex, options);
+      return parseSpec(i).kind === "registry";
+    } catch {
+      return false;
+    }
+  });
+  const known = needsIndex ? await getIndex().catch(() => undefined) : undefined;
+  const steps = expandLibraries(inputs, known ?? EMPTY_INDEX);
+  for (const step of steps) {
+    if (step.needs.some((n) => failures.includes(n))) {
+      console.error(`Error (${step.input}): not installed, because a part of it failed.`);
+      failures.push(step.input);
+      continue;
+    }
+    try {
+      await installOne(step.input, ctx, getIndex, options);
     } catch (e) {
       if (!(e instanceof CliError)) throw e;
-      console.error(`Error (${input}): ${e.message}`);
-      failures.push(input);
+      console.error(`Error (${step.input}): ${e.message}`);
+      failures.push(step.input);
     }
   }
-  if (failures.length)
-    throw new CliError(`${failures.length} of ${inputs.length} installs failed.`);
+  if (failures.length) throw new CliError(`${failures.length} of ${steps.length} installs failed.`);
 }
