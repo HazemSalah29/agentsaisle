@@ -63,9 +63,9 @@ describe("the skill itself", () => {
     for (const f of readdirSync(dir).filter((n) => n.endsWith(".mjs"))) {
       const text = readFileSync(path.join(dir, f), "utf8");
       expect(text, f).not.toMatch(/\bfetch\s*\(|node:https?|node:net|\bcurl\b|\bwget\b/);
-      expect(text, f).not.toMatch(
-        /child_process/.source.replace("child_process", "exec(Sync)?\\("),
-      ); // no shell strings
+      expect(text, f).not.toMatch(/shell:\s*true/);
+      // Only run.mjs (the allow-listed runner) may start programs.
+      if (f !== "run.mjs") expect(text, f).not.toMatch(/node:child_process/);
     }
   });
   it("lists the capture script as the only one that imports the browser library", () => {

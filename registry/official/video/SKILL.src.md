@@ -1,6 +1,6 @@
 ---
 name: video
-description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer video from an idea by running the video skills in order. Use when the user types /video init, /video doctor or /video explain "<topic>". Don't use for kids, story or showcase videos, which are not built yet, or to upload a finished video.
+description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>" or /video showcase. Don't use for kids or story videos, which are not built yet, or to upload a finished video.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Bash(node *)
 ---
@@ -13,11 +13,12 @@ Creates the folder a user makes videos in, checks their machine, and walks an ex
 
 - The user runs `/video init`, or asks to set up a place for making videos.
 - The user runs `/video doctor`, or asks why a render tool is missing.
+- The user runs `/video showcase` (an app demo): hand over to the `video-showcase` skill and stop; it has its own steps.
 - The user runs `/video explain "<topic>"` (options `--format reel|short|youtube|square`, `--lang en|ar`, `--length 30s|60s`) or asks for an explainer video.
 
 ## Don't use when
 
-- The video is kids, story, showcase or edit: say they are not built yet. Do not improvise them with explainer scenes.
+- The video is kids or story: say they are not built yet. Do not improvise them with explainer scenes.
 - The user wants a video uploaded. The last step prepares a pack to upload by hand; it never uploads.
 - The folder is a code project that should not get video folders. Ask for an empty folder first.
 

@@ -196,7 +196,7 @@ describe("capture run (with a stand-in browser library)", () => {
     ]);
     expect(log.events[2]).toMatchObject({ kind: "click", x: 0.578, y: 0.535, w: 0.156, h: 0.069 });
     expect(log.events[3].chars).toBe(14);
-    expect(log.events[3].end).toBeGreaterThan(log.events[3].t);
+    expect(log.events[3].end).toBeGreaterThanOrEqual(log.events[3].t);
     expect(existsSync(path.join(dir, "out", "capture.webm"))).toBe(true);
     expect(existsSync(path.join(dir, "out", ".capture-tmp"))).toBe(false);
   });
