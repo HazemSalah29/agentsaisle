@@ -175,4 +175,19 @@ describe("shot scene", () => {
     expect(r.stdout + r.stderr).toContain('asset "ghost" is not listed');
     expect(r.stdout + r.stderr).toContain("flashes at least 0.4 s apart");
   });
+
+  it("a glitch text flickers in and then stays fully visible", async () => {
+    const { renderScene } = await scenes();
+    const { plan } = renderScene(
+      {
+        id: "s1",
+        kind: "shot",
+        props: props({ type: [{ text: "drop", at: 0.2, style: "glitch" }] }),
+      },
+      ctx(),
+    );
+    const frames = plan.find((p) => p.id === "sc-a-t0")!.frames;
+    expect(frames.at(-1)!.opacity).toBe(1);
+    expect(frames.some((f) => f.opacity < 1)).toBe(true);
+  });
 });

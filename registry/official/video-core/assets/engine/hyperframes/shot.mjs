@@ -181,6 +181,14 @@ export function shotProblems(props, seconds) {
  * [start, end, speed]: inside it the camera moves `speed` times as fast (a speed ramp). Pure.
  */
 export function camState(cam, u) {
+  const c = baseState(cam, u);
+  const [fx, fy] = cam?.focus ?? [0, 0];
+  // A focus shift needs room: raise the zoom so the edge of the photo never shows.
+  const need = 1 + (2 * Math.max(Math.abs(fx), Math.abs(fy))) / 100 + (fx || fy ? 0.03 : 0);
+  return { ...c, s: Math.max(c.s, need), x: c.x + fx, y: c.y + fy };
+}
+
+function baseState(cam, u) {
   const move = cam?.move ?? "push";
   const ease = EASE_FN[cam?.ease] ?? EASE_FN.out;
   let p = u;
@@ -307,10 +315,8 @@ export function shot(s, ctx) {
         const o = (t) => r3(Math.min(1, Math.max(0, t / T)));
         frames.push(
           { offset: o(g - 0.001), opacity: 0, transform: "translateX(0%)" },
-          { offset: o(g), opacity: 0.7, transform: `translateX(${1.4 * dir}%)` },
-          { offset: o(g + 0.06), opacity: 0, transform: "translateX(0%)" },
-          { offset: o(g + 0.09), opacity: 0.55, transform: `translateX(${-1.1 * dir}%)` },
-          { offset: o(g + 0.16), opacity: 0, transform: "translateX(0%)" },
+          { offset: o(g), opacity: 0.5, transform: `translateX(${1.4 * dir}%)` },
+          { offset: o(g + 0.12), opacity: 0, transform: "translateX(0%)" },
         );
       }
       frames.push({ offset: 1, opacity: 0, transform: "translateX(0%)" });
@@ -341,12 +347,12 @@ export function shot(s, ctx) {
   }
   const enterFrames = {
     "whip-l": [
-      { transform: "translateX(-38%)", filter: "blur(22px)" },
-      { transform: "translateX(0%)", filter: "blur(0px)" },
+      { transform: "translateX(-38%) scale(1.8)", filter: "blur(22px)" },
+      { transform: "translateX(0%) scale(1)", filter: "blur(0px)" },
     ],
     "whip-r": [
-      { transform: "translateX(38%)", filter: "blur(22px)" },
-      { transform: "translateX(0%)", filter: "blur(0px)" },
+      { transform: "translateX(38%) scale(1.8)", filter: "blur(22px)" },
+      { transform: "translateX(0%) scale(1)", filter: "blur(0px)" },
     ],
     zoom: [
       { transform: "scale(1.7)", filter: "blur(16px)" },
@@ -356,7 +362,9 @@ export function shot(s, ctx) {
   if (enterFrames) {
     plan.push({ id: camId, frames: enterFrames, at: ctx.at, dur: Math.min(eDur, T), ease: "out" });
   }
-  let html = `<div class="shot-root"><div id="${camId}" class="shot-fill" style="filter:${grade}">${inner}</div>`;
+  // The grade sits on its own wrapper: the enter animation below sets `filter` (blur) on the camera wrapper and
+  // would otherwise replace it.
+  let html = `<div class="shot-root"><div class="shot-fill" style="filter:${grade}"><div id="${camId}" class="shot-fill">${inner}</div></div>`;
 
   // Overlays: grain, vignette, flashes.
   if (fx.vignette) html += `<div class="shot-vignette"></div>`;
@@ -427,7 +435,7 @@ export function shot(s, ctx) {
     if (t.style === "glitch") {
       const hold = [-3, 2.5, -1.5, 1, 0].map((x, k, a) => ({
         offset: r3(k / (a.length - 1)),
-        opacity: k % 2 === 0 ? 0.4 : 1,
+        opacity: [0.3, 1, 0.5, 1, 1][k],
         transform: `translateX(${x}%)`,
       }));
       plan.push({ id, frames: hold, at, dur: 0.3, ease: "linear" });
@@ -478,7 +486,7 @@ export const shotCss = (brand) => `
 .shot-grain{position:absolute;inset:-12%;opacity:.14;mix-blend-mode:overlay;background-size:256px 256px}
 .shot-flash{position:absolute;inset:0;background:#fff;opacity:0}
 .shot-type{position:absolute;left:calc(var(--u)*7);right:calc(var(--u)*7);text-align:center;color:#fff;font-weight:800;line-height:1.02;letter-spacing:-.01em;text-shadow:0 calc(var(--u)*.5) calc(var(--u)*2.6) rgba(0,0,0,.6)}
-.shot-slam,.shot-glitch,.shot-price,.shot-line{text-transform:uppercase;overflow-wrap:anywhere}
+.shot-slam,.shot-glitch,.shot-price,.shot-line{text-transform:uppercase;overflow-wrap:anywhere;-webkit-text-stroke:calc(var(--u)*.45) rgba(0,0,0,.9);paint-order:stroke fill}
 .shot-word{display:inline-block}
 .shot-glitch{text-shadow:calc(var(--u)*.45) 0 ${brand.colors.accent},calc(var(--u)*-.45) 0 #29d9ff,0 calc(var(--u)*.5) calc(var(--u)*2.6) rgba(0,0,0,.6)}
 .shot-tag{display:inline-block;padding:.35em .9em;background:${brand.colors.accent};color:#fff;letter-spacing:.08em;text-transform:uppercase;text-shadow:none}

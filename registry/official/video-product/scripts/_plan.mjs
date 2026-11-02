@@ -15,6 +15,14 @@ export const LIMITS = {
   seconds: [6, 30],
 };
 const HEX = /^#[0-9a-fA-F]{6}$/;
+/** Different ways to look at a photo the second, third... time it is used, so few photos still give varied shots. */
+const FRAMINGS = [
+  null,
+  { focus: [0, 14], zoom: 1.45 },
+  { focus: [0, -16], zoom: 1.45 },
+  { focus: [16, 0], zoom: 1.5 },
+  { focus: [-16, 6], zoom: 1.5 },
+];
 const r2 = (n) => Math.round(n * 100) / 100;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -133,9 +141,15 @@ export function planEdit(i, presets) {
         ]
       : [{ asset: photo.id, role: "bg" }];
   const alt = (k) => (k % 2 ? "top" : "bottom");
+  const uses = new Map();
 
   const scenes = lengths.map((len, k) => {
     const photo = i.photos[k === 0 || k === last ? 0 : (k - 1) % i.photos.length];
+    const framing =
+      k === 0 || k === last
+        ? null
+        : FRAMINGS[Math.min(uses.get(photo.id) ?? 0, FRAMINGS.length - 1)];
+    if (k !== 0 && k !== last) uses.set(photo.id, (uses.get(photo.id) ?? 0) + 1);
     const hookShot = k === 0;
     const ctaShot = k === last;
     const t0 = starts[k];
@@ -148,6 +162,16 @@ export function planEdit(i, presets) {
     if (move === "pull") {
       camera.from = preset.zoom[1] + 0.04;
       camera.to = preset.zoom[0] + 0.02;
+    }
+    if (framing) {
+      camera.focus = framing.focus;
+      if (move === "push") {
+        camera.from = framing.zoom;
+        camera.to = r2(framing.zoom + (preset.zoom[1] - preset.zoom[0]));
+      } else if (move === "pull") {
+        camera.from = r2(framing.zoom + 0.1);
+        camera.to = framing.zoom;
+      } else camera.from = framing.zoom;
     }
     if (preset.ramp && !hookShot && !ctaShot && k % 2 === 1 && len >= 1) camera.ramp = preset.ramp;
     const enterStyle = hookShot
