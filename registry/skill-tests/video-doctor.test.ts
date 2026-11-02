@@ -181,3 +181,23 @@ describe("video doctor engines", () => {
     expect(e().readToolsConfig(home)).toEqual({});
   });
 });
+
+describe("doctor capture line", () => {
+  it("reports the screen-capture library from its package.json only", async () => {
+    const { mkdirSync, mkdtempSync, writeFileSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const { captureLine } = await loadScript<{ captureLine(home: string): string }>(
+      "video",
+      "scripts/doctor.mjs",
+    );
+    const home = mkdtempSync(path.join(os.tmpdir(), "video-pw-"));
+    expect(captureLine(home)).toMatch(/not installed.*own screen recording/);
+    const dir = path.join(home, ".aisle-video", "node_modules", "playwright-core");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "package.json"), '{"name":"playwright-core","version":"1.2.3"}');
+    expect(captureLine(home)).toBe("  playwright  ready 1.2.3 (screen capture for showcase)");
+    writeFileSync(path.join(dir, "package.json"), "{nope");
+    expect(captureLine(home)).toMatch(/unreadable/);
+  });
+});

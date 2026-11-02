@@ -120,12 +120,28 @@ export function readToolsConfig(home = os.homedir()) {
   }
 }
 
+/** One line on the screen-capture library (the user's own install; only its package.json is read). */
+export function captureLine(home = os.homedir(), exists = existsSync) {
+  const pj = path.join(home, ".aisle-video", "node_modules", "playwright-core", "package.json");
+  if (!exists(pj))
+    return "  playwright  not installed (showcase capture: use your own screen recording instead)";
+  try {
+    const v = JSON.parse(readFileSync(pj, "utf8")).version;
+    return `  playwright  ready${typeof v === "string" ? ` ${v}` : ""} (screen capture for showcase)`;
+  } catch {
+    return "  playwright  installed but unreadable";
+  }
+}
+
 /**
  * One line per engine: ready, or what is missing and what happens without it. Only runs the configured
  * python with `--version` and a fixed import check, and whisper-cli with `--help`; never loads a model.
  * `cfg` is the tools.json content; `run` and `exists` are injectable for tests.
  */
-export function engineLines(cfg, { run = spawnSync, exists = existsSync } = {}) {
+export function engineLines(
+  cfg,
+  { run = spawnSync, exists = existsSync, home = os.homedir() } = {},
+) {
   const ok = (cmd, args) => {
     const r = run(cmd, args, { encoding: "utf8", timeout: 20000, shell: false });
     return !r.error && r.status === 0 ? `${r.stdout ?? ""}${r.stderr ?? ""}` : null;
@@ -148,6 +164,7 @@ export function engineLines(cfg, { run = spawnSync, exists = existsSync } = {}) 
   lines.push(
     `  3arab-tts   ${typeof cfg.arab3 === "string" && exists(cfg.arab3) && typeof cfg.arab3Model === "string" && exists(cfg.arab3Model) ? "set up (Arabic voice)" : "not set up (Arabic voice)"}`,
   );
+  lines.push(captureLine(home, exists));
   const wc =
     typeof cfg["whisper-cli"] === "string" && path.isAbsolute(cfg["whisper-cli"])
       ? cfg["whisper-cli"]
