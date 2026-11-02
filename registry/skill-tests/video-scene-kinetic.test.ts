@@ -130,7 +130,13 @@ describe("kinetic scene", () => {
     ).toEqual([3, 3]);
     expect(groupWords(words, ["only two"]).map((g: Loose[]) => g.length)).toEqual([2, 4]);
     const long = Array.from({ length: 9 }, (_, i) => W(`w${i}`, i, i + 0.5));
-    expect(groupWords(long).map((g: Loose[]) => g.length)).toEqual([4, 4, 1]);
+    expect(groupWords(long).map((g: Loose[]) => g.length)).toEqual([3, 3, 3]); // balanced, not 4 + 4 + 1
+    const reads = ["Aisle", "audit", "reads", "a", "skill", "as", "text."].map((t, i) =>
+      W(t, i, i + 0.5),
+    );
+    // 7 words: balanced 4 + 3, and the first group may not end on "a"/"as"-like joining words.
+    const g = groupWords(reads).map((x: Loose[]) => x.map((w) => w.text).join(" "));
+    expect(g).toEqual(["Aisle audit reads", "a skill as text."]);
   });
   it("sizes type so a long word never runs off the frame", async () => {
     const { phraseSize } = await kn();

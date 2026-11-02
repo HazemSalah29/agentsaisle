@@ -24,6 +24,30 @@ export const BGS = ["black", "dark", "accent"];
 export const EXITS = ["slide", "drop", "blur", "shatter", "none"];
 export const POP = 0.22;
 const BASE_SIZE = { 1: 26, 2: 20, 3: 15, 4: 12 };
+const JOINERS = new Set([
+  "a",
+  "an",
+  "the",
+  "to",
+  "of",
+  "in",
+  "on",
+  "at",
+  "for",
+  "with",
+  "and",
+  "or",
+  "but",
+  "as",
+  "by",
+  "is",
+  "it",
+  "its",
+  "your",
+  "my",
+  "our",
+  "their",
+]);
 const num = (v) => typeof v === "number" && Number.isFinite(v);
 const norm = (w) =>
   String(w)
@@ -150,16 +174,39 @@ export function groupWords(words, phrases) {
       return counts.map((n) => words.slice(at, (at += n)));
     }
   }
-  const out = [];
+  // Sentences first (punctuation ends one), then each long sentence into balanced groups, so "reads a skill as
+  // text" is 3 + 2, not 4 + 1, and a group never ends on a small joining word ("a", "the", "to"...).
+  const sentences = [];
   let cur = [];
   for (const w of words) {
     cur.push(w);
-    if (/[.!?;:,]$/.test(w.text) || cur.length >= LIMITS.perPhrase) {
-      out.push(cur);
+    if (/[.!?;:,]$/.test(w.text)) {
+      sentences.push(cur);
       cur = [];
     }
   }
-  if (cur.length) out.push(cur);
+  if (cur.length) sentences.push(cur);
+  const out = [];
+  for (const sent of sentences) {
+    const k = Math.ceil(sent.length / LIMITS.perPhrase);
+    const base = Math.floor(sent.length / k);
+    const extra = sent.length % k;
+    const parts = [];
+    let at = 0;
+    for (let i = 0; i < k; i++) {
+      const n = base + (i < extra ? 1 : 0);
+      parts.push(sent.slice(at, at + n));
+      at += n;
+    }
+    for (let i = 0; i + 1 < parts.length; i++)
+      while (
+        parts[i].length > 1 &&
+        JOINERS.has(norm(parts[i].at(-1).text)) &&
+        parts[i + 1].length < LIMITS.perPhrase
+      )
+        parts[i + 1].unshift(parts[i].pop());
+    out.push(...parts.filter((x) => x.length));
+  }
   return out;
 }
 
