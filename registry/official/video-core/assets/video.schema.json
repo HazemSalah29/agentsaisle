@@ -84,6 +84,7 @@
             "sequence",
             "request-flow",
             "screen",
+            "puppet",
             "custom"
           ]
         },
@@ -247,6 +248,14 @@
             "items": { "type": "object", "required": ["id", "from", "to"] }
           },
           "steps": { "type": "array", "minItems": 1, "maxItems": 14, "items": { "type": "object" } }
+        }
+      },
+      "puppet": {
+        "type": "object",
+        "required": ["cast"],
+        "properties": {
+          "backdrop": { "type": "object" },
+          "cast": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "object" } }
         }
       },
       "custom": { "type": "object" }

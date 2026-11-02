@@ -73,6 +73,8 @@ export function buildProject({
   fontFiles = [],
   assetPaths = new Map(),
   captions = null,
+  rigs = new Map(),
+  visemes = new Map(),
 }) {
   const [w, h] = SIZES[video.meta.format];
   const vertical = h > w;
@@ -132,6 +134,8 @@ export function buildProject({
       rise: Math.round((w / 100) * 2.4),
       size: [w, h],
       assets,
+      rigs,
+      visemes,
     });
     plan.push(...r.plan);
     roots += r.root ?? "";

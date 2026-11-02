@@ -17,6 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { checkProject } from "./check.mjs";
 import { buildProject } from "./project.mjs";
+import { loadRigs, loadVisemes } from "./puppet-data.mjs";
 import { run } from "./run.mjs";
 import { buildTiming } from "./timing.mjs";
 import { capLines, isEntry, isInside, parseArgs } from "./_lib.mjs";
@@ -294,7 +295,16 @@ function main() {
   const assetPaths = new Map((video.assets ?? []).map((a) => [a.id, path.join(dir, a.path)]));
   let built;
   try {
-    built = buildProject({ video, timing, brand, fontFiles, assetPaths, captions });
+    built = buildProject({
+      video,
+      timing,
+      brand,
+      fontFiles,
+      assetPaths,
+      captions,
+      rigs: loadRigs(video, dir).rigs,
+      visemes: loadVisemes(dir),
+    });
   } catch (e) {
     fail(e.message);
   }

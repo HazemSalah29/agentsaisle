@@ -3,6 +3,7 @@
 // hostile string in video.json is shown as text and never becomes markup. Nothing here touches the disk.
 
 import { code, codeCss } from "./code.mjs";
+import { puppet, puppetCss } from "./puppet.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
 import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { screen, screenCss } from "./screen.mjs";
@@ -21,6 +22,7 @@ export const KINDS = [
   "sequence",
   "request-flow",
   "screen",
+  "puppet",
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -192,6 +194,7 @@ const BUILDERS = {
   sequence,
   "request-flow": requestFlow,
   screen,
+  puppet,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
@@ -200,7 +203,8 @@ export const kindCss = (brand, vertical) =>
   codeCss(brand) +
   sequenceCss(brand) +
   requestFlowCss(brand) +
-  screenCss(brand);
+  screenCss(brand) +
+  puppetCss();
 
 /**
  * Markup and animations for one scene.

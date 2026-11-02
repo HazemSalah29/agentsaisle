@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadScript } from "./load";
+import { SHAPE, sampleRig } from "./video-puppet-fixtures";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Rig = {
@@ -10,39 +11,6 @@ type Rig = {
   partTree: (r: Loose) => Loose[];
 };
 const rigMod = () => loadScript<Rig>("video-core", "assets/puppet/rig.mjs");
-
-const SHAPE = '<circle cx="10" cy="10" r="5" fill="#336699"/>';
-/** A minimal valid rig: every required part is one small circle. */
-export const sampleRig = (over: Loose = {}): Loose => ({
-  name: "test-critter",
-  box: { w: 300, h: 400 },
-  palette: ["#336699", "#ffcc00", "#ffffff"],
-  parts: [
-    "body",
-    "head",
-    "arm-l",
-    "arm-r",
-    "leg-l",
-    "leg-r",
-    "eyes-open",
-    "eyes-closed",
-    "mouth-rest",
-    "mouth-a",
-    "mouth-e",
-    "mouth-o",
-    "mouth-u",
-    "mouth-mbp",
-    "mouth-fv",
-    "mouth-l",
-  ].map((id) => ({
-    id,
-    parent:
-      id === "body" ? null : id.startsWith("mouth") || id.startsWith("eyes") ? "head" : "body",
-    pivot: [150, 200],
-    svg: SHAPE,
-  })),
-  ...over,
-});
 
 describe("puppet rig SVG fragments", () => {
   it("accepts plain shapes and groups", async () => {

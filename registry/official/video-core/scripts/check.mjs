@@ -6,6 +6,8 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { codeProblems } from "../assets/engine/hyperframes/code.mjs";
 import { screenProblems } from "../assets/engine/hyperframes/screen.mjs";
+import { puppetProblems } from "../assets/engine/hyperframes/puppet.mjs";
+import { loadRigs } from "./puppet-data.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
 import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
 import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
@@ -110,6 +112,16 @@ export function checkProject(video, dir, schema = loadSchema()) {
       );
     if (s.kind === "broll" && s.props?.asset && !assetIds.has(s.props.asset))
       problems.push(`${at}.props.asset: "${s.props.asset}" is not listed in assets`);
+    if (s.kind === "puppet") {
+      problems.push(
+        ...puppetProblems(s.props ?? {}, s.narration ?? null).map((p) => `${at}.props.${p}`),
+      );
+      const speaks = (s.props?.cast ?? []).some((c) => c?.speaks?.length);
+      if (speaks && !exists("voice/visemes.json"))
+        problems.push(
+          `${at}.props.cast: a character speaks but voice/visemes.json is missing (run visemes.mjs)`,
+        );
+    }
     if (s.kind === "screen") {
       problems.push(...screenProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
       for (const key of ["asset", "pip"])
@@ -117,6 +129,9 @@ export function checkProject(video, dir, schema = loadSchema()) {
           problems.push(`${at}.props.${key}: "${s.props[key]}" is not listed in assets`);
     }
   });
+
+  if (video.scenes.some((s) => s?.kind === "puppet"))
+    problems.push(...loadRigs(video, dir).problems);
 
   for (const [at, text] of strings(video))
     if (SECRET_RES.some((re) => re.test(text)))

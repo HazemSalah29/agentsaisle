@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadScript, skillFile } from "./load";
+import { sampleRig } from "./video-puppet-fixtures";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -115,6 +116,38 @@ describe("video-core check", () => {
     expect(check.checkProject(v, dir).join("\n")).toMatch(/"zz" is not listed in assets/);
   });
 
+  it("checks a puppet scene's props, rig file and viseme file", () => {
+    const rig = sampleRig({ name: "nour" });
+    const cast = [{ rig: "nour", x: 0.4, y: 0.8, height: 0.5, speaks: ["l1"] }];
+    const video = (c: Loose[]): Video => ({
+      ...base(),
+      script: "script.md",
+      scenes: [
+        {
+          id: "p1",
+          kind: "puppet",
+          durationFrom: "fixed",
+          seconds: 4,
+          narration: ["l1"],
+          props: { cast: c },
+        },
+      ],
+    });
+    writeFileSync(path.join(dir, "script.md"), "[l1] Hello.\n");
+    const out = (c: Loose[]) => check.checkProject(video(c), dir).join("\n");
+    expect(out(cast)).toContain("characters/nour/puppet.json is missing");
+    mkdirSync(path.join(dir, "characters", "nour"), { recursive: true });
+    const hostile = sampleRig({ name: "nour" });
+    hostile.parts[0].svg = "<script>x</script>";
+    writeFileSync(path.join(dir, "characters", "nour", "puppet.json"), JSON.stringify(hostile));
+    expect(out(cast)).toMatch(/puppet\.json: .*<script>/);
+    writeFileSync(path.join(dir, "characters", "nour", "puppet.json"), JSON.stringify(rig));
+    expect(out(cast)).toContain("voice/visemes.json is missing");
+    mkdirSync(path.join(dir, "voice"), { recursive: true });
+    writeFileSync(path.join(dir, "voice", "visemes.json"), JSON.stringify({ lines: {} }));
+    expect(check.checkProject(video(cast), dir)).toEqual([]);
+    expect(out([{ ...cast[0], height: 5 }])).toContain("height");
+  });
   it("checks a screen scene's props and that its assets are listed", () => {
     put("assets/rec.webm");
     const v = base();
