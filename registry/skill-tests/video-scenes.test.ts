@@ -42,6 +42,7 @@ describe("video-core scenes", () => {
       "request-flow",
       "screen",
       "puppet",
+      "timeline",
     ]);
   });
 

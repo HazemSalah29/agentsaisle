@@ -85,6 +85,7 @@
             "request-flow",
             "screen",
             "puppet",
+            "timeline",
             "custom"
           ]
         },
@@ -207,6 +208,19 @@
             "type": "array",
             "maxItems": 8,
             "items": { "type": "object", "required": ["lines"] }
+          }
+        }
+      },
+      "timeline": {
+        "type": "object",
+        "required": ["events"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 80 },
+          "events": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 10,
+            "items": { "type": "object", "required": ["at", "label"] }
           }
         }
       },

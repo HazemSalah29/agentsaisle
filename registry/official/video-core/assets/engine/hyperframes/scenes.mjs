@@ -9,6 +9,7 @@ import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { screen, screenCss } from "./screen.mjs";
 import { sequence, sequenceCss } from "./sequence.mjs";
 import { IN, STAGGER, esc, fadeUp } from "./shared.mjs";
+import { timeline, timelineCss } from "./timeline.mjs";
 
 export { esc };
 export const KINDS = [
@@ -23,6 +24,7 @@ export const KINDS = [
   "request-flow",
   "screen",
   "puppet",
+  "timeline",
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -195,6 +197,7 @@ const BUILDERS = {
   "request-flow": requestFlow,
   screen,
   puppet,
+  timeline,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
@@ -204,7 +207,8 @@ export const kindCss = (brand, vertical) =>
   sequenceCss(brand) +
   requestFlowCss(brand) +
   screenCss(brand) +
-  puppetCss();
+  puppetCss() +
+  timelineCss(brand);
 
 /**
  * Markup and animations for one scene.
