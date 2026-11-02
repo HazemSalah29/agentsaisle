@@ -1,21 +1,119 @@
 {
   "note": "TODO(verify): every number here is a working default, not a confirmed platform rule. Check each against the platform's current help pages before relying on it.",
-  "loudness": { "targetLufs": -14, "warnWithin": 2, "failBeyond": 4, "maxTruePeakDb": -1 },
-  "flash": { "changeFraction": 0.1, "maxPerSecond": 3 },
-  "black": { "minSeconds": 0.4 },
-  "freeze": { "warnSeconds": 3 },
+  "loudness": {
+    "targetLufs": -14,
+    "warnWithin": 2,
+    "failBeyond": 4,
+    "maxTruePeakDb": -1
+  },
+  "flash": {
+    "changeFraction": 0.1,
+    "maxPerSecond": 3
+  },
+  "black": {
+    "minSeconds": 0.4
+  },
+  "freeze": {
+    "warnSeconds": 3
+  },
   "captionMinSize": 0.045,
   "contrastMin": 4.5,
   "durationTolerance": 0.35,
   "platforms": {
-    "reel-9x16": { "maxSeconds": 180, "zone": "vertical" },
-    "short-9x16": { "maxSeconds": 180, "zone": "vertical" },
-    "youtube-16x9": { "maxSeconds": 43200, "zone": "wide" },
-    "square-1x1": { "maxSeconds": 180, "zone": "wide" }
+    "reel-9x16": {
+      "maxSeconds": 180,
+      "zone": "vertical"
+    },
+    "short-9x16": {
+      "maxSeconds": 180,
+      "zone": "vertical"
+    },
+    "youtube-16x9": {
+      "maxSeconds": 43200,
+      "zone": "wide"
+    },
+    "square-1x1": {
+      "maxSeconds": 180,
+      "zone": "wide"
+    }
   },
   "zones": {
-    "vertical": { "top": 0.04, "bottom": 0.08, "left": 0.04, "right": 0.04 },
-    "wide": { "top": 0.04, "bottom": 0.04, "left": 0.04, "right": 0.04 }
+    "vertical": {
+      "top": 0.04,
+      "bottom": 0.08,
+      "left": 0.04,
+      "right": 0.04
+    },
+    "wide": {
+      "top": 0.04,
+      "bottom": 0.04,
+      "left": 0.04,
+      "right": 0.04
+    }
   },
-  "inkThreshold": 40
+  "inkThreshold": 40,
+  "kids": {
+    "note": "TODO(verify): working defaults for videos made for children, stricter than the general rules. Check the flash limit against WCAG 2.3.1 and the pace and sentence numbers against the age bands you write for.",
+    "captionMinSize": 0.06,
+    "contrastMin": 7,
+    "flash": {
+      "changeFraction": 0.1,
+      "maxPerSecond": 2
+    },
+    "paceWordsPerSecond": {
+      "3-5": 2.0,
+      "6-9": 2.6
+    },
+    "sentenceWords": {
+      "3-5": 9,
+      "6-9": 15
+    },
+    "minSceneSeconds": 3,
+    "pressure": [
+      "like and subscribe",
+      "smash that like",
+      "smash the like",
+      "hit the bell",
+      "ring the bell",
+      "subscribe",
+      "follow me",
+      "follow us",
+      "don't forget to like",
+      "اشترك",
+      "اشتركوا",
+      "فعل الجرس"
+    ],
+    "unkind": [
+      "stupid",
+      "idiot",
+      "dumb",
+      "shut up",
+      "hate you",
+      "ugly",
+      "loser",
+      "غبي",
+      "أحمق",
+      "اخرس",
+      "قبيح"
+    ],
+    "frightening": [
+      "kill",
+      "killed",
+      "die",
+      "died",
+      "dead",
+      "death",
+      "blood",
+      "murder",
+      "gun",
+      "shoot",
+      "scream",
+      "nightmare",
+      "اقتل",
+      "قتل",
+      "موت",
+      "دم",
+      "كابوس"
+    ]
+  }
 }

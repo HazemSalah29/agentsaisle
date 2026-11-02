@@ -12,7 +12,7 @@ Groups the words, keeps them inside the platform safe zone and writes `captions.
 ## Use when
 
 - A project has `voice/words.json` and `timing.json` and needs captions.
-- The user runs `/video-captions [--style karaoke|pop|clean] [--max-words 4] [--burn|--srt|--both]`.
+- The user runs `/video-captions [--style karaoke|pop|clean|kids] [--max-words 4] [--burn|--srt|--both]`.
 
 ## Don't use when
 

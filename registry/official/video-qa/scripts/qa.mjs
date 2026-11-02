@@ -3,7 +3,8 @@
 // changed except those two files. Programs run through run.mjs (ffmpeg and ffprobe only, no shell).
 // Usage: node qa.mjs <project-dir> [--video <file>] [--draft] [--json]
 // Exit: 0 passed (warnings allowed), 1 something failed, 2 the checks could not run.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { isKids, kidsChecks } from "./_kids.mjs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -76,6 +77,7 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
   const results = [];
   const add = (id, level, text) => results.push({ id, level, text });
   const fmt = video.meta.format;
+  const kids = isKids(video);
   const info = probe(file);
 
   // Format.
@@ -187,19 +189,20 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
       "-",
     ]).stdout,
   );
-  const fl = flashes(luma, rules.flash.changeFraction);
+  const flashRule = kids ? rules.kids.flash : rules.flash;
+  const fl = flashes(luma, flashRule.changeFraction);
   add(
     "flashing",
-    fl.worst > rules.flash.maxPerSecond ? "fail" : "pass",
-    fl.worst > rules.flash.maxPerSecond
-      ? `${fl.worst} flashes in one second at ${r1(fl.at)} s (limit ${rules.flash.maxPerSecond})`
+    fl.worst > flashRule.maxPerSecond ? "fail" : "pass",
+    fl.worst > flashRule.maxPerSecond
+      ? `${fl.worst} flashes in one second at ${r1(fl.at)} s (limit ${flashRule.maxPerSecond}${kids ? ", the stricter limit for children" : ""})`
       : "no fast flashing",
   );
 
   // Text near the edges. Scenes with full-frame media are skipped; the rest should leave the margins empty.
   const zone = rules.zones[plat?.zone ?? "wide"];
-  const skip = (timing?.scenes ?? []).filter(
-    (s) => video.scenes.find((v) => v.id === s.id)?.kind === "broll",
+  const skip = (timing?.scenes ?? []).filter((s) =>
+    ["broll", "puppet"].includes(video.scenes.find((v) => v.id === s.id)?.kind),
   );
   const inSkip = (t) => skip.some((s) => t >= s.start && t < s.start + s.seconds);
   const hits = [];
@@ -234,11 +237,13 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
   if (existsSync(cfile)) {
     const c = JSON.parse(readFileSync(cfile, "utf8"));
     const size = num(c.style?.size);
+    const minCaption = kids ? rules.kids.captionMinSize : rules.captionMinSize;
+    const minContrast = kids ? rules.kids.contrastMin : rules.contrastMin;
     if (h > w)
       add(
         "caption-size",
-        size >= rules.captionMinSize ? "pass" : "fail",
-        `captions are ${r1(size * 100)}% of the height (at least ${rules.captionMinSize * 100}% on vertical video)`,
+        size >= minCaption ? "pass" : "fail",
+        `captions are ${r1(size * 100)}% of the height (at least ${r1(minCaption * 100)}% ${kids ? "for children" : "on vertical video"})`,
       );
     const bfile = video.meta.brand ? path.join(dir, video.meta.brand) : null;
     const colors =
@@ -248,8 +253,8 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
       const ratio = contrast(colors.fg, colors.bg);
       add(
         "caption-contrast",
-        ratio >= rules.contrastMin ? "pass" : "fail",
-        `caption text against the background is ${r1(ratio)}:1 (at least ${rules.contrastMin}:1)`,
+        ratio >= minContrast ? "pass" : "fail",
+        `caption text against the background is ${r1(ratio)}:1 (at least ${minContrast}:1)`,
       );
     }
   }
@@ -308,6 +313,29 @@ export async function qaProject({ dir, file, draft = false }, rules = loadRules(
       add("text", p.level, p.text);
     }
   if (!seen.size) add("text", "pass", "no placeholders or doubled words");
+
+  if (kids) {
+    const read = (f) =>
+      existsSync(path.join(dir, f)) ? readFileSync(path.join(dir, f), "utf8") : null;
+    const chars = path.join(dir, "characters");
+    const bibles = new Set(
+      existsSync(chars)
+        ? readdirSync(chars).filter((n) => existsSync(path.join(chars, n, "bible.md")))
+        : [],
+    );
+    const caps = read("captions.json");
+    for (const r of kidsChecks(
+      {
+        video,
+        script: read("script.md") ?? "",
+        timing,
+        captions: caps ? JSON.parse(caps) : null,
+        bibles,
+      },
+      rules,
+    ))
+      add(r.id, r.level, r.text);
+  }
 
   // Contact sheet.
   let sheet = null;

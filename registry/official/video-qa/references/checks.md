@@ -22,4 +22,20 @@ Numbers are working defaults in `assets/rules.json` (`TODO(verify)`: confirm eac
 ## Not checked
 
 - Spelling: no dictionary ships with the skill, so spelling is for you to read in the contact sheet.
-- Kids' rules (planned with the kids' skill), accuracy of the content, and rights beyond the licence field.
+- Accuracy of the content, whether a story suits a child, and rights beyond the licence field.
+
+## Kids' videos
+
+A project is a kids' video when `meta.type` is `kids` or `meta.audience` starts with `kids`. Everything above applies, with stricter numbers from the `kids` block of `assets/rules.json` (all working defaults, `TODO(verify)`), plus these checks. They read the project's files only.
+
+| Check             | Fails or warns when                                                                                                  | Fix                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| kids-audience     | Fails when the audience names no age band (`kids-3-5` or `kids-6-9`)                                                 | Set `meta.audience`. It also makes the publish pack answer "made for kids: yes". |
+| kids-pace         | A line runs over 2.0 (ages 3 to 5) or 2.6 (6 to 9) words a second: warns, fails past 30% over                        | Shorten the line or lengthen the scene; render again.                            |
+| kids-sentences    | A sentence is over 9 (3 to 5) or 15 (6 to 9) words (a warning)                                                       | Split the sentence in `script.md`.                                               |
+| kids-pressure     | "Like and subscribe", "follow us" or similar appears in the script or on screen                                      | Remove it. Children are never asked to act.                                      |
+| kids-language     | Words from the unkind or frightening lists appear (a warning: read them in context)                                  | Reword, or accept it where the story needs the word and stays gentle.            |
+| kids-cuts         | A scene is under 3 seconds (a warning)                                                                               | Merge scenes or hold longer.                                                     |
+| kids-caption-size | Captions under 6% of the height, or none (a warning when none), flashing over 2 a second, caption contrast under 7:1 | Use `video-captions --style kids`; remove the strobe.                            |
+| kids-characters   | A puppet character has no `characters/<name>/bible.md`                                                               | Run `video-kids` to write the bible; characters must be original.                |
+| kids-footage      | A `broll` scene is present (a warning)                                                                               | Check no real child is shown and the licences are right.                         |

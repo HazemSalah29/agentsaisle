@@ -13,6 +13,7 @@ Runs the automatic checks on a rendered MP4 and tells you what to fix. The scrip
 
 - A project has a rendered video in `out/` and the user wants it checked, or `/video` reaches its QA step.
 - The user asks why a video would be rejected, too quiet, or hard to read on a phone.
+- The project is a kids' video (`meta.type` `kids` or an audience starting with `kids`): the stricter kids' checks run too (`references/checks.md`).
 
 ## Don't use when
 

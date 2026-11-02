@@ -4,7 +4,7 @@
 // long pauses, and respect the platform safe zone. How they look is data: a style from assets/styles.json,
 // adjusted by brand.json and the captions block of video.json. video-core draws them in the browser engine,
 // so Arabic letters join properly.
-// Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean] [--max-words 4] [--burn|--srt|--both]
+// Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean|kids] [--max-words 4] [--burn|--srt|--both]
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
@@ -17,7 +17,7 @@ const HOLD = 0.2; // seconds a caption stays after its last word
 
 export const loadStyles = () =>
   JSON.parse(readFileSync(path.join(skillDir(), "assets", "styles.json"), "utf8"));
-export const STYLE_NAMES = ["karaoke", "pop", "clean"];
+export const STYLE_NAMES = ["karaoke", "pop", "clean", "kids"];
 
 /**
  * Split n items into groups of at most `max`, as even as possible (sizes differ by at most one) and never a
@@ -94,7 +94,8 @@ const dirOf = (video) =>
 export function buildCaptions({ video, words, timing, styles, brand, name, max }) {
   const cfg = video.captions ?? {};
   const style = name ?? cfg.style ?? brand?.captions?.style ?? "karaoke";
-  const maxWords = max ?? cfg.maxWordsPerLine ?? brand?.captions?.maxWordsPerLine ?? 4;
+  const maxWords =
+    max ?? cfg.maxWordsPerLine ?? brand?.captions?.maxWordsPerLine ?? styles[style]?.maxWords ?? 4;
   const safeZone = cfg.safeZone ?? (/16x9/.test(video.meta.format) ? "youtube" : "reel");
   const byLine = new Map(words.lines.map((l) => [l.id, l]));
   const groups = [];
@@ -187,7 +188,7 @@ function main() {
   const { flags, positional } = parsed;
   if (!positional[0] || [flags.burn, flags.srt, flags.both].filter(Boolean).length > 1) {
     console.error(
-      "Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean] [--max-words 4] [--burn|--srt|--both]",
+      "Usage: node captions.mjs <project-dir> [--style karaoke|pop|clean|kids] [--max-words 4] [--burn|--srt|--both]",
     );
     process.exit(2);
   }
