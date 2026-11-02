@@ -4,7 +4,7 @@
 
 | Step           | Skill and command                                                          | Hands over                                                         |
 | -------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| write          | `video-write` (`/video-write explain "<topic>"`)                           | `brief.json`, `script.md`, `facts.md`, `hooks.md`, `storyboard.md` |
+| write          | `video-write` (explain mode)                                               | `brief.json`, `script.md`, `facts.md`, `hooks.md`, `storyboard.md` |
 | storyboard     | the user approves, then `video-write` `storyboard.mjs`                     | `video.json`                                                       |
 | diagram scenes | `video-explain`, for each `rate-limit` or `request-flow` scene still empty | filled props in `video.json`                                       |
 | voice          | `video-voice`                                                              | `voice/<line>.wav`, `voice/words.json`                             |

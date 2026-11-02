@@ -1,6 +1,6 @@
 # The localize flow
 
-`/video localize <project> --to ar|en [--dialect msa|egyptian]` is handled by `video-localize`; this table is the whole order. The pipeline script does not list it.
+Dubbing a project to Arabic or English (`--to ar|en`, `--dialect msa|egyptian`) is handled by `video-localize`; this table is the whole order. The pipeline script does not list it.
 
 | Step      | Skill and command                                       | Hands over                              |
 | --------- | ------------------------------------------------------- | --------------------------------------- |

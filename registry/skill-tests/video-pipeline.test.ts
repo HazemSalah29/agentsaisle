@@ -165,7 +165,7 @@ describe("video pipeline", () => {
       encoding: "utf8",
     });
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain("Next: /video-write");
+    expect(r.stdout).toContain("Next: video-write");
     expect(r.stdout.split("\n").length).toBeLessThanOrEqual(40);
     expect(
       spawnSync(process.execPath, [skillFile("video", "scripts/pipeline.mjs")], {

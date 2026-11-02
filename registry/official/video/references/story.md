@@ -1,6 +1,6 @@
 # The story pipeline
 
-`/video story "<premise>"` makes a short from original characters shown in still images (made by `video-generate`, or supplied by the user), with slow camera motion on the stills, or short generated clips. Make `projects/<slug>/`. The pipeline script does not list these steps yet; follow the table and ask the user at each pause.
+A story short from a premise makes a short from original characters shown in still images (made by `video-generate`, or supplied by the user), with slow camera motion on the stills, or short generated clips. Make `projects/<slug>/`. The pipeline script does not list these steps yet; follow the table and ask the user at each pause.
 
 | Step                                         | Skill and command                                                           | Hands over                                                      |
 | -------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------- |

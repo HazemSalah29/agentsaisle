@@ -1,63 +1,49 @@
 ---
 name: video
-description: Set up the studio folder for making videos with code (HyperFrames) and make an explainer or a kids' puppet video from an idea by running the video skills in order. Use when the user types /video init, /video doctor, /video explain "<topic>", /video kids "<idea>", /video story "<premise>", /video localize, /video ingest, /video showcase, /video tour, /video changes, /video incident, /video session, /video drawing, /video data, /video doc, /video batch, /video calligraphy or /video interactive. Don't use to upload a finished video.
-allowed-tools: Read Write Glob Bash(node *)
+description: Make any video from a plain request, such as "a cartoon for kids about sharing", "a showcase video for my brand", "explain how rate limits work", "cut this footage from a URL into a 30 second short" or "turn my README into a video". Chooses the format, picks the right parts of the video library itself and runs them. Use whenever the user asks to make, edit, caption, dub or publish a video. Don't use to upload a finished video.
+allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
-# Video studio
+# Video
 
-Creates the folder a user makes videos in, checks their machine, and walks an explainer video from an idea to a checked MP4 by naming the next skill at each step. It does the work of none of them. `<skill>` below is the folder that holds this SKILL.md; `<video-core>` and the other `<video-...>` are the sibling skills.
+One command: the user says what video they want, in their own words, and you make the best one the local tools allow. They never name a part of the library: you read the request, pick a recipe in `references/choose.md`, and load the matching video skills (`video-write`, `video-kids`, `video-ingest`, `video-edit`, ...) yourself. `<skill>` is the folder that holds this SKILL.md; the parts are its sibling `video-...` skills.
 
 ## Use when
 
-- The user runs `/video init`, or asks to set up a place for making videos.
-- The user runs `/video doctor`, or asks why a render tool is missing.
-- The user runs `/video kids "<idea>" --age 3-5|6-9` (options `--lang en|ar`, `--song`) or asks for a cartoon for children: follow `references/kids.md`.
-- The user runs `/video story "<premise>"` (options `--length 60s|3m`, `--generator stills-only|veo|kling|ltx|wan`) or asks for a cartoon or cinematic short from images: follow `references/story.md`.
-- The user runs `/video localize <project> --to ar|en` or asks for an Arabic or English version of a finished video: hand over to the `video-localize` skill and stop; it has its own steps (`references/localize.md`).
-- The user runs `/video tour .` or asks for a walkthrough video of a repository: hand over to the `video-tour` skill and stop; it needs `docs/architecture.json`.
-- The user runs `/video changes` or asks for a PR or release video: hand over to the `video-changes` skill and stop; it needs a saved git diff.
-- The user runs `/video incident` or asks for an outage or postmortem video: hand over to the `video-incident` skill and stop; it needs a postmortem with timed events.
-- The user runs `/video session` or asks for a timelapse of an AI coding session: hand over to the `video-session` skill and stop; it needs a saved session log with times, and the user's yes that the session is theirs to show.
-- The user runs `/video drawing` or wants a child's drawing as a character: hand over to the `video-drawing` skill and stop; it needs the parent's yes that it is a drawing, not a photo.
-- The user runs `/video data` or wants a weekly or live-data chart video: hand over to the `video-data` skill and stop; it fetches only npm, GitHub or a host the user approved.
-- The user runs `/video doc <file>` or asks to turn a README or document into a video: hand over to the `video-doc` skill and stop; it does not read PDFs.
-- The user runs `/video batch` or wants many personalised versions from the user's own CSV: hand over to the `video-batch` skill and stop.
-- The user runs `/video calligraphy` or asks for animated Arabic quotes or titles: hand over to the `video-calligraphy` skill and stop; it takes the user's own text and never rewrites it.
-- The user runs `/video interactive <project>` or wants a page the viewer can steer, pause or slow down: hand over to the `video-interactive` skill and stop; it needs a checked project and never uploads.
-- The user runs `/video ingest <url or file>` or asks to download or import footage: hand over to the `video-ingest` skill and stop. It asks for the rights basis itself; never suggest one.
-- The user runs `/video showcase` (an app demo): hand over to the `video-showcase` skill and stop; it has its own steps.
-- The user runs `/video explain "<topic>"` (options `--format reel|short|youtube|square`, `--lang en|ar`, `--length 30s|60s`) or asks for an explainer video.
+- The user asks for any video: an explainer, a kids' cartoon, a story, a showcase or demo of their app or brand, a tour of a repository, a PR or release video, an outage replay, a chart video from data, Arabic lettering, a video from a document or a drawing, one video per row of a CSV.
+- The user brings footage (a file, or a link they have the right to use) to cut, caption, reframe, dub or publish.
+- The user asks what is possible, or why a render tool is missing (run `doctor`).
+- `/video init` and `/video doctor` still work as shortcuts for the studio folder and the machine check.
 
 ## Don't use when
 
-- The video is a story for children with puppets: use `/video kids`. A story from AI or supplied images is `/video story`.
-- The user wants a video uploaded. The last step prepares a pack to upload by hand; it never uploads.
+- The user wants a video uploaded. The last step prepares a pack to upload by hand; nothing is ever uploaded.
 - The folder is a code project that should not get video folders. Ask for an empty folder first.
+- The request is for a known character, a real person's likeness, or footage the user has no right to use. Say no in one sentence and offer an original alternative.
 
 ## Steps
 
-1. For `/video init`: run `node <skill>/scripts/init.mjs` in the folder the user opened (or pass a folder path). It never overwrites a file.
-2. For `/video doctor`: run `node <skill>/scripts/doctor.mjs` and show it as it is. If a tool is missing, give its install line and wait; never install anything yourself. Doctor only says "found" or "missing" for API keys; never read, print or ask for a key value.
-3. For `/video explain "<topic>"`: make `projects/<slug>/` (lowercase, hyphens) with `brief.json` left to the writer. Only `--budget $0` exists: local tools, no paid service. Run `node <skill>/scripts/pipeline.mjs projects/<slug>` before every step and after it.
-4. Do what its `Next:` line says by running that skill (`references/explain.md` has the order and what each step hands over). The order is write, storyboard (stop for the user's approval), diagram scenes, voice, timing, captions, render, QA, publish.
-5. Pause at the storyboard, and again before any step that would cost money (only `video-generate` can, and it asks for the exact total). Never skip QA; if it fails, name the failing check and the step that fixes it, then go back.
-6. When QA passes, offer the publish step: write `publish/copy.json` from the brief and facts (`video-publish` has the rules), then run `/video-publish`. When every step is done, show the MP4 path, the contact sheet, the QA lines and where the pack is, tell the user to read each `disclosure.md`, and stop. Never upload.
-7. For `/video kids "<idea>" --age ...`: the same loop with `references/kids.md` (pass `--kids` to `pipeline.mjs` until `brief.json` exists). Pause at the character sheet and the storyboard; characters are original, and the publish pack's "made for kids" answer is yes.
-8. For `/video story "<premise>"`: follow `references/story.md`. Default `--generator stills-only` costs $0 for motion; any paid image or clip goes through `video-generate`, which prints a quote and waits for the user's yes to that exact total.
+1. Read the request. Pick the recipe in `references/choose.md` and tell the user the plan in at most three short lines: what you will make, the length and format, and what you will need from them. Never ask them to name a skill or type a command.
+2. First use in a folder: run `node <skill>/scripts/doctor.mjs`; if there is no studio folder yet, run `node <skill>/scripts/init.mjs` (it never overwrites). Report only what is missing and its install line; never install anything yourself, and never read, print or ask for an API key.
+3. Ask only for what the request lacks and the recipe needs (the topic, the audience or age, the language, a brand or colours, the footage or link, the app to show). At most three questions, in plain words, with a sensible default offered for each. Defaults: vertical 9:16, 30 to 60 seconds, English, `$0` budget (local tools, no paid service).
+4. Make `projects/<slug>/` (lowercase, hyphens) and follow the recipe by loading the parts it names. The explainer, kids and story chains are in `references/explain.md`, `kids.md` and `story.md`; run `node <skill>/scripts/pipeline.mjs projects/<slug>` before and after each step of those.
+5. Pause only where the user must decide: the storyboard, a character sheet, a quote for any paid call (`video-generate` prints the total and needs the user's typed approval of that exact number), and the rights basis for footage (`video-ingest` asks for it itself; never suggest one). Do not pause for anything else.
+6. Never skip QA (`video-qa`). If it fails, name the failing check and the step that fixes it, then go back. Look at the contact sheet before saying a video is good.
+7. When QA passes, offer the publish pack (`video-publish`), show the MP4 path, the contact sheet, the QA lines and the credits, and tell the user to read each `disclosure.md`. Stop; never upload.
+8. Be honest about limits: no first-try guarantees, synthetic voices are labelled, translations are drafts, and if no recipe fits, say what the nearest one can and cannot do instead of improvising a pipeline.
 
 ## Budget
 
 <!-- include: _shared/read-budget.md -->
 
-- Run each script once. Do not read the template files or the other skills' files to describe them; `pipeline.mjs` says what is next.
+- Run each script once. Do not read the other parts' files to describe them; `pipeline.mjs` says what is next.
 
 ## Output
 
-- The folder path and what was created or kept (init), or the tool table and tier (doctor).
-- For an explainer: the pipeline table after each step, and the finished video's path with its QA result.
+- The plan in three lines, then after each step the pipeline table or one line of progress.
+- At the end: the video's path, its QA result, where the publish pack is.
 
 ## Done when
 
-- `init.mjs` or `doctor.mjs` ran and its output was shown, or the explainer's pipeline shows every step done.
-- Nothing was installed, downloaded, uploaded or overwritten, and the user approved the storyboard before `video.json` existed.
+- The pipeline shows every step done and QA passed, or a recipe's own end state is reached (a project folder, an exported page, a character).
+- Nothing was installed, downloaded, uploaded or overwritten without the user's yes, and every gate above was respected.

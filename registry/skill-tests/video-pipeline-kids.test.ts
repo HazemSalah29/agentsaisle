@@ -83,7 +83,7 @@ describe("kids pipeline", () => {
       "publish",
     ]);
     expect(status(steps, "characters")).toBe("todo");
-    expect(steps[0].next).toMatch(/video-kids new-character/);
+    expect(steps[0].next).toMatch(/video-kids: new character/);
     put(dir, "script.md", "[k1] Hi.\n  beat: hook\n");
     put(dir, "storyboard.md", "| scene | kind |\n");
     expect(status(pipelineState(dir, ALL), "write")).toBe("done");

@@ -94,7 +94,7 @@ export function pipelineState(dir, installed, opts = {}) {
         : lacking.length
           ? `no bible or puppet for: ${lacking.join(", ")}`
           : `${ready.join(", ")} ready`,
-      "/video-kids new-character (bible, then puppet scaffold and sheet)",
+      "video-kids: new character (bible, then puppet scaffold and sheet)",
       "video-kids",
     );
   }
@@ -114,8 +114,8 @@ export function pipelineState(dir, installed, opts = {}) {
         ? "script and storyboard written"
         : "script, facts, storyboard written",
     kids
-      ? `/video-write kids "<idea>" (audience kids-3-5 or kids-6-9)`
-      : `/video-write explain "<topic>"`,
+      ? `video-write in kids mode for "<idea>" (audience kids-3-5 or kids-6-9)`
+      : `video-write in explain mode for "<topic>"`,
     "video-write",
   );
 
@@ -148,7 +148,7 @@ export function pipelineState(dir, installed, opts = {}) {
           : technical
             ? `${technical} filled`
             : "none needed",
-      `/video-explain for ${open.map((s) => s.id).join(", ")}`,
+      `video-explain for ${open.map((s) => s.id).join(", ")}`,
       "video-explain",
     );
   }
@@ -167,7 +167,7 @@ export function pipelineState(dir, installed, opts = {}) {
         : voiced
           ? "all lines voiced"
           : "no narration to voice",
-    "/video-voice (then align the words)",
+    "video-voice (then align the words)",
     "video-voice",
   );
 
@@ -225,7 +225,7 @@ export function pipelineState(dir, installed, opts = {}) {
     !cap
       ? "captions.json missing (skip with --srt only if the user wants no burned captions)"
       : "captions grouped",
-    "/video-captions --burn",
+    "video-captions --burn",
     "video-captions",
   );
 
@@ -270,7 +270,7 @@ export function pipelineState(dir, installed, opts = {}) {
           : report.ok
             ? "passed"
             : `${report.results.filter((r) => r.level === "fail").length} check(s) failed`,
-    "/video-qa",
+    "video-qa",
     "video-qa",
   );
 
@@ -288,8 +288,8 @@ export function pipelineState(dir, installed, opts = {}) {
         ? "the render is newer than the export pack"
         : "pack written (nothing uploaded)",
     hasCopy
-      ? "/video-publish --platforms shorts,reels,tiktok (never uploads)"
-      : "write publish/copy.json from the brief and facts, then /video-publish",
+      ? "video-publish --platforms shorts,reels,tiktok (never uploads)"
+      : "write publish/copy.json from the brief and facts, then video-publish",
     "video-publish",
   );
   return steps;
