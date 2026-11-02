@@ -9,7 +9,7 @@ import { PreviewPairs } from "../../../components/PreviewPairs";
 import { InstallCommand } from "../../../components/InstallCommand";
 import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
-import { libraryOfPart, partsOfLibrary, shortDescription } from "../../../lib/library";
+import { libraryOfPart, partsOfLibrary } from "../../../lib/library";
 import { getRegistry, getSkill } from "../../../lib/registry";
 import { pairPreviews, previewCaption, previewSrc } from "../../../lib/links";
 import { REPO_URL, reportUrl } from "../../../lib/site";
@@ -152,35 +152,39 @@ export default async function SkillPage({ params }: Props) {
           )}
         </section>
 
-        {parts.length > 0 && (
-          <section aria-labelledby="parts" className="space-y-4">
-            <h2 id="parts" className="text-xl">
-              What is inside ({parts.length} parts)
+        {(skill.canDo?.length ?? 0) > 0 && (
+          <section aria-labelledby="can-do" className="space-y-4">
+            <h2 id="can-do" className="text-xl">
+              What it can do
             </h2>
-            <p className="max-w-prose text-sm text-muted">
-              You only type <code className="font-mono">/{skill.name}</code> and say what you want.
-              These parts are for Claude: it picks the ones your request needs. Each is audited on
-              its own.
-            </p>
-            <ul className="grid border-t border-line md:grid-cols-2">
-              {parts.map((p) => (
-                <li
-                  key={p.name}
-                  className="flex items-start justify-between gap-3 border-b border-line py-3 pr-4"
-                >
-                  <div className="min-w-0">
-                    <a
-                      href={`/skills/${p.name}`}
-                      className="font-mono text-sm underline underline-offset-4"
-                    >
-                      {p.name}
-                    </a>
-                    <p className="text-sm text-muted">{shortDescription(p.description)}</p>
-                  </div>
-                  {p.audit ? <GradeBadge grade={p.audit.grade} /> : null}
-                </li>
+            {parts.length > 0 && (
+              <p className="max-w-prose text-sm text-muted">
+                Type <code className="font-mono">/{skill.name}</code> and say what you want. Claude
+                picks the tools your request needs.
+              </p>
+            )}
+            <ul className="list-[square] space-y-2 pl-5 text-sm">
+              {skill.canDo!.map((line) => (
+                <li key={line}>{line}</li>
               ))}
             </ul>
+            {parts.length > 0 && (
+              <details className="text-sm text-muted">
+                <summary className="cursor-pointer hover:text-ink">
+                  Built from {parts.length} parts, each audited on its own
+                </summary>
+                <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono">
+                  {parts.map((p) => (
+                    <li key={p.name}>
+                      <a href={`/skills/${p.name}`} className="underline underline-offset-4">
+                        {p.name}
+                      </a>
+                      {p.audit ? ` ${p.audit.grade}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </section>
         )}
 

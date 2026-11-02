@@ -245,6 +245,7 @@ export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySki
     ...(meta.niche ? { niche: meta.niche } : {}),
     ...(meta.part_of ? { partOf: meta.part_of } : {}),
     ...(meta.requires?.length ? { requires: meta.requires } : {}),
+    ...(meta.can_do?.length ? { canDo: meta.can_do } : {}),
     ...(meta.kind ? { kind: meta.kind } : {}),
     ...(meta.tier ? { tier: meta.tier } : {}),
     ...(meta.tested

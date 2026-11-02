@@ -16,10 +16,3 @@ export const libraryOfPart = (
   skill: RegistrySkill,
 ): RegistrySkill | undefined =>
   skill.partOf ? index.skills.find((s) => s.name === skill.partOf) : undefined;
-
-/** The first sentence of a description with the library prefix removed, for a compact list. Pure. */
-export function shortDescription(text: string): string {
-  const stripped = text.replace(/^Part of the [a-z]+ library[^.]*\.\s*/i, "");
-  const first = /^[^.!?]*[.!?]/.exec(stripped)?.[0] ?? stripped;
-  return first.length > 140 ? `${first.slice(0, 137).trimEnd()}...` : first;
-}

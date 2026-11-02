@@ -120,6 +120,8 @@ export const OfficialMeta = z
     part_of: SkillName.optional(),
     /** A library skill lists the parts it installs with. Must equal the set of skills whose part_of names it. */
     requires: z.array(SkillName).max(60).optional(),
+    /** What the skill can do, in plain words, for its page (at most 10 short lines). */
+    can_do: z.array(z.string().min(1).max(110)).max(10).optional(),
   })
   .strict();
 export type OfficialMeta = z.infer<typeof OfficialMeta>;
@@ -247,6 +249,7 @@ export const RegistrySkill = z.object({
   partOf: SkillName.optional(),
   /** For a library: the parts installed with it. */
   requires: z.array(SkillName).optional(),
+  canDo: z.array(z.string()).optional(),
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 

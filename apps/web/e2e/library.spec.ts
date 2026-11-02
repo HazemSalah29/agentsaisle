@@ -19,11 +19,12 @@ test.describe("a library of skills", () => {
     );
   });
 
-  test("the library page lists its parts, each linking to its own page", async ({ page }) => {
+  test("the library page says what it can do and tucks its parts away, each linking to its own page", async ({
+    page,
+  }) => {
     await page.goto(`/skills/${library.name}`);
-    await expect(
-      page.getByRole("heading", { name: `What is inside (${library.requires!.length} parts)` }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What it can do" })).toBeVisible();
+    await page.getByText(`Built from ${library.requires!.length} parts`).click();
     await page.getByRole("link", { name: part.name, exact: true }).first().click();
     await expect(page).toHaveURL(new RegExp(`/skills/${part.name}$`));
     await expect(page.getByText("is a part of the")).toBeVisible();
