@@ -130,6 +130,18 @@ export function checkProject(video, dir, schema = loadSchema()) {
     }
   });
 
+  // Footage downloaded as a reference (video-ingest --analysis-only) may be measured, never shown.
+  const analysisOnly = (id) => assetIds.get(id)?.analysisOnly === true;
+  video.scenes.forEach((s, i) => {
+    for (const key of ["asset", "pip"])
+      if (analysisOnly(s?.props?.[key]))
+        problems.push(
+          `$.scenes[${i}].props.${key}: "${s.props[key]}" is marked analysisOnly and cannot appear in a video`,
+        );
+  });
+  if (assets.some((a) => a?.analysisOnly === true && a.path === video.music?.asset))
+    problems.push("$.music.asset: this file is marked analysisOnly and cannot be used");
+
   if (video.scenes.some((s) => s?.kind === "puppet"))
     problems.push(...loadRigs(video, dir).problems);
 

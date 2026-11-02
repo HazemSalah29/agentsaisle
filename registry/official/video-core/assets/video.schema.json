@@ -110,6 +110,7 @@
         "licence": { "type": "string", "maxLength": 80 },
         "attribution": { "type": "string", "maxLength": 300 },
         "aiGenerated": { "type": "boolean" },
+        "analysisOnly": { "type": "boolean" },
         "realistic": { "type": "boolean" },
         "voiceClone": { "enum": ["none", "self", "consented"] }
       }
