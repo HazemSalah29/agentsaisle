@@ -60,7 +60,6 @@ export function tempoOf(raw, step) {
   const lo = Math.round(60 / LIMITS.maxBpm / step);
   const hi = Math.round(60 / LIMITS.minBpm / step);
   if (flux.length < hi * 2) return null;
-  let best = null;
   const score = new Float64Array(hi + 2);
   for (let lag = lo; lag <= hi + 1; lag++) {
     let s = 0;
@@ -73,7 +72,7 @@ export function tempoOf(raw, step) {
     if (score[lag] >= score[lag - 1] && score[lag] >= score[lag + 1] && score[lag] > 0)
       peaks.push({ lag, s: score[lag] });
   const top = Math.max(0, ...peaks.map((p) => p.s));
-  best = peaks.find((p) => p.s >= top * 0.7) ?? null;
+  const best = peaks.find((p) => p.s >= top * 0.7) ?? null;
   if (!best || best.s <= 0) return null;
   const [a, b, c] = [score[best.lag - 1], score[best.lag], score[best.lag + 1]];
   const shift = a - 2 * b + c !== 0 ? (0.5 * (a - c)) / (a - 2 * b + c) : 0;
