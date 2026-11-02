@@ -6,7 +6,7 @@
 // Usage: node generate.mjs image|video <project-dir> --provider <id> --prompt "..." [--id asset-id] [--seed 1]
 //        [--ref a.png,b.png] [--seconds 4] [--aspect 9:16] [--realistic] [--budget usd] [--approve 0.0400]
 import { createHash } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { ADAPTERS, UNBUILT } from "./providers.mjs";
 import { approvalText, appendLedger, loadProviders, overCap, quote, readLedger } from "./cost.mjs";
