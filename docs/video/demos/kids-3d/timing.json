@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "fps": 30,
+  "totalFrames": 920,
+  "totalSeconds": 30.667,
+  "scenes": [
+    {
+      "id": "meet",
+      "startFrame": 0,
+      "frames": 213,
+      "start": 0,
+      "seconds": 7.1,
+      "lines": [
+        {
+          "id": "k1",
+          "start": 0,
+          "seconds": 3.25
+        },
+        {
+          "id": "k2",
+          "start": 3.25,
+          "seconds": 3.55
+        }
+      ]
+    },
+    {
+      "id": "alone",
+      "startFrame": 213,
+      "frames": 261,
+      "start": 7.1,
+      "seconds": 8.7,
+      "lines": [
+        {
+          "id": "k3",
+          "start": 0,
+          "seconds": 4.15
+        },
+        {
+          "id": "k4",
+          "start": 4.15,
+          "seconds": 4.225
+        }
+      ]
+    },
+    {
+      "id": "share",
+      "startFrame": 474,
+      "frames": 446,
+      "start": 15.8,
+      "seconds": 14.867,
+      "lines": [
+        {
+          "id": "k5",
+          "start": 0,
+          "seconds": 3.575
+        },
+        {
+          "id": "k6",
+          "start": 3.575,
+          "seconds": 3.725
+        },
+        {
+          "id": "k7",
+          "start": 7.3,
+          "seconds": 3.25
+        },
+        {
+          "id": "k8",
+          "start": 10.55,
+          "seconds": 4
+        }
+      ]
+    }
+  ]
+}

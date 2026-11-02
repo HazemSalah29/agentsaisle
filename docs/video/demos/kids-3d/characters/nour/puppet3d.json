@@ -1,0 +1,649 @@
+{
+  "name": "nour",
+  "height": 2.7,
+  "palette": [
+    "#3f9f6b",
+    "#f2c94c",
+    "#ffffff",
+    "#3a2a4d"
+  ],
+  "materials": {
+    "skin": {
+      "color": "#3f9f6b",
+      "roughness": 0.42,
+      "clearcoat": 0.35,
+      "sheen": 0.6
+    },
+    "belly": {
+      "color": "#ffffff",
+      "roughness": 0.5,
+      "clearcoat": 0.2,
+      "sheen": 0.4
+    },
+    "accent": {
+      "color": "#f2c94c",
+      "roughness": 0.45,
+      "clearcoat": 0.3,
+      "sheen": 0.5
+    },
+    "white": {
+      "color": "#ffffff",
+      "roughness": 0.25,
+      "clearcoat": 0.8
+    },
+    "ink": {
+      "color": "#2b2230",
+      "roughness": 0.2,
+      "clearcoat": 1
+    },
+    "mouth": {
+      "color": "#3b1d1d",
+      "roughness": 0.5
+    },
+    "tongue": {
+      "color": "#d9626b",
+      "roughness": 0.6
+    },
+    "pink": {
+      "color": "#ff8a7a",
+      "roughness": 0.8
+    },
+    "glint": {
+      "color": "#ffffff",
+      "emissive": "#ffffff",
+      "roughness": 0.2
+    }
+  },
+  "parts": [
+    {
+      "id": "shell",
+      "parent": "body",
+      "pivot": [
+        0,
+        0.05,
+        -0.3
+      ],
+      "shape": "sphere",
+      "size": [
+        0.84,
+        0.72,
+        0.5
+      ],
+      "material": "accent"
+    },
+    {
+      "id": "body",
+      "parent": null,
+      "pivot": [
+        0,
+        0.95,
+        0
+      ],
+      "shape": "sphere",
+      "size": [
+        0.62,
+        0.72,
+        0.55
+      ],
+      "material": "skin"
+    },
+    {
+      "id": "belly",
+      "parent": "body",
+      "pivot": [
+        0,
+        -0.05,
+        0.3
+      ],
+      "shape": "sphere",
+      "size": [
+        0.4,
+        0.5,
+        0.3
+      ],
+      "radius": 0.08,
+      "material": "belly"
+    },
+    {
+      "id": "leg-l",
+      "parent": "body",
+      "pivot": [
+        -0.28,
+        -0.55,
+        0.04
+      ],
+      "shape": "capsule",
+      "size": [
+        0.15,
+        0.25,
+        1
+      ],
+      "position": [
+        0,
+        -0.125,
+        0
+      ],
+      "material": "skin"
+    },
+    {
+      "id": "leg-r",
+      "parent": "body",
+      "pivot": [
+        0.28,
+        -0.55,
+        0.04
+      ],
+      "shape": "capsule",
+      "size": [
+        0.15,
+        0.25,
+        1
+      ],
+      "position": [
+        0,
+        -0.125,
+        0
+      ],
+      "material": "skin"
+    },
+    {
+      "id": "arm-l",
+      "parent": "body",
+      "pivot": [
+        -0.62,
+        0.42,
+        0
+      ],
+      "shape": "capsule",
+      "size": [
+        0.12,
+        0.38,
+        1
+      ],
+      "position": [
+        0.04,
+        -0.28,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        12
+      ],
+      "material": "skin"
+    },
+    {
+      "id": "arm-r",
+      "parent": "body",
+      "pivot": [
+        0.62,
+        0.42,
+        0
+      ],
+      "shape": "capsule",
+      "size": [
+        0.12,
+        0.38,
+        1
+      ],
+      "position": [
+        -0.04,
+        -0.28,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        -12
+      ],
+      "material": "skin"
+    },
+    {
+      "id": "head",
+      "parent": "body",
+      "pivot": [
+        0,
+        0.82,
+        0.05
+      ],
+      "shape": "sphere",
+      "size": [
+        0.6,
+        0.57,
+        0.55
+      ],
+      "position": [
+        0,
+        0.3,
+        0
+      ],
+      "material": "skin"
+    },
+    {
+      "id": "cheek-l",
+      "parent": "head",
+      "pivot": [
+        -0.38,
+        0.19999999999999998,
+        0.377
+      ],
+      "shape": "sphere",
+      "size": [
+        0.09,
+        0.07,
+        0.03
+      ],
+      "material": "pink"
+    },
+    {
+      "id": "cheek-r",
+      "parent": "head",
+      "pivot": [
+        0.38,
+        0.19999999999999998,
+        0.377
+      ],
+      "shape": "sphere",
+      "size": [
+        0.09,
+        0.07,
+        0.03
+      ],
+      "material": "pink"
+    },
+    {
+      "id": "brows",
+      "parent": "head",
+      "pivot": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "brow-l",
+      "parent": "brows",
+      "pivot": [
+        -0.22,
+        0.6,
+        0.384
+      ],
+      "shape": "capsule",
+      "size": [
+        0.02,
+        0.15,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        82
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "brow-r",
+      "parent": "brows",
+      "pivot": [
+        0.22,
+        0.6,
+        0.384
+      ],
+      "shape": "capsule",
+      "size": [
+        0.02,
+        0.15,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        98
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "eyes-open",
+      "parent": "head",
+      "pivot": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "eyes-closed",
+      "parent": "head",
+      "pivot": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "eye-l",
+      "parent": "eyes-open",
+      "pivot": [
+        -0.22,
+        0.38,
+        0.46
+      ],
+      "shape": "sphere",
+      "size": [
+        0.13,
+        0.16,
+        0.07
+      ],
+      "material": "white"
+    },
+    {
+      "id": "iris-l",
+      "parent": "eyes-open",
+      "pivot": [
+        -0.20500000000000002,
+        0.37,
+        0.51
+      ],
+      "shape": "sphere",
+      "size": [
+        0.085,
+        0.105,
+        0.05
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "glint-l",
+      "parent": "eyes-open",
+      "pivot": [
+        -0.235,
+        0.425,
+        0.555
+      ],
+      "shape": "sphere",
+      "size": [
+        0.03,
+        0.03,
+        0.02
+      ],
+      "material": "glint"
+    },
+    {
+      "id": "lid-l",
+      "parent": "eyes-closed",
+      "pivot": [
+        -0.22,
+        0.36,
+        0.46
+      ],
+      "shape": "capsule",
+      "size": [
+        0.02,
+        0.15,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        90
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "eye-r",
+      "parent": "eyes-open",
+      "pivot": [
+        0.22,
+        0.38,
+        0.46
+      ],
+      "shape": "sphere",
+      "size": [
+        0.13,
+        0.16,
+        0.07
+      ],
+      "material": "white"
+    },
+    {
+      "id": "iris-r",
+      "parent": "eyes-open",
+      "pivot": [
+        0.235,
+        0.37,
+        0.51
+      ],
+      "shape": "sphere",
+      "size": [
+        0.085,
+        0.105,
+        0.05
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "glint-r",
+      "parent": "eyes-open",
+      "pivot": [
+        0.20500000000000002,
+        0.425,
+        0.555
+      ],
+      "shape": "sphere",
+      "size": [
+        0.03,
+        0.03,
+        0.02
+      ],
+      "material": "glint"
+    },
+    {
+      "id": "lid-r",
+      "parent": "eyes-closed",
+      "pivot": [
+        0.22,
+        0.36,
+        0.46
+      ],
+      "shape": "capsule",
+      "size": [
+        0.02,
+        0.15,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        90
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "mouth-rest",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "capsule",
+      "size": [
+        0.018,
+        0.15,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        90
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "mouth-a",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "sphere",
+      "size": [
+        0.1,
+        0.115,
+        0.05
+      ],
+      "material": "mouth"
+    },
+    {
+      "id": "mouth-e",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "sphere",
+      "size": [
+        0.17,
+        0.055,
+        0.04
+      ],
+      "material": "mouth"
+    },
+    {
+      "id": "mouth-o",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "sphere",
+      "size": [
+        0.075,
+        0.095,
+        0.045
+      ],
+      "material": "mouth"
+    },
+    {
+      "id": "mouth-u",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "sphere",
+      "size": [
+        0.05,
+        0.058,
+        0.04
+      ],
+      "material": "mouth"
+    },
+    {
+      "id": "mouth-mbp",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "capsule",
+      "size": [
+        0.022,
+        0.13,
+        1
+      ],
+      "rotation": [
+        0,
+        0,
+        90
+      ],
+      "material": "ink"
+    },
+    {
+      "id": "mouth-fv",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "sphere",
+      "size": [
+        0.13,
+        0.05,
+        0.04
+      ],
+      "material": "mouth"
+    },
+    {
+      "id": "mouth-l",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.019999999999999962,
+        0.416
+      ],
+      "shape": "sphere",
+      "size": [
+        0.105,
+        0.07,
+        0.045
+      ],
+      "material": "mouth"
+    },
+    {
+      "id": "teeth-fv",
+      "parent": "mouth-fv",
+      "pivot": [
+        0,
+        0.035,
+        0.02
+      ],
+      "shape": "box",
+      "size": [
+        0.12,
+        0.025,
+        0.02
+      ],
+      "radius": 0.008,
+      "material": "white"
+    },
+    {
+      "id": "tongue-l",
+      "parent": "mouth-l",
+      "pivot": [
+        0,
+        -0.02,
+        0.02
+      ],
+      "shape": "sphere",
+      "size": [
+        0.06,
+        0.035,
+        0.03
+      ],
+      "material": "tongue"
+    },
+    {
+      "id": "tongue-a",
+      "parent": "mouth-a",
+      "pivot": [
+        0,
+        -0.05,
+        0.015
+      ],
+      "shape": "sphere",
+      "size": [
+        0.06,
+        0.035,
+        0.03
+      ],
+      "material": "tongue"
+    }
+  ]
+}

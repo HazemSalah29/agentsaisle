@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "provider": "kokoro",
+  "voice": "af_heart",
+  "speed": 0.65,
+  "seed": 1,
+  "model": "hexgrad/Kokoro-82M",
+  "license": "Apache-2.0 (Kokoro-82M)",
+  "lines": {
+    "k1": {
+      "file": "voice/k1.wav",
+      "key": "4363d32c74bf68a3c34e6873f83dc954dd11d91b4a88cb0ff9e6f71eb33ba74c",
+      "sha256": "73b24b3bc97e212c5e1b60587c24bb35914d182f3cc5b8dae1b4d9900255149c",
+      "seconds": 3.25
+    },
+    "k2": {
+      "file": "voice/k2.wav",
+      "key": "7e584a7c0a109952a6c1dcc852f927f0a6b6288492a3c115197a358b05defe11",
+      "sha256": "5bdc38f53b1e3faac09cbd34c7b0fa8949cb2120281eec62cdf15cd8bd72eae1",
+      "seconds": 3.55
+    },
+    "k3": {
+      "file": "voice/k3.wav",
+      "key": "d44b36245e9e84ab201265920e74066765008ced183642fe3ebfeef296c189ec",
+      "sha256": "7ac7228f88a2eb5eb0ee769eac7b97fdddfb796bb2345fff27b14df7c7c3546f",
+      "seconds": 4.15
+    },
+    "k4": {
+      "file": "voice/k4.wav",
+      "key": "636e7a42d3716e0a1f1fc2168b017b67b70aa24283cb9ece7a5475fddc49634d",
+      "sha256": "aace4367f4c85a07928583b9eaf1f7310c5f680e065ee532dfec8bc41e384be4",
+      "seconds": 4.225
+    },
+    "k5": {
+      "file": "voice/k5.wav",
+      "key": "5bec7473b95f961668c6c95e409d6a2d848edaaa9a983d85d86abd7832d074b2",
+      "sha256": "efbb9020d2c12bac280932814baa0db577201166df4d85602c9da0ff0b0a5c31",
+      "seconds": 3.575
+    },
+    "k6": {
+      "file": "voice/k6.wav",
+      "key": "68d936ccc4724f30d8e7a6e9b78e3a1eb5ace4c8b4f392c54929be262bf2ae8a",
+      "sha256": "5bd5b6bac1a7184653736a8e48593f72b251ea84b68a1006e5881b31634de7c8",
+      "seconds": 3.725
+    },
+    "k7": {
+      "file": "voice/k7.wav",
+      "key": "18100dfe4fb39a5e753e1a054aba576facdeb5710f8ee04c684dce7a900df237",
+      "sha256": "09bcd256189b747c2a6a88f999348d8ffb2229a1b3fb620d35ed796dba05f48f",
+      "seconds": 3.25
+    },
+    "k8": {
+      "file": "voice/k8.wav",
+      "key": "dd1159c3f088ae3761c94c7f9f395ba37adf19a46e6dcc849a42449526308156",
+      "sha256": "24917fa114099e01c93a6085807e009064b89f76a26f885c449e6b03a5eab775",
+      "seconds": 4
+    }
+  }
+}
