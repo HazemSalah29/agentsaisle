@@ -8,7 +8,7 @@ import { loadScript, skillFile } from "./load";
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const FIXTURE = skillFile("arch-visualize", "evals/fixture-model.json");
 const run = (args: string[]) =>
-  spawnSync(process.execPath, [skillFile("video-tour", "scripts/tour.mjs"), ...args], {
+  spawnSync(process.execPath, [skillFile("video", "scripts/tour.mjs"), ...args], {
     encoding: "utf8",
     env: { ...process.env, ANTHROPIC_API_KEY: "sk-canary-0000000000000000000000" },
   });
@@ -17,7 +17,7 @@ const tmp = () => mkdtempSync(path.join(os.tmpdir(), "video-tour-"));
 describe("video-tour copies", () => {
   it("keeps byte-identical copies of the importer and helpers", () => {
     const same = (skill: string, a: string, b: string) =>
-      expect(readFileSync(skillFile("video-tour", a), "utf8")).toBe(
+      expect(readFileSync(skillFile("video", a), "utf8")).toBe(
         readFileSync(skillFile(skill, b), "utf8"),
       );
     same("video-core", "scripts/_arch-import.mjs", "assets/arch/import.mjs");
@@ -68,7 +68,7 @@ describe("tour.mjs", () => {
   it("strips control and bidi characters from labels", async () => {
     const { buildTour } = await loadScript<{
       buildTour: (m: Loose, o: Loose) => { script: string };
-    }>("video-tour", "scripts/tour.mjs");
+    }>("video", "scripts/tour.mjs");
     const model = JSON.parse(readFileSync(FIXTURE, "utf8")) as Loose;
     model.nodes[0].label = `Evil‮\u0007node`;
     model.project = { name: `P‮x` };

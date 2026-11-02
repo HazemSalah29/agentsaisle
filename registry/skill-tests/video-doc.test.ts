@@ -7,7 +7,7 @@ import { skillFile } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const run = (args: string[]) =>
-  spawnSync(process.execPath, [skillFile("video-doc", "scripts/doc.mjs"), ...args], {
+  spawnSync(process.execPath, [skillFile("video", "scripts/doc.mjs"), ...args], {
     encoding: "utf8",
     env: { ...process.env, ANTHROPIC_API_KEY: "sk-canary-0000000000000000000000" },
   });
@@ -43,7 +43,7 @@ const make = (text = DOC) => {
 
 describe("video-doc copies", () => {
   it("keeps a byte-identical _lib.mjs", () => {
-    expect(readFileSync(skillFile("video-doc", "scripts/_lib.mjs"), "utf8")).toBe(
+    expect(readFileSync(skillFile("video", "scripts/_lib.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "scripts/_lib.mjs"), "utf8"),
     );
   });

@@ -1,10 +1,3 @@
----
-name: video-tour
-description: "Part of the video library (loaded by /video, not run directly): a narrated codebase tour from an arch-visualize model (needs docs/architecture.json)."
-user-invocable: false
-allowed-tools: Read Write Glob Grep Bash(node *)
----
-
 # Codebase tour video
 
 Builds the draft project of a tour: a title, an overview of the components by tier, one `request-flow` scene per chosen flow, and an outro. All of it is read from the model that `/arch-visualize` wrote, so every step has a `file:line` fact. `<skill>` is the folder that holds this SKILL.md; `<video-core>` is the sibling `video-core` skill.
@@ -30,8 +23,6 @@ Builds the draft project of a tour: a title, an overview of the components by ti
 
 ## Budget
 
-<!-- include: _shared/read-budget.md -->
-
 - Run `tour.mjs` once. Do not open the model file by hand.
 
 ## Output
@@ -43,3 +34,11 @@ Builds the draft project of a tour: a title, an overview of the components by ti
 
 - `check.mjs` exits 0 on the project and every fact in `facts.md` has a `file:line` or the model path as its source.
 - No number, timing or component appears that the model does not hold.
+
+## Details
+
+- Scene order: `s1` title, `s2` list of components per tier (counts computed from the model), one `request-flow` per flow, then a title outro.
+- Narration is mechanical on purpose ("Storefront to Shop API: GET /api/me."). Rewrite for speech but keep one line per flow step, because each step appears with its line.
+- Facts: one for the overview counts, one per step that has evidence. A step without evidence has no fact; do not add a claim to it.
+- Say once, in the narration, that the picture comes from the code and is not live traffic.
+- Not built: a camera fly-over. The flow scene is a fixed diagram.

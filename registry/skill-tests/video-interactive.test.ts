@@ -32,7 +32,7 @@ const scenes = IDS.map((id, i) => ({ id, start: i * 4, end: i * 4 + 4 }));
 describe("video-interactive copies", () => {
   it("keeps byte-identical copies of the branch checks and helpers", () => {
     const same = (a: string, b: string) =>
-      expect(readFileSync(skillFile("video-interactive", a), "utf8")).toBe(
+      expect(readFileSync(skillFile("video", a), "utf8")).toBe(
         readFileSync(skillFile("video-core", b), "utf8"),
       );
     same("scripts/_branches.mjs", "assets/interactive/branches.mjs");
@@ -278,7 +278,7 @@ describe("export-html.mjs", () => {
 
 describe("branches.mjs", () => {
   const run = (args: string[]) =>
-    spawnSync(process.execPath, [skillFile("video-interactive", "scripts/branches.mjs"), ...args], {
+    spawnSync(process.execPath, [skillFile("video", "scripts/branches.mjs"), ...args], {
       encoding: "utf8",
     });
   it("writes an example that passes its own check, and never overwrites", () => {

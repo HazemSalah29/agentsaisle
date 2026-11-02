@@ -1,10 +1,3 @@
----
-name: video-batch
-description: "Part of the video library (loaded by /video, not run directly): one video per row of the user's own CSV from a template; dry run first."
-user-invocable: false
-allowed-tools: Read Write Glob Grep Bash(node *)
----
-
 # Personalised videos from a CSV
 
 Fills a template project's `video.json` and `script.md` once per CSV row and writes `row-001`, `row-002` and so on. Values replace text only, so a cell can never change the structure. `<skill>` is the folder that holds this SKILL.md; `<video-core>` is the sibling `video-core` skill.
@@ -30,8 +23,6 @@ Fills a template project's `video.json` and `script.md` once per CSV row and wri
 
 ## Budget
 
-<!-- include: _shared/read-budget.md -->
-
 - Do not print or paste CSV rows, in the chat or in notes.
 
 ## Output
@@ -42,3 +33,12 @@ Fills a template project's `video.json` and `script.md` once per CSV row and wri
 
 - Every row has its own project, `check.mjs` passes on a sample, and the user knows how to clean up.
 - Nothing was sent anywhere and the CSV was not copied.
+
+## Details
+
+- Placeholders look like `{{name}}` and work in strings of `video.json` and in `script.md`. A cell is plain text: markup stays text, control and bidi characters become spaces, 80 characters at most.
+- Limits: 200 rows, 20 columns, 1 MB. Quoted cells, doubled quotes and commas or newlines inside quotes work.
+- Refused: a placeholder with no column, an empty value in a used column, duplicate or oddly named columns, a template with no placeholders, a non-empty output folder.
+- Copied from the template: assets and brand files. Not copied: `voice/`, `exports/`, `qa/`, rendered media, the CSV.
+- Privacy: local only, no network. Output names are `row-NNN`, never taken from the data. `--clean` removes only a folder that holds the `.aisle-batch` marker.
+- Names in a spoken script can sound wrong in a voice model; listen to a sample before rendering all rows.

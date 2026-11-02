@@ -141,7 +141,7 @@ function main() {
       return fail(
         capLines(
           bad,
-          "Fix interactive.json (node <video-interactive>/scripts/branches.mjs shows the scene ids).",
+          "Fix interactive.json (node <video>/scripts/branches.mjs shows the scene ids).",
         ),
       );
     branches = resolveBranches(data, scenes);

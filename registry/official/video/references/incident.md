@@ -1,10 +1,3 @@
----
-name: video-incident
-description: "Part of the video library (loaded by /video, not run directly): an incident replay from a postmortem timeline (needs written times)."
-user-invocable: false
-allowed-tools: Read Write Glob Grep Bash(node *)
----
-
 # Incident replay video
 
 Builds the draft project from the timeline section of a postmortem: title, a `timeline` scene (one event per narration line), and a "by the clock" list. Times are shown exactly as written; the only computed numbers are minutes between two written times. `<skill>` is the folder that holds this SKILL.md; `<video-core>` is the sibling `video-core` skill.
@@ -29,11 +22,6 @@ Builds the draft project from the timeline section of a postmortem: title, a `ti
 
 ## Budget
 
-- Search first (grep, glob, symbol search). Read line ranges, not whole files.
-- Read at most 8 files per step. If you need more, write down what you learned and narrow the question.
-- Do not re-read a file you just wrote or edited.
-- Prefer the smallest command output that answers the question: head, tail, quiet flags, filtered lists.
-
 - Run `incident.mjs` once. Do not read the whole postmortem.
 
 ## Output
@@ -44,3 +32,18 @@ Builds the draft project from the timeline section of a postmortem: title, a `ti
 
 - `check.mjs` exits 0 and every time and duration in the narration appears in `facts.md`.
 - No time, cause or number was added that the postmortem does not hold.
+
+## Details
+
+Timeline lines, under a heading that contains "timeline":
+
+```
+- 14:02 [action] Deploy 2.3 rolled out | api
+- 14:09 [alert] Error rate above 5%
+- 14:31 [fix] Rolled back
+```
+
+- A line is a time (HH:MM or HH:MM:SS, optional UTC), an optional `[type]` (`failure`, `alert`, `action`, `fix`, `info`; default `info`) and the text, with an optional `| where` (a component, up to 24 characters).
+- 2 to 10 events. Times must go forward; across midnight, trim the timeline or split the video.
+- Computed: minutes from the first failure (or first event) to the first later alert and to the last fix.
+- Not built: logs as input, an overlay on the architecture diagram, severity or customer impact numbers.

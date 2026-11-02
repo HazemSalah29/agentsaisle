@@ -1,4 +1,4 @@
-version: 0.21.0
+version: 0.22.0
 category: [video]
 clients: [claude-code]
 runs_scripts: true
@@ -13,31 +13,24 @@ permissions:
   needs_api_keys: []
 requires:
   - video-analyze
-  - video-batch
   - video-brand
   - video-calligraphy
   - video-captions
-  - video-changes
   - video-core
   - video-data
-  - video-doc
   - video-drawing
   - video-edit
   - video-explain
   - video-generate
-  - video-incident
   - video-ingest
-  - video-interactive
   - video-kids
   - video-kinetic
   - video-localize
   - video-product
   - video-publish
   - video-qa
-  - video-session
   - video-showcase
   - video-story
-  - video-tour
   - video-voice
   - video-write
 can_do:

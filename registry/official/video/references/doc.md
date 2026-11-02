@@ -1,10 +1,3 @@
----
-name: video-doc
-description: "Part of the video library (loaded by /video, not run directly): a short explainer from a Markdown or text document; every line comes from the file."
-user-invocable: false
-allowed-tools: Read Write Glob Grep Bash(node *)
----
-
 # Document explainer video
 
 Builds the draft project: a title, up to five sections as `list` scenes (bullets or whole short sentences), a `chart` scene for each table that has a number column, and an outro. Nothing is paraphrased or cut: a sentence longer than 70 characters is skipped, not shortened. `<skill>` is the folder that holds this SKILL.md; `<video-core>` is the sibling `video-core` skill.
@@ -28,8 +21,6 @@ Builds the draft project: a title, up to five sections as `list` scenes (bullets
 
 ## Budget
 
-<!-- include: _shared/read-budget.md -->
-
 - Run `doc.mjs` once. Do not read the document in full.
 
 ## Output
@@ -40,3 +31,11 @@ Builds the draft project: a title, up to five sections as `list` scenes (bullets
 
 - `check.mjs` exits 0 and every sentence and number in the narration is in `facts.md` with a `file:line` source.
 - Nothing was added that the document does not say.
+
+## Details
+
+- Sections are `#`, `##` and `###` headings (the first `#` is the title). Text before any heading becomes an overview section.
+- Items: bullets if the section has any, else its first three whole sentences. Each is 12 to 70 characters after Markdown marks are removed; longer ones are skipped so nothing is cut mid-sentence.
+- A table with a label column, a number column (commas and a trailing % allowed) and 2 to 8 data rows becomes a bar chart. The chart title names the line, so the figure is cited on screen.
+- Code fences and images are ignored. Links keep their text only.
+- Not built: PDF input, figures from images, summarising.

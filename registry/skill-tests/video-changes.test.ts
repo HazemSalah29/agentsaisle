@@ -7,7 +7,7 @@ import { loadScript, skillFile } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const run = (args: string[]) =>
-  spawnSync(process.execPath, [skillFile("video-changes", "scripts/changes.mjs"), ...args], {
+  spawnSync(process.execPath, [skillFile("video", "scripts/changes.mjs"), ...args], {
     encoding: "utf8",
     env: { ...process.env, ANTHROPIC_API_KEY: "sk-canary-0000000000000000000000" },
   });
@@ -38,7 +38,7 @@ const CHANGELOG = "# Log\n\n## 1.2.0\n\n- Adds `tour`\n* Fixes **bugs**\n\n## 1.
 
 describe("video-changes copies", () => {
   it("keeps a byte-identical _lib.mjs", () => {
-    expect(readFileSync(skillFile("video-changes", "scripts/_lib.mjs"), "utf8")).toBe(
+    expect(readFileSync(skillFile("video", "scripts/_lib.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "scripts/_lib.mjs"), "utf8"),
     );
   });
@@ -90,7 +90,7 @@ describe("changes.mjs", () => {
 
   it("parses file names, counts and hunks", async () => {
     const { parseDiff } = await loadScript<{ parseDiff: (t: string) => Loose[] }>(
-      "video-changes",
+      "video",
       "scripts/changes.mjs",
     );
     const files = parseDiff(DIFF);
@@ -103,7 +103,7 @@ describe("changes.mjs", () => {
 
   it("says '1 line', not '1 lines'", async () => {
     const m = await loadScript<{ buildChanges: (f: Loose[], o: Loose) => Loose }>(
-      "video-changes",
+      "video",
       "scripts/changes.mjs",
     );
     const r = m.buildChanges([{ file: "a.txt", added: 1, removed: 1, hunks: [] }], {

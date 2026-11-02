@@ -1,10 +1,3 @@
----
-name: video-changes
-description: "Part of the video library (loaded by /video, not run directly): a \"what changed\" video for a PR or release from a saved git diff."
-user-invocable: false
-allowed-tools: Read Write Glob Grep Bash(node *)
----
-
 # Release and PR videos
 
 Reads a unified diff as text and builds the draft project: title, totals, optional changelog bullets, up to four code diff scenes, outro. The script never runs git; you save the diff first. `<skill>` is the folder that holds this SKILL.md; `<video-core>` is the sibling `video-core` skill.
@@ -29,8 +22,6 @@ Reads a unified diff as text and builds the draft project: title, totals, option
 
 ## Budget
 
-<!-- include: _shared/read-budget.md -->
-
 - Run `changes.mjs` once. Do not read the diff by hand.
 
 ## Output
@@ -41,3 +32,10 @@ Reads a unified diff as text and builds the draft project: title, totals, option
 
 - `check.mjs` exits 0 and every number in the narration is one the script counted.
 - No code was run from the repository, and nothing was uploaded.
+
+## Details
+
+- Counts come from the diff: files, lines added, lines removed per file. Never round or estimate them.
+- A code scene needs a hunk of at most 20 lines, 60 characters wide, in a language the code scene knows (js, ts, json, sh, py). Other files appear only in the totals.
+- The changelog section is found by a heading that contains the release text; its bullets (at most five) are shown as written, markdown marks removed.
+- Not built: architecture diff (needs two arch-visualize models), code morph between hunks, binary files.

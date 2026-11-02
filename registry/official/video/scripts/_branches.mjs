@@ -1,5 +1,5 @@
 // Pure checks for an interactive.json (the branch points of an interactive explainer). No imports, so the
-// video-interactive skill keeps a byte-identical copy. A branch is a question that appears at the end of one
+// video skill keeps a byte-identical copy. A branch is a question that appears at the end of one
 // scene; each answer plays its own run of scenes, then every path continues at the same scene (or ends).
 //
 // { "version": 1, "branches": [ { "id": "pick", "after": "s3", "question": "Which one?",

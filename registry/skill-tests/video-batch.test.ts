@@ -7,7 +7,7 @@ import { loadScript, skillFile } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const run = (args: string[]) =>
-  spawnSync(process.execPath, [skillFile("video-batch", "scripts/batch.mjs"), ...args], {
+  spawnSync(process.execPath, [skillFile("video", "scripts/batch.mjs"), ...args], {
     encoding: "utf8",
     env: { ...process.env, ANTHROPIC_API_KEY: "sk-canary-0000000000000000000000" },
   });
@@ -37,7 +37,7 @@ const CSV = 'name,team,secret\nAda,"Ops, Core",x1\nGrace,Dev,x2\n';
 
 describe("video-batch copies", () => {
   it("keeps a byte-identical _lib.mjs", () => {
-    expect(readFileSync(skillFile("video-batch", "scripts/_lib.mjs"), "utf8")).toBe(
+    expect(readFileSync(skillFile("video", "scripts/_lib.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "scripts/_lib.mjs"), "utf8"),
     );
   });
@@ -103,7 +103,7 @@ describe("batch.mjs", () => {
 
   it("parses quoted CSV", async () => {
     const { parseCsv } = await loadScript<{ parseCsv: (t: string) => string[][] }>(
-      "video-batch",
+      "video",
       "scripts/batch.mjs",
     );
     expect(parseCsv('a,b\r\n"x, ""y""",z\r\n\r\n')).toEqual([

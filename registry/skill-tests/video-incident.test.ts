@@ -7,7 +7,7 @@ import { loadScript, skillFile } from "./load";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const run = (args: string[]) =>
-  spawnSync(process.execPath, [skillFile("video-incident", "scripts/incident.mjs"), ...args], {
+  spawnSync(process.execPath, [skillFile("video", "scripts/incident.mjs"), ...args], {
     encoding: "utf8",
     env: { ...process.env, ANTHROPIC_API_KEY: "sk-canary-0000000000000000000000" },
   });
@@ -33,7 +33,7 @@ const write = (text: string) => {
 
 describe("video-incident copies", () => {
   it("keeps a byte-identical _lib.mjs", () => {
-    expect(readFileSync(skillFile("video-incident", "scripts/_lib.mjs"), "utf8")).toBe(
+    expect(readFileSync(skillFile("video", "scripts/_lib.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "scripts/_lib.mjs"), "utf8"),
     );
   });
@@ -57,7 +57,7 @@ describe("incident.mjs", () => {
 
   it("refuses events without a time, times going backwards and unknown types", async () => {
     const { parseTimeline } = await loadScript<{ parseTimeline: (t: string) => Loose }>(
-      "video-incident",
+      "video",
       "scripts/incident.mjs",
     );
     expect(parseTimeline("## Timeline\n- Checkout broke\n- 10:00 ok\n").problems[0]).toContain(

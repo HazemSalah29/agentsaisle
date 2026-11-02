@@ -8,7 +8,7 @@ import { loadScript, skillFile } from "./load";
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const CANARY = "sk-canary-0000000000000000000000";
 const run = (args: string[]) =>
-  spawnSync(process.execPath, [skillFile("video-session", "scripts/session.mjs"), ...args], {
+  spawnSync(process.execPath, [skillFile("video", "scripts/session.mjs"), ...args], {
     encoding: "utf8",
     env: { ...process.env, ANTHROPIC_API_KEY: CANARY },
   });
@@ -64,7 +64,7 @@ const write = (text: string) => {
 
 describe("video-session copies", () => {
   it("keeps a byte-identical _lib.mjs", () => {
-    expect(readFileSync(skillFile("video-session", "scripts/_lib.mjs"), "utf8")).toBe(
+    expect(readFileSync(skillFile("video", "scripts/_lib.mjs"), "utf8")).toBe(
       readFileSync(skillFile("video-core", "scripts/_lib.mjs"), "utf8"),
     );
   });
@@ -72,7 +72,7 @@ describe("video-session copies", () => {
     const src = readFileSync(skillFile("video-core", "scripts/check.mjs"), "utf8");
     const block = /const SECRET_RES = \[([\s\S]*?)\n\];/.exec(src)![1];
     const { SECRET_RES } = await loadScript<{ SECRET_RES: RegExp[] }>(
-      "video-session",
+      "video",
       "scripts/session.mjs",
     );
     const sources = (t: string) => [...t.matchAll(/^\s*\/(.*)\/[a-z]*,$/gm)].map((m) => m[1]);
@@ -106,7 +106,7 @@ describe("session.mjs", () => {
     const { parseSession, activeClock } = await loadScript<{
       parseSession: (t: string) => Loose;
       activeClock: (e: Loose[]) => Loose;
-    }>("video-session", "scripts/session.mjs");
+    }>("video", "scripts/session.mjs");
     const { events } = parseSession(JSONL);
     const c = activeClock(events);
     expect(c.active).toBe(61);
@@ -146,7 +146,7 @@ describe("session.mjs", () => {
     const { parseSession, pickMoments } = await loadScript<{
       parseSession: (t: string) => Loose;
       pickMoments: (e: Loose[]) => Loose[];
-    }>("video-session", "scripts/session.mjs");
+    }>("video", "scripts/session.mjs");
     const log = [
       "10:00:00 Start",
       "10:00:05 $ cd ~/secret-project && sed -n 1,5p notes.txt",
@@ -166,7 +166,7 @@ describe("session.mjs", () => {
 
   it("keeps long file names out of the captions", async () => {
     const { pickMoments } = await loadScript<{ pickMoments: (e: Loose[]) => Loose[] }>(
-      "video-session",
+      "video",
       "scripts/session.mjs",
     );
     const ev = [
