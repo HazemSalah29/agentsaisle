@@ -1,6 +1,6 @@
-# Demo videos for the explainer vertical (library 0.1.0)
+# Demo videos
 
-Two short vertical explainers made by the library itself, with every file kept so anyone can look inside and re-run them. Each folder holds the final 1080x1920 MP4 (checked with `video-qa`) next to its sources.
+Short vertical videos made by the library itself, with every file kept so anyone can look inside and re-run them. Each folder holds the final 1080x1920 MP4 (checked with `video-qa`) next to its sources.
 
 | Demo                            | What it shows                                                                                                                                                                | Built from                                                                                                                                                                                                                                   |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -8,6 +8,8 @@ Two short vertical explainers made by the library itself, with every file kept s
 | [`request-flow/`](request-flow) | What `aisle add` does, one step per line of Agent Aisle's own source. About 44 seconds.                                                                                      | A `request-flow` scene imported from [`docs/architecture.json`](request-flow/docs/architecture.json), a model of the install path written for this demo and validated by `arch-visualize`'s checker.                                         |
 | [`kids/`](kids)                 | A kids' cartoon: Nour the turtle learns to share a leaf with Pip the rabbit. About 31 seconds, ages 3 to 5.                                                                  | Two original puppet characters (bibles and rigs drawn by `video-kids`), three `puppet` scenes, a Kokoro voice at 0.65 speed, kids' captions. The shaded look, voices pitch-shifted to sound younger: see [`kids/README.md`](kids/README.md). |
 | [`kids-3d/`](kids-3d)           | The same story with the optional 3D look: lit, shadowed clay-style characters on a 3D meadow.                                                                                | The same script and voice; `puppet3d.json` rigs built from primitives and drawn with the vendored three.js; QA passes. See [`kids-3d/README.md`](kids-3d/README.md).                                                                         |
+
+More demos, each with its README: [`live-data/`](live-data) (npm downloads, fetched the day it was made), [`incident/`](incident) (fictional outage), [`changes/`](changes) (a real diff of this repo), [`doc/`](doc) (this repo's README), [`tour/`](tour) (the install path), [`drawing/`](drawing) (a synthetic drawing to a puppet to a story), [`calligraphy/`](calligraphy) (Arabic proverbs, unreviewed translations). The website lists them at `/demos` from [`index.json`](index.json); each folder's `qa/report.json` is what the page quotes.
 
 ## What is in each folder
 
