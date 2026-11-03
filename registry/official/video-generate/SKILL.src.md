@@ -26,7 +26,8 @@ Makes AI stills and clips and lists them in `video.json` as `aiGenerated`. This 
 2. Run `node <skill>/scripts/generate.mjs image|video <project> --provider <id> --prompt "..." --id <asset-id> [--ref a.png] [--seconds 4] [--budget <usd>]`.
 3. Exit 3 means a quote was printed and nothing was sent. Show the quote to the user and ask. Only if they say yes to that exact total, re-run with `--approve <total>`. There is no `--yes`, and you never approve for them.
 4. A repeat of the same prompt, seed and references is served from the cache at $0.
-5. Report the path, the model, the cost and the running total in `generation-log.jsonl`.
+5. A file made elsewhere (the Higgsfield connector, a download the user made) is listed with `node <skill>/scripts/adopt.mjs <project> <file> --id <asset-id> --tool <name> [--credits n]`: no network, no charge, credits recorded only as reported.
+6. Report the path, the model, the cost and the running total in `generation-log.jsonl`.
 
 ## Budget
 
