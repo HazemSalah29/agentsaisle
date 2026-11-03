@@ -23,7 +23,7 @@ Turns a short script into a punchy motion-graphics video: every word pops in at 
 
 1. Write `projects/<slug>/script.md`: 5 to 12 short lines, one idea each (`references/script.md`). Optional attributes under a line: `emph:` (key words), `layout: slab` (one giant word on a colour block), `transition:`, `exit:`, `card: Title|row=tag;row` and `flow: a>b>c` (only content the user supplied).
 2. Pick a preset (`volt` lime, `ember` orange, `ice` cyan; `--accent #rrggbb` overrides). Run `node <skill>/scripts/plan.mjs --project projects/<slug> --preset ember`.
-3. Voice and timing: `<video-voice>/scripts/voice.mjs` (the local synthetic voice, or `--provider recorded --file mic.wav` for the user's own recording with their consent), then `align.mjs` (real word times from whisper.cpp), then `<video-core>/scripts/timing.mjs`.
+3. Voice and timing: `<video-voice>/scripts/voice.mjs` (the local synthetic voice, or `recorded.mjs <project> --file mic.wav --speaker self` for the user's own recording, which also writes the word times), then `align.mjs` (real word times from whisper.cpp), then `<video-core>/scripts/timing.mjs`.
 4. `node <skill>/scripts/cues.mjs projects/<slug> --preset ember` (original sound effects on cuts and key words), `<video-core>/scripts/check.mjs`, then `render.mjs --draft`.
 5. Run `node <skill>/scripts/sync.mjs projects/<slug>` and `<video-qa>/scripts/qa.mjs`, open `qa/contact-sheet.png` and judge it with the checklist in `references/craft.md`. Fix by editing `script.md` attributes or `video.json` and re-planning (a new folder) or editing in place; at most 2 revisions, then show the user.
 6. Render the final (no `--draft`), run QA again, show the MP4 path and contact sheet, offer the publish pack (`video-publish`). Never upload.

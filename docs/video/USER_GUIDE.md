@@ -96,6 +96,10 @@ One-time setup for capture (you run this yourself; the skills never install anyt
 
 What it will not do: record a site that is not yours (localhost only, or `--own-site --rights "why"`; requests to other addresses are blocked while recording), type into password, card or key fields, or record a native desktop app. The cursor is drawn from the log, not recorded, and the camera follows the log, not what is on screen. Beat detection can be wrong on complex music, so check by ear.
 
+### Using your own voice
+
+Record the script once, start to finish, in any audio or video file. Claude asks whose voice it is (yours, or someone who agreed: then give a note of their consent), then cuts the recording into one clip per line and measures every word's time with whisper.cpp, so captions and word-synced type work exactly as with a synthetic voice. If a line is not in the recording, it names the line and writes nothing. The recording is never uploaded.
+
 ### Agent session timelapse
 
 A session timelapse turns a saved Claude Code log (`~/.claude/projects/<project>/<session>.jsonl`) or a timestamped text log into a short with up to 8 key moments, one code diff and "the session in numbers". Idle gaps over a minute count as one second. Secrets, e-mail addresses and home folders are replaced before anything is kept, and tool output is never used, but prompts and code can still be private: read `script.md` before you publish, and only use sessions that are yours to show. Logs up to 100 MB are read; nothing is run or sent anywhere.

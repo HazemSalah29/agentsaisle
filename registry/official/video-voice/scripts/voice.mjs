@@ -32,6 +32,10 @@ export function voiceProject({ dir, video, lines, opts, providers = PROVIDERS, i
     throw new Error(
       `Provider "${id}" is not built yet (have: ${Object.keys(providers).join(", ")}).`,
     );
+  if (id === "recorded")
+    throw new Error(
+      "This project uses a recorded voice. Cut a recording into lines with recorded.mjs; voice.mjs only makes synthetic voices.",
+    );
   const provider = providers[id];
   if (!provider)
     throw new Error(`Unknown provider "${id}" (have: ${Object.keys(providers).join(", ")}).`);

@@ -24,7 +24,9 @@
       "type": "object",
       "required": ["provider"],
       "properties": {
-        "provider": { "enum": ["kokoro", "chatterbox", "3arab", "elevenlabs", "test", "none"] },
+        "provider": {
+          "enum": ["kokoro", "chatterbox", "3arab", "elevenlabs", "recorded", "test", "none"]
+        },
         "voiceId": { "type": "string", "maxLength": 80 },
         "speed": { "type": "number", "minimum": 0.5 }
       }

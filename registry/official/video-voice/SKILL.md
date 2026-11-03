@@ -1,6 +1,6 @@
 ---
 name: video-voice
-description: "Part of the video library (loaded by /video, not run directly): narration from script.md with local voices (Kokoro English, 3arab Arabic) and word timings; never clones a voice."
+description: "Part of the video library (loaded by /video, not run directly): narration from script.md with local voices (Kokoro English, 3arab Arabic) or the user's own recording cut into lines, with word timings; never clones a voice."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
@@ -12,6 +12,7 @@ Turns `script.md` into audio and word times. Scripts do the work; the engines ru
 ## Use when
 
 - A project has a checked `script.md` and needs narration audio, or word timings for captions.
+- The user wants their own voice: they recorded the script once through (`references/recorded.md`).
 - A project has a checked script and needs narration, optionally with `--provider`, `--voice`, `--speed`.
 
 ## Don't use when
@@ -26,7 +27,8 @@ Turns `script.md` into audio and word times. Scripts do the work; the engines ru
 2. Run `node <skill>/scripts/voice.mjs <project> [--provider kokoro|3arab|test] [--voice id] [--speed 1] [--seed 1]`. Default provider: 3arab for `ar`, kokoro otherwise. Lines that did not change are kept; add `--force` to redo all.
 3. Run `node <skill>/scripts/align.mjs <project>`. It uses whisper.cpp when set up; otherwise it estimates and flags the timings as approximate.
 4. Report the manifest: provider, voice, seconds, and whether timings are measured or estimated.
-5. Next: `node <video-core>/scripts/timing.mjs <project>`, then `video-captions`.
+5. Their own recording instead of steps 2 and 3: ask whose voice it is, then `node <skill>/scripts/recorded.mjs <project> --file <recording> --speaker self` (or `--speaker other --consent <file>`). It cuts one WAV per line and writes the word times; it needs whisper.cpp and nothing is uploaded.
+6. Next: `node <video-core>/scripts/timing.mjs <project>`, then `video-captions`.
 
 ## Budget
 

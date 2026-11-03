@@ -56,6 +56,12 @@ export function voiceGuidance(manifest) {
   if (!manifest) return [];
   if (manifest.provider === "test")
     return ["The voice track is a test tone, not speech: replace it before publishing."];
+  if (manifest.provider === "recorded")
+    return [
+      manifest.speaker === "other"
+        ? "The narration is a human recording of another person, used with their consent (kept as a hash in voice/manifest.json): keep the consent record."
+        : "The narration is the creator's own recording, not a synthetic voice.",
+    ];
   const out = [
     `The narration is a computer-generated voice (${manifest.provider}, model ${manifest.model || "unknown"}). Some platforms ask you to say so; check each platform's current rule (TODO(verify)).`,
   ];

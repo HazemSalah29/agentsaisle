@@ -28,6 +28,7 @@ Match the user's words to a row. If two fit, take the more specific one. Each ch
 
 ## Rules for every recipe
 
+- The user wants their own voice, not a synthetic one: they record the script once through, and `video-voice` cuts it into lines (`recorded.mjs`; it asks whose voice it is and needs consent for anyone else's). It works in every recipe that has a script.
 - Original characters only; no known characters, no real person's likeness, no copying another product's footage or branding. Offer an original instead.
 - `$0` by default. Anything that costs money (`video-generate`) quotes first and waits for the exact total. Footage needs a rights basis from the user.
 - A request that spans two rows (for example "a showcase of my app in Arabic") is the first recipe, then the second (`video-localize`).
