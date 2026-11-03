@@ -1,8 +1,8 @@
 name: Publish CLI
 
-# Publishes @agentsaisle/cli to npm. It does nothing until you add an NPM_TOKEN repository secret
-# (an npm automation token) and push a tag like `cli-v0.1.1` or run the workflow by hand.
-# The first release is meant to be published manually; see the README.
+# Publishes @agentsaisle/cli to npm with npm's trusted publishing (OIDC): no token is stored anywhere. On npm, the
+# package's Trusted Publisher is set to this repository, this file name (publish-cli.yml) and the environment
+# `npm-publish`. Push a tag like `cli-v0.2.1` (it must match packages/cli/package.json) or run the workflow by hand.
 on:
   push:
     tags:
@@ -16,6 +16,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Matches the environment named in npm's Trusted Publisher settings. GitHub creates it on the first run; add
+    # required reviewers under Settings > Environments > npm-publish to make a person approve each release.
+    environment: npm-publish
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -35,8 +38,8 @@ jobs:
           want="${GITHUB_REF_NAME#cli-v}"
           have=$(node -p "require('./packages/cli/package.json').version")
           if [ "$want" != "$have" ]; then echo "Tag $GITHUB_REF_NAME does not match package version $have"; exit 1; fi
+      - name: Use an npm that supports trusted publishing (11.5.1 or newer)
+        run: npm install -g npm@^11.5.1 && npm --version
       - name: Publish
         working-directory: packages/cli
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
