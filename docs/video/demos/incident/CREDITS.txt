@@ -1,9 +1,0 @@
-Credits: A checkout slowdown
-
-Voice: kokoro (model hexgrad/Kokoro-82M; Apache-2.0 (Kokoro-82M))
-
-No third-party or generated assets.
-
-Disclosure
-- No synthetic-content label needed: no AI-generated assets are used.
-- The narration is a computer-generated voice (kokoro, model hexgrad/Kokoro-82M). Some platforms ask you to say so; check each platform's current rule (TODO(verify)).

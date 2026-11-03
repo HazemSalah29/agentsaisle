@@ -20,11 +20,9 @@ describe("video init", () => {
     const dir = tmp();
     const r = initStudio(dir);
     for (const d of DIRS) expect(existsSync(path.join(dir, d))).toBe(true);
-    for (const f of ["CLAUDE.md", "brand/brand.json", "providers.yaml"])
+    for (const f of ["CLAUDE.md", "brand/brand.json"])
       expect(existsSync(path.join(dir, f))).toBe(true);
-    expect(templateFiles()).toEqual(
-      expect.arrayContaining(["CLAUDE.md", "brand/brand.json", "providers.yaml"]),
-    );
+    expect(templateFiles()).toEqual(expect.arrayContaining(["CLAUDE.md", "brand/brand.json"]));
     expect(r.kept).toEqual([]);
     expect(readFileSync(path.join(dir, ".gitignore"), "utf8")).toBe(
       "projects/*/cache/\nprojects/*/out/\nexports/\n",
@@ -57,12 +55,9 @@ describe("video init", () => {
     );
   });
 
-  it("ships a providers.yaml without keys and a studio CLAUDE.md that bans keys in the folder", () => {
-    const yaml = readFileSync(skillFile("video", "assets/studio/providers.yaml"), "utf8");
-    expect(yaml).not.toMatch(/sk-|api[_-]?key\s*:\s*\S{12,}/i);
-    expect(readFileSync(skillFile("video", "assets/studio/CLAUDE.md"), "utf8")).toMatch(
-      /Never put API keys/,
-    );
+  it("ships a studio CLAUDE.md that bans keys in the folder", () => {
+    const md = readFileSync(skillFile("video", "assets/studio/CLAUDE.md"), "utf8");
+    expect(md).toMatch(/Never put API keys in this folder/);
   });
 
   it("keeps its helper file identical to video-core's", () => {

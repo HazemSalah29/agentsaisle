@@ -25,8 +25,8 @@ describe("build steps", () => {
   });
   it("passes the flags on to render only", async () => {
     const { buildSteps } = await bd();
-    const steps = buildSteps("/p", { draft: true, ignoreApproval: true, engine: "remotion" });
-    expect(steps[2].args).toEqual(["/p", "--draft", "--ignore-approval", "--engine", "remotion"]);
+    const steps = buildSteps("/p", { draft: true, ignoreApproval: true, preset: "ember" });
+    expect(steps[2].args).toEqual(["/p", "--draft", "--ignore-approval", "--preset", "ember"]);
     expect(steps[0].args).toEqual(["/p"]);
   });
 });

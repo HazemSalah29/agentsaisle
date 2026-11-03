@@ -1,9 +1,12 @@
-Credits: How a rate limit really works
+Credits: How a rate limiter saves your API
 
-Voice: kokoro (model hexgrad/Kokoro-82M; Apache-2.0 (Kokoro-82M))
+Voice: kokoro (model Kokoro-82M v1.0 (onnx); Apache-2.0 (Kokoro-82M))
+
+Music: an original bed synthesised by video-core (no samples, no licence needed)
+Sound effects: original, synthesised by video-core (no samples, no licence needed)
 
 No third-party or generated assets.
 
 Disclosure
 - No synthetic-content label needed: no AI-generated assets are used.
-- The narration is a computer-generated voice (kokoro, model hexgrad/Kokoro-82M). Some platforms ask you to say so; check each platform's current rule (TODO(verify)).
+- The narration is a computer-generated voice (kokoro, model Kokoro-82M v1.0 (onnx)). Some platforms ask you to say so; check each platform's current rule (TODO(verify)).

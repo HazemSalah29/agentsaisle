@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pulseboard</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        background: #0d1017;
+        color: #e8ecf3;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
+      aside {
+        background: #11151e;
+        border-right: 1px solid #1d2330;
+        padding: 24px 16px;
+      }
+      .logo {
+        font-weight: 800;
+        font-size: 20px;
+        margin-bottom: 28px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .logo i {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3ddc84;
+        box-shadow: 0 0 12px #3ddc84;
+      }
+      nav a {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 8px;
+        color: #9aa4b5;
+        text-decoration: none;
+        margin-bottom: 4px;
+        cursor: pointer;
+      }
+      nav a.on {
+        background: #1a2130;
+        color: #fff;
+      }
+      main {
+        padding: 32px 40px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 26px;
+      }
+      .sub {
+        color: #8790a2;
+        margin-bottom: 24px;
+      }
+      .add {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      input {
+        flex: 1;
+        background: #141925;
+        border: 1px solid #263044;
+        color: #fff;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 15px;
+      }
+      button {
+        background: #5b8cff;
+        color: #fff;
+        border: 0;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .card {
+        background: #121722;
+        border: 1px solid #1f2736;
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3ddc84;
+        box-shadow: 0 0 10px #3ddc84;
+      }
+      .dot.down {
+        background: #ff4d5e;
+        box-shadow: 0 0 10px #ff4d5e;
+      }
+      .name {
+        font-weight: 700;
+        flex: 1;
+      }
+      .ms {
+        color: #8790a2;
+        font-variant-numeric: tabular-nums;
+      }
+      .bars {
+        display: flex;
+        gap: 2px;
+      }
+      .bars span {
+        width: 4px;
+        height: 18px;
+        border-radius: 2px;
+        background: #2c6b48;
+      }
+      .bars span.bad {
+        background: #8a2b35;
+      }
+      .new {
+        animation: pop 0.5s ease-out;
+      }
+      @keyframes pop {
+        from {
+          transform: scale(0.96);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+      .panel {
+        display: none;
+      }
+      .panel.on {
+        display: block;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .sw {
+        width: 46px;
+        height: 26px;
+        border-radius: 13px;
+        background: #2a3242;
+        position: relative;
+        cursor: pointer;
+      }
+      .sw::after {
+        content: "";
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        transition: left 0.2s;
+      }
+      .sw.on {
+        background: #3ddc84;
+      }
+      .sw.on::after {
+        left: 23px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside>
+        <div class="logo"><i></i>Pulseboard</div>
+        <nav>
+          <a class="on" id="nav-mon">Monitors</a>
+          <a id="nav-alerts">Alerts</a>
+          <a>Status page</a>
+          <a>Settings</a>
+        </nav>
+      </aside>
+      <main>
+        <section class="panel on" id="mon">
+          <h1>Monitors</h1>
+          <div class="sub">Every endpoint, checked every 30 seconds.</div>
+          <div class="add">
+            <input id="url" placeholder="https://your-api.com/health" /><button id="addbtn">
+              Add monitor
+            </button>
+          </div>
+          <div id="list">
+            <div class="card">
+              <span class="dot"></span><span class="name">api.shop.dev/health</span
+              ><span class="bars" data-bad="22"></span><span class="ms">84 ms</span>
+            </div>
+            <div class="card">
+              <span class="dot"></span><span class="name">auth.shop.dev/ping</span
+              ><span class="bars" data-bad="-1"></span><span class="ms">61 ms</span>
+            </div>
+            <div class="card">
+              <span class="dot down"></span><span class="name">search.shop.dev</span
+              ><span class="bars" data-bad="27"></span><span class="ms">timeout</span>
+            </div>
+          </div>
+        </section>
+        <section class="panel" id="alerts">
+          <h1>Alerts</h1>
+          <div class="sub">Get told before your users do.</div>
+          <div class="card toggle">
+            <span class="name">Slack #oncall</span><span class="sw" id="slack"></span>
+          </div>
+          <div class="card toggle">
+            <span class="name">Email me</span><span class="sw on"></span>
+          </div>
+          <div class="card toggle">
+            <span class="name">SMS after 3 failures</span><span class="sw"></span>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+      const bars = (el) => {
+        const bad = +el.dataset.bad;
+        el.innerHTML = Array.from(
+          { length: 30 },
+          (_, i) => `<span class="${i >= bad && bad >= 0 ? "bad" : ""}"></span>`,
+        ).join("");
+      };
+      document.querySelectorAll(".bars").forEach(bars);
+      document.getElementById("addbtn").onclick = () => {
+        const v = document.getElementById("url").value || "https://example.dev";
+        const c = document.createElement("div");
+        c.className = "card new";
+        c.innerHTML = `<span class="dot"></span><span class="name">${v.replace(/^https?:\/\//, "").replace(/[<>&]/g, "")}</span><span class="bars" data-bad="-1"></span><span class="ms">97 ms</span>`;
+        document.getElementById("list").prepend(c);
+        bars(c.querySelector(".bars"));
+        document.getElementById("url").value = "";
+      };
+      const show = (id) => {
+        document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("on", p.id === id));
+        document.getElementById("nav-mon").classList.toggle("on", id === "mon");
+        document.getElementById("nav-alerts").classList.toggle("on", id === "alerts");
+      };
+      document.getElementById("nav-alerts").onclick = () => show("alerts");
+      document.getElementById("nav-mon").onclick = () => show("mon");
+      document.getElementById("slack").onclick = (e) => e.currentTarget.classList.toggle("on");
+    </script>
+  </body>
+</html>

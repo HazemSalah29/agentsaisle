@@ -18,7 +18,6 @@ const STEP_SKILLS = [
   "video-explain",
   "video-voice",
   "video-core",
-  "video-captions",
   "video-qa",
   "video-publish",
 ];
@@ -136,18 +135,6 @@ export function pipelineState(dir, installed) {
     "video-core",
   );
 
-  const cap = mtime(f("captions.json"));
-  step(
-    "captions",
-    "captions",
-    !cap ? "todo" : cap < timing ? "stale" : "done",
-    !cap
-      ? "captions.json missing (skip with --srt only if the user wants no burned captions)"
-      : "captions grouped",
-    "video-captions --burn",
-    "video-captions",
-  );
-
   const outDir = f("out");
   const mp4s = existsSync(outDir)
     ? readdirSync(outDir).filter((n) => n.endsWith(".mp4") && n !== "silent.mp4")
@@ -158,7 +145,7 @@ export function pipelineState(dir, installed) {
       .map((n) => mtime(path.join(outDir, n)))
       .sort()
       .at(-1) ?? 0;
-  const need = Math.max(stamp, timing, cap);
+  const need = Math.max(stamp, timing);
   step(
     "render",
     "render",

@@ -1,4 +1,4 @@
-// What every video-edit command shares: a guard for file names, the ffmpeg input options, the encoding
+// What the ffmpeg scripts of the video skills share: a guard for file names, the ffmpeg input options, the encoding
 // defaults and a probe. Pure helpers plus one wrapper around run.mjs (ffmpeg and ffprobe only, no shell).
 import { existsSync } from "node:fs";
 import path from "node:path";

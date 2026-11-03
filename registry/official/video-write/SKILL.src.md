@@ -1,33 +1,33 @@
 ---
 name: video-write
-description: "Part of the video library (loaded by /video, not run directly): write the script, sourced facts, hooks and storyboard for a short video (explain or story mode; English or Arabic)."
+description: "Part of the video library (loaded by /video, not run directly): write the script, sourced facts, hooks and storyboard for a short video (explain or showcase mode; English or Arabic)."
 user-invocable: false
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
 # Video writer
 
-Writes the text files a video is built from, then checks them with a script. The agent writes; `write-check.mjs` judges the structure, the sources and the Arabic rules. `<skill>` below is the folder that holds this SKILL.md. Only `explain` and `story` modes exist; say so if asked for another.
+Writes the text files a video is built from, then checks them with a script. The agent writes; `write-check.mjs` judges the structure, the sources and the Arabic rules. `<skill>` below is the folder that holds this SKILL.md. Two modes: `explain` and `showcase` (kinetic lines are written with the `video` skill's `references/kinetic.md`). Every script is held to the `video` skill's `references/craft.md`.
 
 ## Use when
 
-- The user wants a script, storyboard or hook for a short video (explainer or story).
+- The user wants a script, storyboard or hook for a short video (explainer or showcase).
 - A `projects/<slug>/` folder has a brief but no `script.md` yet.
 
 ## Don't use when
 
-- The user wants audio, captions, edits or a render: use `video-voice`, `video-captions` or `video-core`.
-- The mode is ad, showcase, tutorial, hot-take, listicle, data-story or remix: not built yet.
+- The user wants audio, captions, edits or a render: use `video-voice` or `video-core`.
+- The mode is a story, ad, listicle or remix: not built. Offer explain, showcase or a kinetic short.
 - The user wants numbers, quotes or reviews you cannot source. Never invent them.
 
 ## Steps
 
 1. Pick or create `projects/<slug>/`. Ask only for what is missing: mode, topic, language (`en` or `ar`), format, length, audience.
 2. Write `brief.json` (fields in `<skill>/assets/brief.schema.json`: title, mode, lang, format, audience, goal, promise, lengthSeconds, tone, cta).
-3. Write `script.md`: one `[id] line` per sentence of narration, each followed by an indented `beat:` line (rules and beat order in `references/explain-mode.md`, or `references/story-mode.md`; hooks in `references/hooks.md`). Open with the payoff, not a "storytime" intro. Put the call to action after the payoff.
-4. Explain mode: write `facts.md` (`- [f1] claim. Source: <link or file>`) and tag each step, edge case and number with `fact: <id>`. Use only sources the user gave or you read this session; otherwise leave the claim out or mark it `[needs-source]` for the user. Story mode: write `style-bible.md` (world, palette, characters; `references/story-mode.md`).
+3. Write `script.md`: one `[id] line` per sentence of narration, each followed by an indented `beat:` line (beats in `references/explain-mode.md` or `references/showcase-mode.md`; hooks in `references/hooks.md`). Open with the payoff, not a "storytime" intro. Put the call to action after the payoff.
+4. Explain mode: write `facts.md` (`- [f1] claim. Source: <link or file>`) and tag each step, edge case and number with `fact: <id>`. Use only sources the user gave or you read this session; otherwise leave the claim out or mark it `[needs-source]` for the user.
 5. Write `hooks.md` with 5 alternative openings (first 3 seconds).
-6. Write `storyboard.md`: a table with scene, kind (`title`, `quote`, `list`, `chart`, `broll`, and for technical steps `rate-limit`, `code`, `sequence`, `request-flow`), narration line ids, props as JSON in backticks, seconds, transition (`references/storyboard.md`).
+6. Explain mode: write `storyboard.md`, a table with scene, kind, narration line ids, props as JSON in backticks, seconds, transition (`references/storyboard.md`; kinds in `video-core/references/scene-kinds.md`). Showcase mode skips this: the showcase chain builds `video.json`.
 7. Arabic: write natively (not a translation), spell numbers as words, add diacritics only where a word is ambiguous (`references/arabic.md`). Say the Arabic is a draft for a native speaker to review.
 8. Run `node <skill>/scripts/write-check.mjs <project>`. Fix every ERROR and weigh each warning; run it again until it exits 0.
 9. Stop and show the storyboard. Only after the user approves, run `node <skill>/scripts/storyboard.mjs <project>` to write `video.json`.
@@ -37,7 +37,7 @@ Writes the text files a video is built from, then checks them with a script. The
 <!-- include: _shared/read-budget.md -->
 
 - Write each file once, then run the check. Do not reread files you just wrote.
-- Keep scripts short: about 2.5 words a second, so 30 s is roughly 75 words.
+- Keep scripts short: about 3 words a second at voice speed 1.1, so 35 s is roughly 100 words. Write long, then cut a third.
 
 ## Output
 

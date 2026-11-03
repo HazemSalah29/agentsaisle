@@ -1,14 +1,18 @@
 {
   "version": 1,
-  "title": "How a rate limit really works",
+  "title": "How a rate limiter saves your API",
   "voice": "kokoro",
   "voiceDetails": {
     "provider": "kokoro",
-    "voice": "af_heart",
-    "model": "hexgrad/Kokoro-82M",
+    "voice": "am_michael",
+    "model": "Kokoro-82M v1.0 (onnx)",
     "license": "Apache-2.0 (Kokoro-82M)"
   },
   "assets": [],
+  "sound": [
+    "Music: an original bed synthesised by video-core (no samples, no licence needed)",
+    "Sound effects: original, synthesised by video-core (no samples, no licence needed)"
+  ],
   "disclosure": {
     "realisticSynthetic": false,
     "aiMusic": false,
@@ -16,6 +20,6 @@
   },
   "guidance": [
     "No synthetic-content label needed: no AI-generated assets are used.",
-    "The narration is a computer-generated voice (kokoro, model hexgrad/Kokoro-82M). Some platforms ask you to say so; check each platform's current rule (TODO(verify))."
+    "The narration is a computer-generated voice (kokoro, model Kokoro-82M v1.0 (onnx)). Some platforms ask you to say so; check each platform's current rule (TODO(verify))."
   ]
 }

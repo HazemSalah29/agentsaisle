@@ -5,15 +5,17 @@ House rules for every video made in this folder. Edit the defaults below; the vi
 ## Defaults
 
 - Format: reel-9x16 (also short-9x16, youtube-16x9, square-1x1)
-- Language: en (Arabic: ar, with dir rtl)
-- Voice: kokoro (local). Set to `none` for silent videos.
-- Engine: hyperframes
-- Budget: $0 (local tools only). Paid generation always asks first and logs to `projects/<slug>/spend.json`.
+- Length: 30 to 45 seconds
+- Language: en
+- Voice: kokoro, `am_michael` (a male narrator) or `af_heart` (a female narrator), speed 1.1. Your own recording beats any synthetic voice: drop it in `inbox/`.
+- Look: preset `volt` (also ember, ice, grape), or your colours in `brand/brand.json`
+- Captions: pop (also karaoke, clean, none)
+- Music: an original generated bed, or your own licensed track from `library/music/`
 
 ## Rules
 
 - One folder per video in `projects/<slug>/`: `video.json` is the source of truth; edit it and re-render.
-- Every asset in `video.json` needs a licence. Music and sound effects go in `library/` with a `licence.txt`.
-- Never put API keys in this folder. Keys come from operating-system environment variables only.
+- Every asset in `video.json` needs a licence. Music you add goes in `library/music/` with a `licence.txt`.
+- Never put API keys in this folder.
 - Nothing is uploaded automatically. Final files go to `exports/<slug>/`.
 - Use only original characters, music and logos, or ones you hold a licence for.

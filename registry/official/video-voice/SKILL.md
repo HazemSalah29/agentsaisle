@@ -28,7 +28,7 @@ Turns `script.md` into audio and word times. Scripts do the work; the engines ru
 3. Run `node <skill>/scripts/align.mjs <project>`. It uses whisper.cpp when set up; otherwise it estimates and flags the timings as approximate.
 4. Report the manifest: provider, voice, seconds, and whether timings are measured or estimated.
 5. Their own recording instead of steps 2 and 3: ask whose voice it is, then `node <skill>/scripts/recorded.mjs <project> --file <recording> --speaker self` (or `--speaker other --consent <file>`). It cuts one WAV per line and writes the word times; it needs whisper.cpp and nothing is uploaded.
-6. Next: `node <video-core>/scripts/timing.mjs <project>`, then `video-captions`.
+6. Next: `node <video-core>/scripts/timing.mjs <project>`; the render burns the captions from these word times.
 
 ## Budget
 

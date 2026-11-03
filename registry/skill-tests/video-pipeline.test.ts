@@ -94,8 +94,7 @@ describe("video pipeline", () => {
     put(dir, "out/p.mp4", "x", t(30));
     put(dir, "qa/report.json", { ok: true, results: [] }, t(40));
     let steps = pipelineState(dir, ALL);
-    for (const id of ["voice", "timing", "captions", "render", "qa"])
-      expect(status(steps, id)).toBe("done");
+    for (const id of ["voice", "timing", "render", "qa"]) expect(status(steps, id)).toBe("done");
     put(
       dir,
       "video.json",

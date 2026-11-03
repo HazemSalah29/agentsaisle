@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Renders a project: check -> HyperFrames project in out/hf -> render -> mix voice and music -> out/<name>.mp4.
-// Every program is started through run.mjs (allow-list, argument arrays, no shell). HyperFrames itself is never
-// installed or downloaded here; if it is missing the script prints the install line and stops.
-// Usage: node render.mjs <project-dir> [--engine hyperframes|remotion] [--draft] [--ignore-approval] [--hyperframes <package-dir>] [--remotion <cli-package-dir>]
+// Renders a project: check -> film (resolve.mjs) -> Remotion renders the silent picture -> ffmpeg mixes the voice,
+// music bed and sound effects -> out/<name>.mp4, plus SRT/VTT captions. Every program starts through run.mjs
+// (allow-list, argument arrays, no shell). Remotion is never installed here: if the engine is missing the script says
+// how to set it up (engine.mjs) and stops.
+// Usage: node render.mjs <project-dir> [--draft] [--ignore-approval] [--preset volt|ember|ice|grape] [--engine-dir <dir>]
 import {
   copyFileSync,
   existsSync,
@@ -13,71 +14,23 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { checkProject } from "./check.mjs";
-import { buildRemotionProject } from "../assets/engine/remotion/build.mjs";
-import { buildProject } from "./project.mjs";
+import { LICENCE_NOTE, engineDir, engineStatus, syncSource, tools } from "./engine.mjs";
 import { loadWords, sceneWords } from "./words-data.mjs";
-import {
-  REMOTION_LICENCE_NOTE,
-  findRemotion,
-  remotionArgs,
-  remotionProblems,
-} from "./render-remotion.mjs";
 import { approvalState, writeValidation } from "./review.mjs";
 import { run } from "./run.mjs";
 import { buildTiming } from "./timing.mjs";
 import { capLines, isEntry, isInside, parseArgs } from "./_lib.mjs";
+import { PRESETS, buildFilm } from "../assets/film/resolve.mjs";
+import { bed, synth, wav } from "../assets/film/sound.mjs";
 
-export const PINNED_HYPERFRAMES = "0.8.226";
 const AUDIO_EXT = [".wav", ".mp3", ".m4a", ".flac"];
 const FONT_EXT = /\.(woff2?|ttf|otf)$/i;
+const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
+const IMAGE_EXT = /\.(png|jpe?g|webp|gif|svg)$/i;
 
 const readJson = (f) => JSON.parse(readFileSync(f, "utf8"));
-
-/** The absolute path of the HyperFrames CLI script inside a package folder, or null. */
-export function binOf(pkgDir, fs = { exists: existsSync, readJson }) {
-  const pj = path.join(pkgDir, "package.json");
-  if (!fs.exists(pj)) return null;
-  try {
-    const p = fs.readJson(pj);
-    if (p.name !== "hyperframes") return null;
-    const bin =
-      typeof p.bin === "string" ? p.bin : (p.bin?.hyperframes ?? Object.values(p.bin ?? {})[0]);
-    return bin ? { bin: path.resolve(pkgDir, bin), version: p.version } : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Where an installed HyperFrames might be, best first: --hyperframes, node_modules next to the project (and
- * up to three folders above), the global install next to this Node, then the npx cache.
- */
-export function candidateDirs({
-  explicit,
-  dir,
-  execPath = process.execPath,
-  home = os.homedir(),
-  list = readdirSafe,
-}) {
-  const out = [];
-  if (explicit) out.push(path.resolve(explicit));
-  let d = path.resolve(dir);
-  for (let i = 0; i < 4; i++) {
-    out.push(path.join(d, "node_modules", "hyperframes"));
-    d = path.dirname(d);
-  }
-  const prefix = path.resolve(path.dirname(execPath), "..");
-  out.push(
-    path.join(prefix, "lib", "node_modules", "hyperframes"),
-    path.join(path.dirname(execPath), "node_modules", "hyperframes"),
-  );
-  const npx = path.join(home, ".npm", "_npx");
-  for (const e of list(npx)) out.push(path.join(npx, e, "node_modules", "hyperframes"));
-  return out;
-}
 const readdirSafe = (d) => {
   try {
     return readdirSync(d).sort();
@@ -86,12 +39,21 @@ const readdirSafe = (d) => {
   }
 };
 
-export function findHyperframes(opts, fs) {
-  for (const c of candidateDirs(opts)) {
-    const found = binOf(c, fs);
-    if (found) return found;
-  }
-  return null;
+/** SRT and WebVTT text from caption pages ({ start, end, words }). Pure. */
+export function subtitles(pages) {
+  const ts = (s, sep) => {
+    const ms = Math.max(0, Math.round(s * 1000));
+    const h = String(Math.floor(ms / 3600000)).padStart(2, "0");
+    const m = String(Math.floor(ms / 60000) % 60).padStart(2, "0");
+    const sec = String(Math.floor(ms / 1000) % 60).padStart(2, "0");
+    return `${h}:${m}:${sec}${sep}${String(ms % 1000).padStart(3, "0")}`;
+  };
+  const text = (p) => p.words.map((w) => w.text).join(" ");
+  const srt = pages
+    .map((p, i) => `${i + 1}\n${ts(p.start, ",")} --> ${ts(p.end, ",")}\n${text(p)}\n`)
+    .join("\n");
+  const vtt = `WEBVTT\n\n${pages.map((p) => `${ts(p.start, ".")} --> ${ts(p.end, ".")}\n${text(p)}\n`).join("\n")}`;
+  return { srt, vtt };
 }
 
 /** Voice lines placed at their start in the film: [{ file, ms }]. */
@@ -227,21 +189,19 @@ export function muxArgs({
   if (filters.length) args.push("-filter_complex", filters.join(";"));
   args.push("-map", "0:v");
   if (map) args.push("-map", map);
+  // Remotion writes full-range (yuvj420p) H.264; platforms expect limited-range yuv420p, so the picture is
+  // converted once here (the final is rendered at a low CRF, so this pass loses little).
   args.push(
-    ...(draft
-      ? [
-          "-vf",
-          "scale=-2:540",
-          "-c:v",
-          "libx264",
-          "-crf",
-          "23",
-          "-preset",
-          "veryfast",
-          "-pix_fmt",
-          "yuv420p",
-        ]
-      : ["-c:v", "copy"]),
+    "-vf",
+    "scale=in_range=pc:out_range=tv,format=yuv420p",
+    "-c:v",
+    "libx264",
+    "-crf",
+    draft ? "23" : "18",
+    "-preset",
+    "veryfast",
+    "-color_range",
+    "tv",
   );
   if (map) args.push("-c:a", "aac", "-b:a", "192k", "-ar", "48000");
   args.push(
@@ -270,18 +230,20 @@ function main() {
   try {
     parsed = parseArgs(process.argv.slice(2), {
       booleans: ["draft", "ignore-approval"],
-      strings: ["engine", "hyperframes", "remotion"],
+      strings: ["preset", "engine-dir"],
     });
   } catch (e) {
     fail(e.message, 2);
   }
   const { flags, positional } = parsed;
-  const engine = flags.engine ?? "hyperframes";
-  if (engine !== "hyperframes" && engine !== "remotion")
-    fail(`Engine "${String(engine).slice(0, 30)}" is not known (have: hyperframes, remotion).`, 2);
   if (!positional[0])
     fail(
-      "Usage: node render.mjs <project-dir> [--engine hyperframes|remotion] [--draft] [--hyperframes <package-dir>] [--remotion <package-dir>]",
+      "Usage: node render.mjs <project-dir> [--draft] [--ignore-approval] [--preset volt|ember|ice|grape] [--engine-dir <dir>]",
+      2,
+    );
+  if (flags.preset && !PRESETS[flags.preset])
+    fail(
+      `Preset "${String(flags.preset).slice(0, 20)}" is not known (have: ${Object.keys(PRESETS).join(", ")}).`,
       2,
     );
   const dir = path.resolve(positional[0]);
@@ -313,42 +275,17 @@ function main() {
     writeFileSync(tfile, `${JSON.stringify(timing, null, 2)}\n`);
   } else fail("No timing.json: run timing.mjs after the voice step.");
 
-  const notes = [];
-  let captions = null;
-  if (video.captions?.burn === true) {
-    const cfile = path.join(dir, "captions.json");
-    if (!existsSync(cfile))
-      fail("video.json asks for burned captions but captions.json is missing: run captions.mjs.");
-    captions = readJson(cfile);
-    if (captions.approximate)
-      notes.push("caption times are estimated, not measured, so they may drift from the voice");
-  }
-
-  const hf =
-    engine === "hyperframes" ? findHyperframes({ explicit: flags.hyperframes, dir }) : null;
-  const rm = engine === "remotion" ? findRemotion({ explicit: flags.remotion, dir }) : null;
-  if (engine === "hyperframes") {
-    if (!hf)
-      fail(
-        `HyperFrames is not installed. Install the npm package "hyperframes" at version ${PINNED_HYPERFRAMES} (the command is in references/runner.md), then run again.`,
-      );
-    if (hf.version !== PINNED_HYPERFRAMES)
-      notes.push(
-        `HyperFrames ${hf.version} found; this skill was tested with ${PINNED_HYPERFRAMES}`,
-      );
-  } else {
-    if (!rm)
-      fail(
-        `Remotion is not installed. Install "remotion" and "@remotion/cli" at one 4.x version next to the project (the command is in references/runner.md), then run again. ${REMOTION_LICENCE_NOTE}`,
-      );
-    const bad = remotionProblems(rm);
-    if (bad.length) fail(bad.join("\n"));
-    notes.push(REMOTION_LICENCE_NOTE);
-    notes.push(
-      `Remotion ${rm.version}: this adapter has not been tested against a real Remotion install yet`,
+  const edir = engineDir({ explicit: flags["engine-dir"] });
+  const engine = engineStatus(edir);
+  if (!engine.ok)
+    fail(
+      capLines(
+        engine.problems,
+        "The Remotion engine is not ready. Run: node <video-core>/scripts/engine.mjs setup",
+      ),
     );
-  }
 
+  const notes = [];
   // A final render never runs on a draft that was approved for an older version of the project.
   if (!flags.draft) {
     const ap = approvalState(dir);
@@ -370,76 +307,109 @@ function main() {
       .filter((f) => FONT_EXT.test(f))
       .map((f) => path.join(fdir, f));
   }
-  const assetPaths = new Map((video.assets ?? []).map((a) => [a.id, path.join(dir, a.path)]));
+  const assetFiles = new Map();
+  for (const a of video.assets ?? []) {
+    const file = path.join(dir, a.path);
+    const type = VIDEO_EXT.test(a.path) ? "video" : IMAGE_EXT.test(a.path) ? "image" : null;
+    if (type) assetFiles.set(a.id, { file, type });
+  }
+  const words = loadWords(dir);
+  if (words?.lines?.some((l) => l.approximate))
+    notes.push("word times are estimated (no whisper.cpp), so captions may drift a little");
   let built;
   try {
-    built = (engine === "remotion" ? buildRemotionProject : buildProject)({
+    built = buildFilm({
       video,
       timing,
       brand,
-      fontFiles,
-      assetPaths,
-      captions,
-      words: sceneWords(timing, loadWords(dir)),
+      words: sceneWords(timing, words),
+      assetFiles,
+      preset: flags.preset,
     });
   } catch (e) {
     fail(e.message);
   }
   notes.push(...built.notes);
 
-  const work = path.join(dir, "out", engine === "remotion" ? "rm" : "hf");
+  // The work folder: public/ holds the media and fonts the film names; props.json is the film.
+  const work = path.join(dir, "out", "rm");
   rmSync(work, { recursive: true, force: true });
-  mkdirSync(work, { recursive: true });
-  for (const [rel, text] of Object.entries(built.files)) {
-    mkdirSync(path.dirname(path.join(work, rel)), { recursive: true });
-    writeFileSync(path.join(work, rel), text);
+  const pub = path.join(work, "public");
+  mkdirSync(pub, { recursive: true });
+  for (const m of built.media) {
+    mkdirSync(path.dirname(path.join(pub, m.to)), { recursive: true });
+    copyFileSync(m.from, path.join(pub, m.to));
   }
-  for (const m of [...built.media, ...built.fonts]) {
-    mkdirSync(path.dirname(path.join(work, m.to)), { recursive: true });
-    copyFileSync(m.from, path.join(work, m.to));
-  }
+  built.film.fonts = fontFiles.map((f) => {
+    const name = path.basename(f);
+    mkdirSync(path.join(pub, "fonts"), { recursive: true });
+    copyFileSync(f, path.join(pub, "fonts", name));
+    return { family: name.replace(FONT_EXT, ""), src: `/fonts/${name}` };
+  });
+  const props = path.join(work, "props.json");
+  writeFileSync(props, JSON.stringify({ film: built.film }));
+  syncSource(edir);
 
   const silent = path.join(work, "silent.mp4");
-  if (engine === "hyperframes") {
-    const check = run("node", [hf.bin, "check", work]);
-    if (check.status !== 0)
-      fail(
-        capLines(
-          (check.stdout + check.stderr).split("\n").filter(Boolean).slice(-30),
-          "HyperFrames check failed.",
-        ),
-      );
-    const r = run(
-      "node",
-      [hf.bin, "render", work, "-o", silent, "-q", flags.draft ? "draft" : "looks"],
-      { cwd: work },
+  const browser = tools().browser;
+  const args = [
+    engine.cli,
+    "render",
+    path.join(edir, "src", "index.ts"),
+    "main",
+    silent,
+    `--props=${props}`,
+    `--public-dir=${pub}`,
+    "--codec=h264",
+    "--muted",
+    "--log=error",
+    ...(typeof browser === "string" && path.isAbsolute(browser)
+      ? [`--browser-executable=${browser}`]
+      : []),
+    ...(flags.draft ? ["--scale=0.5", "--crf=28"] : ["--crf=14"]),
+  ];
+  const r = run("node", args, { cwd: edir, timeoutMs: 3_600_000 });
+  if (r.status !== 0 || !existsSync(silent))
+    fail(
+      capLines(
+        (r.stdout + r.stderr).split("\n").filter(Boolean).slice(-30),
+        "Remotion render failed.",
+      ),
     );
-    if (r.status !== 0 || !existsSync(silent))
-      fail(
-        capLines(
-          (r.stdout + r.stderr).split("\n").filter(Boolean).slice(-30),
-          "HyperFrames render failed.",
-        ),
-      );
-  } else {
-    const r = run("node", remotionArgs({ bin: rm.bin, out: silent, draft: flags.draft }), {
-      cwd: work,
-    });
-    if (r.status !== 0 || !existsSync(silent))
-      fail(
-        capLines(
-          (r.stdout + r.stderr).split("\n").filter(Boolean).slice(-30),
-          "Remotion render failed.",
-        ),
-      );
+
+  // Sound: the voice, a music bed (the user's licensed track, or an original generated one) and effects on cuts.
+  const sfxDir = path.join(work, "sfx");
+  mkdirSync(sfxDir, { recursive: true });
+  const effect = (name) => {
+    const f = path.join(sfxDir, `${name}.wav`);
+    if (!existsSync(f)) writeFileSync(f, wav(synth(name)));
+    return f;
+  };
+  const style = video.style ?? {};
+  const auto =
+    style.sfx === false
+      ? []
+      : built.cues.map((c) => ({
+          file: effect(c.name),
+          ms: Math.round(c.at * 1000),
+          gainDb: c.gainDb,
+        }));
+  const sfx = [...auto, ...sfxPlacements(video, dir)].sort((a, b) => a.ms - b.ms);
+  const musicAsset = video.music?.asset;
+  let music = musicAsset && isInside(musicAsset) ? path.join(dir, musicAsset) : null;
+  let duckDb = video.music?.duckUnderVoiceDb ?? -14;
+  if (!music && style.music !== "none") {
+    music = path.join(work, "bed.wav");
+    writeFileSync(music, wav(bed({ seconds: timing.totalSeconds + 0.5, bpm: style.bpm ?? 104 })));
+    duckDb = video.music?.duckUnderVoiceDb ?? -21;
+    notes.push(
+      'music: an original generated bed (no licence needed); set style.music to "none" to turn it off',
+    );
   }
 
   const name = path.basename(dir).replace(/[^A-Za-z0-9._-]/g, "-") || "video";
   const out = path.join(dir, "out", `${name}${flags.draft ? "-draft" : ""}.mp4`);
   const voice = voicePlacements(video, timing, dir);
-  const musicAsset = video.music?.asset;
-  const music = musicAsset && isInside(musicAsset) ? path.join(dir, musicAsset) : null;
-  const sfx = sfxPlacements(video, dir);
   const audible =
     Boolean(music) || sfx.length > 0 || voice.some((v) => !wavIsSilent(readFileSync(v.file)));
   const m = run(
@@ -452,7 +422,7 @@ function main() {
       voice,
       music,
       sfx,
-      duckDb: video.music?.duckUnderVoiceDb ?? -14,
+      duckDb,
       seconds: timing.totalSeconds,
       draft: flags.draft,
     }),
@@ -462,6 +432,12 @@ function main() {
       capLines((m.stdout + m.stderr).split("\n").filter(Boolean).slice(-20), "ffmpeg mux failed."),
     );
 
+  if (built.film.captions.length) {
+    const subs = subtitles(built.film.captions);
+    writeFileSync(path.join(dir, "out", `${name}.srt`), subs.srt);
+    writeFileSync(path.join(dir, "out", `${name}.vtt`), subs.vtt);
+  }
+
   let report;
   try {
     report = writeValidation({
@@ -470,7 +446,7 @@ function main() {
       video,
       timing,
       draft: flags.draft,
-      size: built.size,
+      size: [built.film.width, built.film.height],
     });
   } catch (e) {
     notes.push(`could not write validation.json: ${String(e.message).slice(0, 80)}`);
@@ -478,10 +454,11 @@ function main() {
   if (report && !report.ok)
     for (const c of report.checks.filter((x) => x.level === "fail"))
       notes.push(`validation: ${c.id}: ${c.text}`);
+  notes.push(LICENCE_NOTE);
   console.log(
     capLines(
       notes.map((n) => `note: ${n}`),
-      `Rendered ${path.relative(dir, out)}: ${timing.totalSeconds}s, ${flags.draft ? "540p draft" : built.size.join("x")}, ${voice.length} voice line(s)${music ? ", music" : ""}${sfx.length ? `, ${sfx.length} sound effect(s)` : ""}, ${(statSync(out).size / 1024).toFixed(0)} KB.`,
+      `Rendered ${path.relative(dir, out)}: ${timing.totalSeconds}s, ${flags.draft ? "540p draft" : `${built.film.width}x${built.film.height}`}, ${voice.length} voice line(s)${music ? ", music" : ""}${sfx.length ? `, ${sfx.length} sound effect(s)` : ""}, ${(statSync(out).size / 1024).toFixed(0)} KB.`,
     ),
   );
   if (report && !report.ok) process.exit(1);

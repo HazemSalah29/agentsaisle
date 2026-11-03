@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Kinetic video",
+    "type": "explainer",
+    "format": "reel-9x16",
+    "fps": 30,
+    "lang": "en",
+    "brand": "brand/brand.json"
+  },
+  "script": "script.md",
+  "style": {
+    "preset": "ember",
+    "captions": "none"
+  },
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "am_michael",
+    "speed": 1.05
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "kind": "kinetic",
+      "narration": [
+        "l1"
+      ],
+      "props": {
+        "bg": "black",
+        "grid": true,
+        "vignette": true,
+        "caption": true,
+        "emph": [
+          "stuck"
+        ],
+        "exit": "slide"
+      }
+    },
+    {
+      "id": "s2",
+      "kind": "kinetic",
+      "narration": [
+        "l2"
+      ],
+      "props": {
+        "bg": "accent",
+        "emph": [],
+        "exit": "shatter"
+      },
+      "transitionIn": "slash"
+    },
+    {
+      "id": "s3",
+      "kind": "kinetic",
+      "narration": [
+        "l3"
+      ],
+      "props": {
+        "bg": "black",
+        "grid": true,
+        "vignette": true,
+        "caption": true,
+        "emph": [
+          "nobody"
+        ],
+        "exit": "drop"
+      },
+      "transitionIn": "shatter"
+    },
+    {
+      "id": "s4",
+      "kind": "kinetic",
+      "narration": [
+        "l4"
+      ],
+      "props": {
+        "bg": "black",
+        "grid": true,
+        "vignette": true,
+        "caption": true,
+        "emph": [
+          "ship",
+          "Friday"
+        ],
+        "exit": "blur"
+      },
+      "transitionIn": "whip"
+    },
+    {
+      "id": "s5",
+      "kind": "kinetic",
+      "narration": [
+        "l5"
+      ],
+      "props": {
+        "bg": "black",
+        "grid": true,
+        "vignette": true,
+        "emph": [
+          "users"
+        ],
+        "exit": "slide",
+        "cards": [
+          {
+            "title": "What users want",
+            "rows": [
+              {
+                "text": "it works",
+                "tag": "yes"
+              },
+              {
+                "text": "dark mode",
+                "tag": "later"
+              },
+              {
+                "text": "perfect code",
+                "tag": "never"
+              }
+            ],
+            "x": 50,
+            "y": 68,
+            "tilt": [
+              14,
+              -16
+            ]
+          }
+        ],
+        "y": 28
+      },
+      "transitionIn": "zoom-through"
+    },
+    {
+      "id": "s6",
+      "kind": "kinetic",
+      "narration": [
+        "l6"
+      ],
+      "props": {
+        "bg": "accent",
+        "emph": [],
+        "exit": "shatter"
+      },
+      "transitionIn": "slash"
+    },
+    {
+      "id": "s7",
+      "kind": "kinetic",
+      "narration": [
+        "l7"
+      ],
+      "props": {
+        "bg": "black",
+        "grid": true,
+        "vignette": true,
+        "caption": true,
+        "emph": [
+          "ship"
+        ],
+        "exit": "drop"
+      },
+      "transitionIn": "shatter"
+    }
+  ]
+}

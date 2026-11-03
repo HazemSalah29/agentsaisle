@@ -2,7 +2,7 @@
 // One command for the steps that always run in the same order: check -> timing -> render (-> credits for a final).
 // It stops at the first one that fails and prints that step's own message, so one call replaces four. Every step is
 // the script you would run by hand; nothing here decides anything they do not.
-// Usage: node build.mjs <project-dir> [--draft] [--ignore-approval] [--engine hyperframes|remotion]
+// Usage: node build.mjs <project-dir> [--draft] [--ignore-approval] [--preset volt|ember|ice|grape]
 // Exit: 0 built, 1 a step failed (its output is shown), 2 could not start.
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -13,11 +13,11 @@ import { capLines, isEntry, parseArgs } from "./_lib.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** The steps for a build, as { id, script, args }. Pure. */
-export function buildSteps(dir, { draft = false, ignoreApproval = false, engine } = {}) {
+export function buildSteps(dir, { draft = false, ignoreApproval = false, preset } = {}) {
   const render = [dir];
   if (draft) render.push("--draft");
   if (ignoreApproval) render.push("--ignore-approval");
-  if (engine) render.push("--engine", engine);
+  if (preset) render.push("--preset", preset);
   return [
     { id: "check", script: "check.mjs", args: [dir] },
     { id: "timing", script: "timing.mjs", args: [dir] },
@@ -29,7 +29,7 @@ export function buildSteps(dir, { draft = false, ignoreApproval = false, engine 
 const lastLines = (r, n = 12) =>
   (r.stdout + r.stderr)
     .split("\n")
-    .filter((l) => l.trim() && !/^\[hyperframes\] check:/.test(l))
+    .filter((l) => l.trim())
     .slice(-n);
 
 function main() {
@@ -37,7 +37,7 @@ function main() {
   try {
     parsed = parseArgs(process.argv.slice(2), {
       booleans: ["draft", "ignore-approval"],
-      strings: ["engine"],
+      strings: ["preset"],
     });
   } catch (e) {
     console.error(e.message);
@@ -46,7 +46,7 @@ function main() {
   const target = parsed.positional[0];
   if (!target) {
     console.error(
-      "Usage: node build.mjs <project-dir> [--draft] [--ignore-approval] [--engine hyperframes|remotion]",
+      "Usage: node build.mjs <project-dir> [--draft] [--ignore-approval] [--preset volt|ember|ice|grape]",
     );
     process.exit(2);
   }
@@ -58,7 +58,7 @@ function main() {
   const steps = buildSteps(dir, {
     draft: parsed.flags.draft,
     ignoreApproval: parsed.flags["ignore-approval"],
-    engine: parsed.flags.engine,
+    preset: parsed.flags.preset,
   });
   const lines = [];
   for (const s of steps) {

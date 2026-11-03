@@ -5,7 +5,7 @@
 //          [--into <video.json> --scene <id> [--asset <id>] [--device phone|laptop|browser|none] [--title <text>]]
 //          [--max-idle 1.2] [--type-speed 3]
 // Without --video it only plans and prints. Exit: 0 done, 2 refused or failed.
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { DEFAULTS, filterFor, planShowcase } from "./_plan.mjs";
 import { capLines, isEntry, isInside, parseArgs } from "./_lib.mjs";
@@ -52,6 +52,7 @@ export function execute(argv) {
     outFile = checkOutput(flags.out, inFile, flags.force);
     if (!/\.mp4$/i.test(outFile)) throw new Error("The edited recording must be an .mp4 file.");
     if (!existsSync(inFile)) throw new Error(`${path.basename(inFile)} does not exist.`);
+    mkdirSync(path.dirname(outFile), { recursive: true });
     try {
       ffmpeg([
         ...input(inFile),
@@ -103,10 +104,14 @@ export function execute(argv) {
       ...plan.props,
     };
     if (flags.title) props.title = flags.title;
+    const says = Object.entries(plan.says).sort((a, b) => a[1] - b[1]);
     const scene = {
-      ...(old ?? { id: flags.scene, kind: "screen", transitionIn: "cut" }),
+      ...(old ?? { id: flags.scene, kind: "screen", transitionIn: "slide" }),
       durationFrom: "fixed",
       seconds: plan.seconds,
+      ...(says.length
+        ? { narration: says.map(([id]) => id), narrationAt: Object.fromEntries(says) }
+        : {}),
       props,
     };
     if (old) video.scenes[video.scenes.indexOf(old)] = scene;

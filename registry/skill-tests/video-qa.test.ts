@@ -28,7 +28,7 @@ const checks = () => loadScript<Checks>("video-qa", "scripts/_checks.mjs");
 const qa = () => loadScript<Qa>("video-qa", "scripts/qa.mjs");
 
 describe("transition windows", () => {
-  it("covers only the moving transitions, from just before a scene to the end of its transition", async () => {
+  it("covers only the moving transitions, from the end of the scene before to when the next has settled", async () => {
     const { transitionWindows } = await checks();
     const timing = {
       scenes: [
@@ -47,10 +47,16 @@ describe("transition windows", () => {
       ],
     };
     const w = transitionWindows(timing, video);
-    expect(w).toHaveLength(2); // the fade is not a moving transition
-    expect(w[0]![0]).toBeCloseTo(3.85);
+    expect(w).toHaveLength(2); // the fade is not a moving transition, and the first scene has none
+    expect(w[0]![0]).toBeCloseTo(3.45); // it runs over the end of the scene before
     expect(w[0]![1]).toBeCloseTo(4.95);
-    expect(w[1]![1]).toBeCloseTo(12.55);
+    expect(w[1]![1]).toBeCloseTo(12.95);
+    // a scene with no transition slides in
+    const plain = transitionWindows(
+      { scenes: timing.scenes.slice(0, 2) },
+      { scenes: [{ id: "a" }, { id: "b" }] },
+    );
+    expect(plain).toHaveLength(1);
     expect(transitionWindows(null, video)).toEqual([]);
   });
 });

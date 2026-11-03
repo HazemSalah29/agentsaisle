@@ -9,7 +9,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-export const MIN_NODE_MAJOR = 22;
+export const MIN_NODE_MAJOR = 20;
 export const MAX_LINES = 40;
 
 /** Fixed programs and arguments. Nothing else is ever spawned. */
@@ -19,7 +19,7 @@ export const TOOLS = [
     cmd: "node",
     args: ["--version"],
     need: "core",
-    why: "HyperFrames renders (Node 22+)",
+    why: "Remotion renders (Node 20+)",
   },
   {
     id: "ffmpeg",
@@ -35,27 +35,19 @@ export const TOOLS = [
     need: "core",
     why: "QA checks (ships with FFmpeg)",
   },
-  {
-    id: "yt-dlp",
-    cmd: "yt-dlp",
-    args: ["--version"],
-    need: "optional",
-    why: "downloading footage with video-ingest (network)",
-  },
-  { id: "python", cmd: "python3", args: ["--version"], need: "optional", why: "TTS models, Manim" },
-  { id: "manim", cmd: "manim", args: ["--version"], need: "optional", why: "maths scenes" },
+  { id: "python", cmd: "python3", args: ["--version"], need: "optional", why: "the Kokoro voice" },
   {
     id: "whisper",
     cmd: "whisper-cli",
     args: ["--help"],
     need: "optional",
-    why: "captions from audio (whisper.cpp)",
+    why: "measured word times for captions (whisper.cpp)",
   },
   { id: "nvidia-smi", cmd: "nvidia-smi", args: ["--version"], need: "gpu", why: "local GPU tier" },
 ];
 
 /** Names only. The values of these variables are never read into the output. */
-export const KEY_NAMES = ["ELEVENLABS_API_KEY", "KLING_API_KEY", "RUNWAY_API_KEY", "LUMA_API_KEY"];
+export const KEY_NAMES = [];
 
 const INSTALL = {
   darwin: {
@@ -157,11 +149,15 @@ export function engineLines(
   lines.push(
     `  python venv ${pyOk ? `found ${ver.text}` : py ? "not usable (needs 3.10 to 3.12)" : "not set up (voice engines)"}`,
   );
+  const kdir = path.join(home, ".aisle-video", "kokoro");
+  const onnx =
+    exists(path.join(kdir, "kokoro-v1.0.onnx")) &&
+    exists(path.join(kdir, "voices-v1.0.bin")) &&
+    pyOk &&
+    ok(py, ["-c", "import kokoro_onnx"]) !== null;
+  const torch = !onnx && pyOk && ok(py, ["-c", "import kokoro"]) !== null;
   lines.push(
-    `  kokoro      ${pyOk && ok(py, ["-c", "import kokoro"]) !== null ? "ready (English voice)" : "not installed (English voice: use --provider test or add audio yourself)"}`,
-  );
-  lines.push(
-    `  opencv      ${pyOk && ok(py, ["-c", "import cv2"]) !== null ? "ready (face tracking for reframe)" : "not installed (reframe: use --mode center, left, right or x=0.4)"}`,
+    `  kokoro      ${onnx ? "ready (English voice, onnx on CPU)" : torch ? "ready (English voice)" : "not set up (English voice: references/engines.md in video-voice; or record your own)"}`,
   );
   lines.push(
     `  3arab-tts   ${typeof cfg.arab3 === "string" && exists(cfg.arab3) && typeof cfg.arab3Model === "string" && exists(cfg.arab3Model) ? "set up (Arabic voice)" : "not set up (Arabic voice)"}`,
@@ -176,6 +172,24 @@ export function engineLines(
     `  whisper.cpp ${wc && ok(wc, ["--help"]) !== null && modelOk ? `ready (${path.basename(cfg.whisperModel)})` : "not set up (captions use ESTIMATED word times)"}`,
   );
   return lines;
+}
+
+/** One line on the Remotion engine (video-core's engine.mjs decides; this only reports). */
+export async function remotionLine(
+  root = path.join(path.dirname(realpathSync(fileURLToPath(import.meta.url))), "..", ".."),
+) {
+  try {
+    const eng = await import(
+      pathToFileURL(path.join(root, "video-core", "scripts", "engine.mjs")).href
+    );
+    const dir = eng.engineDir();
+    const s = eng.engineStatus(dir);
+    return s.ok
+      ? `  remotion    ready ${s.version} (${dir})`
+      : "  remotion    not set up: node <video-core>/scripts/engine.mjs setup, then the user runs the two lines it prints";
+  } catch {
+    return "  remotion    video-core not found next to this skill";
+  }
 }
 
 /** One line on the bundled code highlighter (part of video-core), so a missing install shows up early. */
@@ -197,9 +211,7 @@ export function report({ tools, keys, platform, engines = [] }) {
     lines.push(`  ${t.id.padEnd(11)} ${v}${t.need === "core" || r.found ? "" : " (optional)"}`);
   }
   const found = KEY_NAMES.filter((k) => keys[k]);
-  lines.push(
-    `  api keys    ${found.length ? `found: ${found.join(", ")}` : "none set (fine for the $0 tier)"}`,
-  );
+  if (found.length) lines.push(`  api keys    found: ${found.join(", ")}`);
   lines.push(...engines);
   lines.push(`tier: ${hardwareTier(tools)}`);
   const todo = installLines(tools, platform);
@@ -219,7 +231,7 @@ export function cachedLine(cache, now = Date.now()) {
   return `doctor (cached, checked ${hours < 1 ? "under an hour" : `${Math.round(hours)} h`} ago): tier ${cache.tier}. Run doctor.mjs without --cached to see every tool.`;
 }
 
-function main() {
+async function main() {
   const cacheFile = path.join(os.homedir(), ".aisle-video", "doctor-cache.json");
   const useCache = process.argv.includes("--cached");
   if (useCache) {
@@ -242,7 +254,7 @@ function main() {
       tools,
       keys,
       platform: process.platform,
-      engines: [...engineLines(readToolsConfig()), ...sceneLines()],
+      engines: [await remotionLine(), ...engineLines(readToolsConfig()), ...sceneLines()],
     }),
   );
   const tier = hardwareTier(tools);

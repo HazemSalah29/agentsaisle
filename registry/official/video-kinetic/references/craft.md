@@ -2,12 +2,12 @@
 
 ## What the parts do
 
-- **Pop-in**: each spoken word scales in with a small overshoot (0.22 s) starting 30 ms before it is said, so the eye lands on it as the ear does. Words are uppercase in the Anton display font (SIL OFL), white, with key words in the accent colour, a glow and a spark ring.
-- **Phrases**: the line splits at punctuation into groups of at most 4 words. Two phrases can be on screen at once, one above the other; a phrase leaves when its slot is needed again, or half a second after its last word, by `slide`, `drop`, `blur` or `shatter` (letters break apart and fly). The last phrase of a beat stays so the next transition can split it.
-- **Slab**: a short line (1 to 3 words) on a full colour block in the accent colour, one giant word. Used about every third beat for rhythm.
-- **Transitions** into a beat: `slash` (a glowing line sweeps corner to corner and the old scene is cut in two, the halves sliding apart with a spark ring), `shatter` (the old scene breaks into shards), `whip` (slides out blurred), `zoom-through`. A slash is never closer than 2.5 s to the last one (it would strobe); the engine turns a too-early slash into a whip and says so.
-- **Cards and flows**: a tilted 3D card whose rows appear on spoken words (`card:`), or a vertical chain of nodes with a glowing dot (`flow:`). Only the user's content.
-- **Sound**: original synthesized effects, a whoosh and a hit on cuts and a tick on key words, mixed under the voice at -5 to -16 dB; the master is normalised to -14 LUFS.
+- **Pop-in**: each spoken word springs in with an overshoot starting 30 ms before it is said, so the eye lands on it as the ear does. Uppercase Anton (SIL OFL), white, key words in the accent colour with a glow; each key word gives the camera a small punch.
+- **Phrases**: the line splits at punctuation into groups of at most 4 words. The newest phrase holds the middle; the one before clears out as it arrives, by `slide`, `drop`, `blur` or `shatter` (letters break apart and fly). The last phrase of a beat stays.
+- **Slab**: a short line on a full block of the accent colour, giant dark type. Used about every third beat for rhythm.
+- **Transitions** into a beat: `slash` (a glowing diagonal wipe with a flash), `shatter` (the old beat zooms apart with a flash), `whip` (a fast blurred slide), `zoom-through`. Never two slashes within 2.5 s.
+- **Cards and flows**: a tilted 3D card whose rows appear on spoken words (`card:`), or a vertical chain of nodes (`flow:`). Only the user's content.
+- **Sound**: added by the render: a whoosh on each cut, an impact on slabs, a soft pop on each phrase and an original music bed ducked under the voice; the master is normalised to -14 LUFS.
 
 ## Rules
 

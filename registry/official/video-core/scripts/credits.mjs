@@ -113,6 +113,15 @@ export function buildCredits(video, manifest = null) {
       attribution: a.attribution ?? "",
       aiGenerated: a.aiGenerated === true,
     })),
+    // The engine's own music bed and sound effects are synthesised from maths: original, nothing to license.
+    sound: [
+      ...(video.music?.asset || video.style?.music === "none"
+        ? []
+        : ["Music: an original bed synthesised by video-core (no samples, no licence needed)"]),
+      ...(video.style?.sfx === false
+        ? []
+        : ["Sound effects: original, synthesised by video-core (no samples, no licence needed)"]),
+    ],
     disclosure: computed,
     guidance: [...guidance(computed, video), ...voiceGuidance(manifest)],
   };
@@ -128,6 +137,7 @@ export function creditsText(c) {
       "",
     );
   else if (c.voice !== "none") lines.push(`Voice: ${c.voice}`, "");
+  if (c.sound?.length) lines.push(...c.sound, "");
   if (c.assets.length === 0) lines.push("No third-party or generated assets.", "");
   for (const a of c.assets) {
     lines.push(`${a.path}`);

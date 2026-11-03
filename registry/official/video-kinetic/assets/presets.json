@@ -9,12 +9,7 @@
     "vignette": true,
     "grain": false,
     "caption": true,
-    "slabEvery": 3,
-    "sfx": {
-      "cut": ["whoosh", -8],
-      "hit": ["impact", -5],
-      "pop": ["tick", -15]
-    }
+    "slabEvery": 3
   },
   "ember": {
     "description": "Charcoal with a hot orange accent: warm and bold.",
@@ -26,12 +21,7 @@
     "vignette": true,
     "grain": false,
     "caption": true,
-    "slabEvery": 3,
-    "sfx": {
-      "cut": ["whoosh", -8],
-      "hit": ["impact", -5],
-      "pop": ["tick", -15]
-    }
+    "slabEvery": 3
   },
   "ice": {
     "description": "Deep navy with a cyan accent: cool and technical.",
@@ -43,11 +33,18 @@
     "vignette": true,
     "grain": false,
     "caption": true,
-    "slabEvery": 4,
-    "sfx": {
-      "cut": ["whoosh", -9],
-      "hit": ["impact", -6],
-      "pop": ["tick", -16]
-    }
+    "slabEvery": 4
+  },
+  "grape": {
+    "description": "Ink violet with a lilac accent: playful and modern.",
+    "accent": "#b48bff",
+    "bg": "#0a0711",
+    "exits": ["blur", "slide", "shatter", "drop"],
+    "transitions": ["whip", "slash", "zoom-through", "shatter"],
+    "grid": true,
+    "vignette": true,
+    "grain": false,
+    "caption": true,
+    "slabEvery": 4
   }
 }

@@ -25,9 +25,11 @@ async function main() {
     const video = read("video.json");
     const timing = read("timing.json");
     let kin;
+    let rules;
     let wd;
     try {
-      kin = await import("../../video-core/assets/engine/hyperframes/kinetic.mjs");
+      kin = await import("../../video-core/assets/film/resolve.mjs");
+      rules = await import("../../video-core/assets/film/rules.mjs");
       wd = await import("../../video-core/scripts/words-data.mjs");
     } catch {
       throw new Error("Needs the video-core skill installed next to video-kinetic.");
@@ -45,25 +47,23 @@ async function main() {
         errors.push(
           `${s.id}: word times are estimated, not measured (install whisper.cpp, or use --allow-estimated)`,
         );
-      const times = kin.phraseTimes(s.props ?? {}, ws, T);
-      for (const [j, ph] of times.entries()) {
+      const groups = kin.groupWords(ws, s.props?.phrases);
+      for (const [j, g] of groups.entries()) {
         total++;
-        if (ph.words.length > kin.LIMITS.perPhrase)
+        if (g.length > rules.KINETIC.perPhrase)
           errors.push(
-            `${s.id} phrase ${j + 1}: ${ph.words.length} words at once (at most ${kin.LIMITS.perPhrase})`,
+            `${s.id} phrase ${j + 1}: ${g.length} words at once (at most ${rules.KINETIC.perPhrase})`,
           );
-        const size = kin.phraseSize(
-          ph.words.map((w) => kin.shown(w.text)),
-          s.props?.bg === "accent",
-        );
-        if (size < 8)
+        const longest = Math.max(...g.map((w) => w.text.replace(/[^\p{L}\p{N}]/gu, "").length));
+        if (longest > 14)
           errors.push(
-            `${s.id} phrase ${j + 1}: type size ${size} is too small to read (shorten the line)`,
+            `${s.id} phrase ${j + 1}: a ${longest}-letter word is too long for the frame (shorten it)`,
           );
-        const visible = (ph.exitAt ?? T) - ph.start;
-        if (visible < readSeconds(ph.words.length))
+        const until = groups[j + 1]?.[0]?.start ?? T;
+        const visible = until - g[0].start;
+        if (visible < readSeconds(g.length))
           warns.push(
-            `${s.id} phrase ${j + 1}: on screen ${visible.toFixed(2)} s, a reader needs about ${readSeconds(ph.words.length).toFixed(2)} s (speak slower or split the line)`,
+            `${s.id} phrase ${j + 1}: on screen ${visible.toFixed(2)} s, a reader needs about ${readSeconds(g.length).toFixed(2)} s (speak slower or split the line)`,
           );
       }
     });

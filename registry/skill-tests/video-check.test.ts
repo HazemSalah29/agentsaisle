@@ -158,9 +158,9 @@ describe("video-core check", () => {
       },
     ];
     const out = check.checkProject(v, dir).join("\n");
-    expect(out).toMatch(/scenes\[0\]\.props\.items: at least 1 item/);
-    expect(out).toMatch(/scenes\[1\]\.props\.type/);
-    expect(out).toMatch(/scenes\[1\]\.props\.data: at least 2 item/);
+    expect(out).toMatch(/scenes\[0\]\.props\.items: 1 to 6 items/);
+    expect(out).toMatch(/scenes\[1\]\.props\.type: bar or line/);
+    expect(out).toMatch(/scenes\[1\]\.props\.data: 2 to 10 points/);
   });
 
   it("fails on a credential anywhere in the file", () => {

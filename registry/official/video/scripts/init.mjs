@@ -14,16 +14,7 @@ import {
 import path from "node:path";
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 
-export const DIRS = [
-  "brand/fonts",
-  "characters",
-  "recipes",
-  "library/music",
-  "library/sfx",
-  "inbox",
-  "projects",
-  "exports",
-];
+export const DIRS = ["brand/fonts", "library/music", "library/sfx", "inbox", "projects", "exports"];
 export const GITIGNORE = ["projects/*/cache/", "projects/*/out/", "exports/"];
 
 /** Files under assets/studio as relative paths, sorted. */

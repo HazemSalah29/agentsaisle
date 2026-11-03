@@ -36,7 +36,7 @@ describe("video doctor", () => {
     expect(d.hardwareTier(all(true, { "nvidia-smi": { found: false } }))).toBe("$0 laptop");
     expect(d.hardwareTier(all(true))).toBe("local GPU");
     expect(d.hardwareTier(all(true, { ffmpeg: { found: false } }))).toBe("not ready");
-    expect(d.hardwareTier(all(true, { node: { found: true, version: { major: 20 } } }))).toBe(
+    expect(d.hardwareTier(all(true, { node: { found: true, version: { major: 18 } } }))).toBe(
       "not ready",
     );
   });
@@ -67,16 +67,13 @@ describe("video doctor", () => {
   });
 
   // The real doctor probes the voice and face engines, which import heavy Python libraries: allow it time.
-  it("never prints a key value, only found or missing", { timeout: 60_000 }, () => {
+  it("needs no API key and never prints one", { timeout: 60_000 }, () => {
     const secret = "sk-canary-1234567890";
-    const keys = Object.fromEntries(d.KEY_NAMES.map((k) => [k, true]));
-    const out = d.report({ tools: all(true), keys, platform: "darwin" });
-    expect(out).toContain("KLING_API_KEY");
+    expect(d.KEY_NAMES).toEqual([]);
     const run = spawnSync("node", [skillFile("video", "scripts/doctor.mjs")], {
       encoding: "utf8",
       env: { ...process.env, KLING_API_KEY: secret },
     });
-    expect(run.stdout).toContain("KLING_API_KEY");
     expect(run.stdout + run.stderr).not.toContain(secret);
   });
 
@@ -117,9 +114,8 @@ describe("video doctor engines", () => {
       .engineLines({}, { run: fake({}), exists: () => false })
       .join("\n");
     expect(text).toMatch(/python venv not set up/);
-    expect(text).toMatch(/kokoro +not installed/);
+    expect(text).toMatch(/kokoro +not set up/);
     expect(text).toMatch(/3arab-tts +not set up/);
-    expect(text).toMatch(/opencv +not installed \(reframe: use --mode center/);
     expect(text).toMatch(/whisper.cpp +not set up \(captions use ESTIMATED word times\)/);
   });
 
@@ -127,15 +123,14 @@ describe("video doctor engines", () => {
     const run = fake({
       "/v/bin/python3.12 --version": { status: 0, out: "Python 3.12.4\n" },
       "/v/bin/python3.12 -c import kokoro": { status: 0 },
-      "/v/bin/python3.12 -c import cv2": { status: 0 },
+      "/v/bin/python3.12 -c import kokoro_onnx": { status: 0 },
       "/b/whisper-cli --help": { status: 0 },
     });
     const text = e()
       .engineLines(cfg, { run, exists: () => true })
       .join("\n");
-    expect(text).toMatch(/opencv +ready \(face tracking for reframe\)/);
     expect(text).toMatch(/python venv found 3\.12\.4/);
-    expect(text).toMatch(/kokoro +ready/);
+    expect(text).toMatch(/kokoro +ready \(English voice, onnx on CPU\)/);
     expect(text).toMatch(/3arab-tts +set up/);
     expect(text).toMatch(/whisper.cpp +ready \(ggml-base\.bin\)/);
   });
@@ -149,7 +144,7 @@ describe("video doctor engines", () => {
       .engineLines(cfg, { run, exists: (f) => f !== "/m/ggml-base.bin" })
       .join("\n");
     expect(text).toMatch(/not usable \(needs 3\.10 to 3\.12\)/);
-    expect(text).toMatch(/kokoro +not installed/);
+    expect(text).toMatch(/kokoro +not set up/);
     expect(text).toMatch(/whisper.cpp +not set up/);
   });
 

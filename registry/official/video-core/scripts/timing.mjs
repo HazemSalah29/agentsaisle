@@ -66,8 +66,21 @@ export function buildTiming(video, measure, pad = DEFAULT_PAD) {
   const scenes = video.scenes.map((s) => {
     const lines = [];
     let seconds;
-    if ((s.durationFrom ?? "voice") === "fixed") seconds = s.seconds;
-    else {
+    if ((s.durationFrom ?? "voice") === "fixed") {
+      seconds = s.seconds;
+      // A fixed scene may still carry narration at set times (a screen recording: the line starts where its
+      // action happens). Lines never overlap, and the scene grows to fit the last one.
+      if (s.narrationAt && (s.narration ?? []).length) {
+        let free = 0;
+        for (const id of s.narration) {
+          const d = measure(id);
+          const start = Math.max(free, Number(s.narrationAt[id]) || 0);
+          lines.push({ id, start: round(start), seconds: round(d) });
+          free = start + d + 0.1;
+        }
+        seconds = Math.max(seconds, free - 0.1 + pad);
+      }
+    } else {
       let t = 0;
       for (const id of s.narration ?? []) {
         const d = measure(id);
