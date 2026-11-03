@@ -8,7 +8,12 @@ import { writerFiles } from "./video-fixtures";
 
 type Loose = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Finding = { level: "error" | "warn"; file: string; line: number; message: string };
-type Check = { checkWriting: (f: Loose) => Finding[]; BUILT_KINDS: string[] };
+type Check = {
+  checkWriting: (f: Loose) => Finding[];
+  BUILT_KINDS: string[];
+  itemCount: (k: string, p?: Loose) => number;
+  paceNote: (o: Loose) => string | null;
+};
 type Parse = {
   parseScript: (t: string) => { lines: Loose[]; problems: Loose[] };
   parseFacts: (t: string) => Loose[];
@@ -227,6 +232,48 @@ describe("video-write check", () => {
         "\n",
       ),
     ).toMatch(/"edge" is not a story beat|no "turn" beat/);
+  });
+
+  it("counts what a scene brings in one by one, for every kind that does", async () => {
+    const { itemCount } = await check();
+    expect(itemCount("list", { items: ["a", "b", "c"] })).toBe(3);
+    expect(itemCount("steps", { steps: [{}, {}] })).toBe(2);
+    expect(itemCount("versus", { left: { points: ["a"] }, right: { points: ["b", "c"] } })).toBe(3);
+    expect(itemCount("cycle", { nodes: ["a", "b", "c"] })).toBe(3);
+    expect(itemCount("title", { text: "x" })).toBe(0);
+    expect(itemCount("number", { value: 1 })).toBe(0);
+    expect(itemCount("list", {})).toBe(0); // missing props never throw
+  });
+
+  it("warns when a scene has a lot of narration for few items, and when one scene runs long", async () => {
+    const { paceNote } = await check();
+    const three = { kind: "list", props: { items: ["a", "b", "c"] } };
+    expect(paceNote({ ...three, seconds: 9 })).toBeNull(); // 3 s an item
+    expect(paceNote({ ...three, seconds: 12 })).toMatch(/spotlight/); // 4 s an item
+    const one = { kind: "list", props: { items: ["a"] } };
+    expect(paceNote({ ...one, seconds: 8 })).toMatch(/spotlight/);
+    expect(
+      paceNote({ ...one, props: { items: ["a"], layout: "spotlight" }, seconds: 8 }),
+    ).toBeNull();
+    expect(paceNote({ kind: "title", props: {}, seconds: 7 })).toBeNull();
+    expect(paceNote({ kind: "title", props: {}, seconds: 10 })).toMatch(/split/);
+    expect(
+      paceNote({ ...three, props: { ...three.props, layout: "spotlight" }, seconds: 10 }),
+    ).toMatch(/split/);
+    expect(paceNote({ ...three, seconds: 0 })).toBeNull();
+  });
+
+  it("reports the pace of a scene by name from the storyboard", async () => {
+    const { checkWriting } = await check();
+    const f = writerFiles();
+    const slow = f.storyboard.replace(
+      '"items":["Take a token","Refill slowly","Reject when empty"]',
+      '"items":["Take a token"]',
+    );
+    expect(warns(checkWriting({ ...f, storyboard: slow })).join("\n")).toMatch(
+      /scene "bucket": about \d+ s of narration for 1 item/,
+    );
+    expect(warns(checkWriting(f)).join("\n")).not.toMatch(/the picture would wait/);
   });
 
   it("checks the storyboard against the script and the built kinds", async () => {

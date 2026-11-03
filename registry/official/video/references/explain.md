@@ -24,3 +24,9 @@ Nothing but the project folder. Every skill reads its inputs from files there, s
 ## When something fails
 
 Name the failing file or check in one line, say which step fixes it, and go back to that step. Do not patch `video.json` by hand to make a check pass.
+
+## Pace and transitions
+
+- Pick the kind from what the line says (`video-core/assets/scene-catalog.json`). When a scene has several seconds of narration per item, use `"layout":"spotlight"`; keep the default stack for short items said quickly.
+- Between idea scenes use `fade` by default, one `whip` for a change of topic, and a `slash` only where it is more than 2.5 s from the last one. Never put a transition on every scene.
+- If `video-qa` reports an idle stretch, name the scene it gives, then: leave `focus` on, use spotlight, or split the scene. Do not add decoration to hide a long hold.

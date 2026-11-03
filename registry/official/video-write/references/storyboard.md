@@ -35,3 +35,7 @@ For a beat that explains an algorithm, a code change, a message exchange or a re
 - Numbers, values and labels are only ever the ones in the user's facts. Never invent a stat to fill a `number`, `callout`, `funnel` or `matrix`.
 - Every item enters on the word that names it. Give `on` (the spoken words) only when the item's own words are not said.
 - One idea per scene, no more than 6 items, and do not put two diagram scenes back to back without a title or a short list between them.
+
+## Pace
+
+`write-check.mjs` warns when a scene carries more than about 3.5 s of narration per item (a list, steps, funnel, matrix, nodes, cycle, timeline or versus scene) or more than 9 s in one scene: the picture would wait on the voice. Fixes, in order: `"layout":"spotlight"` on `list`, `steps` or `funnel` (one item fills the frame at a time), split the scene so the picture changes with the idea, or cut words. Item scenes keep moving on their own (`focus`, on by default), but a long narration over two or three items still reads as slow.

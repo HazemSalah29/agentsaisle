@@ -23,6 +23,48 @@ const ORDER = {
   explain: ["hook", "misconception", "analogy", "step", "edge", "takeaway"],
   story: ["hook", "setup", "turn", "climax", "button"],
 };
+/** How many things a scene brings in one after another (0 when it is a single idea: a title, a number, a quote). */
+export function itemCount(kind, props = {}) {
+  const n = (v) => (Array.isArray(v) ? v.length : 0);
+  switch (kind) {
+    case "list":
+      return n(props.items);
+    case "steps":
+      return n(props.steps);
+    case "funnel":
+      return n(props.stages);
+    case "timeline":
+      return n(props.events);
+    case "matrix":
+      return n(props.items);
+    case "nodes":
+    case "cycle":
+      return n(props.nodes);
+    case "versus":
+      return n(props.left?.points) + n(props.right?.points);
+    default:
+      return 0;
+  }
+}
+
+/** Most seconds of narration one item may carry before the scene sits still, and the most one scene should hold. */
+export const MAX_SECONDS_PER_ITEM = 3.5;
+export const MAX_SCENE_SECONDS = 9;
+
+/**
+ * A pace warning for a scene, or null: a lot of narration against few things to show (so the picture would wait on
+ * the voice), or one scene that runs very long. The spotlight layout is the answer to the first, so it is never warned.
+ */
+export function paceNote({ kind, props = {}, seconds }) {
+  if (!(seconds > 0)) return null;
+  const items = itemCount(kind, props);
+  if (items > 0 && props.layout !== "spotlight" && seconds / items > MAX_SECONDS_PER_ITEM)
+    return `about ${Math.round(seconds)} s of narration for ${items} item(s): the picture would wait on the voice. Use layout "spotlight", split the scene, or cut words`;
+  if (seconds > MAX_SCENE_SECONDS)
+    return `about ${Math.round(seconds)} s in one scene (more than ${MAX_SCENE_SECONDS} s): split it so the picture changes with the ideas`;
+  return null;
+}
+
 export const BUILT_KINDS = [
   "title",
   "quote",
@@ -226,6 +268,13 @@ export function checkWriting(files, schema = loadBriefSchema()) {
           r.line,
           `scene "${r.scene}": kind "${r.kind}" is not built yet (${BUILT_KINDS.join(", ")})`,
         );
+      const said = (r.narration ?? "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean)
+        .reduce((t, id) => t + secondsOf(lines.find((l) => l.id === id)?.text ?? ""), 0);
+      const pace = paceNote({ kind: r.kind, props: r.props ?? {}, seconds: said });
+      if (pace) add("warn", "storyboard.md", r.line, `scene "${r.scene}": ${pace}`);
       for (const id of (r.narration ?? "")
         .split(",")
         .map((s) => s.trim())
