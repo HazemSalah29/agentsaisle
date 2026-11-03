@@ -177,6 +177,7 @@
         "type": "object",
         "required": ["items"],
         "properties": {
+          "focus": { "type": "boolean" },
           "heading": { "type": "string", "maxLength": 120 },
           "items": {
             "type": "array",
@@ -308,6 +309,7 @@
         "type": "object",
         "required": ["value", "label"],
         "properties": {
+          "focus": { "type": "boolean" },
           "value": { "type": "number" },
           "from": { "type": "number" },
           "unit": { "type": "string", "minLength": 0, "maxLength": 12 },
@@ -320,6 +322,7 @@
         "type": "object",
         "required": ["stat", "label"],
         "properties": {
+          "focus": { "type": "boolean" },
           "stat": { "type": "string", "minLength": 1, "maxLength": 14 },
           "label": { "type": "string", "minLength": 1, "maxLength": 60 },
           "note": { "type": "string", "minLength": 1, "maxLength": 120 },
@@ -330,6 +333,7 @@
         "type": "object",
         "required": ["left", "right"],
         "properties": {
+          "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },
           "left": {
             "type": "object",
@@ -364,6 +368,7 @@
         "type": "object",
         "required": ["steps"],
         "properties": {
+          "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },
           "steps": {
             "type": "array",
@@ -385,6 +390,7 @@
         "type": "object",
         "required": ["nodes"],
         "properties": {
+          "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },
           "center": { "type": "string", "minLength": 1, "maxLength": 40 },
           "nodes": {
@@ -399,6 +405,8 @@
         "type": "object",
         "required": ["stages"],
         "properties": {
+          "focus": { "type": "boolean" },
+          "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },
           "stages": {
             "type": "array",
@@ -420,6 +428,7 @@
         "type": "object",
         "required": ["x", "y", "items"],
         "properties": {
+          "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },
           "x": {
             "type": "object",
@@ -489,6 +498,7 @@
         "type": "object",
         "required": ["events"],
         "properties": {
+          "focus": { "type": "boolean" },
           "title": { "type": "string", "maxLength": 80 },
           "events": {
             "type": "array",

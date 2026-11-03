@@ -74,7 +74,7 @@ describe("list, chart and timeline enter on the word that names them", () => {
     const { renderScene } = await scenes();
     const props = { heading: "Plan", items: ["One", "Two"], on: ["bots", "finally"] };
     const { plan } = renderScene({ id: "s", kind: "list", props }, ctx({ words: said }));
-    expect(at(plan, "sc-a-i0")).toBeCloseTo(13.4 - 0.06);
+    expect(at(plan, "sc-a-i0")).toBeCloseTo(11); // its word is at 13.4, but the first item comes in within a second
     expect(at(plan, "sc-a-i1")).toBeCloseTo(15.0 - 0.06);
     const none = renderScene(
       { id: "s", kind: "list", props: { items: ["A one", "B two"] } },
@@ -132,5 +132,66 @@ describe("list, chart and timeline enter on the word that names them", () => {
       ctx({ words: said }),
     );
     expect(html).not.toContain("<img");
+  });
+});
+
+describe("spoken focus on lists", () => {
+  it("fills a rail under each item for exactly as long as the voice is on it, and dims the item once it is said", async () => {
+    const { renderScene } = await scenes();
+    const { html, plan } = renderScene(
+      {
+        id: "s",
+        kind: "list",
+        props: { heading: "Plan", items: ["Check limits", "Block bots", "Log everything"] },
+      },
+      ctx({ words: said }),
+    );
+    const rail = (i: number) => plan.find((p) => p.id === `sc-a-i${i}-r`)!;
+    expect(html).toContain('id="sc-a-i0-r" class="rail"');
+    expect(rail(0).at).toBeCloseTo(at(plan, "sc-a-i0"));
+    expect(rail(0).at + rail(0).dur).toBeCloseTo(at(plan, "sc-a-i1"), 1); // until the next item
+    expect(rail(1).at + rail(1).dur).toBeCloseTo(at(plan, "sc-a-i2"), 1);
+    expect(rail(2).at + rail(2).dur).toBeCloseTo(10 + 8 - 0.15, 1); // the last one runs to the scene end
+    expect(rail(0).frames[0].transform).toBe("scaleX(0)");
+    expect(rail(0).frames[1].transform).toBe("scaleX(1)");
+    expect(rail(0).ease).toBe("linear");
+    const dim = plan.filter((p) => p.frames.some((f: Loose) => f.opacity === 0.45));
+    expect(dim.map((p) => p.id)).toEqual(["sc-a-i0", "sc-a-i1"]); // the last item stays bright
+  });
+  it("can be turned off", async () => {
+    const { renderScene } = await scenes();
+    const { html, plan } = renderScene(
+      { id: "s", kind: "list", props: { items: ["Check limits", "Block bots"], focus: false } },
+      ctx({ words: said }),
+    );
+    expect(html).not.toContain("rail");
+    expect(plan.every((p) => !/-r$/.test(p.id))).toBe(true);
+  });
+});
+
+describe("something moves early", () => {
+  const late = [W("then", 0.2), W("finally", 5.0), W("block", 6.0)];
+  const props = (title?: string) => ({
+    ...(title ? { title } : {}),
+    steps: [{ label: "Block" }, { label: "Finally" }],
+  });
+  it("brings the first item in at once when no heading is on screen, within a second when one is", async () => {
+    const { renderScene } = await scenes();
+    const bare = renderScene({ id: "s", kind: "steps", props: props() }, ctx({ words: late }));
+    expect(at(bare.plan, "sc-a-s0")).toBeCloseTo(10.3); // not 15.94 (its word)
+    const titled = renderScene(
+      { id: "s", kind: "steps", props: props("How") },
+      ctx({ words: late }),
+    );
+    expect(at(titled.plan, "sc-a-s0")).toBeCloseTo(11);
+    expect(at(titled.plan, "sc-a-s1")).toBeGreaterThan(at(titled.plan, "sc-a-s0")!);
+  });
+  it("starts a number counting at once", async () => {
+    const { renderScene } = await scenes();
+    const { plan } = renderScene(
+      { id: "s", kind: "number", props: { value: 20, from: 27, label: "parts left", on: "block" } },
+      ctx({ words: late }),
+    );
+    expect(at(plan, "sc-a-box")).toBeCloseTo(10.3);
   });
 });

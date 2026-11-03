@@ -11,7 +11,19 @@ import { requestFlow, requestFlowCss } from "./request-flow.mjs";
 import { screen, screenCss } from "./screen.mjs";
 import { sequence, sequenceCss } from "./sequence.mjs";
 import { shot, shotCss } from "./shot.mjs";
-import { IN, LEAD, STAGGER, esc, fadeUp, wordCursor } from "./shared.mjs";
+import {
+  FIRST_BY,
+  IN,
+  LEAD,
+  STAGGER,
+  esc,
+  fadeUp,
+  focusOn,
+  rail,
+  settle,
+  spansOf,
+  wordCursor,
+} from "./shared.mjs";
 import { timeline, timelineCss } from "./timeline.mjs";
 
 export { esc };
@@ -86,13 +98,11 @@ function list(s, ctx) {
     });
   }
   const tag = s.props.numbered ? "ol" : "ul";
-  html += `<${tag} class="items">`;
   const cursor = wordCursor(ctx);
   let prev = -Infinity;
-  items.forEach((text, i) => {
-    const id = `${ctx.prefix}-i${i}`;
-    // Each item enters on the word that names it (`on` overrides which words); failing that with its narration
-    // line when there is one per item; otherwise they are spread out.
+  // When each item comes in: on the word that names it (`on` overrides which words); failing that with its
+  // narration line when there is one per item; otherwise they are spread out.
+  const ats = items.map((text, i) => {
     const said = cursor.find(s.props.on?.[i] ?? text);
     const line = ctx.lines.length === items.length ? ctx.lines[i] : null;
     const base =
@@ -102,19 +112,22 @@ function list(s, ctx) {
           (line
             ? line.start
             : 0.4 + i * Math.max(STAGGER, Math.min(1, (ctx.seconds - 1) / items.length)));
-    // Something is on screen from the start: with no heading the first item does not wait for a late word.
+    // Something is on screen early: with no heading the first item comes in at once, with one within a second.
     const first =
-      i === 0 && !s.props.heading && said !== null ? Math.min(base, ctx.at + 0.3) : base;
-    const at = Math.max(first, prev + 0.05);
+      i === 0 && said !== null ? Math.min(base, ctx.at + (s.props.heading ? FIRST_BY : 0.3)) : base;
+    const at = Math.min(Math.max(first, prev + 0.05), ctx.at + ctx.seconds - IN);
     prev = at;
-    html += `<li id="${id}">${esc(text)}</li>`;
-    plan.push({
-      id,
-      frames: fadeUp(false, ctx.rise),
-      at: Math.min(at, ctx.at + ctx.seconds - IN),
-      dur: IN,
-      ease: "out",
-    });
+    return at;
+  });
+  const focus = focusOn(s.props);
+  const spans = spansOf(ats, ctx);
+  html += `<${tag} class="items">`;
+  items.forEach((text, i) => {
+    const id = `${ctx.prefix}-i${i}`;
+    const r = focus ? rail(`${id}-r`, spans[i]) : null;
+    html += `<li id="${id}">${esc(text)}${r ? r.html : ""}</li>`;
+    plan.push({ id, frames: fadeUp(false, ctx.rise), at: ats[i], dur: IN, ease: "out" });
+    if (r) plan.push(...r.plan, ...settle(id, spans[i], i === items.length - 1));
   });
   html += `</${tag}>`;
   return { html, plan };

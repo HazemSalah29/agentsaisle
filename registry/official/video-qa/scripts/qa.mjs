@@ -276,7 +276,7 @@ export async function qaProject({ dir, file, draft = false }, baseRules = loadRu
       add(
         "idle",
         "warn",
-        `nothing moves for ${r1(idle[0].seconds)} s from ${r1(idle[0].start)} s${sceneAt(idle[0].start) ? ` (scene ${sceneAt(idle[0].start)})` : ""}${idle.length > 1 ? `, and in ${idle.length - 1} more place(s)` : ""}; bring the next item or a highlight in sooner, or split the scene (limit ${mo.idle.maxSeconds} s)`,
+        `nothing moves for ${r1(idle[0].seconds)} s from ${r1(idle[0].start)} s${sceneAt(idle[0].start) ? ` (scene ${sceneAt(idle[0].start)})` : ""}${idle.length > 1 ? `, and in ${idle.length - 1} more place(s)` : ""}; bring the next item or a highlight in sooner, split the scene, or leave focus on for item scenes (limit ${mo.idle.maxSeconds} s)`,
       );
     else add("idle", "pass", `something moves at least every ${mo.idle.maxSeconds} s`);
     const fast = fastRuns(motion, {

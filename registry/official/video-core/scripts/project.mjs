@@ -53,7 +53,9 @@ html,body{margin:0;background:${brand.colors.bg}}
 .cite{margin:0;font-size:calc(var(--u)*3.4);color:${brand.colors.muted}}
 .heading{margin:0;font-size:calc(var(--u)*6);line-height:1.1;font-weight:700}
 .items{margin:0;padding-inline-start:calc(var(--u)*7);font-size:calc(var(--u)*5.2);line-height:1.35}
-.items li{margin-bottom:calc(var(--u)*2)}
+.items li{position:relative;margin-bottom:calc(var(--u)*2.6)}
+.rail{position:absolute;inset-inline:0;bottom:calc(var(--u)*-1);display:block;height:calc(var(--u)*.7);border-radius:calc(var(--u)*.35);background:${brand.colors.accent};transform-origin:0 50%}
+[dir=rtl] .rail{transform-origin:100% 50%}
 .items li::marker{color:${brand.colors.accent}}
 .chart{width:100%;height:auto;font-family:inherit}
 .chart .axis{stroke:${brand.colors.muted};stroke-width:.3}

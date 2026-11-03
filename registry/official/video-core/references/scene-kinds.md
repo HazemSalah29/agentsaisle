@@ -39,3 +39,7 @@ Scenes that show an idea instead of listing it. Each piece enters on the word th
 | `funnel`  | `stages` (3 to 5 of `{label, value, on}`; `value` is text as given), `title`                       | Stacked bands that narrow, one per stage.                                                                                |
 | `matrix`  | `x` and `y` (`{low, high}`), `items` (1 to 8 of `{label, x, y, on}`, x and y from 0 to 1), `title` | A 2x2 grid with labelled axes; items drop in at their positions.                                                         |
 | `nodes`   | `nodes` (2 to 7 of `{id, label, on}`), `edges` (1 to 12 of `{from, to}`), `title`                  | A small graph laid out in layers from its edges (top to bottom, or left to right in wide frames), with a travelling dot. |
+
+## Following the voice (`focus`)
+
+Scenes that bring items in one by one (`list`, `timeline` and the idea kinds) keep moving for as long as the voice is on an item: a rail fills under the item being spoken across its whole stretch (until the next item arrives; the last runs to the end of the scene), finished items dim, a dot travels from node to node in `cycle` and `nodes`, items in `matrix` pulse, and the bar in `callout` and `number` fills until the scene ends. The first item comes in at once (within a second when a heading is already showing), so a scene never opens empty. This is on by default; give `focus: false` on a scene to turn it off. `video-qa` flags stretches where nothing moves (the `idle` check), and this is the fix it points to.

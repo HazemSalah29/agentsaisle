@@ -4,7 +4,21 @@
 // falls back to even spacing when there is no voice. Numbers are the ones the author wrote: nothing is computed from
 // data here except the in-between values of the counter and the geometry. Nothing touches the disk.
 import { EASE_FN, r3 } from "./motion.mjs";
-import { IN, LEAD, STAGGER, esc, fadeUp, wordCursor } from "./shared.mjs";
+import {
+  FIRST_BY,
+  IN,
+  LEAD,
+  STAGGER,
+  esc,
+  fadeUp,
+  focusOn,
+  pathPlan,
+  pulsePlan,
+  rail,
+  settle,
+  spansOf,
+  wordCursor,
+} from "./shared.mjs";
 
 export const DIAGRAM_KINDS = [
   "number",
@@ -40,6 +54,7 @@ export function diagramProblems(kind, p = {}) {
     if (p.title !== undefined && !isText(p.title, LIMITS.title))
       out.push(`title: text of at most ${LIMITS.title} characters`);
   };
+  if (p.focus !== undefined && typeof p.focus !== "boolean") out.push("focus: true or false");
   const ons = (list, name) => {
     if (list.some((x) => x?.on !== undefined && !isText(x.on, 60)))
       out.push(`${name}[].on: the spoken words that bring it in, up to 60 characters`);
@@ -150,8 +165,11 @@ export function diagramProblems(kind, p = {}) {
   return out;
 }
 
+/** With a heading already on screen the first item may come in within a second; without one, at once. */
+const firstBy = (p) => (p.title ? FIRST_BY : 0.3);
+
 /** In-times (film seconds) for `texts`: their spoken words, else even spacing; never out of order, never past the scene. */
-function whens(ctx, texts, ons = [], start = 0.35) {
+function whens(ctx, texts, ons = [], start = 0.35, firstBy = FIRST_BY) {
   const cursor = wordCursor(ctx);
   const n = texts.length;
   const gap = Math.max(STAGGER, Math.min(1.1, (ctx.seconds - start - 1) / Math.max(1, n)));
@@ -159,7 +177,9 @@ function whens(ctx, texts, ons = [], start = 0.35) {
   return texts.map((t, i) => {
     const said = cursor.find(ons[i] ?? t);
     const base = said !== null ? said - LEAD : ctx.at + start + i * gap;
-    const at = Math.min(Math.max(base, prev + 0.08), ctx.at + ctx.seconds - IN);
+    // something moves early: the first item does not wait for a late word
+    const early = i === 0 ? Math.min(base, ctx.at + firstBy) : base;
+    const at = Math.min(Math.max(early, prev + 0.08), ctx.at + ctx.seconds - IN);
     prev = at;
     return at;
   });
@@ -197,7 +217,7 @@ function number(s, ctx) {
   const decimals = p.decimals ?? Math.min(4, (String(p.value).split(".")[1] ?? "").length);
   const from = p.from ?? 0;
   const steps = 10;
-  const t0 = whens(ctx, [p.label], [p.on], 0.25)[0];
+  const t0 = whens(ctx, [p.label], [p.on], 0.25, 0.3)[0];
   const span = Math.max(0.5, Math.min(1.6, ctx.seconds - (t0 - ctx.at) - 0.8));
   const plan = [item(`${ctx.prefix}-box`, t0, pop(0.85), 0.35)];
   // The counter is a stack of the in-between values: each one shows for its slice of time, then its wrapper hides it.
@@ -216,15 +236,22 @@ function number(s, ctx) {
     } else html += `<span id="${id}" class="num-step">${text}</span>`;
   }
   plan.push(item(`${ctx.prefix}-l`, t0 + 0.1, fadeUp(false, ctx.rise / 2)));
+  let tail = "";
+  if (focusOn(p)) {
+    // once the count is done, a rail fills under the label until the scene ends
+    const r = rail(`${ctx.prefix}-r`, { at: t0 + span, until: ctx.at + ctx.seconds - 0.15 });
+    tail = r.html;
+    plan.push(...r.plan);
+  }
   return {
-    html: `<div id="${ctx.prefix}-box" class="num"><span class="num-steps">${html}</span></div><p id="${ctx.prefix}-l" class="num-label">${esc(p.label)}</p>`,
+    html: `<div id="${ctx.prefix}-box" class="num"><span class="num-steps">${html}</span></div><p id="${ctx.prefix}-l" class="num-label">${esc(p.label)}</p><div class="rail-wrap">${tail}</div>`,
     plan,
   };
 }
 
 function callout(s, ctx) {
   const p = s.props;
-  const [a, b, c] = whens(ctx, [p.stat, p.label, p.note ?? ""], [p.on], 0);
+  const [a, b, c] = whens(ctx, [p.stat, p.label, p.note ?? ""], [p.on], 0, 0.3);
   const plan = [
     item(
       `${ctx.prefix}-st`,
@@ -236,8 +263,8 @@ function callout(s, ctx) {
       `${ctx.prefix}-bar`,
       a + 0.15,
       [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
-      0.5,
-      "out",
+      focusOn(p) ? Math.max(0.5, ctx.at + ctx.seconds - 0.15 - (a + 0.15)) : 0.5,
+      focusOn(p) ? "linear" : "out",
     ),
     item(`${ctx.prefix}-l`, Math.max(b, a + 0.25), fadeUp(false, ctx.rise / 2)),
   ];
@@ -253,7 +280,9 @@ function versus(s, ctx) {
   const p = s.props;
   const h = head(p, ctx);
   const all = [...p.left.points, ...p.right.points];
-  const t = whens(ctx, all, [], 0.6);
+  const t = whens(ctx, all, [], 0.6, firstBy(p));
+  const focus = focusOn(p);
+  const spans = spansOf(t, ctx);
   const plan = [...h.plan];
   const sides = ["left", "right"].map((side, k) => {
     const d = p[side];
@@ -272,8 +301,11 @@ function versus(s, ctx) {
     const base = k ? p.left.points.length : 0;
     const pts = d.points
       .map((x, i) => {
-        plan.push(item(`${id}-p${i}`, t[base + i], fadeUp(false, ctx.rise / 2)));
-        return `<li id="${id}-p${i}">${esc(x)}</li>`;
+        const pid = `${id}-p${i}`;
+        plan.push(item(pid, t[base + i], fadeUp(false, ctx.rise / 2)));
+        const r = focus ? rail(`${pid}-r`, spans[base + i]) : null;
+        if (r) plan.push(...r.plan, ...settle(pid, spans[base + i], base + i === all.length - 1));
+        return `<li id="${pid}">${esc(x)}${r ? r.html : ""}</li>`;
       })
       .join("");
     return `<div id="${id}" class="vs-card vs-${side}"><h3>${esc(d.title)}</h3><ul>${pts}</ul></div>`;
@@ -295,15 +327,20 @@ function steps(s, ctx) {
     p.steps.map((x) => x.label),
     p.steps.map((x) => x.on),
     0.5,
+    firstBy(p),
   );
   const plan = [...h.plan];
+  const focus = focusOn(p);
+  const spans = spansOf(t, ctx);
   const rows = p.steps
     .map((st, i) => {
       const id = `${ctx.prefix}-s${i}`;
       plan.push(item(id, t[i], fadeUp(false, ctx.rise / 2)));
       plan.push(item(`${id}-c`, t[i], pop(0.4), 0.35));
       if (i + 1 < n) plan.push(item(id, t[i + 1], [{ opacity: 1 }, { opacity: 0.45 }], 0.3));
-      return `<li id="${id}" class="st-row"><span id="${id}-c" class="st-n">${i + 1}</span><span class="st-b">${esc(st.label)}${st.detail ? `<small>${esc(st.detail)}</small>` : ""}</span></li>`;
+      const r = focus ? rail(`${id}-r`, spans[i]) : null;
+      if (r) plan.push(...r.plan);
+      return `<li id="${id}" class="st-row"><span id="${id}-c" class="st-n">${i + 1}</span><span class="st-b">${esc(st.label)}${st.detail ? `<small>${esc(st.detail)}</small>` : ""}</span>${r ? r.html : ""}</li>`;
     })
     .join("");
   return { html: `${h.html}<ol class="st">${rows}</ol>`, plan };
@@ -313,7 +350,7 @@ function cycle(s, ctx) {
   const p = s.props;
   const h = head(p, ctx);
   const n = p.nodes.length;
-  const t = whens(ctx, p.nodes, [], 0.5);
+  const t = whens(ctx, p.nodes, [], 0.5, firstBy(p));
   const plan = [...h.plan];
   const R = 34;
   const pos = (i) => {
@@ -337,20 +374,26 @@ function cycle(s, ctx) {
       "inOut",
     ),
   );
-  // After the last node, a dot circles the ring for the rest of the scene: sampled positions on the ring.
-  const last = t[n - 1] + 0.5;
-  const left = ctx.at + ctx.seconds - last;
-  const turns = Math.max(1, Math.round(left / 3));
-  const per = 24;
-  const path = Array.from({ length: turns * per + 1 }, (_, k) => {
-    const a = (-90 + (360 * k) / per) * (Math.PI / 180);
-    return {
-      left: `${r3(50 + R * Math.cos(a))}%`,
-      top: `${r3(50 + R * Math.sin(a))}%`,
-      opacity: k === 0 ? 0 : 1,
-    };
+  // A dot follows the voice round the ring: it sits on a node while that node is spoken and travels to the next
+  // one as the next is named; after the last node it carries on to the first until the scene ends.
+  const angle = (i) => -90 + (360 / n) * i;
+  const at = (deg) => ({
+    left: `${r3(50 + R * Math.cos((deg * Math.PI) / 180))}%`,
+    top: `${r3(50 + R * Math.sin((deg * Math.PI) / 180))}%`,
   });
-  plan.push(item(`${ctx.prefix}-orb`, last, path, Math.max(0.5, left), "linear"));
+  const end = Math.max(t[n - 1] + 0.6, ctx.at + ctx.seconds - 0.15);
+  const samples = [];
+  for (let i = 0; i < n; i++) {
+    const from = t[i];
+    const to = i + 1 < n ? t[i + 1] : end;
+    for (let k = 0; k < 10; k++)
+      samples.push({
+        t: from + ((to - from) * k) / 10,
+        ...at(angle(i) + (360 / n) * EASE_FN.inOut(k / 10)),
+      });
+  }
+  samples.push({ t: end, ...at(angle(n)) });
+  plan.push({ id: `${ctx.prefix}-orb`, ease: "linear", ...pathPlan(samples) });
   const center = p.center ? `<div class="cy-center">${esc(p.center)}</div>` : "";
   const html = `${h.html}<div class="cy"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><circle id="${ringId}" cx="50" cy="50" r="${R}" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg><i id="${ctx.prefix}-orb" class="cy-orb"></i>${nodes}${center}</div>`;
   return { html, plan };
@@ -365,11 +408,16 @@ function funnel(s, ctx) {
     p.stages.map((x) => x.label),
     p.stages.map((x) => x.on),
     0.5,
+    firstBy(p),
   );
   const plan = [...h.plan];
+  const focus = focusOn(p);
+  const spans = spansOf(t, ctx);
   const rows = p.stages
     .map((st, i) => {
       const id = `${ctx.prefix}-f${i}`;
+      const r = focus ? rail(`${id}-r`, spans[i]) : null;
+      if (r) plan.push(...r.plan);
       const w0 = 100 - (i * 62) / n;
       const w1 = 100 - ((i + 1) * 62) / n;
       const inset = r3(((w0 - w1) / 2 / w0) * 100);
@@ -384,7 +432,7 @@ function funnel(s, ctx) {
           0.5,
         ),
       );
-      return `<div id="${id}" class="fn-row" style="width:${r3(w0)}%;clip-path:polygon(0 0,100% 0,${r3(100 - inset)}% 100%,${inset}% 100%);opacity:${r3(1 - i * (0.5 / n))}"><span>${esc(st.label)}</span>${st.value ? `<b>${esc(st.value)}</b>` : ""}</div>`;
+      return `<div id="${id}" class="fn-row" style="width:${r3(w0)}%;clip-path:polygon(0 0,100% 0,${r3(100 - inset)}% 100%,${inset}% 100%);opacity:${r3(1 - i * (0.5 / n))}"><span>${esc(st.label)}</span>${st.value ? `<b>${esc(st.value)}</b>` : ""}${r ? r.html : ""}</div>`;
     })
     .join("");
   return { html: `${h.html}<div class="fn">${rows}</div>`, plan };
@@ -398,13 +446,17 @@ function matrix(s, ctx) {
     p.items.map((x) => x.label),
     p.items.map((x) => x.on),
     0.5,
+    firstBy(p),
   );
   const plan = [...h.plan];
+  const focus = focusOn(p);
+  const spans = spansOf(t, ctx);
   const dots = p.items
     .map((it, i) => {
       const id = `${ctx.prefix}-m${i}`;
       plan.push(item(id, t[i], pop(0.5), 0.4));
-      return `<div id="${id}" class="mx-item" style="left:${r3(8 + it.x * 84)}%;top:${r3(92 - it.y * 84)}%"><i></i><span>${esc(it.label)}</span></div>`;
+      if (focus) plan.push(pulsePlan(`${id}-h`, spans[i]));
+      return `<div id="${id}" class="mx-item" style="left:${r3(8 + it.x * 84)}%;top:${r3(92 - it.y * 84)}%"><i>${focus ? `<b id="${id}-h" class="pulse"></b>` : ""}</i><span>${esc(it.label)}</span></div>`;
     })
     .join("");
   plan.push(item(`${ctx.prefix}-grid`, ctx.at, [{ opacity: 0 }, { opacity: 1 }], 0.4));
@@ -449,6 +501,7 @@ function nodes(s, ctx) {
     p.nodes.map((n) => n.label),
     p.nodes.map((n) => n.on),
     0.5,
+    firstBy(p),
   );
   const at = new Map(p.nodes.map((n, i) => [n.id, t[i]]));
   const plan = [...h.plan];
@@ -476,25 +529,39 @@ function nodes(s, ctx) {
       return `<div id="${id}" class="nd-node" style="left:${x}%;top:${y}%"><span>${esc(n.label)}</span></div>`;
     })
     .join("");
-  // A dot travels along the first edge once everything is in, so the picture keeps moving to the end.
-  const e0 = p.edges[0];
-  const [ax, ay] = where.get(e0.from);
-  const [bx, by] = where.get(e0.to);
-  const start = Math.max(...t) + 0.5;
-  plan.push(
-    item(
-      `${ctx.prefix}-dot`,
-      start,
-      [
-        { left: `${ax}%`, top: `${ay}%`, opacity: 1 },
-        { left: `${bx}%`, top: `${by}%`, opacity: 1 },
-      ],
-      Math.max(0.6, ctx.at + ctx.seconds - start - 0.2),
-      "inOut",
-    ),
-  );
+  // A dot follows the voice from node to node (in the order they are spoken); the last node pulses to the end.
+  let dotStyle = "opacity:0";
+  if (focusOn(p)) {
+    const pts = p.nodes.map((n) => where.get(n.id));
+    const samples = [];
+    p.nodes.forEach((n, i) => {
+      samples.push({ t: t[i], left: `${pts[i][0]}%`, top: `${pts[i][1]}%` });
+      if (i + 1 < pts.length)
+        for (let k = 1; k < 8; k++) {
+          const u = EASE_FN.inOut(k / 8);
+          samples.push({
+            t: t[i] + ((t[i + 1] - t[i]) * k) / 8,
+            left: `${r3(pts[i][0] + (pts[i + 1][0] - pts[i][0]) * u)}%`,
+            top: `${r3(pts[i][1] + (pts[i + 1][1] - pts[i][1]) * u)}%`,
+          });
+        }
+    });
+    const path = pathPlan(samples);
+    plan.push({ id: `${ctx.prefix}-dot`, ease: "linear", ...path });
+    plan.push(
+      pulsePlan(`${ctx.prefix}-halo`, {
+        at: t[t.length - 1],
+        until: ctx.at + ctx.seconds - 0.15,
+      }),
+    );
+    dotStyle = `left:${pts[0][0]}%;top:${pts[0][1]}%;opacity:0`;
+  }
+  const lastPos = where.get(p.nodes.at(-1).id);
+  const halo = focusOn(p)
+    ? `<b id="${ctx.prefix}-halo" class="pulse pulse-box" style="left:${lastPos[0]}%;top:${lastPos[1]}%"></b>`
+    : "";
   return {
-    html: `${h.html}<div class="nd"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${svg}</svg>${html}<i id="${ctx.prefix}-dot" class="nd-dot" style="left:${ax}%;top:${ay}%;opacity:0"></i></div>`,
+    html: `${h.html}<div class="nd"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${svg}</svg>${html}<i id="${ctx.prefix}-dot" class="nd-dot" style="${dotStyle}"></i>${halo}</div>`,
     plan,
   };
 }
@@ -516,6 +583,7 @@ export const diagramCss = (brand, vertical = true) => {
 .num-steps{display:grid}.num-steps>*{grid-area:1/1;text-align:center}
 .num-step{opacity:0}.num-hide{display:block}
 .num small{font-size:.38em;margin-inline-start:.12em;color:${fg}}
+.rail-wrap{position:relative;height:calc(var(--u)*1);width:100%;margin-top:calc(var(--u)*1)}
 .num-label{margin:0;text-align:center;font-size:calc(var(--u)*${r3(5.2 * K)});font-weight:700}
 .co-stat{font-size:calc(var(--u)*${r3(26 * K)});font-weight:800;line-height:1;color:${accent}}
 .co-bar{height:calc(var(--u)*1.2);width:calc(var(--u)*30);background:${fg};transform-origin:0 50%;border-radius:calc(var(--u)*.6)}
@@ -523,11 +591,12 @@ export const diagramCss = (brand, vertical = true) => {
 .vs{width:100%}.vs-pair{display:grid;grid-template-columns:1fr auto 1fr;gap:calc(var(--u)*2);align-items:stretch}
 .vs-card{${card};padding:calc(var(--u)*3)}.vs-left{border-color:${muted}}.vs-right{border-color:${accent}}
 .vs-card h3{margin:0 0 calc(var(--u)*2);font-size:calc(var(--u)*${r3(4.6 * K)})}
+.vs-card li{position:relative;padding-bottom:calc(var(--u)*1.2)}
 .vs-card ul{margin:0;padding:0;list-style:none;font-size:calc(var(--u)*${r3(3.6 * K)});line-height:1.3;display:flex;flex-direction:column;gap:calc(var(--u)*1.6)}
 .vs-vs{align-self:center;font-size:calc(var(--u)*${r3(3.4 * K)});font-weight:800;color:${muted};text-transform:uppercase}
 .vs-verdict{margin:0;font-size:calc(var(--u)*${r3(5 * K)});font-weight:800;color:${accent}}
 .st{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:calc(var(--u)*2.6)}
-.st-row{display:flex;gap:calc(var(--u)*3);align-items:flex-start;font-size:calc(var(--u)*${r3(4.4 * K)});line-height:1.2;font-weight:700}
+.st-row{position:relative;padding-bottom:calc(var(--u)*1.2);display:flex;gap:calc(var(--u)*3);align-items:flex-start;font-size:calc(var(--u)*${r3(4.4 * K)});line-height:1.2;font-weight:700}
 .st-n{flex:none;width:calc(var(--u)*8);height:calc(var(--u)*8);border-radius:50%;background:${accent};color:${bg};display:grid;place-items:center;font-size:calc(var(--u)*${r3(4.4 * K)})}
 .st-b small{display:block;font-weight:400;font-size:.72em;color:${muted};margin-top:calc(var(--u)*.6)}
 .cy{position:relative;${cy}}
@@ -547,6 +616,9 @@ export const diagramCss = (brand, vertical = true) => {
 .nd{position:relative;${nd}}
 .nd svg{position:absolute;inset:0;width:100%;height:100%}.nd line{stroke:${muted};stroke-width:.7;stroke-linecap:round}
 .nd-node{position:absolute;z-index:2;translate:-50% -50%;${card};background:${bg};padding:calc(var(--u)*1.6) calc(var(--u)*2.4);font-size:calc(var(--u)*${r3(3.4 * K)});font-weight:700;text-align:center;max-width:34%}
+.pulse{position:absolute;inset:-60%;border:calc(var(--u)*.5) solid ${accent};border-radius:50%;opacity:0;pointer-events:none}
+.pulse-box{inset:auto;width:calc(var(--u)*14);height:calc(var(--u)*7);translate:-50% -50%;border-radius:calc(var(--u)*2)}
+.fn-row .rail{background:${bg};opacity:.5;bottom:0;height:calc(var(--u)*.9);border-radius:0}
 .nd-dot{position:absolute;z-index:1;width:calc(var(--u)*2.6);height:calc(var(--u)*2.6);margin:calc(var(--u)*-1.3);border-radius:50%;background:${accent};box-shadow:0 0 calc(var(--u)*3) ${accent}}
 `;
 };

@@ -1,7 +1,7 @@
 // The `timeline` scene: a vertical timeline of events (an outage, a release, a day), shown one event at a time,
 // each with its narration line when there is one line per event; earlier events dim so one idea moves at a time.
 // The type of an event is also written as a word, so colour is never the only signal. Every string is escaped.
-import { IN, LEAD, esc, fadeUp, wordCursor } from "./shared.mjs";
+import { IN, LEAD, esc, fadeUp, focusOn, rail, spansOf, wordCursor } from "./shared.mjs";
 
 export const LIMITS = { events: 10, at: 12, label: 60, where: 24, title: 80 };
 export const TYPES = {
@@ -62,10 +62,15 @@ export function timeline(s, ctx) {
   const said = ev.map((e) => cursor.find(e.on ?? e.label));
   const when = (i) =>
     said[i] !== null ? said[i] - LEAD : ctx.at + (perLine ? ctx.lines[i].start : 0.6 + i * step);
+  const spans = spansOf(
+    ev.map((_, i) => Math.min(when(i), ctx.at + ctx.seconds - IN)),
+    ctx,
+  );
   html += `<ol class="${n > 6 ? "tl tl-dense" : "tl"}">`;
   ev.forEach((e, i) => {
     const type = e.type ?? "info";
-    html += `<li id="${ctx.prefix}-w${i}"><div id="${ctx.prefix}-e${i}" class="tl-row tl-${type}"><span class="tl-t">${esc(e.at)}</span><span class="tl-dot"></span><span class="tl-b"><span class="tl-k">${TYPES[type]}</span> ${esc(e.label)}${e.where ? `<small>${esc(e.where)}</small>` : ""}</span></div></li>`;
+    html += `<li id="${ctx.prefix}-w${i}"><div id="${ctx.prefix}-e${i}" class="tl-row tl-${type}"><span class="tl-t">${esc(e.at)}</span><span class="tl-dot"></span><span class="tl-b"><span class="tl-k">${TYPES[type]}</span> ${esc(e.label)}${e.where ? `<small>${esc(e.where)}</small>` : ""}</span>${focusOn(s.props) ? rail(`${ctx.prefix}-r${i}`, spans[i]).html : ""}</div></li>`;
+    if (focusOn(s.props)) plan.push(...rail(`${ctx.prefix}-r${i}`, spans[i]).plan);
     plan.push({
       id: `${ctx.prefix}-e${i}`,
       frames: fadeUp(false, ctx.rise / 2),
@@ -88,7 +93,7 @@ export function timeline(s, ctx) {
 
 export const timelineCss = (brand) => `
 .tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:calc(var(--u)*2.6);width:100%}
-.tl-row{display:grid;grid-template-columns:calc(var(--u)*17) calc(var(--u)*3) 1fr;align-items:start;column-gap:calc(var(--u)*2.4);font-size:calc(var(--u)*3.8);line-height:1.25}
+.tl-row{position:relative;padding-bottom:calc(var(--u)*1.2);display:grid;grid-template-columns:calc(var(--u)*17) calc(var(--u)*3) 1fr;align-items:start;column-gap:calc(var(--u)*2.4);font-size:calc(var(--u)*3.8);line-height:1.25}
 .tl-dense{gap:calc(var(--u)*1.5)}
 .tl-dense .tl-row{font-size:calc(var(--u)*3.2)}
 .tl-t{font-weight:700;color:${brand.colors.muted};text-align:end;font-variant-numeric:tabular-nums}

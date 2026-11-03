@@ -142,8 +142,14 @@ describe("video-core scenes", () => {
     const { renderScene } = await load();
     const s = { kind: "list", props: { items: ["a", "b", "c"], numbered: true } };
     const lines = [{ start: 0.2 }, { start: 1.5 }, { start: 2.8 }];
-    expect(renderScene(s, ctx({ lines })).plan.map((p) => p.at)).toEqual([2.2, 3.5, 4.8]);
-    const spread = renderScene(s, ctx({ seconds: 6 })).plan.map((p) => p.at);
+    // the first plan entry of each item is its entrance (later ones are its rail and its dimming)
+    const enters = (plan: { id: string; at: number }[]) => {
+      const seen = new Map<string, number>();
+      for (const p of plan) if (/-i\d$/.test(p.id) && !seen.has(p.id)) seen.set(p.id, p.at);
+      return [...seen.values()];
+    };
+    expect(enters(renderScene(s, ctx({ lines })).plan)).toEqual([2.2, 3.5, 4.8]);
+    const spread = enters(renderScene(s, ctx({ seconds: 6 })).plan);
     expect(spread[0]).toBeLessThan(spread[1]!);
     expect(spread[2]).toBeLessThanOrEqual(2 + 6 - 0.5);
     expect(renderScene(s, ctx()).html).toMatch(/^<ol class="items">.*<\/ol>$/);

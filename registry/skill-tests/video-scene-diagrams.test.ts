@@ -236,3 +236,65 @@ describe("the scene catalog and the docs", () => {
     }
   });
 });
+
+describe("spoken focus keeps every idea scene moving", () => {
+  // The longest stretch of the scene in which no animation in the plan is running (entrances, rails, dots, pulses).
+  const longestStill = (plan: Loose[], from: number, to: number) => {
+    const spans = plan
+      .map((p) => [p.at, p.at + p.dur] as [number, number])
+      .filter(([a, b]) => b - a >= 0.3)
+      .sort((x, y) => x[0] - y[0]);
+    let cursor = from;
+    let worst = 0;
+    for (const [a, b] of spans) {
+      worst = Math.max(worst, a - cursor);
+      cursor = Math.max(cursor, b);
+    }
+    return Math.max(worst, to - cursor);
+  };
+  const KINDS_WITH_FOCUS = [
+    "number",
+    "callout",
+    "versus",
+    "steps",
+    "cycle",
+    "funnel",
+    "matrix",
+    "nodes",
+  ];
+  // narration spread over 8 s: items are named at 0.6, 2.6, 4.8 and 6.8 s
+  const spoken = [W("alpha", 0.6), W("beta", 2.6), W("gamma", 4.8), W("delta", 6.8)];
+  it("has no stretch longer than 1.3 s without an animation, for any kind, while the voice runs", async () => {
+    const { renderScene } = await scenes();
+    const more: Record<string, Loose> = {
+      list: { heading: "H", items: ["alpha", "beta", "gamma", "delta"] },
+      timeline: {
+        events: ["alpha", "beta", "gamma", "delta"].map((label, i) => ({ at: `${i}:00`, label })),
+      },
+    };
+    for (const k of [...KINDS_WITH_FOCUS, "list", "timeline"]) {
+      const { plan } = renderScene(
+        { id: "s", kind: k, props: more[k] ?? GOOD[k] },
+        ctx({ words: spoken }),
+      );
+      expect(longestStill(plan, 10, 18 - 0.5), k).toBeLessThanOrEqual(1.3);
+    }
+  });
+  it("is what `focus: false` turns off: without it a scene can sit still for seconds", async () => {
+    const { renderScene } = await scenes();
+    const off = renderScene(
+      { id: "s", kind: "steps", props: { ...GOOD.steps, focus: false } },
+      ctx({ words: spoken }),
+    );
+    const on = renderScene({ id: "s", kind: "steps", props: GOOD.steps }, ctx({ words: spoken }));
+    expect(longestStill(off.plan, 10, 17.5)).toBeGreaterThan(1.3);
+    expect(longestStill(on.plan, 10, 17.5)).toBeLessThanOrEqual(1.3);
+  });
+  it("validates focus as a boolean", async () => {
+    const { diagramProblems } = await dg();
+    expect(diagramProblems("steps", { ...GOOD.steps, focus: "yes" })).toContain(
+      "focus: true or false",
+    );
+    expect(diagramProblems("steps", { ...GOOD.steps, focus: false })).toEqual([]);
+  });
+});
