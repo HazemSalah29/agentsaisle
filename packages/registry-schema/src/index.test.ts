@@ -135,6 +135,12 @@ describe("house standard meta fields", () => {
     demo: { url: "https://demo.example.dev", screenshots: ["preview/home-1440.png"] },
   };
 
+  it("accepts up to 6 setup steps and refuses more or unknown keys", () => {
+    const step = { title: "Add the connector", text: "Settings, then Connectors." };
+    expect(OfficialMeta.safeParse({ ...base, setup: [step] }).success).toBe(true);
+    expect(OfficialMeta.safeParse({ ...base, setup: Array(7).fill(step) }).success).toBe(false);
+    expect(OfficialMeta.safeParse({ ...base, setup: [{ ...step, x: 1 }] }).success).toBe(false);
+  });
   it("keeps V1 meta valid with none of the new fields", () => {
     expect(OfficialMeta.safeParse(base).success).toBe(true);
   });

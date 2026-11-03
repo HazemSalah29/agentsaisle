@@ -158,7 +158,7 @@ Dubbing a project to Arabic (or English) makes a sibling folder, `<project>.ar/`
 
 ## 6. Costs
 
-Everything is local and free except AI clips from your Higgsfield connector, which draw on your Higgsfield credits (the website's free perks do not apply through the connector). When the connector is connected in Claude, `/video` plans clips into videos that have room for pictures without being asked, but it shows the shot list and the credit total first and generates only after your yes; a no means the free local route for that video. Files the connector makes are listed in the project with `adopt.mjs`, and each one is logged in `projects/<slug>/generation-log.jsonl` with the credits as reported.
+Everything is local and free except AI clips from the Higgsfield connector, which is used only when you ask for Higgsfield by name. Higgsfield is a paid service with a small free allowance (about 10 credits), and the website's free perks do not apply through the connector. Before it makes anything, `/video` shows the shot list and the credit total and generates only after your yes. Files the connector makes are listed in the project with `adopt.mjs`, and each one is logged in `projects/<slug>/generation-log.jsonl` with the credits as reported.
 
 ## 7. Rights and labels, in plain words
 

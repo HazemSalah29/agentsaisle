@@ -122,6 +122,13 @@ export const OfficialMeta = z
     requires: z.array(SkillName).max(60).optional(),
     /** What the skill can do, in plain words, for its page (at most 10 short lines). */
     can_do: z.array(z.string().min(1).max(110)).max(10).optional(),
+    /** What to set up before first use, for its page: numbered steps (at most 6). */
+    setup: z
+      .array(
+        z.object({ title: z.string().min(1).max(80), text: z.string().min(1).max(600) }).strict(),
+      )
+      .max(6)
+      .optional(),
   })
   .strict();
 export type OfficialMeta = z.infer<typeof OfficialMeta>;
@@ -250,6 +257,7 @@ export const RegistrySkill = z.object({
   /** For a library: the parts installed with it. */
   requires: z.array(SkillName).optional(),
   canDo: z.array(z.string()).optional(),
+  setup: z.array(z.object({ title: z.string(), text: z.string() })).optional(),
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 

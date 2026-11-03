@@ -152,6 +152,22 @@ export default async function SkillPage({ params }: Props) {
           )}
         </section>
 
+        {(skill.setup?.length ?? 0) > 0 && (
+          <section aria-labelledby="setup" className="space-y-4">
+            <h2 id="setup" className="text-xl">
+              Before you start
+            </h2>
+            <ol className="max-w-prose list-decimal space-y-4 pl-5 text-sm">
+              {skill.setup!.map((step) => (
+                <li key={step.title}>
+                  <b className="text-ink">{step.title}</b>
+                  <p className="mt-1 whitespace-pre-line text-muted">{step.text}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
         {(skill.canDo?.length ?? 0) > 0 && (
           <section aria-labelledby="can-do" className="space-y-4">
             <h2 id="can-do" className="text-xl">
