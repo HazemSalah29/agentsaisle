@@ -47,3 +47,16 @@ Scenes that bring items in one by one (`list`, `timeline` and the idea kinds) ke
 ## Spotlight layout
 
 `layout: "spotlight"` on `list`, `steps` or `funnel` shows one item at a time, large, filling the frame: it rises in on its spoken word, a rail fills under it while it is spoken, it leaves just before the next one arrives (the last stays), and a row of dots shows where you are. Steps and stages show "Step 2 of 5" above the label, with the detail or value under it. Use it when each item has a few seconds of narration or a plain list would leave the tall frame mostly empty; keep the default (`stack`) for short items said quickly. Vertical frames also get larger type in the plain scenes (headings, lists, quotes) and the idea scenes; wide frames are unchanged.
+
+## More idea kinds
+
+| Kind            | Props                                                                                              | What it shows                                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `ranking`       | `items` (2 to 8 of `{label, value, on}`), `unit`, `title`                                          | Horizontal bars sorted by your values, largest first and highlighted; each grows across the time it is spoken. |
+| `checklist`     | `items` (2 to 7 of `{text, state, on}`; `state` is `done`, `todo` or `fail`), `title`              | Rows whose box draws its tick or cross on the spoken word.                                                     |
+| `terminal`      | `lines` (1 to 8 of `{text, kind, on}`; `kind` is `cmd` or `out`, 64 characters), `prompt`, `title` | A terminal window; each line types at a steady pace (28 characters a second). Text only: nothing is run.       |
+| `compare-table` | `columns` (2 to 4 names), `rows` (2 to 6 of `{label, cells, on}`; one cell per column), `title`    | A table whose rows reveal on their words, the spoken one underlined by its rail.                               |
+| `stack`         | `layers` (2 to 6 of `{label, detail, on}`), `title`                                                | Labelled layers sliding in one over another from alternating sides.                                            |
+| `gauge`         | `value` (0 to 100, required), `from`, `unit` (8), `label` (60, required), `on`                     | One percentage ring that fills to exactly `value` while the number counts up.                                  |
+
+All six follow the voice like the first batch (`focus`, on by default) and use only the numbers and text you wrote.

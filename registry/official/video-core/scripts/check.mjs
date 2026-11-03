@@ -9,6 +9,7 @@ import { screenProblems } from "../assets/engine/hyperframes/screen.mjs";
 import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
 import { calligraphyProblems } from "../assets/engine/hyperframes/calligraphy.mjs";
 import { DIAGRAM_KINDS, diagramProblems } from "../assets/engine/hyperframes/diagrams.mjs";
+import { DIAGRAM2_KINDS, diagram2Problems } from "../assets/engine/hyperframes/diagrams2.mjs";
 import { kineticProblems } from "../assets/engine/hyperframes/kinetic.mjs";
 import { shotProblems } from "../assets/engine/hyperframes/shot.mjs";
 import { timelineProblems } from "../assets/engine/hyperframes/timeline.mjs";
@@ -113,6 +114,8 @@ export function checkProject(video, dir, schema = loadSchema()) {
       problems.push(...calligraphyProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "timeline")
       problems.push(...timelineProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
+    if (DIAGRAM2_KINDS.includes(s.kind))
+      problems.push(...diagram2Problems(s.kind, s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (DIAGRAM_KINDS.includes(s.kind))
       problems.push(...diagramProblems(s.kind, s.props ?? {}).map((p) => `${at}.props.${p}`));
     if (s.kind === "kinetic")

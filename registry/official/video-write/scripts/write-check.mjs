@@ -28,7 +28,15 @@ export function itemCount(kind, props = {}) {
   const n = (v) => (Array.isArray(v) ? v.length : 0);
   switch (kind) {
     case "list":
+    case "ranking":
+    case "checklist":
       return n(props.items);
+    case "terminal":
+      return n(props.lines);
+    case "compare-table":
+      return n(props.rows);
+    case "stack":
+      return n(props.layers);
     case "steps":
       return n(props.steps);
     case "funnel":
@@ -84,6 +92,12 @@ export const BUILT_KINDS = [
   "funnel",
   "matrix",
   "nodes",
+  "ranking",
+  "checklist",
+  "terminal",
+  "compare-table",
+  "stack",
+  "gauge",
 ];
 const WEAK_HOOKS = [
   "you won't believe",

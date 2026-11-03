@@ -53,6 +53,12 @@ describe("video-core scenes", () => {
       "funnel",
       "matrix",
       "nodes",
+      "ranking",
+      "checklist",
+      "terminal",
+      "compare-table",
+      "stack",
+      "gauge",
     ]);
   });
 

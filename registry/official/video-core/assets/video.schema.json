@@ -111,6 +111,12 @@
             "funnel",
             "matrix",
             "nodes",
+            "ranking",
+            "checklist",
+            "terminal",
+            "compare-table",
+            "stack",
+            "gauge",
             "custom"
           ]
         },
@@ -495,6 +501,139 @@
               "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
             }
           }
+        }
+      },
+      "ranking": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "focus": { "type": "boolean" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "unit": { "type": "string", "minLength": 0, "maxLength": 12 },
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": ["label", "value"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+                "value": { "type": "number" },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "checklist": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "focus": { "type": "boolean" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "required": ["text"],
+              "properties": {
+                "text": { "type": "string", "minLength": 1, "maxLength": 60 },
+                "state": { "enum": ["done", "todo", "fail"] },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "terminal": {
+        "type": "object",
+        "required": ["lines"],
+        "properties": {
+          "focus": { "type": "boolean" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "prompt": { "type": "string", "minLength": 1, "maxLength": 4 },
+          "lines": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": ["text"],
+              "properties": {
+                "text": { "type": "string", "minLength": 1, "maxLength": 64 },
+                "kind": { "enum": ["cmd", "out"] },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "compare-table": {
+        "type": "object",
+        "required": ["columns", "rows"],
+        "properties": {
+          "focus": { "type": "boolean" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "columns": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": { "type": "string", "minLength": 1, "maxLength": 24 }
+          },
+          "rows": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "required": ["label", "cells"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1, "maxLength": 30 },
+                "cells": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 0, "maxLength": 40 }
+                },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "stack": {
+        "type": "object",
+        "required": ["layers"],
+        "properties": {
+          "focus": { "type": "boolean" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "layers": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "required": ["label"],
+              "properties": {
+                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+                "detail": { "type": "string", "minLength": 1, "maxLength": 80 },
+                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
+              }
+            }
+          }
+        }
+      },
+      "gauge": {
+        "type": "object",
+        "required": ["value", "label"],
+        "properties": {
+          "focus": { "type": "boolean" },
+          "value": { "type": "number", "minimum": 0, "maximum": 100 },
+          "from": { "type": "number", "minimum": 0, "maximum": 100 },
+          "label": { "type": "string", "minLength": 1, "maxLength": 60 },
+          "unit": { "type": "string", "minLength": 0, "maxLength": 8 },
+          "on": { "type": "string", "minLength": 1, "maxLength": 60 }
         }
       },
       "timeline": {

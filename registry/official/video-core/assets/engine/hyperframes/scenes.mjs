@@ -5,6 +5,7 @@
 import { calligraphy, calligraphyCss } from "./calligraphy.mjs";
 import { code, codeCss } from "./code.mjs";
 import { DIAGRAM_BUILDERS, DIAGRAM_KINDS, diagramCss } from "./diagrams.mjs";
+import { DIAGRAM2_BUILDERS, DIAGRAM2_KINDS, diagram2Css } from "./diagrams2.mjs";
 import { kinetic, kineticCss } from "./kinetic.mjs";
 import { rateLimit, rateLimitCss } from "./rate-limit.mjs";
 import { requestFlow, requestFlowCss } from "./request-flow.mjs";
@@ -44,6 +45,7 @@ export const KINDS = [
   "shot",
   "kinetic",
   ...DIAGRAM_KINDS,
+  ...DIAGRAM2_KINDS,
 ];
 
 const grow = [{ transform: "scaleY(0)" }, { transform: "scaleY(1)" }];
@@ -243,6 +245,7 @@ const BUILDERS = {
   shot,
   kinetic,
   ...DIAGRAM_BUILDERS,
+  ...DIAGRAM2_BUILDERS,
 };
 
 /** Styles the kinds above need on top of the base page styles. */
@@ -257,6 +260,7 @@ export const kindCss = (brand, vertical, kinds) =>
   shotCss(brand) +
   spotlightCss(brand) +
   diagramCss(brand, vertical) +
+  diagram2Css(brand, vertical) +
   // The display font is only declared (and so only allowed) when a kinetic scene exists.
   (!kinds || kinds.has("kinetic") ? kineticCss(brand) : "");
 

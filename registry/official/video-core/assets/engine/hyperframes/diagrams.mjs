@@ -649,3 +649,5 @@ export const diagramCss = (brand, vertical = true) => {
 .nd-dot{position:absolute;z-index:1;width:calc(var(--u)*2.6);height:calc(var(--u)*2.6);margin:calc(var(--u)*-1.3);border-radius:50%;background:${accent};box-shadow:0 0 calc(var(--u)*3) ${accent}}
 `;
 };
+
+export { fmt, firstBy, head, item, pop, whens };

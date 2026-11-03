@@ -202,6 +202,120 @@
           }
         ]
       }
+    },
+    "ranking": {
+      "use_when": ["the biggest is", "from most to least", "top three", "ranked by", "the leader"],
+      "props": {
+        "unit": "ms",
+        "items": [
+          {
+            "label": "Cache",
+            "value": 12
+          },
+          {
+            "label": "Disk",
+            "value": 48
+          },
+          {
+            "label": "Network",
+            "value": 120
+          }
+        ]
+      },
+      "note": "Sorted by the values you give; never invent them."
+    },
+    "checklist": {
+      "use_when": [
+        "make sure",
+        "tick off",
+        "before you ship",
+        "the requirements are",
+        "done, done and not yet"
+      ],
+      "props": {
+        "items": [
+          {
+            "text": "Tests pass"
+          },
+          {
+            "text": "Docs updated"
+          },
+          {
+            "text": "Tag pushed",
+            "state": "todo"
+          }
+        ]
+      }
+    },
+    "terminal": {
+      "use_when": [
+        "run this command",
+        "in your terminal",
+        "type",
+        "the output is",
+        "install it with"
+      ],
+      "props": {
+        "lines": [
+          {
+            "text": "npm install aisle",
+            "kind": "cmd"
+          },
+          {
+            "text": "added 1 package",
+            "kind": "out"
+          }
+        ]
+      },
+      "note": "Text only as written; nothing is run."
+    },
+    "compare-table": {
+      "use_when": [
+        "side by side",
+        "how they differ",
+        "plan against plan",
+        "what each one gives you",
+        "the table shows"
+      ],
+      "props": {
+        "columns": ["Free", "Pro"],
+        "rows": [
+          {
+            "label": "Videos",
+            "cells": ["3", "Unlimited"]
+          },
+          {
+            "label": "Voice",
+            "cells": ["Local", "Local"]
+          }
+        ]
+      }
+    },
+    "stack": {
+      "use_when": ["layers", "on top of", "built on", "from the bottom up", "the stack is"],
+      "props": {
+        "layers": [
+          {
+            "label": "App"
+          },
+          {
+            "label": "Engine",
+            "detail": "renders frames"
+          },
+          {
+            "label": "Browser"
+          }
+        ]
+      }
+    },
+    "gauge": {
+      "use_when": ["percent complete", "how full", "coverage is", "utilisation", "reached"],
+      "props": {
+        "value": 87,
+        "unit": "%",
+        "label": "of tests pass"
+      },
+      "note": "Fills to the value you give."
     }
   }
 }
