@@ -47,7 +47,7 @@ describe("timeline scene", () => {
   it("escapes hostile text", async () => {
     const { renderScene } = await scenes();
     const p = props();
-    p.events[0].label = "<img src=x onerror=alert(1)>";
+    p.events[0]!.label = "<img src=x onerror=alert(1)>";
     const { html } = renderScene({ id: "s1", kind: "timeline", props: p }, ctx());
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img");
@@ -70,7 +70,10 @@ describe("timeline scene", () => {
   it("uses a denser layout above 6 events so a tall list stays inside the safe area", async () => {
     const { renderScene } = await scenes();
     const many = props();
-    many.events = Array.from({ length: 8 }, (_, i) => ({ at: `1${i}:00`, label: `Event ${i}` }));
+    (many as Loose).events = Array.from({ length: 8 }, (_, i) => ({
+      at: `1${i}:00`,
+      label: `Event ${i}`,
+    }));
     expect(renderScene({ id: "s1", kind: "timeline", props: many }, ctx()).html).toContain(
       'class="tl tl-dense"',
     );

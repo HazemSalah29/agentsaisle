@@ -168,7 +168,7 @@ describe.skipIf(!haveFF)("analyze on a real file", () => {
     expect(recipe.format).toEqual({ width: 320, height: 180, fps: 30 });
     // video compression moves each colour a little, so compare by channel
     const near = (hex: string, want: number[]) =>
-      [1, 3, 5].every((k, c) => Math.abs(parseInt(hex.slice(k, k + 2), 16) - want[c]) < 12);
+      [1, 3, 5].every((k, c) => Math.abs(parseInt(hex.slice(k, k + 2), 16) - want[c]!) < 12);
     for (const want of [
       [255, 0, 0],
       [0, 255, 0],

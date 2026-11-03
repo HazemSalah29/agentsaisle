@@ -196,6 +196,6 @@ describe("shot scene", () => {
     );
     const frames = plan.find((p) => p.id === "sc-a-t0")!.frames;
     expect(frames.at(-1)!.opacity).toBe(1);
-    expect(frames.some((f) => f.opacity < 1)).toBe(true);
+    expect(frames.some((f: Loose) => f.opacity < 1)).toBe(true);
   });
 });

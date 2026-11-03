@@ -138,7 +138,7 @@ describe("request-flow scene", () => {
     const spokes = boxes.slice(1);
     expect(new Set(spokes.map((b) => b[0])).size).toBe(1); // one column
     expect(new Set(spokes.map((b) => b[1])).size).toBe(4); // one row each
-    expect(spokes[0][0]).toBeGreaterThan(hub[0] + 20); // to the right of the hub
+    expect(spokes[0]![0]).toBeGreaterThan(hub![0]! + 20); // to the right of the hub
   });
 
   it("describes what is wrong with hand-written props", async () => {

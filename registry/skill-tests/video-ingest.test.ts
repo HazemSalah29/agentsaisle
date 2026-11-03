@@ -32,7 +32,7 @@ const fakeRun =
     calls.push({ cmd, args });
     if (args[0] === "--version") return { status: 0, stdout: `${version}\n`, stderr: "" };
     if (fail) return { status: 1, stdout: "", stderr: "ERROR: boom\n" };
-    const tpl = args[args.indexOf("-o") + 1].replace("%(ext)s", "mp4");
+    const tpl = args[args.indexOf("-o") + 1]!.replace("%(ext)s", "mp4");
     writeFileSync(tpl, "FAKE VIDEO BYTES");
     return { status: 0, stdout: "", stderr: "" };
   };

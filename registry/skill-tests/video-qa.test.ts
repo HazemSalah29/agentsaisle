@@ -20,7 +20,7 @@ type Checks = {
   fastRuns: (m: Loose[], o: Loose) => Loose[];
   hardSwaps: (m: Loose[], b: Loose[], o: Loose) => Loose[];
   shortScenes: (t: Loose | null, min: number) => Loose[];
-  transitionWindows: (t: Loose, v: Loose) => number[][];
+  transitionWindows: (t: Loose | null, v: Loose) => number[][];
   applyLessons: (r: Loose, l: unknown) => { rules: Loose; applied: string[]; ignored: string[] };
 };
 type Qa = { qaProject: (o: Loose) => Promise<{ results: Loose[]; facts: Loose }> };
@@ -48,9 +48,9 @@ describe("transition windows", () => {
     };
     const w = transitionWindows(timing, video);
     expect(w).toHaveLength(2); // the fade is not a moving transition
-    expect(w[0][0]).toBeCloseTo(3.85);
-    expect(w[0][1]).toBeCloseTo(4.95);
-    expect(w[1][1]).toBeCloseTo(12.55);
+    expect(w[0]![0]).toBeCloseTo(3.85);
+    expect(w[0]![1]).toBeCloseTo(4.95);
+    expect(w[1]![1]).toBeCloseTo(12.55);
     expect(transitionWindows(null, video)).toEqual([]);
   });
 });
@@ -72,7 +72,7 @@ describe("changed cells", () => {
   it("ignores small noise but not a real change, and uses the sample spacing for time", async () => {
     const { changedCells } = await checks();
     const noisy = changedCells(cat(frame(4, 4, 100), frame(4, 4, 104)), 4, 4, { cellDiff: 10 });
-    expect(noisy[0].cells).toBe(0);
+    expect(noisy[0]!.cells).toBe(0);
     const real = changedCells(cat(frame(4, 4, 100), frame(4, 4, 140)), 4, 4, {
       cellDiff: 10,
       dt: 0.5,
@@ -111,7 +111,7 @@ describe("video-qa motion checks", () => {
     const rows = m([1, 1, 90, 1, 1, 60, 70, 65, 1, 1]);
     const out = fastRuns(rows, { limit: 30, minSamples: 3 });
     expect(out).toHaveLength(1);
-    expect(out[0].start).toBeCloseTo(0.5);
+    expect(out[0]!.start).toBeCloseTo(0.5);
     expect(fastRuns(rows, { limit: 30, minSamples: 3, ignore: [[0.6, 0.8]] })).toEqual([]);
   });
   it("reports a one-frame swap but not a transition spread over several samples", async () => {
@@ -197,7 +197,7 @@ describe("video-qa parsers", () => {
     expect(contrast("#000000", "#ffffff")).toBeCloseTo(21, 0);
     expect(contrast("#777777", "#808080")).toBeLessThan(1.2);
     expect(textProblems("Fix this TODO later")[0]).toMatchObject({ level: "fail" });
-    expect(textProblems("a claim [needs-source]")[0].level).toBe("fail");
+    expect(textProblems("a claim [needs-source]")[0]!.level).toBe("fail");
     expect(textProblems("the the cache")[0]).toMatchObject({ level: "warn" });
     expect(textProblems("A clean sentence.")).toEqual([]);
     const timing = {

@@ -87,9 +87,9 @@ describe("camera", () => {
     const { cameraFrames } = await screen();
     const f = cameraFrames([{ at: 2, dur: 1, x: 0.5, y: 0.5, scale: 2 }], 10);
     expect(f.map((k) => k.offset)).toEqual([0, 0.2, 0.3, 1]);
-    expect(f[0].transform).toBe(f[1].transform);
-    expect(f[2].transform).toBe(f[3].transform);
-    expect(f[2].transform).not.toBe(f[1].transform);
+    expect(f[0]!.transform).toBe(f[1]!.transform);
+    expect(f[2]!.transform).toBe(f[3]!.transform);
+    expect(f[2]!.transform).not.toBe(f[1]!.transform);
   });
 });
 
@@ -107,8 +107,8 @@ describe("screen renderer", () => {
     expect(r.root).toContain('src="assets/media/rec.mp4"');
     const ids = r.plan.map((p) => p.id);
     expect(ids).toEqual(["sc-a-cam", "sc-a-vid", "sc-a-cur", "sc-a-rp0"]);
-    expect(r.plan[3].at).toBe(3);
-    expect(r.plan[0].frames).toEqual(r.plan[1].frames);
+    expect(r.plan[3]!.at).toBe(3);
+    expect(r.plan[0]!.frames).toEqual(r.plan[1]!.frames);
   });
   it("is the same output twice", async () => {
     const { renderScene } = await scenes();
@@ -140,9 +140,9 @@ describe("screen renderer", () => {
         const [x, y, w, h] = m.slice(1).map(Number);
         expect(x).toBeGreaterThanOrEqual(0);
         expect(y).toBeGreaterThanOrEqual(0);
-        expect(x + w).toBeLessThanOrEqual(100);
-        expect(y + h).toBeLessThanOrEqual((size[1] / size[0]) * 100);
-        expect(w / h).toBeCloseTo(1280 / 720, 1);
+        expect(x! + w!).toBeLessThanOrEqual(100);
+        expect(y! + h!).toBeLessThanOrEqual((size[1]! / size[0]!) * 100);
+        expect(w! / h!).toBeCloseTo(1280 / 720, 1);
       }
     }
   });

@@ -149,7 +149,7 @@ describe("video-core scenes", () => {
     const s = { kind: "list", props: { items: ["a", "b", "c"], numbered: true } };
     const lines = [{ start: 0.2 }, { start: 1.5 }, { start: 2.8 }];
     // the first plan entry of each item is its entrance (later ones are its rail and its dimming)
-    const enters = (plan: { id: string; at: number }[]) => {
+    const enters = (plan: Loose[]) => {
       const seen = new Map<string, number>();
       for (const p of plan) if (/-i\d$/.test(p.id) && !seen.has(p.id)) seen.set(p.id, p.at);
       return [...seen.values()];

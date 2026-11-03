@@ -128,8 +128,8 @@ describe.skipIf(!haveFF)("video-edit stabilize and jumpcut on real files", () =>
         "VAVG",
       )[0];
     const before = at(out, 0.5);
-    expect(at(out, 1.6)).toBeLessThan(before - 20);
-    expect(Math.abs(at(out, 3.5) - before)).toBeLessThan(4);
+    expect(at(out, 1.6)).toBeLessThan(before! - 20);
+    expect(Math.abs(at(out, 3.5)! - before!)).toBeLessThan(4);
     expect(cli("jumpcut", "--in", clip, "--out", path.join(dir, "n.mp4")).stderr).toContain(
       "--marks",
     );

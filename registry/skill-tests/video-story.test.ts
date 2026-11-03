@@ -184,7 +184,7 @@ describe("video-story continuity and reference packs", () => {
   it("keeps the byte-identical copies in step", () => {
     const same = (a: string, b: string, f = a) =>
       expect(readFileSync(skillFile("video-story", `scripts/${a}`), "utf8")).toBe(
-        readFileSync(skillFile(b.split(":")[0], `scripts/${b.split(":")[1] ?? f}`), "utf8"),
+        readFileSync(skillFile(b.split(":")[0]!, `scripts/${b.split(":")[1] ?? f}`), "utf8"),
       );
     same("_lib.mjs", "video-core:_lib.mjs");
     same("_script-parse.mjs", "video-write:script-parse.mjs");

@@ -75,8 +75,8 @@ describe("video-session copies", () => {
       "video",
       "scripts/session.mjs",
     );
-    const sources = (t: string) => [...t.matchAll(/^\s*\/(.*)\/[a-z]*,$/gm)].map((m) => m[1]);
-    expect(SECRET_RES.map((r) => r.source)).toEqual(sources(block));
+    const sources = (t: string) => [...t.matchAll(/^\s*\/(.*)\/[a-z]*,$/gm)].map((m) => m[1]!);
+    expect(SECRET_RES.map((r) => r.source)).toEqual(sources(block!));
   });
 });
 

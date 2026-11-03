@@ -58,7 +58,7 @@ wait 1.5
   it("keeps hostile text as plain data", async () => {
     const r = (await demo()).parseDemo('go /\nclick "<img src=x onerror=alert(1)>"');
     expect(r.problems).toEqual([]);
-    expect(r.steps[1].text).toBe("<img src=x onerror=alert(1)>");
+    expect(r.steps[1]!.text).toBe("<img src=x onerror=alert(1)>");
   });
   it("limits the number of steps", async () => {
     const t = "go /\n" + 'click "A"\n'.repeat(70);

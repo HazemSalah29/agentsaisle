@@ -154,7 +154,7 @@ describe("diagram scenes", () => {
       diagramProblems("nodes", { ...GOOD.nodes, edges: [{ from: "a", to: "zzz" }] })[0],
     ).toContain("edges[0]");
     expect(
-      diagramProblems("versus", { left: { title: "a", points: [] }, right: GOOD.versus.right })[0],
+      diagramProblems("versus", { left: { title: "a", points: [] }, right: GOOD.versus!.right })[0],
     ).toContain("left.points");
     expect(diagramProblems("callout", { stat: "x".repeat(20), label: "l" })[0]).toContain("stat");
   });

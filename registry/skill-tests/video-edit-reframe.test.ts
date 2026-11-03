@@ -63,8 +63,8 @@ describe("reframe path maths", () => {
     }
     // never faster than half a crop width a second
     r.points.slice(1).forEach((q, i) => {
-      const dt = q.t - r.points[i].t;
-      expect(Math.abs(q.x - r.points[i].x) / dt).toBeLessThanOrEqual(0.5 * CROP + 0.01);
+      const dt = q.t - r.points[i]!.t;
+      expect(Math.abs(q.x - r.points[i]!.x) / dt).toBeLessThanOrEqual(0.5 * CROP + 0.01);
     });
     expect(r.coverage).toBeGreaterThan(0.8);
   });

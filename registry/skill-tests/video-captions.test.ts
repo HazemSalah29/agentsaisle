@@ -434,8 +434,8 @@ describe("video-captions bilingual", () => {
       groups,
       translations: { lang: "fr", lines: { l1: "Sa\u0007lut", l2: "b" } },
     });
-    expect(r[0].text).toBe("Sa lut");
-    expect(r[0].dir).toBe("ltr");
+    expect(r[0]!.text).toBe("Sa lut");
+    expect(r[0]!.dir).toBe("ltr");
   });
 
   it("is drawn by video-core with its own direction, escaped, and keeps scenes clear of it", async () => {

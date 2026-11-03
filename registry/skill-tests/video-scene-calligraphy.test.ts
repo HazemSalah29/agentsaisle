@@ -38,7 +38,7 @@ describe("calligraphy scene", () => {
   it("wipes from the right for Arabic and from the left for Latin text", async () => {
     const { renderScene } = await scenes();
     const first = (text: string) =>
-      renderScene({ id: "s1", kind: "calligraphy", props: { text } }, ctx()).plan[0].frames[0]
+      renderScene({ id: "s1", kind: "calligraphy", props: { text } }, ctx()).plan[0]!.frames[0]
         .clipPath;
     expect(first(TEXT)).toMatch(/100%\)$/);
     expect(first("Hello world")).toMatch(/^inset\(-40% 100%/);

@@ -51,7 +51,7 @@ describe("sequence parser", () => {
     expect(r.problems).toEqual([]);
     expect(r.participants.map((p) => p.id)).toEqual(["B", "A"]);
     expect(r.items).toHaveLength(3);
-    expect(r.items[1].dashed).toBe(true);
+    expect(r.items[1]!.dashed).toBe(true);
   });
 
   it("says what it cannot read and what is not supported", async () => {

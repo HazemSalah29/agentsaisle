@@ -83,7 +83,7 @@ describe("localize", () => {
       readFileSync(skillFile("video-localize", "assets/glossary.ar.yaml"), "utf8"),
     );
     expect(g.brands).toContain("Agent Aisle");
-    expect(g.terms[0].ar.length).toBeGreaterThan(1);
+    expect(g.terms[0]!.ar.length).toBeGreaterThan(1);
     const doc: Doc = {
       from: "en",
       to: "ar",
@@ -122,9 +122,9 @@ describe("localize", () => {
     expect(out.meta).toMatchObject({ lang: "ar", dir: "rtl" });
     expect(out.voice).toEqual({ provider: "3arab", voiceId: expect.stringContaining("مصرية") });
     expect(out.captions).toBeUndefined();
-    expect(out.scenes[0].props.text).toBe("تحديد المعدل");
-    expect(out.scenes[1].props.items).toEqual(["واحد", "اثنان"]);
-    expect((src.scenes[0].props as { text: string }).text).toBe("Rate limits");
+    expect(out.scenes[0]!.props.text).toBe("تحديد المعدل");
+    expect(out.scenes[1]!.props.items).toEqual(["واحد", "اثنان"]);
+    expect((src.scenes[0]!.props as { text: string }).text).toBe("Rate limits");
     expect(m.localizeVideo(src, doc)).toEqual(out); // repeatable
     const script = m.localizeScript(SCRIPT, doc);
     expect(script).toContain("[l1] يحمي تحديد المعدل الخادم.");

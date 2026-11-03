@@ -35,11 +35,11 @@ describe("showcase status", () => {
         .slice(0, 3),
     ).toEqual(["done", "done", "todo"]);
     put(dir, "video.json", JSON.stringify({ scenes: [{ kind: "screen", props: { zoom: [] } }] }));
-    expect(showcaseState(dir)[2].status).toBe("done");
+    expect(showcaseState(dir)[2]!.status).toBe("done");
     // A newer demo script makes the capture stale.
     const later = new Date(Date.now() + 60_000);
     utimesSync(path.join(dir, "demo.md"), later, later);
-    expect(showcaseState(dir)[1].status).toBe("stale");
+    expect(showcaseState(dir)[1]!.status).toBe("stale");
   });
 });
 

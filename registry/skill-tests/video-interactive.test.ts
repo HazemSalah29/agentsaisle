@@ -46,7 +46,7 @@ describe("branch checks", () => {
     expect(branchProblems(good(), IDS)).toEqual([]);
     const [b] = resolveBranches(good(), scenes);
     expect(b).toMatchObject({ gate: 8, then: 24 });
-    expect(b.options.map((o: Loose) => [o.start, o.end])).toEqual([
+    expect(b!.options.map((o: Loose) => [o.start, o.end])).toEqual([
       [8, 16],
       [16, 24],
     ]);
@@ -77,7 +77,7 @@ describe("branch checks", () => {
     d.branches[0].options[1].to = "s7";
     d.branches[0].then = "end";
     expect(branchProblems(d, IDS)).toEqual([]);
-    expect(resolveBranches(d, scenes)[0].then).toBeNull();
+    expect(resolveBranches(d, scenes)[0]!.then).toBeNull();
   });
 });
 

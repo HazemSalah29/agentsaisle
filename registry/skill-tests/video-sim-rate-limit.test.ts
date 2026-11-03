@@ -6,7 +6,7 @@ type Sim = {
   simulate: (spec: Loose) => {
     arrivals: number[];
     durationMs: number;
-    runs: { algo: string; allowed: number; rejected: number; events: Loose[] }[];
+    runs: { algo: string; allowed: number; rejected: number; events: Loose[]; meter: number[][] }[];
   };
   specProblems: (spec: Loose) => string[];
   arrivals: (spec: Loose) => number[];
@@ -26,16 +26,16 @@ const spec = (algo: Loose, pattern: Loose, count: number, seed = 1) => ({
   algos: [algo],
 });
 const outcomes = (r: { runs: { events: Loose[] }[] }) =>
-  r.runs[0].events.map((e) => (e.outcome === "allowed" ? "A" : "R")).join("");
+  r.runs[0]!.events.map((e) => (e.outcome === "allowed" ? "A" : "R")).join("");
 
 describe("rate-limit simulator", () => {
   it("token bucket of 5 rejects the 6th request at t=0", async () => {
     const { simulate } = await load();
     const r = simulate(spec({ algo: "token-bucket", capacity: 5, refillPerSec: 1 }, burst(6), 6));
     expect(outcomes(r)).toBe("AAAAAR");
-    expect(r.runs[0].events[5]).toMatchObject({ t: 0, outcome: "rejected", level: 0, max: 5 });
-    expect(r.runs[0].allowed).toBe(5);
-    expect(r.runs[0].rejected).toBe(1);
+    expect(r.runs[0]!.events[5]).toMatchObject({ t: 0, outcome: "rejected", level: 0, max: 5 });
+    expect(r.runs[0]!.allowed).toBe(5);
+    expect(r.runs[0]!.rejected).toBe(1);
   });
 
   it("token bucket refills over time (capacity 1, 1 token a second, 2 requests a second)", async () => {
@@ -70,7 +70,7 @@ describe("rate-limit simulator", () => {
     const { simulate } = await load();
     const slow = { type: "steady", ratePerSec: 0.5 }; // t = 0, 2000
     const tb = simulate(spec({ algo: "token-bucket", capacity: 2, refillPerSec: 1 }, slow, 2));
-    expect(tb.runs[0].meter).toEqual([
+    expect(tb.runs[0]!.meter).toEqual([
       [0, 2],
       [0, 2],
       [0, 1],
@@ -79,7 +79,7 @@ describe("rate-limit simulator", () => {
       [2000, 1],
     ]);
     const sw = simulate(spec({ algo: "sliding-window", limit: 2, windowSec: 1 }, slow, 2));
-    expect(sw.runs[0].meter).toContainEqual([1000, 0]);
+    expect(sw.runs[0]!.meter).toContainEqual([1000, 0]);
   });
 
   it("shows the fixed-window edge: a burst before and a burst after the boundary both get through", async () => {
@@ -126,7 +126,7 @@ describe("rate-limit simulator", () => {
   it("arrivals are ascending whole milliseconds", async () => {
     const { arrivals } = await load();
     const t = arrivals(spec({}, { type: "poisson", ratePerSec: 10 }, 500, 7));
-    expect(t.every((v, i) => Number.isInteger(v) && (i === 0 || v >= t[i - 1]))).toBe(true);
+    expect(t.every((v, i) => Number.isInteger(v) && (i === 0 || v >= t[i - 1]!))).toBe(true);
     expect(t).toHaveLength(500);
   });
 
@@ -142,7 +142,7 @@ describe("rate-limit simulator", () => {
       ],
     });
     expect(r.runs).toHaveLength(2);
-    expect(r.runs[0].events.map((e) => e.t)).toEqual(r.runs[1].events.map((e) => e.t));
+    expect(r.runs[0]!.events.map((e) => e.t)).toEqual(r.runs[1]!.events.map((e) => e.t));
     for (const run of r.runs) expect(run.allowed + run.rejected).toBe(100);
   });
 

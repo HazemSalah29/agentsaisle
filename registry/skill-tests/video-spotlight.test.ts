@@ -36,10 +36,10 @@ describe("spotlight layout", () => {
     const { renderScene } = await scenes();
     const { html, plan } = renderScene({ id: "s", kind: "list", props }, ctx());
     for (let i = 0; i < 4; i++) expect(html).toContain(`id="sc-a-p${i}"`);
-    expect(entries(plan, "sc-a-p0")[0].at).toBeCloseTo(10.44); // 10.5 - 0.06 lead
-    expect(entries(plan, "sc-a-p1")[0].at).toBeCloseTo(12.44);
+    expect(entries(plan, "sc-a-p0")[0]!.at).toBeCloseTo(10.44); // 10.5 - 0.06 lead
+    expect(entries(plan, "sc-a-p1")[0]!.at).toBeCloseTo(12.44);
     const out0 = entries(plan, "sc-a-p0-x")[0];
-    expect(out0.at + out0.dur).toBeLessThanOrEqual(entries(plan, "sc-a-p1")[0].at); // gone before the next arrives
+    expect(out0!.at + out0!.dur).toBeLessThanOrEqual(entries(plan, "sc-a-p1")[0]!.at); // gone before the next arrives
     expect(entries(plan, "sc-a-p3-x")).toHaveLength(0); // the last one stays
     expect(html.match(/class="sp-dot"/g)).toHaveLength(4);
   });
@@ -47,10 +47,10 @@ describe("spotlight layout", () => {
     const { renderScene } = await scenes();
     const { plan } = renderScene({ id: "s", kind: "list", props }, ctx());
     const r = entries(plan, "sc-a-p1-r")[0];
-    expect(r.at).toBeCloseTo(12.44);
-    expect(r.at + r.dur).toBeCloseTo(14.44, 1);
+    expect(r!.at).toBeCloseTo(12.44);
+    expect(r!.at + r!.dur).toBeCloseTo(14.44, 1);
     const last = entries(plan, "sc-a-p3-r")[0];
-    expect(last.at + last.dur).toBeCloseTo(18 - 0.15, 1);
+    expect(last!.at + last!.dur).toBeCloseTo(18 - 0.15, 1);
   });
   it("works for steps (with the detail) and funnel (with the value) and keeps the heading", async () => {
     const { renderScene } = await scenes();
@@ -91,7 +91,7 @@ describe("spotlight layout", () => {
       ctx({ words: [W("beta", 4)] }),
     );
     expect(html).not.toContain("<img");
-    expect(entries(plan, "sc-a-p0")[0].at).toBeLessThanOrEqual(10.5); // no heading: it comes in at once (0.4 s when its word is never said)
+    expect(entries(plan, "sc-a-p0")[0]!.at).toBeLessThanOrEqual(10.5); // no heading: it comes in at once (0.4 s when its word is never said)
   });
   it("sizes long labels smaller, and wide frames smaller than tall ones", async () => {
     const { sizeFor } = await sp();

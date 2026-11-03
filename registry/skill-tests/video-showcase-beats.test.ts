@@ -26,7 +26,7 @@ function track(bpm: number, seconds: number, first = 0.1) {
   for (let t = first; t < seconds - 0.05; t += 60 / bpm) {
     times.push(t);
     const o = Math.floor(t * RATE);
-    for (let i = 0; i < 0.03 * RATE; i++) s[o + i] += 0.8 * rnd() * Math.exp(-i / (0.006 * RATE));
+    for (let i = 0; i < 0.03 * RATE; i++) s[o + i]! += 0.8 * rnd() * Math.exp(-i / (0.006 * RATE));
   }
   return { s, times };
 }
