@@ -40,7 +40,7 @@ const GOOD: Record<string, Loose> = {
     title: "Ship it",
     items: [
       { text: "Cache warm" },
-      { text: "Disk synced", state: "todo" },
+      { text: "Disk synced", state: "open" },
       { text: "Network fine", state: "fail" },
     ],
   },
@@ -121,7 +121,7 @@ describe("second-batch idea scenes", () => {
     const bar = plan.find((p) => p.id === "sc-a-k0-b")!;
     expect(bar.at + bar.dur).toBeCloseTo(12.44, 1); // grows until the next item ("disk", 2.5 s) is named
   });
-  it("checklist draws a tick or a cross on the word, and nothing for a todo", async () => {
+  it("checklist draws a tick or a cross on the word, and nothing for an open box", async () => {
     const { renderScene } = await scenes();
     const { html, plan } = renderScene(
       { id: "s", kind: "checklist", props: GOOD.checklist },
@@ -130,7 +130,7 @@ describe("second-batch idea scenes", () => {
     expect(html).toContain("M4 12.5");
     expect(html).toContain("M6 6 L18 18");
     expect(plan.find((p) => p.id === "sc-a-c0-t")).toBeTruthy();
-    expect(plan.find((p) => p.id === "sc-a-c1-t")).toBeUndefined(); // todo: an empty box
+    expect(plan.find((p) => p.id === "sc-a-c1-t")).toBeUndefined(); // open: an empty box
     expect(at(plan, "sc-a-c0-t")).toBeGreaterThan(at(plan, "sc-a-c0")!);
   });
   it("terminal types at a steady rate, never past the next line, and never claims to run anything", async () => {

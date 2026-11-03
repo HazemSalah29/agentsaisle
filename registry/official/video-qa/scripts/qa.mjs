@@ -21,6 +21,7 @@ import {
   parseSignalstats,
   sheetTimes,
   shortScenes,
+  transitionWindows,
   textProblems,
 } from "./_checks.mjs";
 import { run } from "./run.mjs";
@@ -180,8 +181,16 @@ export async function qaProject({ dir, file, draft = false }, baseRules = loadRu
       add("black", "fail", `black picture ${r1(b.start)} to ${r1(b.end)} s (${r1(b.seconds)} s)`);
   else add("black", "pass", "no black stretch");
   const freeze = parseFreeze(
-    ff(["-i", file, "-an", "-vf", `freezedetect=d=${rules.freeze.warnSeconds}`, "-f", "null", "-"])
-      .stderr,
+    ff([
+      "-i",
+      file,
+      "-an",
+      "-vf",
+      `freezedetect=d=${rules.freeze.warnSeconds}:n=-80dB`,
+      "-f",
+      "null",
+      "-",
+    ]).stderr,
   );
   if (freeze.length)
     for (const f of freeze)
@@ -331,7 +340,11 @@ export async function qaProject({ dir, file, draft = false }, baseRules = loadRu
   const skip = (timing?.scenes ?? []).filter((s) =>
     ["broll", "shot", "kinetic"].includes(video.scenes.find((v) => v.id === s.id)?.kind),
   );
-  const inSkip = (t) => skip.some((s) => t >= s.start && t < s.start + s.seconds);
+  // a slash, whip, shatter or zoom carries a scene across the frame: the margins are not judged while it runs
+  const moving = transitionWindows(timing, video);
+  const inSkip = (t) =>
+    skip.some((s) => t >= s.start && t < s.start + s.seconds) ||
+    moving.some(([a, b]) => t >= a && t <= b);
   const hits = [];
   for (const [side, crop] of Object.entries(strips(zone))) {
     const frames = parseSignalstats(

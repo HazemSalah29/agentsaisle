@@ -541,7 +541,7 @@
               "required": ["text"],
               "properties": {
                 "text": { "type": "string", "minLength": 1, "maxLength": 60 },
-                "state": { "enum": ["done", "todo", "fail"] },
+                "state": { "enum": ["done", "open", "fail"] },
                 "on": { "type": "string", "minLength": 1, "maxLength": 60 }
               }
             }

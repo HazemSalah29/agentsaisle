@@ -231,3 +231,18 @@ export function applyLessons(rules, lessons) {
   }
   return { rules: { ...rules, motion }, applied, ignored };
 }
+
+/** Transitions that carry a scene across the frame (the picture legitimately passes through the margins). */
+export const MOVING_TRANSITIONS = ["slash", "shatter", "whip", "zoom-through"];
+
+/**
+ * The stretches of the film where a moving transition is running: [[from, to]], from just before a scene starts to
+ * the end of its transition (`transitionSeconds`, default 0.8 s) plus a little. Plain cuts and fades are not included.
+ */
+export function transitionWindows(timing, video) {
+  return (timing?.scenes ?? []).flatMap((s) => {
+    const v = (video?.scenes ?? []).find((x) => x.id === s.id);
+    if (!MOVING_TRANSITIONS.includes(v?.transitionIn)) return [];
+    return [[s.start - 0.15, s.start + (Number(v.transitionSeconds) || 0.8) + 0.15]];
+  });
+}

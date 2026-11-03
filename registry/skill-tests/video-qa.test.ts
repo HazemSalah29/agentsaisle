@@ -20,11 +20,40 @@ type Checks = {
   fastRuns: (m: Loose[], o: Loose) => Loose[];
   hardSwaps: (m: Loose[], b: Loose[], o: Loose) => Loose[];
   shortScenes: (t: Loose | null, min: number) => Loose[];
+  transitionWindows: (t: Loose, v: Loose) => number[][];
   applyLessons: (r: Loose, l: unknown) => { rules: Loose; applied: string[]; ignored: string[] };
 };
 type Qa = { qaProject: (o: Loose) => Promise<{ results: Loose[]; facts: Loose }> };
 const checks = () => loadScript<Checks>("video-qa", "scripts/_checks.mjs");
 const qa = () => loadScript<Qa>("video-qa", "scripts/qa.mjs");
+
+describe("transition windows", () => {
+  it("covers only the moving transitions, from just before a scene to the end of its transition", async () => {
+    const { transitionWindows } = await checks();
+    const timing = {
+      scenes: [
+        { id: "a", start: 0, seconds: 4 },
+        { id: "b", start: 4, seconds: 4 },
+        { id: "c", start: 8, seconds: 4 },
+        { id: "d", start: 12, seconds: 4 },
+      ],
+    };
+    const video = {
+      scenes: [
+        { id: "a" },
+        { id: "b", transitionIn: "slash" },
+        { id: "c", transitionIn: "fade" },
+        { id: "d", transitionIn: "whip", transitionSeconds: 0.4 },
+      ],
+    };
+    const w = transitionWindows(timing, video);
+    expect(w).toHaveLength(2); // the fade is not a moving transition
+    expect(w[0][0]).toBeCloseTo(3.85);
+    expect(w[0][1]).toBeCloseTo(4.95);
+    expect(w[1][1]).toBeCloseTo(12.55);
+    expect(transitionWindows(null, video)).toEqual([]);
+  });
+});
 
 describe("changed cells", () => {
   const frame = (w: number, h: number, v: number, dots: [number, number][] = []) => {

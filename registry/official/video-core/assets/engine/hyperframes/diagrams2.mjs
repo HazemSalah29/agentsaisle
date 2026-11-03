@@ -20,7 +20,7 @@ export const DIAGRAM2_KINDS = [
 const isText = (v, max, min = 1) =>
   typeof v === "string" && v.trim().length >= min && v.length <= max;
 const inRange = (n, lo, hi) => Array.isArray(n) && n.length >= lo && n.length <= hi;
-export const TICK_STATES = ["done", "todo", "fail"];
+export const TICK_STATES = ["done", "open", "fail"];
 export const LINE_KINDS = ["cmd", "out"];
 
 /** Problems with the props of one of the second-batch scenes, as readable strings. */
@@ -146,7 +146,7 @@ function ranking(s, ctx) {
 const TICK = {
   done: '<path d="M4 12.5 L9.5 18 L20 6.5" pathLength="1"/>',
   fail: '<path d="M6 6 L18 18 M18 6 L6 18" pathLength="1"/>',
-  todo: "",
+  open: "",
 };
 
 function checklist(s, ctx) {
@@ -302,7 +302,7 @@ function stack(s, ctx) {
           id,
           t[i],
           [
-            { opacity: 0, transform: `translateX(${side * ctx.rise * 3}px) scale(0.97)` },
+            { opacity: 0, transform: `translateX(${side * ctx.rise}px) scale(0.97)` },
             { opacity: 1, transform: "translateX(0) scale(1)" },
           ],
           0.5,
