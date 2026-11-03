@@ -1,4 +1,4 @@
-version: 0.28.1
+version: 0.28.2
 category: [video]
 clients: [claude-code]
 runs_scripts: true
@@ -41,3 +41,10 @@ can_do:
   - "Turn a README, a repo, a pull request, an outage or live data into a video"
   - "Animate Arabic quotes, or dub a video into Arabic or English"
   - "Check the result, then prepare it for YouTube, Shorts, Reels, TikTok or LinkedIn (nothing is uploaded)"
+setup:
+  - title: "Install the skill"
+    text: "Run the install command above. Open Claude Desktop or Claude Code in your project, type /video and say what you want. Everything works for free on your own computer."
+  - title: "Optional: add the Higgsfield connector for AI clips"
+    text: "Without it you still get explainers, code and data videos, showcases and edits. With it, /video also makes AI-generated clips. In Claude Desktop: Settings, Connectors, Add custom connector. Name it Higgsfield, paste https://mcp.higgsfield.ai/mcp, save, then sign in to your Higgsfield account when asked. In Claude Code: run claude mcp add --transport http higgsfield https://mcp.higgsfield.ai/mcp, then /mcp to sign in."
+  - title: "Know what it costs"
+    text: "The connector uses your Higgsfield credits, and the free perks of the Higgsfield website do not apply through it. Before it makes anything, /video shows the shot list and the credit total and waits for your yes. Say no and it makes the video the free way."
