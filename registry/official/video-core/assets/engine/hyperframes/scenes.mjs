@@ -24,6 +24,7 @@ import {
   spansOf,
   wordCursor,
 } from "./shared.mjs";
+import { spotlight, spotlightCss } from "./spotlight.mjs";
 import { timeline, timelineCss } from "./timeline.mjs";
 
 export { esc };
@@ -87,7 +88,7 @@ function list(s, ctx) {
   const items = s.props.items;
   const plan = [];
   let html = "";
-  if (s.props.heading) {
+  if (s.props.heading && s.props.layout !== "spotlight") {
     html += `<h2 id="${ctx.prefix}-h" class="heading">${esc(s.props.heading)}</h2>`;
     plan.push({
       id: `${ctx.prefix}-h`,
@@ -119,6 +120,14 @@ function list(s, ctx) {
     prev = at;
     return at;
   });
+  if (s.props.layout === "spotlight") {
+    const sp = spotlight(ctx, {
+      title: s.props.heading,
+      entries: items.map((text, i) => ({ label: text, tag: `${i + 1} of ${items.length}` })),
+      ats,
+    });
+    return { html: sp.html, plan: sp.plan };
+  }
   const focus = focusOn(s.props);
   const spans = spansOf(ats, ctx);
   html += `<${tag} class="items">`;
@@ -246,6 +255,7 @@ export const kindCss = (brand, vertical, kinds) =>
   timelineCss(brand) +
   calligraphyCss(brand) +
   shotCss(brand) +
+  spotlightCss(brand) +
   diagramCss(brand, vertical) +
   // The display font is only declared (and so only allowed) when a kinetic scene exists.
   (!kinds || kinds.has("kinetic") ? kineticCss(brand) : "");

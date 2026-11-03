@@ -43,3 +43,7 @@ Scenes that show an idea instead of listing it. Each piece enters on the word th
 ## Following the voice (`focus`)
 
 Scenes that bring items in one by one (`list`, `timeline` and the idea kinds) keep moving for as long as the voice is on an item: a rail fills under the item being spoken across its whole stretch (until the next item arrives; the last runs to the end of the scene), finished items dim, a dot travels from node to node in `cycle` and `nodes`, items in `matrix` pulse, and the bar in `callout` and `number` fills until the scene ends. The first item comes in at once (within a second when a heading is already showing), so a scene never opens empty. This is on by default; give `focus: false` on a scene to turn it off. `video-qa` flags stretches where nothing moves (the `idle` check), and this is the fix it points to.
+
+## Spotlight layout
+
+`layout: "spotlight"` on `list`, `steps` or `funnel` shows one item at a time, large, filling the frame: it rises in on its spoken word, a rail fills under it while it is spoken, it leaves just before the next one arrives (the last stays), and a row of dots shows where you are. Steps and stages show "Step 2 of 5" above the label, with the detail or value under it. Use it when each item has a few seconds of narration or a plain list would leave the tall frame mostly empty; keep the default (`stack`) for short items said quickly. Vertical frames also get larger type in the plain scenes (headings, lists, quotes) and the idea scenes; wide frames are unchanged.

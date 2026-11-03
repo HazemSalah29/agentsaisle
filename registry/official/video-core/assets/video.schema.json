@@ -177,6 +177,7 @@
         "type": "object",
         "required": ["items"],
         "properties": {
+          "layout": { "enum": ["stack", "spotlight"] },
           "focus": { "type": "boolean" },
           "heading": { "type": "string", "maxLength": 120 },
           "items": {
@@ -368,6 +369,7 @@
         "type": "object",
         "required": ["steps"],
         "properties": {
+          "layout": { "enum": ["stack", "spotlight"] },
           "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },
           "steps": {
@@ -405,6 +407,7 @@
         "type": "object",
         "required": ["stages"],
         "properties": {
+          "layout": { "enum": ["stack", "spotlight"] },
           "focus": { "type": "boolean" },
           "focus": { "type": "boolean" },
           "title": { "type": "string", "minLength": 1, "maxLength": 80 },

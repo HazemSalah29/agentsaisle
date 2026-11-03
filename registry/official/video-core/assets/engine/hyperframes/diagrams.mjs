@@ -19,6 +19,7 @@ import {
   spansOf,
   wordCursor,
 } from "./shared.mjs";
+import { LAYOUTS, spotlight } from "./spotlight.mjs";
 
 export const DIAGRAM_KINDS = [
   "number",
@@ -55,6 +56,8 @@ export function diagramProblems(kind, p = {}) {
       out.push(`title: text of at most ${LIMITS.title} characters`);
   };
   if (p.focus !== undefined && typeof p.focus !== "boolean") out.push("focus: true or false");
+  if (p.layout !== undefined && !LAYOUTS.includes(p.layout))
+    out.push(`layout: one of ${LAYOUTS.join(", ")}`);
   const ons = (list, name) => {
     if (list.some((x) => x?.on !== undefined && !isText(x.on, 60)))
       out.push(`${name}[].on: the spoken words that bring it in, up to 60 characters`);
@@ -329,6 +332,18 @@ function steps(s, ctx) {
     0.5,
     firstBy(p),
   );
+  if (p.layout === "spotlight") {
+    const sp = spotlight(ctx, {
+      title: p.title,
+      entries: p.steps.map((x, i) => ({
+        label: x.label,
+        sub: x.detail,
+        tag: `Step ${i + 1} of ${n}`,
+      })),
+      ats: t,
+    });
+    return { html: sp.html, plan: sp.plan };
+  }
   const plan = [...h.plan];
   const focus = focusOn(p);
   const spans = spansOf(t, ctx);
@@ -410,6 +425,18 @@ function funnel(s, ctx) {
     0.5,
     firstBy(p),
   );
+  if (p.layout === "spotlight") {
+    const sp = spotlight(ctx, {
+      title: p.title,
+      entries: p.stages.map((x, i) => ({
+        label: x.label,
+        sub: x.value,
+        tag: `Stage ${i + 1} of ${n}`,
+      })),
+      ats: t,
+    });
+    return { html: sp.html, plan: sp.plan };
+  }
   const plan = [...h.plan];
   const focus = focusOn(p);
   const spans = spansOf(t, ctx);
@@ -569,7 +596,7 @@ function nodes(s, ctx) {
 export const DIAGRAM_BUILDERS = { number, callout, versus, steps, cycle, funnel, matrix, nodes };
 
 export const diagramCss = (brand, vertical = true) => {
-  const K = vertical ? 1.3 : 1; // type grows on tall frames, where the width is the limit
+  const K = vertical ? 1.5 : 1; // type grows on tall frames, where the width is the limit
   const box = (w, ratio) =>
     `width:calc(var(--u)*${w});max-width:100%;align-self:center;aspect-ratio:${ratio}`;
   // Tall frames are limited by width, wide frames by height: the diagrams are square when tall and landscape when wide.

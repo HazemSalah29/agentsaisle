@@ -297,4 +297,14 @@ describe("spoken focus keeps every idea scene moving", () => {
     );
     expect(diagramProblems("steps", { ...GOOD.steps, focus: false })).toEqual([]);
   });
+  it("hints at the spotlight layout for list, steps and funnel", () => {
+    const cat = JSON.parse(
+      readFileSync(
+        path.join(__dirname, "..", "official", "video-core", "assets", "scene-catalog.json"),
+        "utf8",
+      ),
+    );
+    for (const k of ["list", "steps", "funnel"])
+      expect(cat.kinds[k].layout.values, k).toContain("spotlight");
+  });
 });

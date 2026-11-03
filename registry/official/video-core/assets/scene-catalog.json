@@ -22,6 +22,10 @@
         "heading": "Three rules",
         "items": ["One", "Two", "Three"],
         "numbered": true
+      },
+      "layout": {
+        "values": ["stack", "spotlight"],
+        "spotlight_when": "each item gets several seconds of narration, or the frame would otherwise stay mostly empty: one item fills the screen and swaps on its word"
       }
     },
     "chart": {
@@ -117,6 +121,10 @@
             "label": "Finally"
           }
         ]
+      },
+      "layout": {
+        "values": ["stack", "spotlight"],
+        "spotlight_when": "each item gets several seconds of narration, or the frame would otherwise stay mostly empty: one item fills the screen and swaps on its word"
       }
     },
     "cycle": {
@@ -148,7 +156,11 @@
           }
         ]
       },
-      "note": "Values are text exactly as given."
+      "note": "Values are text exactly as given.",
+      "layout": {
+        "values": ["stack", "spotlight"],
+        "spotlight_when": "each item gets several seconds of narration, or the frame would otherwise stay mostly empty: one item fills the screen and swaps on its word"
+      }
     },
     "matrix": {
       "use_when": ["on one axis, on the other", "trade-off", "where each one sits", "quadrant"],

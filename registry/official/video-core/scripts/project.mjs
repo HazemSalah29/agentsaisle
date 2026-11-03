@@ -42,17 +42,20 @@ export function cleanBrand(raw) {
   return { colors, font };
 }
 
+/** Type for plain scenes grows a fifth on tall frames, where the width is the limit and the frame is mostly empty. */
+const grow = (n, vertical) => Math.round(n * (vertical ? 1.2 : 1) * 100) / 100;
+
 const css = ({ w, h, brand, stack, faces, vertical, bottomPad, kinds }) => `${faces}
 html,body{margin:0;background:${brand.colors.bg}}
 #root{--u:${w / 100}px;position:relative;width:${w}px;height:${h}px;overflow:hidden;background:${brand.colors.bg};color:${brand.colors.fg};font-family:${stack};}
 .scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:calc(var(--u)*3);box-sizing:border-box;padding:${vertical ? "calc(var(--u)*8)" : "calc(var(--u)*6)"} calc(var(--u)*7) ${bottomPad}}
 .title{margin:0;font-size:calc(var(--u)*10.5);line-height:1.08;font-weight:700;letter-spacing:-.01em}
-.sub{margin:0;font-size:calc(var(--u)*3.8);line-height:1.3;color:${brand.colors.muted}}
-.quote{margin:0;padding-inline-start:calc(var(--u)*3);border-inline-start:calc(var(--u)*.8) solid ${brand.colors.accent};font-size:calc(var(--u)*5.4);line-height:1.2;font-weight:700}
+.sub{margin:0;font-size:calc(var(--u)*${grow(3.8, vertical)});line-height:1.3;color:${brand.colors.muted}}
+.quote{margin:0;padding-inline-start:calc(var(--u)*3);border-inline-start:calc(var(--u)*.8) solid ${brand.colors.accent};font-size:calc(var(--u)*${grow(5.4, vertical)});line-height:1.2;font-weight:700}
 .quote p{margin:0}
-.cite{margin:0;font-size:calc(var(--u)*3.4);color:${brand.colors.muted}}
-.heading{margin:0;font-size:calc(var(--u)*6);line-height:1.1;font-weight:700}
-.items{margin:0;padding-inline-start:calc(var(--u)*7);font-size:calc(var(--u)*5.2);line-height:1.35}
+.cite{margin:0;font-size:calc(var(--u)*${grow(3.4, vertical)});color:${brand.colors.muted}}
+.heading{margin:0;font-size:calc(var(--u)*${grow(6, vertical)});line-height:1.1;font-weight:700}
+.items{margin:0;padding-inline-start:calc(var(--u)*7);font-size:calc(var(--u)*${grow(5.2, vertical)});line-height:1.35}
 .items li{position:relative;margin-bottom:calc(var(--u)*2.6)}
 .rail{position:absolute;inset-inline:0;bottom:calc(var(--u)*-1);display:block;height:calc(var(--u)*.7);border-radius:calc(var(--u)*.35);background:${brand.colors.accent};transform-origin:0 50%}
 [dir=rtl] .rail{transform-origin:100% 50%}
