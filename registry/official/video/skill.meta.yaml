@@ -1,4 +1,4 @@
-version: 0.26.0
+version: 0.27.0
 category: [video]
 clients: [claude-code]
 runs_scripts: true

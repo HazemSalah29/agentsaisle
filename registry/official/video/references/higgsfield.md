@@ -2,6 +2,10 @@
 
 For "make it Higgsfield style" or "use Higgsfield": the clips are made by the user's own Higgsfield connector (an MCP server at `https://mcp.higgsfield.ai/mcp`), and this library assembles, voices, captions, renders and checks them. The connector is a paid service that draws credits from the user's Higgsfield balance. Its help centre says generations through the connector always use credits, and the free or unlimited perks of the website do not apply there. So: never promise it is free, and never start a generation without a yes.
 
+## Default use
+
+When the connector's tools are present, use them for the visuals of any video where generated pictures help, even if the user never named Higgsfield: add the shot list to the plan you tell them in step 1, with the credit total (or "unknown, from your balance"), and ask one yes or no for the whole list. This is the only place the connector is used without being asked for, and it is never silent: credits are the user's money. A no (or "no clips") means the normal `$0` route for that video; do not ask again in the same project. If no connector is present, say nothing and do not nag.
+
 ## Before anything
 
 1. Look for the connector's tools in this session (tool names containing `higgsfield`). Do not assume names; read them and their parameters from what the connector lists.

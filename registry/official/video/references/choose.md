@@ -29,6 +29,8 @@ Match the user's words to a row. If two fit, take the more specific one. Each ch
 
 ## Rules for every recipe
 
+- Connector clips are the default visuals: when the Higgsfield connector is connected in this session (`references/higgsfield.md`, "Default use"), plan generated clips into every video that has room for pictures (story, brand, showcase backdrops, intros and outros) without the user asking for them. The explainer, code, data and diagram scenes stay as they are, because clips would hide the thing being explained. The spend still needs one yes per video for the shot list; with no connector, or after a no, make the video the `$0` way and say nothing more about it.
+
 - The user wants their own voice, not a synthetic one: they record the script once through, and `video-voice` cuts it into lines (`recorded.mjs`; it asks whose voice it is and needs consent for anyone else's). It works in every recipe that has a script.
 - Original characters only; no known characters, no real person's likeness, no copying another product's footage or branding. Offer an original instead.
 - `$0` by default. Anything that costs money (`video-generate`) quotes first and waits for the exact total. Footage needs a rights basis from the user.
