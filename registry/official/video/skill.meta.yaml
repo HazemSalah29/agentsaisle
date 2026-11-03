@@ -1,4 +1,4 @@
-version: 0.28.2
+version: 0.29.0
 category: [video]
 clients: [claude-code]
 runs_scripts: true
@@ -12,39 +12,26 @@ permissions:
   network: false
   needs_api_keys: []
 requires:
-  - video-analyze
   - video-brand
-  - video-calligraphy
-  - video-captions
   - video-core
-  - video-data
-  - video-edit
   - video-explain
-  - video-generate
-  - video-ingest
   - video-kinetic
-  - video-localize
-  - video-product
   - video-publish
   - video-qa
   - video-showcase
-  - video-story
   - video-voice
   - video-write
 can_do:
-  - "Explain an idea, algorithm or API in a short video, with real simulations and code"
-  - "Make a punchy motion-graphics video where bold words pop in as they are spoken, with slash-cut transitions"
-  - "Make a showcase or demo video of your app or brand"
-  - "Make AI clips with Higgsfield when you ask for it (paid; you approve the shot list first)"
-  - "Make a fast product or launch edit from your own photos, with music and sound"
-  - "Cut, caption, reframe and clean up footage you already have"
-  - "Turn a README, a repo, a pull request, an outage or live data into a video"
-  - "Animate Arabic quotes, or dub a video into Arabic or English"
-  - "Check the result, then prepare it for YouTube, Shorts, Reels, TikTok or LinkedIn (nothing is uploaded)"
+  - "Explain an idea, algorithm or API in a 30 to 45 second short, with code, diagrams and real simulations"
+  - "Make a kinetic-type short where bold words hit as they are spoken, with slab cuts and sound design"
+  - "Make a showcase of your own app: a scripted recording with a camera that follows the action"
+  - "Write the hook and script to a short-form quality bar, then review each draft against a score card"
+  - "Voice it locally for free (Kokoro), with burned captions, an original music bed and sound effects"
+  - "Check the result, then prepare it for YouTube Shorts, Reels, TikTok or LinkedIn (nothing is uploaded)"
 setup:
   - title: "Install the skill"
-    text: "Run the install command above. Open Claude Desktop or Claude Code in your project, type /video and say what you want. Everything works for free on your own computer."
-  - title: "Only for Higgsfield: add the connector"
-    text: "You need this only if you ask /video for a Higgsfield video; nothing else uses it. In Claude Desktop: Settings, Connectors, Add custom connector. Name it Higgsfield, paste https://mcp.higgsfield.ai/mcp, save, then sign in to your Higgsfield account when asked. In Claude Code: run claude mcp add --transport http higgsfield https://mcp.higgsfield.ai/mcp, then /mcp to sign in."
-  - title: "Know what it costs"
-    text: "Higgsfield is a paid service with a small free allowance (about 10 credits), and its website's free perks do not apply through the connector. Before it makes anything, /video shows the shot list and the credit total and waits for your yes."
+    text: "Run the install command above. Open Claude Desktop (Code tab, Local) or Claude Code in an empty folder, type /video and say what you want."
+  - title: "Set up the Remotion engine once"
+    text: "The first time, /video writes the engine's package.json to ~/.aisle-video/remotion and shows two commands to run there: npm install, then npx remotion@4.0.540 browser ensure (about 350 MB in all). Remotion is free for individuals and companies of up to 3 people; larger companies need a Remotion company licence."
+  - title: "Add the free voice"
+    text: "pip install kokoro-onnx soundfile, then put kokoro-v1.0.onnx and voices-v1.0.bin (from the kokoro-onnx GitHub releases) in ~/.aisle-video/kokoro. /video doctor shows what is ready. Your own recording works too, with no setup."

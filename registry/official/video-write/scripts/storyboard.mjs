@@ -8,8 +8,8 @@ import { parseStoryboard } from "./script-parse.mjs";
 import { BUILT_KINDS } from "./write-check.mjs";
 import { capLines, isEntry, parseArgs } from "./_lib.mjs";
 
-const TYPES = { explain: "explainer", story: "story" };
-const TRANSITIONS = ["cut", "fade", "slide", "zoom", "whip", "match"];
+const TYPES = { explain: "explainer", showcase: "showcase" };
+const TRANSITIONS = ["cut", "fade", "slide", "whip", "zoom-through", "slash", "shatter"];
 
 /** { video, problems }. `existing` (a parsed video.json) keeps its voice, music, assets and disclosure. */
 export function buildVideo(brief, storyboardText, existing = {}) {
@@ -45,7 +45,7 @@ export function buildVideo(brief, storyboardText, existing = {}) {
   }
   const meta = {
     title: brief.title,
-    type: TYPES[brief.mode] ?? "custom",
+    type: TYPES[brief.mode] ?? "explainer",
     format: brief.format,
     fps: 30,
     lang: brief.lang,

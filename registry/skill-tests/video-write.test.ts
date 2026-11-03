@@ -111,11 +111,18 @@ describe("video-write check", () => {
     expect(errors(checkWriting({ ...f, script: noHook })).join("\n")).toMatch(
       /first line must be the hook/,
     );
-    const noEdge = f.script.replace("beat: edge", "beat: step");
-    expect(errors(checkWriting({ ...f, script: noEdge })).join("\n")).toMatch(/no "edge" beat/);
+    const noTakeaway = f.script.replace("beat: takeaway", "beat: edge");
+    expect(errors(checkWriting({ ...f, script: noTakeaway })).join("\n")).toMatch(
+      /no "takeaway" beat/,
+    );
+    // misconception, analogy and edge are optional now: a script without them passes the order check
+    const lean = f.script.replace("beat: edge", "beat: step");
+    expect(errors(checkWriting({ ...f, script: lean })).join("\n")).not.toMatch(/no "edge" beat/);
     const swapped = f.script
+      .replace("beat: hook", "beat: hook")
+      .replace(/beat: takeaway/, "beat: step-x")
       .replace("beat: analogy", "beat: takeaway")
-      .replace("beat: takeaway\n[l8]", "beat: analogy\n[l8]");
+      .replace("beat: step-x", "beat: step");
     expect(errors(checkWriting({ ...f, script: swapped })).join("\n")).toMatch(
       /comes before the beat it should follow/,
     );
@@ -221,17 +228,17 @@ describe("video-write check", () => {
     expect(errors(checkWriting({ ...f, brief, script: ok })).join("\n")).not.toMatch(/digits/);
   });
 
-  it("checks story beats", async () => {
+  it("checks showcase beats", async () => {
     const { checkWriting } = await check();
-    const brief = JSON.stringify({ ...JSON.parse(writerFiles().brief), mode: "story" });
-    const script = `[s1] A fox found a door.\n  beat: hook\n[s2] It lived alone in a quiet wood.\n  beat: setup\n[s3] The door opened by itself.\n  beat: turn\n[s4] Inside was a whole city of lamps.\n  beat: climax\n[s5] The fox lit one and went home.\n  beat: button\n`;
+    const brief = JSON.stringify({ ...JSON.parse(writerFiles().brief), mode: "showcase" });
+    const script = `[s1] Your users find outages first.\n  beat: hook\n[s2] Paste any endpoint.\n  beat: feature\n[s3] Slack hears about it first.\n  beat: feature\n[s4] Pulseboard. Know before they do.\n  beat: close\n`;
     const files = { brief, script, hooks: writerFiles().hooks };
     expect(errors(checkWriting(files))).toEqual([]);
     expect(
-      errors(checkWriting({ ...files, script: script.replace("beat: turn", "beat: edge") })).join(
-        "\n",
-      ),
-    ).toMatch(/"edge" is not a story beat|no "turn" beat/);
+      errors(
+        checkWriting({ ...files, script: script.replace(/beat: feature/g, "beat: problem") }),
+      ).join("\n"),
+    ).toMatch(/no "feature" beat/);
   });
 
   it("counts what a scene brings in one by one, for every kind that does", async () => {
@@ -239,7 +246,8 @@ describe("video-write check", () => {
     expect(itemCount("list", { items: ["a", "b", "c"] })).toBe(3);
     expect(itemCount("steps", { steps: [{}, {}] })).toBe(2);
     expect(itemCount("versus", { left: { points: ["a"] }, right: { points: ["b", "c"] } })).toBe(3);
-    expect(itemCount("cycle", { nodes: ["a", "b", "c"] })).toBe(3);
+    expect(itemCount("nodes", { nodes: ["a", "b", "c"] })).toBe(3);
+    expect(itemCount("chart", { data: [{}, {}] })).toBe(2);
     expect(itemCount("title", { text: "x" })).toBe(0);
     expect(itemCount("number", { value: 1 })).toBe(0);
     expect(itemCount("list", {})).toBe(0); // missing props never throw
@@ -248,15 +256,15 @@ describe("video-write check", () => {
   it("warns when a scene has a lot of narration for few items, and when one scene runs long", async () => {
     const { paceNote } = await check();
     const three = { kind: "list", props: { items: ["a", "b", "c"] } };
-    expect(paceNote({ ...three, seconds: 9 })).toBeNull(); // 3 s an item
+    expect(paceNote({ ...three, seconds: 7 })).toBeNull(); // about 2.3 s an item
     expect(paceNote({ ...three, seconds: 12 })).toMatch(/spotlight/); // 4 s an item
     const one = { kind: "list", props: { items: ["a"] } };
     expect(paceNote({ ...one, seconds: 8 })).toMatch(/spotlight/);
     expect(
-      paceNote({ ...one, props: { items: ["a"], layout: "spotlight" }, seconds: 8 }),
+      paceNote({ ...one, props: { items: ["a"], layout: "spotlight" }, seconds: 6 }),
     ).toBeNull();
-    expect(paceNote({ kind: "title", props: {}, seconds: 7 })).toBeNull();
-    expect(paceNote({ kind: "title", props: {}, seconds: 10 })).toMatch(/split/);
+    expect(paceNote({ kind: "title", props: {}, seconds: 6 })).toBeNull();
+    expect(paceNote({ kind: "title", props: {}, seconds: 8 })).toMatch(/split/);
     expect(
       paceNote({ ...three, props: { ...three.props, layout: "spotlight" }, seconds: 10 }),
     ).toMatch(/split/);

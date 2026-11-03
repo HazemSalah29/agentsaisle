@@ -1,0 +1,125 @@
+{
+  "ok": true,
+  "file": "out/ship-it.mp4",
+  "facts": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "codec": "h264",
+    "pixFmt": "yuv420p",
+    "audio": true,
+    "seconds": 15.4,
+    "sheet": {
+      "file": "qa/contact-sheet.png",
+      "times": [
+        1,
+        1.75,
+        3,
+        3.64,
+        5,
+        6.02,
+        7,
+        8.68,
+        9,
+        11,
+        11.31,
+        13,
+        13.31,
+        14.93,
+        15
+      ]
+    }
+  },
+  "results": [
+    {
+      "id": "resolution",
+      "level": "pass",
+      "text": "1080x1920"
+    },
+    {
+      "id": "fps",
+      "level": "pass",
+      "text": "30 fps (project says 30)"
+    },
+    {
+      "id": "codec",
+      "level": "pass",
+      "text": "h264, yuv420p"
+    },
+    {
+      "id": "duration",
+      "level": "pass",
+      "text": "15.4 s"
+    },
+    {
+      "id": "loudness",
+      "level": "pass",
+      "text": "-15.7 LUFS (target -14, working default)"
+    },
+    {
+      "id": "clipping",
+      "level": "pass",
+      "text": "true peak -1.4 dBTP (limit -1)"
+    },
+    {
+      "id": "black",
+      "level": "pass",
+      "text": "no black stretch"
+    },
+    {
+      "id": "freeze",
+      "level": "pass",
+      "text": "something changes at least every 3 s"
+    },
+    {
+      "id": "flashing",
+      "level": "pass",
+      "text": "no fast flashing"
+    },
+    {
+      "id": "idle",
+      "level": "pass",
+      "text": "something moves at least every 1.2 s"
+    },
+    {
+      "id": "speed",
+      "level": "pass",
+      "text": "no move is too fast to follow"
+    },
+    {
+      "id": "joins",
+      "level": "pass",
+      "text": "no unplanned one-frame swaps between scenes"
+    },
+    {
+      "id": "scene-length",
+      "level": "warn",
+      "text": "scene s2 (1.6 s), s6 (1.7 s), s7 (1.6 s) is under 2 s; merge it with its neighbour or give it more narration"
+    },
+    {
+      "id": "safe-zone",
+      "level": "pass",
+      "text": "margins are clear"
+    },
+    {
+      "id": "project",
+      "level": "pass",
+      "text": "video.json passes check.mjs (props, assets, licences)"
+    },
+    {
+      "id": "disclosure",
+      "level": "pass",
+      "text": "disclosure flags match the assets"
+    },
+    {
+      "id": "voiced",
+      "level": "pass",
+      "text": "every narration line is voiced"
+    },
+    {
+      "id": "text",
+      "level": "pass",
+      "text": "no placeholders or doubled words"
+    }
+  ]
+}

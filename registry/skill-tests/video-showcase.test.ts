@@ -54,7 +54,7 @@ describe("the skill itself", () => {
     for (const [f, from] of [
       ["scripts/run.mjs", "video-core"],
       ["scripts/_lib.mjs", "video-core"],
-      ["scripts/ffwrap.mjs", "video-edit"],
+      ["scripts/ffwrap.mjs", "video-publish"],
     ] as const)
       expect(readFileSync(skillFile("video-showcase", f), "utf8")).toBe(
         readFileSync(skillFile(from, f), "utf8"),

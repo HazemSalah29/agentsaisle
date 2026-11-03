@@ -1,142 +1,170 @@
 {
   "version": 1,
   "meta": {
-    "title": "How a rate limit really works",
+    "title": "How a rate limiter saves your API",
     "type": "explainer",
-    "format": "short-9x16",
+    "format": "reel-9x16",
     "fps": 30,
-    "lang": "en",
-    "audience": "developers who have used an API but never built a limiter"
+    "lang": "en"
   },
   "script": "script.md",
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "am_michael",
+    "speed": 1.1
+  },
+  "style": {
+    "preset": "volt",
+    "captions": "pop"
+  },
   "scenes": [
     {
-      "id": "s1",
+      "id": "hook",
       "kind": "title",
-      "props": {
-        "text": "10 through a limit of 5",
-        "subtitle": "how a rate limit really works"
-      },
       "narration": [
         "l1"
-      ]
+      ],
+      "props": {
+        "kicker": "System design",
+        "text": "*10,000* requests. One second."
+      }
     },
     {
-      "id": "s2",
-      "kind": "list",
+      "id": "stakes",
+      "kind": "kinetic",
+      "narration": [
+        "l2"
+      ],
       "props": {
-        "heading": "Not a counter per minute",
-        "items": [
-          "A bucket of tokens",
-          "Each request takes one",
-          "Tokens drip back steadily"
+        "emph": [
+          "falls",
+          "over."
         ]
       },
-      "narration": [
-        "l2",
-        "l3"
-      ],
-      "transitionIn": "fade"
+      "transitionIn": "whip"
     },
     {
-      "id": "s3",
-      "kind": "rate-limit",
+      "id": "ways",
+      "kind": "list",
+      "narration": [
+        "l3",
+        "l4"
+      ],
       "props": {
-        "seed": 42,
+        "heading": "Three ways to limit",
+        "items": [
+          {
+            "text": "Token *bucket*",
+            "on": "token"
+          },
+          {
+            "text": "Fixed *window*",
+            "on": "fixed"
+          },
+          {
+            "text": "Sliding *window*",
+            "on": "sliding"
+          }
+        ]
+      },
+      "transitionIn": "slide"
+    },
+    {
+      "id": "code",
+      "kind": "code",
+      "narration": [
+        "l5",
+        "l6"
+      ],
+      "props": {
+        "title": "Token bucket",
+        "file": "limiter.ts",
+        "language": "ts",
+        "code": "function allow(b: Bucket): boolean {\n  refill(b);\n  if (b.tokens < 1) return false; // 429\n  b.tokens -= 1;\n  return true;\n}",
+        "focus": [
+          {
+            "lines": [
+              4,
+              4
+            ],
+            "on": "spends"
+          },
+          {
+            "lines": [
+              2,
+              2
+            ],
+            "on": "refill"
+          },
+          {
+            "lines": [
+              3,
+              3
+            ],
+            "on": "run"
+          }
+        ]
+      },
+      "transitionIn": "zoom-through"
+    },
+    {
+      "id": "proof",
+      "kind": "rate-limit",
+      "narration": [
+        "l7"
+      ],
+      "props": {
+        "title": "Same burst, two limiters",
+        "seed": 7,
         "count": 60,
         "pattern": {
-          "type": "poisson",
-          "ratePerSec": 6
+          "type": "burst",
+          "ratePerSec": 12,
+          "burstSize": 14,
+          "burstEverySec": 1.5
         },
         "algos": [
           {
             "algo": "token-bucket",
-            "capacity": 5,
-            "refillPerSec": 3
+            "capacity": 10,
+            "refillPerSec": 6
+          },
+          {
+            "algo": "fixed-window",
+            "limit": 10,
+            "windowSec": 1
           }
-        ],
-        "title": "A token bucket, simulated"
+        ]
       },
-      "narration": [
-        "l4",
-        "l5",
-        "l6",
-        "l7"
-      ],
-      "transitionIn": "fade"
+      "transitionIn": "slash"
     },
     {
-      "id": "s4",
-      "kind": "code",
-      "props": {
-        "language": "js",
-        "file": "token bucket, simplified from the simulator",
-        "title": "The bucket in code",
-        "code": "const allow = (b, now) => {\n  const dt = (now - b.last) / 1000;\n  b.tokens = Math.min(b.capacity, b.tokens + dt * b.refill);\n  b.last = now;\n  if (b.tokens < 1) return false; // 429\n  b.tokens -= 1;\n  return true;\n};"
-      },
+      "id": "verdict",
+      "kind": "kinetic",
       "narration": [
         "l8"
       ],
-      "transitionIn": "fade"
-    },
-    {
-      "id": "s5",
-      "kind": "rate-limit",
       "props": {
-        "seed": 1,
-        "count": 15,
-        "pattern": {
-          "type": "burst",
-          "ratePerSec": 1,
-          "burstSize": 5,
-          "burstEverySec": 0.2,
-          "burstOffsetSec": 0.9
-        },
-        "algos": [
-          {
-            "algo": "fixed-window",
-            "limit": 5,
-            "windowSec": 1
-          },
-          {
-            "algo": "sliding-window",
-            "limit": 5,
-            "windowSec": 1
-          }
-        ],
-        "title": "Same traffic, two windows"
+        "bg": "accent",
+        "phrases": [
+          "So, bursty traffic?",
+          "Use a token bucket."
+        ]
       },
-      "narration": [
-        "l9",
-        "l10",
-        "l11",
-        "l12",
-        "l13"
-      ],
-      "transitionIn": "fade"
+      "transitionIn": "shatter"
     },
     {
-      "id": "s6",
+      "id": "cta",
       "kind": "title",
-      "props": {
-        "text": "Test it, do not guess",
-        "subtitle": "run the simulation before you pick"
-      },
       "narration": [
-        "l14"
+        "l9"
       ],
-      "transitionIn": "fade"
+      "props": {
+        "kicker": "Part 2",
+        "text": "Build it in *Redis*",
+        "subtitle": "Follow so you don't miss it."
+      },
+      "transitionIn": "whip"
     }
-  ],
-  "voice": {
-    "provider": "kokoro",
-    "voiceId": "af_heart",
-    "speed": 1
-  },
-  "captions": {
-    "style": "karaoke",
-    "maxWordsPerLine": 4,
-    "safeZone": "reel",
-    "burn": true
-  }
+  ]
 }

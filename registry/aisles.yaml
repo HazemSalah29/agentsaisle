@@ -31,7 +31,7 @@ aisles:
     niches: [arch]
   - id: video
     name: Video
-    description: Write, voice, animate, edit and publish videos from one editable project file.
+    description: Short explainer, kinetic-type and app showcase videos, rendered with Remotion on your own computer.
     niches: [video]
   - id: media
     name: Media

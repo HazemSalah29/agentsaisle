@@ -9,8 +9,9 @@ const text = (f: string) => readFileSync(skillFile("video", f), "utf8");
 const routing = [
   "references/choose.md",
   "references/explain.md",
-  "references/story.md",
-  "references/localize.md",
+  "references/kinetic.md",
+  "references/showcase.md",
+  "references/craft.md",
 ]
   .map(text)
   .join("\n");
@@ -40,17 +41,26 @@ describe("the video director", () => {
     expect(routing).not.toMatch(/`\/video-[a-z]+/);
   });
 
-  it("keeps the gates for money and rights in the director's steps", () => {
+  it("keeps the gates for installs, rights and uploads in the director's steps", () => {
     const skill = text("SKILL.md");
-    expect(skill).toMatch(/shot list and credit total before any Higgsfield generation/);
-    expect(skill).toMatch(/never suggest one/);
-    expect(skill).toMatch(/never upload/i);
+    expect(skill).toMatch(/Never install anything yourself/);
+    expect(skill).toMatch(/never read or ask for an API key/);
+    expect(skill).toMatch(/Never upload/);
+    expect(skill).toMatch(/Pause for the user only at/);
   });
 
-  it("says character animation is not offered instead of routing to it", () => {
+  it("offers exactly three formats and says what is not offered", () => {
     const skill = text("SKILL.md");
-    expect(skill).toMatch(/does not make character animation/);
-    expect(text("references/choose.md")).toMatch(/Not offered/);
-    expect(skill + routing).not.toMatch(/video-kids|video-drawing|puppet/);
+    const choose = text("references/choose.md");
+    for (const f of ["Explainer", "Kinetic", "Showcase"]) expect(choose).toContain(`| ${f}`);
+    expect(choose).toMatch(/Not offered/);
+    expect(skill + routing).not.toMatch(/video-kids|puppet|Higgsfield|HyperFrames/);
+  });
+
+  it("holds every video to the craft page and its score card", () => {
+    const craft = text("references/craft.md");
+    for (const line of ["Hook", "Clarity", "Pace", "Variety", "Polish", "Payoff"])
+      expect(craft).toContain(`| ${line}`);
+    expect(text("SKILL.md")).toMatch(/references\/craft\.md/);
   });
 });

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -28,7 +28,6 @@ const run = (script: string, args: string[], cwd?: string) =>
 describe("video-kinetic copies", () => {
   it("keeps byte-identical copies", () => {
     same(["video-kinetic", "scripts/_lib.mjs"], ["video-core", "scripts/_lib.mjs"]);
-    same(["video-kinetic", "scripts/_synth.mjs"], ["video-product", "scripts/_synth.mjs"]);
     same(
       ["video-kinetic", "scripts/_script-parse.mjs"],
       ["video-voice", "scripts/script-parse.mjs"],
@@ -105,31 +104,6 @@ describe("planKinetic", () => {
     ).toContain("1 to 24 words");
     expect(() => planKinetic(lines, { preset: "x" }, presets())).toThrow("preset");
   });
-  it("turns timed words into sound cues: a whoosh and a hit on cuts, a tick on key words, all inside the film", async () => {
-    const { soundCues } = await plan();
-    const scenes = [
-      { start: 0, seconds: 3, emph: ["trust"], words: [{ text: "trust", start: 1.2 }] },
-      { start: 3, seconds: 3, transitionIn: "slash", emph: [], words: [] },
-      {
-        start: 6,
-        seconds: 3,
-        transitionIn: "whip",
-        emph: ["go"],
-        slab: true,
-        words: [{ text: "Go!", start: 0.4 }],
-      },
-    ];
-    const cues = soundCues(scenes, presets().ember, 9);
-    expect(cues.map((c: Loose) => [c.name, c.at])).toEqual([
-      ["tick", 1.2],
-      ["whoosh", 2.97],
-      ["impact", 3.02],
-      ["whoosh", 5.97],
-      ["impact", 6.4],
-    ]);
-    expect(cues.every((c: Loose) => c.at >= 0 && c.at < 9 && c.gainDb <= -4)).toBe(true);
-    expect(soundCues(scenes, presets().ember, 1.5).length).toBe(1); // cues past the end are dropped
-  });
 });
 
 describe("plan, cues and sync on a real project (no voice engine needed)", () => {
@@ -141,7 +115,7 @@ describe("plan, cues and sync on a real project (no voice engine needed)", () =>
     );
     return dir;
   };
-  it("builds, voices (test tone), times, adds cues, checks and syncs", () => {
+  it("builds, voices (test tone), times, checks and syncs", () => {
     const dir = make();
     const R = (skill: string, script: string, args: string[]) =>
       spawnSync(process.execPath, [skillFile(skill, `scripts/${script}`), ...args], {
@@ -158,11 +132,9 @@ describe("plan, cues and sync on a real project (no voice engine needed)", () =>
       const r = R(skill, script, [...args]);
       expect(r.status, `${script}: ${r.stderr}${r.stdout}`).toBe(0);
     }
-    const c = run("cues.mjs", [dir, "--preset", "volt"]);
-    expect(c.status, c.stderr).toBe(0);
     const video = JSON.parse(readFileSync(path.join(dir, "video.json"), "utf8")) as Loose;
-    expect(video.sfx.length).toBeGreaterThan(0);
-    for (const s of video.sfx) expect(existsSync(path.join(dir, s.file)), s.file).toBe(true);
+    expect(video.meta.type).toBe("kinetic");
+    expect(video.style).toEqual({ preset: "volt", captions: "none" });
     const chk = R("video-core", "check.mjs", [dir]);
     expect(chk.stdout + chk.stderr).toContain("OK");
     // Estimated word times are refused unless allowed.
@@ -171,8 +143,6 @@ describe("plan, cues and sync on a real project (no voice engine needed)", () =>
     expect(strict.stdout).toContain("estimated");
     const lenient = run("sync.mjs", [dir, "--allow-estimated"]);
     expect(lenient.stdout).toMatch(/ok: \d+ phrases|warn/);
-    expect(run("cues.mjs", [dir, "--no-sound"]).status).toBe(0);
-    expect(JSON.parse(readFileSync(path.join(dir, "video.json"), "utf8")).sfx).toBeUndefined();
   });
   it("needs the script and refuses a malformed one", () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "vk-"));

@@ -15,38 +15,37 @@ import {
 import { capLines, isEntry, parseArgs, skillDir } from "./_lib.mjs";
 
 export const BEATS = {
-  explain: ["hook", "misconception", "analogy", "step", "edge", "takeaway", "cta"],
-  story: ["hook", "setup", "turn", "climax", "button", "cta"],
+  explain: [
+    "hook",
+    "stakes",
+    "misconception",
+    "analogy",
+    "step",
+    "proof",
+    "edge",
+    "takeaway",
+    "cta",
+  ],
+  showcase: ["hook", "problem", "feature", "proof", "close", "cta"],
 };
 /** The order the required beats must come in (cta may come after the last of them). */
 const ORDER = {
-  explain: ["hook", "misconception", "analogy", "step", "edge", "takeaway"],
-  story: ["hook", "setup", "turn", "climax", "button"],
+  explain: ["hook", "step", "takeaway"],
+  showcase: ["hook", "feature", "close"],
 };
 /** How many things a scene brings in one after another (0 when it is a single idea: a title, a number, a quote). */
 export function itemCount(kind, props = {}) {
   const n = (v) => (Array.isArray(v) ? v.length : 0);
   switch (kind) {
     case "list":
-    case "ranking":
-    case "checklist":
       return n(props.items);
     case "terminal":
       return n(props.lines);
-    case "compare-table":
-      return n(props.rows);
-    case "stack":
-      return n(props.layers);
     case "steps":
       return n(props.steps);
-    case "funnel":
-      return n(props.stages);
-    case "timeline":
-      return n(props.events);
-    case "matrix":
-      return n(props.items);
+    case "chart":
+      return n(props.data);
     case "nodes":
-    case "cycle":
       return n(props.nodes);
     case "versus":
       return n(props.left?.points) + n(props.right?.points);
@@ -57,7 +56,7 @@ export function itemCount(kind, props = {}) {
 
 /** Most seconds of narration one item may carry before the scene sits still, and the most one scene should hold. */
 export const MAX_SECONDS_PER_ITEM = 3.5;
-export const MAX_SCENE_SECONDS = 9;
+export const MAX_SCENE_SECONDS = 7;
 
 /**
  * A pace warning for a scene, or null: a lot of narration against few things to show (so the picture would wait on
@@ -75,29 +74,21 @@ export function paceNote({ kind, props = {}, seconds }) {
 
 export const BUILT_KINDS = [
   "title",
-  "quote",
   "list",
-  "chart",
-  "broll",
-  "rate-limit",
-  "code",
-  "sequence",
-  "request-flow",
-  "timeline",
   "number",
-  "callout",
   "versus",
   "steps",
-  "cycle",
-  "funnel",
-  "matrix",
-  "nodes",
-  "ranking",
-  "checklist",
+  "code",
   "terminal",
-  "compare-table",
-  "stack",
-  "gauge",
+  "chart",
+  "nodes",
+  "request-flow",
+  "rate-limit",
+  "sequence",
+  "quote",
+  "broll",
+  "kinetic",
+  "screen",
 ];
 const WEAK_HOOKS = [
   "you won't believe",
@@ -107,6 +98,11 @@ const WEAK_HOOKS = [
   "in this video we will",
   "today we're going to",
   "like and subscribe",
+  "hey guys",
+  "welcome back",
+  "let's dive",
+  "lets dive",
+  "in today's video",
   "smash that",
 ];
 const DIGITS = /[0-9٠-٩۰-۹]/;
@@ -185,7 +181,7 @@ export function checkWriting(files, schema = loadBriefSchema()) {
     else lastAt = b === "step" ? beats.lastIndexOf("step") : at;
   }
   const cta = beats.indexOf("cta");
-  const payoff = mode === "explain" ? beats.lastIndexOf("takeaway") : beats.lastIndexOf("button");
+  const payoff = mode === "explain" ? beats.lastIndexOf("takeaway") : beats.lastIndexOf("close");
   if (cta !== -1 && payoff !== -1 && cta < payoff)
     add("error", "script.md", lines[cta].line, "the call to action must come after the payoff");
 

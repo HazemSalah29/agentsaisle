@@ -16,7 +16,7 @@ Chooses and fills the four technical scene kinds of `video-core` (`rate-limit`, 
 
 ## Don't use when
 
-- The user wants the script, voice, captions or the render. Those are `video-write`, `video-voice`, `video-captions` and `video-core`.
+- The user wants the script, voice, captions or the render. Those are `video-write`, `video-voice` and `video-core` (which also burns the captions).
 - The scene needs maths, a graph of a function or a kind that is not built. Say so; do not fake it with a title scene.
 - A number would have to be typed in by hand. Run the simulation or leave the number out.
 

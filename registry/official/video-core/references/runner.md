@@ -2,24 +2,24 @@
 
 ## What may run
 
-Every program starts through `scripts/run.mjs`: only `ffmpeg`, `ffprobe` and `node`, an argument array, no shell, a time limit, and an environment without variables named like KEY, TOKEN, SECRET, PASSWORD or AUTH. `node` may only run an absolute path to a script file (never `-e`). A request for anything else is refused. Add a program only with the owner's approval.
+Every program starts through `scripts/run.mjs`: only `ffmpeg`, `ffprobe`, `node`, `python` (our own provider scripts) and `whisper-cli`, with an argument array, no shell, a time limit, and an environment without variables named like KEY, TOKEN, SECRET, PASSWORD or AUTH. `node` may only run an absolute path to a script file (never `-e`). Add a program only with the owner's approval.
 
-## HyperFrames
+## The Remotion engine
 
-`render.mjs` looks for an installed HyperFrames (`--hyperframes <package-dir>`, `node_modules` next to the project, the global install beside this Node, the npx cache) and runs its `check` and `render`. It never installs or downloads it. The tested version is 0.8.226; install it with `npm install --global hyperframes@0.8.226`. HyperFrames itself may fetch Google Fonts and send usage data (`TODO(verify)` how to switch both off); our scripts make no network calls.
+The engine is an npm project installed once by the user, by default in `~/.aisle-video/remotion` (or the folder named by `"remotion"` in `~/.aisle-video/tools.json`). `engine.mjs setup` writes its pinned `package.json` (from `assets/remotion/package.json`); the user runs `npm install` and `npx remotion@4.0.540 browser ensure` there. Before every render, `render.mjs` copies this skill's `assets/remotion/src` into the engine, so updating the skill updates the look without reinstalling.
 
-## Remotion (second engine)
+`render.mjs` writes `out/rm/props.json` (the film) and `out/rm/public/` (media and fonts), runs `remotion render` with `--props`, `--public-dir` and `--muted`, then mixes the audio with ffmpeg. If `~/.aisle-video/tools.json` has `"browser"` (an absolute path to Chrome or Chromium), it is passed as `--browser-executable`.
 
-`render.mjs --engine remotion` builds a Remotion project in `out/rm/` from the same scene markup, stylesheet and animation plan as HyperFrames (so every scene kind works in both), renders a silent MP4 with `remotion render`, and then the same ffmpeg step mixes voice and music. It looks for `@remotion/cli` and `remotion` (`--remotion <cli-package-dir>`, `node_modules` next to the project, global, npx cache) and never installs them. Supported: Remotion 4.x with both packages at one version: `npm install remotion@<4.x> @remotion/cli@<4.x> react react-dom` next to the project. The adapter has **not been tested against a real Remotion install yet** (`TODO(verify)` CLI flags and `staticFile` paths). Remotion downloads its own headless browser on first render; our scripts make no network calls. Remotion's licence is free for individuals and companies of up to 3 people, paid above that (`TODO(verify)`), and the note is printed at every Remotion render.
+Remotion's licence: free for individuals and companies of up to 3 people; larger companies need a company licence (remotion.dev/license). Render prints this note every time.
 
 ## Animation
 
-No GSAP. Scenes use `assets/lib/tween.js`: paused Web Animations placed at absolute times, plus a small timeline object registered on `window.__timelines["main"]`. HyperFrames seeks each frame itself, so a frame depends only on the clock. `check` passes with this setup but prints a "nested structure" warning per scene (each scene is a `<section>` in `index.html`, not a sub-composition); the warning is expected for now.
+Everything is a function of the frame: springs and eased curves from Remotion (`spring`, `interpolate`), smooth noise from `@remotion/noise`, paths from `@remotion/paths`. No GSAP, no CSS animations or transitions (they would not be frame-exact). Fonts (Inter, JetBrains Mono, Anton, all SIL OFL) come from npm and are bundled, so nothing is fetched while rendering.
 
-## Determinism
+## Sound
 
-Two renders of the same project give byte-identical files (tested). Video is rendered by HyperFrames, then FFmpeg mixes audio and writes the final file with `-bitexact`. `--draft` renders at the lowest quality and scales to 540p.
+`assets/film/sound.mjs` synthesises the effects (whoosh, pop, impact, ...) and the music bed from maths: original, so there is no licence to track. The mix ducks the music under the voice and brings the whole to -14 LUFS.
 
-## Not built yet
+## Not built
 
-Captions, the `custom` kind, transitions other than cut and fade, engines other than HyperFrames and Remotion, loudness normalisation, and the voice step itself (voice files come from `video-voice` or from the user).
+Engines other than Remotion, the `custom` kind, AI-generated footage, character animation and editing of the user's own footage.

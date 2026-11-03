@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "title": "Kinetic video",
+  "voice": "kokoro",
+  "voiceDetails": {
+    "provider": "kokoro",
+    "voice": "am_michael",
+    "model": "Kokoro-82M v1.0 (onnx)",
+    "license": "Apache-2.0 (Kokoro-82M)"
+  },
+  "assets": [],
+  "sound": [
+    "Music: an original bed synthesised by video-core (no samples, no licence needed)",
+    "Sound effects: original, synthesised by video-core (no samples, no licence needed)"
+  ],
+  "disclosure": {
+    "realisticSynthetic": false,
+    "aiMusic": false,
+    "voiceClone": "none"
+  },
+  "guidance": [
+    "No synthetic-content label needed: no AI-generated assets are used.",
+    "The narration is a computer-generated voice (kokoro, model Kokoro-82M v1.0 (onnx)). Some platforms ask you to say so; check each platform's current rule (TODO(verify))."
+  ]
+}

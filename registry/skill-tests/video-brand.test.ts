@@ -39,11 +39,15 @@ describe("video-brand check", () => {
     expect(checkBrand(DEFAULT_BRAND)).toEqual([]);
   });
 
-  it("keeps the same defaults as video-core and the studio template", async () => {
+  it("keeps the same defaults as the studio template, and the engine accepts them", async () => {
     const { DEFAULT_BRAND } = await load();
-    const core = await loadScript<{ DEFAULT_BRAND: Loose }>("video-core", "scripts/project.mjs");
-    expect(DEFAULT_BRAND.colors).toEqual(core.DEFAULT_BRAND.colors);
-    expect(DEFAULT_BRAND.font).toBe(core.DEFAULT_BRAND.font);
+    const film = await loadScript<{ themeOf: (b: Loose) => Loose }>(
+      "video-core",
+      "assets/film/resolve.mjs",
+    );
+    const theme = film.themeOf(DEFAULT_BRAND);
+    for (const k of ["bg", "fg", "accent", "muted"]) expect(theme[k]).toBe(DEFAULT_BRAND.colors[k]);
+    expect(theme.font).toBe(DEFAULT_BRAND.font);
     const template = JSON.parse(
       readFileSync(skillFile("video", "assets/studio/brand/brand.json"), "utf8"),
     );

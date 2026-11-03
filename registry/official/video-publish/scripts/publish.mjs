@@ -67,7 +67,7 @@ export function gateProblems(dir, name, override) {
   return out;
 }
 
-/** Whether HyperFrames-based thumbnail cards can be made here: the video-core skill sits next to this one. */
+/** Where video-core's scripts are: thumbnail cards are rendered by its engine when it sits next to this skill. */
 const coreScripts = () => path.join(skillDir(), "..", "video-core", "scripts");
 
 /** A designed card: the title as a one-scene video rendered by video-core, one frame taken from it. Best effort. */
@@ -272,12 +272,16 @@ export function publishProject({ dir, platforms, override, card = true, force = 
       path.join(dest, "copy.json"),
       `${JSON.stringify({ title: p.text.title, description: p.text.description, hashtags: p.text.hashtags ?? [] }, null, 2)}\n`,
     );
-    for (const [from, to] of [
-      ["captions.srt", "captions.srt"],
-      ["captions.vtt", "captions.vtt"],
-      ["CREDITS.txt", "CREDITS.txt"],
-    ])
-      if (existsSync(f(from))) copyFileSync(f(from), path.join(dest, to));
+    // Subtitles are written by the render as out/<project>.srt and .vtt (older projects kept captions.srt at the top).
+    const base = path.basename(path.resolve(dir)).replace(/[^A-Za-z0-9._-]/g, "-");
+    for (const [froms, to] of [
+      [[f("out", `${base}.srt`), f("captions.srt")], "captions.srt"],
+      [[f("out", `${base}.vtt`), f("captions.vtt")], "captions.vtt"],
+      [[f("CREDITS.txt")], "CREDITS.txt"],
+    ]) {
+      const from = froms.find((x) => existsSync(x));
+      if (from) copyFileSync(from, path.join(dest, to));
+    }
     writeFileSync(
       path.join(dest, "disclosure.md"),
       `${disclosureNote({ platform: p.pl, credits, kids, override: manifest.qa.overridden })}\n`,

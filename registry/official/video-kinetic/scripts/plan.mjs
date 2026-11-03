@@ -58,7 +58,7 @@ function main() {
         [
           `Wrote ${flags.project}: ${r.summary.scenes} beats, ${r.summary.slabs} slab(s), ${r.summary.transitions} transitions, preset ${flags.preset}.`,
         ],
-        "Next: voice, align, timing, then cues.mjs, check, render --draft, sync.mjs and the contact sheet (references/craft.md).",
+        "Next: voice, align, timing, then check, render --draft (sound effects are added by the render), sync.mjs and the contact sheet (references/craft.md).",
       ),
     );
   } catch (e) {

@@ -1,8 +1,0 @@
-{
-  "id": "npm-weekly",
-  "title": "This week in npm downloads",
-  "source": "npm",
-  "items": ["commander", "zod", "tsup"],
-  "metric": "Weekly downloads",
-  "format": "short-9x16"
-}

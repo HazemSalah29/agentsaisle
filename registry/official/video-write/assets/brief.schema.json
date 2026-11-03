@@ -20,7 +20,7 @@
       "maxLength": 120
     },
     "mode": {
-      "enum": ["explain", "story"]
+      "enum": ["explain", "showcase"]
     },
     "lang": {
       "type": "string",

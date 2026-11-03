@@ -1,21 +1,23 @@
 # Explain mode
 
-Beats, in this order (each is a `beat:` value; `step` may repeat):
+Beats (each a `beat:` value). Required, in this order: `hook`, at least one `step`, `takeaway`. The others are optional and go where the table puts them.
 
-1. `hook` - the opening line.
-2. `misconception` - what most people think.
-3. `analogy` - a real-world comparison.
-4. `step` - the mechanism, one step per line, each mapped to one animation beat. When the mechanism is an algorithm, a request path, a message exchange or code, give the scene a technical kind (`rate-limit`, `request-flow`, `sequence`, `code`) so it is shown, not listed; `video-explain` fills it in.
-5. `edge` - an edge case or failure.
-6. `takeaway` - one line to remember.
-7. `cta` (optional) - after the takeaway only.
+| Beat            | What it is                                                            | Usual scene                                                        |
+| --------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `hook`          | The payoff or the stakes, in under 2 seconds (`references/hooks.md`). | `title` or `kinetic`                                               |
+| `stakes`        | Why it matters now, one line.                                         | `kinetic`, `number`                                                |
+| `misconception` | What most people get wrong (only if it is true and useful).           | `kinetic`, `versus`                                                |
+| `analogy`       | A real-world comparison, one line (only if it really helps).          | `title`, `broll`                                                   |
+| `step`          | The mechanism, one step per line, each mapped to one picture beat.    | `code`, `rate-limit`, `request-flow`, `sequence`, `nodes`, `steps` |
+| `proof`         | It working: a simulation, a measurement, a command and its output.    | `rate-limit`, `chart`, `terminal`, `number`                        |
+| `edge`          | A failure or limit, one line.                                         | `code` diff, `versus`                                              |
+| `takeaway`      | One line to remember. Short enough for a slab.                        | `kinetic` with `bg: accent`                                        |
+| `cta`           | After the takeaway only, at most 3 seconds.                           | `title` with a kicker                                              |
 
-Sources: every `step`, every `edge` and every line with a number and a unit needs `fact: <id>`, and `facts.md` holds `- [id] claim. Source: <link or file>`. A fact without a source fails the check. A line containing `[needs-source]` fails it too: find the source or remove the claim. Use only sources the user gave or that you read in this session.
+A 35-second explainer is about 100 words: hook, 3 to 5 steps or proofs, a takeaway, a call to action. Show, don't list: a mechanism gets a technical kind, not a bullet list about it.
+
+Sources: every `step`, `proof` and `edge` line and every line with a number and a unit needs `fact: <id>`, and `facts.md` holds `- [id] claim. Source: <link or file>`. A line containing `[needs-source]` fails the check. Use only sources the user gave or that you read in this session. A number quoted from a simulation is a fact too: `Source: simulate.mjs, seed 42`.
 
 Honesty: never invent statistics, quotes, testimonials or reviews. If the user wants a number you cannot source, say so and write around it.
 
-On screen: a small citation can show the source name; it is the user's choice.
-
-Length: about 2.5 words a second; keep each line under about 6 seconds.
-
-Technical scenes: write one `step` line per row or step of the picture, so each row appears with its line. A number the narration quotes from a simulation is a fact too: `facts.md` says `Source: simulate.mjs, seed 42` (never a number you worked out yourself).
+Technical scenes: write one `step` line per row or step of the picture, so each row appears with its line.

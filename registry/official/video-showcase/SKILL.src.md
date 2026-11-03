@@ -26,7 +26,7 @@ Turns a demo script into a polished screen demo. The recording, cursor path, cam
 1. `node <skill>/scripts/status.mjs <project>` shows what exists and what is next.
 2. Get or write `demo.md` (`references/demo-script.md`). Show it to the user and wait for approval: it drives a browser on their app.
 3. `node <skill>/scripts/capture.mjs --url <app> --script demo.md --out <project>/capture`. If it says the library is missing, give the user its install line and stop; never install it. A failed step names the line to fix.
-4. `node <skill>/scripts/plan.mjs --log capture/interaction-log.json --video capture/capture.webm --out assets/demo.mp4 --into video.json --scene demo --device laptop` (`--device phone` for 9:16). Quote the narration starts it prints.
+4. `node <skill>/scripts/plan.mjs --log capture/interaction-log.json --video capture/capture.webm --out assets/demo.mp4 --into video.json --scene demo --device laptop` (`--device phone` only for a site recorded at a phone size; a wide recording on a 9:16 video gets a taller window that follows the cursor). It writes the narration times (`narrationAt`) from each `say` into the scene. Then add `callouts` to the scene: one per feature, 2 to 4 words, at the time its line starts.
 5. Add title or list scenes for the features, then, if the user has a licensed track, `node <skill>/scripts/beats.mjs --audio <track> --out beats.json --into video.json --snap` (`references/workflow.md`).
 6. `node <video-core>/scripts/check.mjs <project>`, then `render.mjs --draft`; look at one frame per scene before the final render.
 

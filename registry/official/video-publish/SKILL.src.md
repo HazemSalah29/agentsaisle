@@ -18,7 +18,7 @@ Turns a finished render into something ready to post. It prepares files and chec
 
 - The render is missing or QA has not passed. Name the step to run; do not work around the gate. The user may override a failed QA in words with a reason; use `--override-qa "<reason>"`, never decide for them.
 - The user wants the video uploaded. Say this skill cannot, and the pack is for uploading by hand.
-- The video is the wrong shape for the platform (a 16:9 video for Reels). Say so; `video-edit reframe` is the fix.
+- The video is the wrong shape for the platform (a 16:9 video for Reels). Say so; render it again in the platform's format (`meta.format`).
 
 ## Steps
 

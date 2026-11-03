@@ -132,13 +132,17 @@ export function planKinetic(lines, opts, presets) {
     version: 1,
     meta: {
       title: String(opts.title ?? "Kinetic video").slice(0, 120),
-      type: "explainer",
+      type: "kinetic",
       format: opts.format ?? "reel-9x16",
       fps: 30,
       lang: opts.lang ?? "en",
       brand: "brand/brand.json",
     },
     script: "script.md",
+    style: {
+      preset: ["volt", "ember", "ice", "grape"].includes(opts.preset) ? opts.preset : "volt",
+      captions: "none",
+    },
     voice: {
       provider: opts.voice ?? "kokoro",
       ...(opts.voice && opts.voice !== "kokoro" ? {} : { voiceId: "af_heart", speed: 1.05 }),
@@ -154,33 +158,4 @@ export function planKinetic(lines, opts, presets) {
       transitions: scenes.filter((s) => s.transitionIn).length,
     },
   };
-}
-
-/**
- * Sound cues once the words are timed: a whoosh and a hit on each transition, a tick on each key word. `scenes` are
- * [{ start, seconds, transitionIn, words: [{ text, start }], emph: [] , slab }] with times in seconds. Pure.
- */
-export function soundCues(scenes, preset, filmSeconds) {
-  const out = [];
-  const add = (name, gain, at) => {
-    if (!(at >= 0 && at < filmSeconds - 0.05)) return;
-    if (out.some((c) => c.name === name && Math.abs(c.at - at) < 0.15)) return;
-    out.push({ name, gainDb: gain, at: Math.round(at * 1000) / 1000 });
-  };
-  scenes.forEach((s) => {
-    if (s.transitionIn) {
-      add(preset.sfx.cut[0], preset.sfx.cut[1], s.start - 0.03);
-      if (s.transitionIn === "slash" || s.transitionIn === "shatter")
-        add(preset.sfx.hit[0], preset.sfx.hit[1], s.start + 0.02);
-    }
-    const em = new Set((s.emph ?? []).map(norm));
-    for (const w of s.words ?? [])
-      if (em.has(norm(w.text)))
-        add(
-          s.slab ? preset.sfx.hit[0] : preset.sfx.pop[0],
-          s.slab ? preset.sfx.hit[1] : preset.sfx.pop[1],
-          s.start + w.start,
-        );
-  });
-  return out.sort((a, b) => a.at - b.at).slice(0, 80);
 }

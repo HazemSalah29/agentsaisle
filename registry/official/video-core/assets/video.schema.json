@@ -4,31 +4,63 @@
   "type": "object",
   "required": ["version", "meta", "scenes"],
   "properties": {
-    "version": { "const": 1 },
+    "version": {
+      "const": 1
+    },
     "meta": {
       "type": "object",
       "required": ["title", "type", "format", "fps", "lang"],
       "properties": {
-        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
-        "type": { "enum": ["explainer", "story", "showcase", "edit", "custom"] },
-        "format": { "enum": ["reel-9x16", "short-9x16", "youtube-16x9", "square-1x1"] },
-        "fps": { "enum": [24, 25, 30, 60] },
-        "lang": { "type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z]{2,4})?$" },
-        "dir": { "enum": ["ltr", "rtl"] },
-        "audience": { "type": "string", "maxLength": 80 },
-        "brand": { "type": "string", "maxLength": 200 }
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "type": {
+          "enum": ["explainer", "kinetic", "showcase"]
+        },
+        "format": {
+          "enum": ["reel-9x16", "short-9x16", "youtube-16x9", "square-1x1"]
+        },
+        "fps": {
+          "enum": [24, 25, 30, 60]
+        },
+        "lang": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Za-z]{2,4})?$"
+        },
+        "dir": {
+          "enum": ["ltr", "rtl"]
+        },
+        "audience": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "brand": {
+          "type": "string",
+          "maxLength": 200
+        }
       }
     },
-    "script": { "type": "string", "maxLength": 200 },
+    "script": {
+      "type": "string",
+      "maxLength": 200
+    },
     "voice": {
       "type": "object",
       "required": ["provider"],
       "properties": {
         "provider": {
-          "enum": ["kokoro", "chatterbox", "3arab", "elevenlabs", "recorded", "test", "none"]
+          "enum": ["kokoro", "3arab", "recorded", "test", "none"]
         },
-        "voiceId": { "type": "string", "maxLength": 80 },
-        "speed": { "type": "number", "minimum": 0.5 }
+        "voiceId": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 0.5
+        }
       }
     },
     "sfx": {
@@ -38,9 +70,19 @@
         "type": "object",
         "required": ["file", "at"],
         "properties": {
-          "file": { "type": "string", "maxLength": 200 },
-          "at": { "type": "number", "minimum": 0 },
-          "gainDb": { "type": "number", "minimum": -30, "maximum": 6 }
+          "file": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "at": {
+            "type": "number",
+            "minimum": 0
+          },
+          "gainDb": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 6
+          }
         }
       }
     },
@@ -48,36 +90,78 @@
       "type": "object",
       "required": ["asset"],
       "properties": {
-        "asset": { "type": "string", "maxLength": 200 },
-        "duckUnderVoiceDb": { "type": "number" }
+        "asset": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "duckUnderVoiceDb": {
+          "type": "number"
+        }
       }
     },
     "scenes": {
       "type": "array",
       "minItems": 1,
       "maxItems": 200,
-      "items": { "$ref": "#/definitions/scene" }
+      "items": {
+        "$ref": "#/definitions/scene"
+      }
     },
     "captions": {
       "type": "object",
       "properties": {
-        "style": { "enum": ["karaoke", "pop", "clean", "cinematic"] },
-        "maxWordsPerLine": { "type": "integer", "minimum": 1 },
-        "safeZone": { "enum": ["reel", "short", "youtube", "none"] },
-        "burn": { "type": "boolean" }
+        "burn": {
+          "type": "boolean"
+        }
       }
     },
     "assets": {
       "type": "array",
       "maxItems": 500,
-      "items": { "$ref": "#/definitions/asset" }
+      "items": {
+        "$ref": "#/definitions/asset"
+      }
     },
     "disclosure": {
       "type": "object",
       "properties": {
-        "realisticSynthetic": { "type": "boolean" },
-        "aiMusic": { "type": "boolean" },
-        "voiceClone": { "enum": ["none", "self", "consented"] }
+        "realisticSynthetic": {
+          "type": "boolean"
+        },
+        "aiMusic": {
+          "type": "boolean"
+        },
+        "voiceClone": {
+          "enum": ["none", "self", "consented"]
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "enum": ["volt", "ember", "ice", "grape"]
+        },
+        "captions": {
+          "enum": ["pop", "karaoke", "clean", "none"]
+        },
+        "music": {
+          "enum": ["pulse", "none"]
+        },
+        "bpm": {
+          "type": "integer",
+          "minimum": 70,
+          "maximum": 150
+        },
+        "sfx": {
+          "type": "boolean"
+        },
+        "progress": {
+          "type": "boolean"
+        },
+        "grain": {
+          "type": "boolean"
+        }
       }
     }
   },
@@ -86,612 +170,94 @@
       "type": "object",
       "required": ["id", "kind"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
         "kind": {
           "enum": [
             "title",
-            "quote",
             "list",
-            "chart",
-            "broll",
-            "rate-limit",
-            "code",
-            "sequence",
-            "request-flow",
-            "screen",
-            "timeline",
-            "calligraphy",
-            "shot",
-            "kinetic",
             "number",
-            "callout",
             "versus",
             "steps",
-            "cycle",
-            "funnel",
-            "matrix",
-            "nodes",
-            "ranking",
-            "checklist",
+            "code",
             "terminal",
-            "compare-table",
-            "stack",
-            "gauge",
-            "custom"
+            "chart",
+            "nodes",
+            "request-flow",
+            "rate-limit",
+            "sequence",
+            "quote",
+            "broll",
+            "kinetic",
+            "screen"
           ]
         },
-        "durationFrom": { "enum": ["voice", "fixed"] },
-        "seconds": { "type": "number", "minimum": 0.5 },
+        "durationFrom": {
+          "enum": ["voice", "fixed"]
+        },
+        "seconds": {
+          "type": "number",
+          "minimum": 0.5
+        },
         "narration": {
           "type": "array",
-          "items": { "type": "string", "pattern": "^[a-z0-9-]{1,32}$" }
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]{1,32}$"
+          }
         },
-        "props": { "type": "object" },
+        "props": {
+          "type": "object",
+          "description": "Checked per kind by assets/film/rules.mjs."
+        },
         "transitionIn": {
-          "enum": [
-            "cut",
-            "fade",
-            "slide",
-            "zoom",
-            "whip",
-            "match",
-            "slash",
-            "shatter",
-            "zoom-through"
-          ]
+          "enum": ["cut", "fade", "slide", "whip", "zoom-through", "slash", "shatter"]
         },
-        "transitionSeconds": { "type": "number", "minimum": 0.25, "maximum": 0.8 },
-        "transitionAngle": { "type": "number", "minimum": -85, "maximum": 85 },
-        "captions": { "enum": ["auto", "off", "custom"] }
+        "narrationAt": {
+          "type": "object",
+          "description": "Seconds into a fixed scene where each narration line starts (screen recordings)."
+        }
       }
     },
     "asset": {
       "type": "object",
       "required": ["id", "path", "source"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-        "path": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "kind": { "enum": ["image", "video", "audio", "font", "other"] },
-        "source": { "enum": ["generated", "user", "download", "library"] },
-        "licence": { "type": "string", "maxLength": 80 },
-        "attribution": { "type": "string", "maxLength": 300 },
-        "aiGenerated": { "type": "boolean" },
-        "analysisOnly": { "type": "boolean" },
-        "realistic": { "type": "boolean" },
-        "voiceClone": { "enum": ["none", "self", "consented"] }
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "kind": {
+          "enum": ["image", "video", "audio", "font", "other"]
+        },
+        "source": {
+          "enum": ["generated", "user", "download", "library"]
+        },
+        "licence": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "attribution": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "aiGenerated": {
+          "type": "boolean"
+        },
+        "realistic": {
+          "type": "boolean"
+        },
+        "voiceClone": {
+          "enum": ["none", "self", "consented"]
+        }
       }
-    },
-    "props": {
-      "title": {
-        "type": "object",
-        "required": ["text"],
-        "properties": {
-          "text": { "type": "string", "minLength": 1, "maxLength": 120 },
-          "subtitle": { "type": "string", "maxLength": 200 }
-        }
-      },
-      "quote": {
-        "type": "object",
-        "required": ["text"],
-        "properties": {
-          "text": { "type": "string", "minLength": 1, "maxLength": 300 },
-          "by": { "type": "string", "maxLength": 80 },
-          "source": { "type": "string", "maxLength": 200 }
-        }
-      },
-      "list": {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-          "layout": { "enum": ["stack", "spotlight"] },
-          "focus": { "type": "boolean" },
-          "heading": { "type": "string", "maxLength": 120 },
-          "items": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 8,
-            "items": { "type": "string", "minLength": 1, "maxLength": 120 }
-          },
-          "on": {
-            "type": "array",
-            "maxItems": 8,
-            "items": { "type": "string", "minLength": 1, "maxLength": 60 }
-          },
-          "numbered": { "type": "boolean" }
-        }
-      },
-      "chart": {
-        "type": "object",
-        "required": ["type", "data"],
-        "properties": {
-          "type": { "enum": ["bar", "line"] },
-          "title": { "type": "string", "maxLength": 120 },
-          "unit": { "type": "string", "maxLength": 20 },
-          "data": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 24,
-            "items": {
-              "type": "object",
-              "required": ["label", "value"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "value": { "type": "number" },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "broll": {
-        "type": "object",
-        "required": ["asset"],
-        "properties": {
-          "asset": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-          "fit": { "enum": ["cover", "contain"] },
-          "caption": { "type": "string", "maxLength": 160 }
-        }
-      },
-      "rate-limit": {
-        "type": "object",
-        "required": ["seed", "count", "pattern", "algos"],
-        "properties": {
-          "title": { "type": "string", "maxLength": 120 },
-          "seed": { "type": "integer", "minimum": 0 },
-          "count": { "type": "integer", "minimum": 1 },
-          "pattern": { "type": "object", "required": ["type", "ratePerSec"] },
-          "algos": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 2,
-            "items": { "type": "object", "required": ["algo"] }
-          }
-        }
-      },
-      "code": {
-        "type": "object",
-        "required": ["language"],
-        "properties": {
-          "language": { "type": "string" },
-          "title": { "type": "string", "maxLength": 120 },
-          "file": { "type": "string", "maxLength": 80 },
-          "code": { "type": "string", "maxLength": 1500 },
-          "diff": { "type": "object", "required": ["before", "after"] },
-          "focus": {
-            "type": "array",
-            "maxItems": 8,
-            "items": { "type": "object", "required": ["lines"] }
-          }
-        }
-      },
-      "calligraphy": {
-        "type": "object",
-        "required": ["text"],
-        "properties": {
-          "text": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "translation": { "type": "string", "maxLength": 80 },
-          "by": { "type": "string", "maxLength": 40 },
-          "font": { "type": "string", "maxLength": 41 },
-          "reveal": { "enum": ["wipe", "fade", "rise"] }
-        }
-      },
-      "shot": {
-        "type": "object",
-        "required": ["layers"],
-        "properties": {
-          "layers": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 4,
-            "items": { "type": "object", "required": ["asset"] }
-          },
-          "camera": { "type": "object" },
-          "type": { "type": "array", "maxItems": 3, "items": { "type": "object" } },
-          "cards": { "type": "array", "maxItems": 3, "items": { "type": "object" } },
-          "fx": { "type": "object" },
-          "enter": { "type": "object" }
-        }
-      },
-      "kinetic": {
-        "type": "object",
-        "properties": {
-          "bg": { "enum": ["black", "dark", "accent"] },
-          "exit": { "enum": ["slide", "drop", "blur", "shatter", "none"] },
-          "text": { "type": "string", "maxLength": 120 },
-          "phrases": {
-            "type": "array",
-            "maxItems": 12,
-            "items": { "type": "string", "maxLength": 40 }
-          },
-          "emph": {
-            "type": "array",
-            "maxItems": 12,
-            "items": { "type": "string", "maxLength": 24 }
-          },
-          "cards": { "type": "array", "maxItems": 2, "items": { "type": "object" } },
-          "flow": { "type": "object" }
-        }
-      },
-      "number": {
-        "type": "object",
-        "required": ["value", "label"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "value": { "type": "number" },
-          "from": { "type": "number" },
-          "unit": { "type": "string", "minLength": 0, "maxLength": 12 },
-          "decimals": { "type": "integer", "minimum": 0, "maximum": 4 },
-          "label": { "type": "string", "minLength": 1, "maxLength": 60 },
-          "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-        }
-      },
-      "callout": {
-        "type": "object",
-        "required": ["stat", "label"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "stat": { "type": "string", "minLength": 1, "maxLength": 14 },
-          "label": { "type": "string", "minLength": 1, "maxLength": 60 },
-          "note": { "type": "string", "minLength": 1, "maxLength": 120 },
-          "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-        }
-      },
-      "versus": {
-        "type": "object",
-        "required": ["left", "right"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "left": {
-            "type": "object",
-            "required": ["title", "points"],
-            "properties": {
-              "title": { "type": "string", "minLength": 1, "maxLength": 40 },
-              "points": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 4,
-                "items": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          },
-          "right": {
-            "type": "object",
-            "required": ["title", "points"],
-            "properties": {
-              "title": { "type": "string", "minLength": 1, "maxLength": 40 },
-              "points": {
-                "type": "array",
-                "minItems": 1,
-                "maxItems": 4,
-                "items": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          },
-          "verdict": { "type": "string", "minLength": 1, "maxLength": 100 }
-        }
-      },
-      "steps": {
-        "type": "object",
-        "required": ["steps"],
-        "properties": {
-          "layout": { "enum": ["stack", "spotlight"] },
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "steps": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 6,
-            "items": {
-              "type": "object",
-              "required": ["label"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "detail": { "type": "string", "minLength": 1, "maxLength": 80 },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "cycle": {
-        "type": "object",
-        "required": ["nodes"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "center": { "type": "string", "minLength": 1, "maxLength": 40 },
-          "nodes": {
-            "type": "array",
-            "minItems": 3,
-            "maxItems": 6,
-            "items": { "type": "string", "minLength": 1, "maxLength": 40 }
-          }
-        }
-      },
-      "funnel": {
-        "type": "object",
-        "required": ["stages"],
-        "properties": {
-          "layout": { "enum": ["stack", "spotlight"] },
-          "focus": { "type": "boolean" },
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "stages": {
-            "type": "array",
-            "minItems": 3,
-            "maxItems": 5,
-            "items": {
-              "type": "object",
-              "required": ["label"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "value": { "type": "string", "minLength": 1, "maxLength": 16 },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "matrix": {
-        "type": "object",
-        "required": ["x", "y", "items"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "x": {
-            "type": "object",
-            "required": ["low", "high"],
-            "properties": {
-              "low": { "type": "string", "minLength": 1, "maxLength": 24 },
-              "high": { "type": "string", "minLength": 1, "maxLength": 24 }
-            }
-          },
-          "y": {
-            "type": "object",
-            "required": ["low", "high"],
-            "properties": {
-              "low": { "type": "string", "minLength": 1, "maxLength": 24 },
-              "high": { "type": "string", "minLength": 1, "maxLength": 24 }
-            }
-          },
-          "items": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 8,
-            "items": {
-              "type": "object",
-              "required": ["label", "x", "y"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 24 },
-                "x": { "type": "number", "minimum": 0, "maximum": 1 },
-                "y": { "type": "number", "minimum": 0, "maximum": 1 },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "nodes": {
-        "type": "object",
-        "required": ["nodes", "edges"],
-        "properties": {
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "nodes": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 7,
-            "items": {
-              "type": "object",
-              "required": ["id", "label"],
-              "properties": {
-                "id": { "type": "string", "pattern": "^[a-z0-9-]{1,16}$" },
-                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          },
-          "edges": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 12,
-            "items": {
-              "type": "object",
-              "required": ["from", "to"],
-              "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
-            }
-          }
-        }
-      },
-      "ranking": {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "unit": { "type": "string", "minLength": 0, "maxLength": 12 },
-          "items": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 8,
-            "items": {
-              "type": "object",
-              "required": ["label", "value"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "value": { "type": "number" },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "checklist": {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "items": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 7,
-            "items": {
-              "type": "object",
-              "required": ["text"],
-              "properties": {
-                "text": { "type": "string", "minLength": 1, "maxLength": 60 },
-                "state": { "enum": ["done", "open", "fail"] },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "terminal": {
-        "type": "object",
-        "required": ["lines"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "prompt": { "type": "string", "minLength": 1, "maxLength": 4 },
-          "lines": {
-            "type": "array",
-            "minItems": 1,
-            "maxItems": 8,
-            "items": {
-              "type": "object",
-              "required": ["text"],
-              "properties": {
-                "text": { "type": "string", "minLength": 1, "maxLength": 64 },
-                "kind": { "enum": ["cmd", "out"] },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "compare-table": {
-        "type": "object",
-        "required": ["columns", "rows"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "columns": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 4,
-            "items": { "type": "string", "minLength": 1, "maxLength": 24 }
-          },
-          "rows": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 6,
-            "items": {
-              "type": "object",
-              "required": ["label", "cells"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 30 },
-                "cells": {
-                  "type": "array",
-                  "items": { "type": "string", "minLength": 0, "maxLength": 40 }
-                },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "stack": {
-        "type": "object",
-        "required": ["layers"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-          "layers": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 6,
-            "items": {
-              "type": "object",
-              "required": ["label"],
-              "properties": {
-                "label": { "type": "string", "minLength": 1, "maxLength": 40 },
-                "detail": { "type": "string", "minLength": 1, "maxLength": 80 },
-                "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-              }
-            }
-          }
-        }
-      },
-      "gauge": {
-        "type": "object",
-        "required": ["value", "label"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "value": { "type": "number", "minimum": 0, "maximum": 100 },
-          "from": { "type": "number", "minimum": 0, "maximum": 100 },
-          "label": { "type": "string", "minLength": 1, "maxLength": 60 },
-          "unit": { "type": "string", "minLength": 0, "maxLength": 8 },
-          "on": { "type": "string", "minLength": 1, "maxLength": 60 }
-        }
-      },
-      "timeline": {
-        "type": "object",
-        "required": ["events"],
-        "properties": {
-          "focus": { "type": "boolean" },
-          "title": { "type": "string", "maxLength": 80 },
-          "events": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 10,
-            "items": { "type": "object", "required": ["at", "label"] }
-          }
-        }
-      },
-      "sequence": {
-        "type": "object",
-        "required": ["source"],
-        "properties": {
-          "source": { "type": "string", "minLength": 1, "maxLength": 1200 },
-          "title": { "type": "string", "maxLength": 120 }
-        }
-      },
-      "screen": {
-        "type": "object",
-        "required": ["asset"],
-        "properties": {
-          "asset": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-          "pip": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
-          "device": { "enum": ["phone", "laptop", "browser", "none"] },
-          "title": { "type": "string", "maxLength": 120 },
-          "viewport": { "type": "object", "required": ["w", "h"] },
-          "zoom": { "type": "array", "maxItems": 40, "items": { "type": "object" } },
-          "cursor": { "type": "array", "maxItems": 600, "items": { "type": "object" } },
-          "ripples": { "type": "array", "maxItems": 60, "items": { "type": "object" } }
-        }
-      },
-      "request-flow": {
-        "type": "object",
-        "required": ["nodes", "edges", "steps"],
-        "properties": {
-          "title": { "type": "string", "maxLength": 120 },
-          "nodes": {
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 10,
-            "items": { "type": "object", "required": ["id", "label", "tier"] }
-          },
-          "edges": {
-            "type": "array",
-            "maxItems": 30,
-            "items": { "type": "object", "required": ["id", "from", "to"] }
-          },
-          "steps": { "type": "array", "minItems": 1, "maxItems": 14, "items": { "type": "object" } }
-        }
-      },
-      "custom": { "type": "object" }
     }
   }
 }

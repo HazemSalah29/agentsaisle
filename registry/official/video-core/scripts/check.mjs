@@ -4,18 +4,7 @@
 // Usage: node check.mjs <project-dir | path/to/video.json> [--json]
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { codeProblems } from "../assets/engine/hyperframes/code.mjs";
-import { screenProblems } from "../assets/engine/hyperframes/screen.mjs";
-import { sequenceProblems } from "../assets/engine/hyperframes/sequence.mjs";
-import { calligraphyProblems } from "../assets/engine/hyperframes/calligraphy.mjs";
-import { DIAGRAM_KINDS, diagramProblems } from "../assets/engine/hyperframes/diagrams.mjs";
-import { DIAGRAM2_KINDS, diagram2Problems } from "../assets/engine/hyperframes/diagrams2.mjs";
-import { kineticProblems } from "../assets/engine/hyperframes/kinetic.mjs";
-import { shotProblems } from "../assets/engine/hyperframes/shot.mjs";
-import { timelineProblems } from "../assets/engine/hyperframes/timeline.mjs";
-import { flowProblems } from "../assets/engine/hyperframes/request-flow.mjs";
-import { MAX_DRAWN } from "../assets/engine/hyperframes/rate-limit.mjs";
-import { specProblems } from "../assets/sim/rate-limit.mjs";
+import { KINDS, kindProblems } from "../assets/film/rules.mjs";
 import { validate } from "./schema-check.mjs";
 import { capLines, isEntry, isInside, parseArgs, skillDir } from "./_lib.mjs";
 
@@ -105,70 +94,25 @@ export function checkProject(video, dir, schema = loadSchema()) {
           problems.push(`${at}.narration: line "${id}" is not in ${video.script}`);
     const propSchema = schema.definitions?.props?.[s.kind];
     if (propSchema) problems.push(...validate(propSchema, s.props ?? {}, schema, `${at}.props`));
-    if (s.kind === "rate-limit") problems.push(...rateLimitProblems(s.props ?? {}, `${at}.props`));
-    if (s.kind === "request-flow")
-      problems.push(...flowProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (s.kind === "sequence")
-      problems.push(...sequenceProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (s.kind === "calligraphy")
-      problems.push(...calligraphyProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (s.kind === "timeline")
-      problems.push(...timelineProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (DIAGRAM2_KINDS.includes(s.kind))
-      problems.push(...diagram2Problems(s.kind, s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (DIAGRAM_KINDS.includes(s.kind))
-      problems.push(...diagramProblems(s.kind, s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (s.kind === "kinetic")
-      problems.push(...kineticProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-    if (s.kind === "shot") {
-      problems.push(...shotProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-      for (const l of s.props?.layers ?? [])
-        if (l?.asset && !assetIds.has(l.asset))
-          problems.push(`${at}.props.layers: asset "${l.asset}" is not listed in assets`);
-    }
-    if (s.kind === "code")
+    if (KINDS.includes(s.kind))
       problems.push(
-        ...codeProblems(s.props ?? {}, s.narration?.length ?? 0).map((p) => `${at}.props.${p}`),
+        ...kindProblems(s.kind, s.props ?? {}, s.narration?.length ?? 0).map(
+          (p) => `${at}.props.${p}`,
+        ),
       );
-    if (s.kind === "broll" && s.props?.asset && !assetIds.has(s.props.asset))
-      problems.push(`${at}.props.asset: "${s.props.asset}" is not listed in assets`);
-    if (s.kind === "screen") {
-      problems.push(...screenProblems(s.props ?? {}).map((p) => `${at}.props.${p}`));
-      for (const key of ["asset", "pip"])
-        if (s.props?.[key] && !assetIds.has(s.props[key]))
-          problems.push(`${at}.props.${key}: "${s.props[key]}" is not listed in assets`);
-    }
-  });
-
-  // Footage downloaded as a reference (video-ingest --analysis-only) may be measured, never shown.
-  const analysisOnly = (id) => assetIds.get(id)?.analysisOnly === true;
-  video.scenes.forEach((s, i) => {
     for (const key of ["asset", "pip"])
-      if (analysisOnly(s?.props?.[key]))
-        problems.push(
-          `$.scenes[${i}].props.${key}: "${s.props[key]}" is marked analysisOnly and cannot appear in a video`,
-        );
+      if (
+        s.props?.[key] &&
+        (s.kind === "broll" || s.kind === "screen") &&
+        !assetIds.has(s.props[key])
+      )
+        problems.push(`${at}.props.${key}: "${s.props[key]}" is not listed in assets`);
   });
-  if (assets.some((a) => a?.analysisOnly === true && a.path === video.music?.asset))
-    problems.push("$.music.asset: this file is marked analysisOnly and cannot be used");
 
   for (const [at, text] of strings(video))
     if (SECRET_RES.some((re) => re.test(text)))
       problems.push(`${at}: looks like a credential; remove it`);
   return problems;
-}
-
-/** The rate-limit scene is drawn from the simulator, so its props must be a spec and never a typed-in result. */
-function rateLimitProblems(props, at) {
-  const out = specProblems(props).map((p) => `${at}.${p}`);
-  for (const k of ["log", "events", "results", "allowed", "rejected"])
-    if (k in props)
-      out.push(
-        `${at}.${k}: results are computed from the seed; remove it (the animation is the simulation)`,
-      );
-  if (Number.isInteger(props.count) && props.count > MAX_DRAWN)
-    out.push(`${at}.count: a scene draws at most ${MAX_DRAWN} requests (each is a dot); use fewer`);
-  return out;
 }
 
 /** Resolve the argument to { file, dir }. */

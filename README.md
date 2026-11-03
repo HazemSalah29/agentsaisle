@@ -241,7 +241,7 @@ The CLI shows it as **unverified** and asks before it copies anything.
 | **Frontend**              | Web performance and related skills.                                                                                               |
 | **Database**              | Schema design, migrations, query tuning and seed data.                                                                            |
 | **Testing and debugging** | Writing tests, fixing failing tests, reading logs and stack traces.                                                               |
-| **Video**                 | One command, `/video`: describe the video you want and Claude uses the library's parts. `aisle add video` installs it.            |
+| **Video**                 | One command, `/video`: explainer, kinetic-type or app showcase shorts, rendered with Remotion. `aisle add video` installs it.     |
 
 ### Kits
 
