@@ -158,7 +158,7 @@ Dubbing a project to Arabic (or English) makes a sibling folder, `<project>.ar/`
 
 ## 6. Costs
 
-Everything is local and free except AI image or clip generation (`video-generate`) with a real provider. Before any paid call it prints the quote (units x price from your `providers.yaml`; no price is built in) and stops. It runs only when you say yes to that exact total and the agent re-runs with `--approve <total>`; there is no `--yes`. It refuses when the project budget (`--budget`) or the monthly cap in `providers.yaml` is 0 or would be passed. A repeat of the same prompt, seed and reference images comes from the cache at no cost. Every call is logged in `projects/<slug>/generation-log.jsonl` (never the key).
+Everything is local and free except AI clips from your Higgsfield connector, which draw on your Higgsfield credits (the website's free perks do not apply through the connector). When the connector is connected in Claude, `/video` plans clips into videos that have room for pictures without being asked, but it shows the shot list and the credit total first and generates only after your yes; a no means the free local route for that video. Files the connector makes are listed in the project with `adopt.mjs`, and each one is logged in `projects/<slug>/generation-log.jsonl` with the credits as reported.
 
 ## 7. Rights and labels, in plain words
 
