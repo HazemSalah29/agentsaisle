@@ -242,7 +242,7 @@ export async function qaProject({ dir, file, draft = false }, baseRules = loadRu
     // Idle is judged on changed cells of a small grey picture, written to a temp file (the runner reads text only).
     const [gw, gh] = mo.idle.grid;
     const tmp = mkdtempSync(path.join(os.tmpdir(), "video-qa-"));
-    let cells = [];
+    let cells;
     try {
       const raw = path.join(tmp, "frames.gray");
       ff([
