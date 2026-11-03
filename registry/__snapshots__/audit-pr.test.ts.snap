@@ -30,5 +30,5 @@ exports[`auditEntries > a malicious entry fails and the comment says why in plai
 
 _Automated checks found the patterns listed here. An audit reduces risk; it is not a guarantee of safety._
 
-_The audit reads the skill as text and never runs it. It reduces risk and is not a guarantee of safety. [How audits work](https://agentsaisle-vercel.vercel.app/audit)_"
+_The audit reads the skill as text and never runs it. It reduces risk and is not a guarantee of safety. [How audits work](https://www.agentsaisle.dev/audit)_"
 `;

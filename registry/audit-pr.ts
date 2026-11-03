@@ -106,7 +106,7 @@ export function renderComment(results: EntryResult[]): string {
     else lines.push(`### ${r.name}`, "", `Could not audit: ${r.problem}`, "");
   }
   lines.push(
-    "_The audit reads the skill as text and never runs it. It reduces risk and is not a guarantee of safety. [How audits work](https://agentsaisle-vercel.vercel.app/audit)_",
+    "_The audit reads the skill as text and never runs it. It reduces risk and is not a guarantee of safety. [How audits work](https://www.agentsaisle.dev/audit)_",
   );
   let text = lines.join("\n");
   if (text.length > MAX_COMMENT)

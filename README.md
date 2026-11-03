@@ -4,7 +4,7 @@
 
 **Audit Agent Skills before you trust them.** `aisle audit` is a free, open-source scanner that reads a skill as text, never runs it, and grades it A to F. Agent Aisle is also a store: find an audited skill, install it with one command, and your AI coding agent knows a new job.
 
-[Website](https://agentsaisle-vercel.vercel.app) · [Docs](https://agentsaisle-vercel.vercel.app/docs) · [Audit](https://agentsaisle-vercel.vercel.app/audit) · [Browse skills](https://agentsaisle-vercel.vercel.app/skills) · [Add your skill](https://agentsaisle-vercel.vercel.app/submit)
+[Website](https://www.agentsaisle.dev) · [Docs](https://www.agentsaisle.dev/docs) · [Audit](https://www.agentsaisle.dev/audit) · [Browse skills](https://www.agentsaisle.dev/skills) · [Add your skill](https://www.agentsaisle.dev/submit)
 
 </div>
 
@@ -307,7 +307,7 @@ Your agent may run a skill's scripts later, on your machine. So **read the skill
 ### List it
 
 1. Push your skill to a **public** GitHub repository.
-2. Open the [Submit page](https://agentsaisle-vercel.vercel.app/submit). The form writes a small YAML file for you and opens a pull request.
+2. Open the [Submit page](https://www.agentsaisle.dev/submit). The form writes a small YAML file for you and opens a pull request.
 3. An automatic check validates your repository, commit, `SKILL.md` and scripts. It only reads text and never runs your code.
 4. A maintainer reviews it. Only maintainers set **Verified**.
 

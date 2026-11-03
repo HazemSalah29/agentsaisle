@@ -1,7 +1,7 @@
 # Agent Aisle audit (GitHub Action)
 
 Audits Agent Skills in your repository for risky patterns and shows the findings in your repository's
-**Security > Code scanning** tab. It runs [`aisle audit`](https://agentsaisle-vercel.vercel.app/audit) on your
+**Security > Code scanning** tab. It runs [`aisle audit`](https://www.agentsaisle.dev/audit) on your
 files as text. **Nothing in your skills is run, imported or installed.**
 
 > Automated checks found no known risky patterns. This is not a guarantee of safety.
