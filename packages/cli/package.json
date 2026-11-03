@@ -1,6 +1,6 @@
 {
   "name": "@agentsaisle/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Install Agent Skills into your project with one command.",
   "license": "MIT",
   "keywords": [
@@ -12,7 +12,7 @@
     "cli",
     "ai-agents"
   ],
-  "homepage": "https://agentsaisle-vercel.vercel.app",
+  "homepage": "https://www.agentsaisle.dev",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HazemSalah29/agentsaisle.git",

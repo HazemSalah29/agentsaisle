@@ -89,13 +89,13 @@ export function formatSarif(
           driver: {
             name: "aisle audit",
             version: options.version ?? list[0]?.auditVersion ?? "1.0.0",
-            informationUri: "https://agentsaisle-vercel.vercel.app/audit",
+            informationUri: "https://www.agentsaisle.dev/audit",
             rules: rules.map((x) => ({
               id: x.id,
               name: x.id.replace("-", ""),
               shortDescription: { text: x.title },
               help: {
-                text: `${x.title}. See https://agentsaisle-vercel.vercel.app/audit for what each rule checks.`,
+                text: `${x.title}. See https://www.agentsaisle.dev/audit for what each rule checks.`,
               },
               defaultConfiguration: { level: LEVEL[x.severity] },
               properties: {

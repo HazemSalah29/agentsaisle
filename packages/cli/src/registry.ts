@@ -6,10 +6,11 @@ import { CliError } from "./errors.js";
 import { closestMatches } from "./spec.js";
 
 /**
- * The live registry. This is the project's .vercel.app address, which keeps working after a custom
- * domain is added, so published CLI versions never break. Override with AISLE_REGISTRY.
+ * The live registry, on the project's own domain. (The old agentsaisle-vercel.vercel.app address stopped working
+ * when the domain was changed, so CLI versions up to 0.2.0 need AISLE_REGISTRY to point here.) Override with
+ * AISLE_REGISTRY, a URL or a file path.
  */
-export const DEFAULT_REGISTRY_URL = "https://agentsaisle-vercel.vercel.app/registry.json";
+export const DEFAULT_REGISTRY_URL = "https://www.agentsaisle.dev/registry.json";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 export function cacheDir(): string {
