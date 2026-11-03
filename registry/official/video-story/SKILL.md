@@ -23,7 +23,7 @@ Plans and assembles a story from stills (and optionally clips). The agent writes
 
 1. Run `video-write` story mode first: `script.md`, `style-bible.md` (world, palette, characters), a storyboard. Default generator is `stills-only` ($0 for motion).
 2. Write `refpack.json` (`style` and each character's `look` from the bible), then `node <skill>/scripts/refpack.mjs <project>`. Make the front view of each character first with `video-generate image`, show it to the user, and only then the other views. One character per image.
-3. Write `shots.json` (`references/shots.md`): 3 to 8 seconds per shot, camera, action, mood, prompt, the script lines it covers. Run `node <skill>/scripts/shots.mjs <project> --plan` and show the counts. Price comes only from a `video-generate` quote.
+3. Write `shots.json` (`references/shots.md`): 3 to 8 seconds per shot, camera, action, mood, prompt, the script lines it covers. Run `node <skill>/scripts/shots.mjs <project> --plan` and show the counts. Credits come only from what the Higgsfield connector reports.
 4. Write `continuity.json`; run `node <skill>/scripts/continuity.mjs <project>`. For each shot, `--next <shot-id>` prints the `--ref` images to pass to `video-generate` (the anchor and the characters' front views).
 5. Make one keyframe still per shot with `video-generate`, ask before every paid call, then (non-stills generators only) one clip per shot from its keyframe with a prompt that describes only the motion. Do not regenerate unless the user asks.
 6. Set each shot's `asset`, run `shots.mjs <project> --build`, then narration, music and captions through the usual video skills and `video-qa`. Stills get a slow push-in (Ken Burns) from the `broll` scene.
@@ -40,7 +40,7 @@ Plans and assembles a story from stills (and optionally clips). The agent writes
 
 ## Output
 
-- The plan (shots, seconds, images, clips), the cost quote taken from `video-generate`, and what is still missing.
+- The plan (shots, seconds, images, clips), the credits the connector reported, and what is still missing.
 - A note that every generated asset is marked `aiGenerated`, and that realistic people or places need the synthetic-content label.
 
 ## Done when

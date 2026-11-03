@@ -1,4 +1,4 @@
-version: 0.2.0
+version: 0.3.0
 category: [video]
 clients: [claude-code]
 runs_scripts: true
@@ -9,6 +9,6 @@ permissions:
   tools: [Read, Write, Glob, Grep, Bash]
   writes_files: true
   runs_scripts: true
-  network: true
-  needs_api_keys: [GEMINI_API_KEY]
+  network: false
+  needs_api_keys: []
 part_of: video
