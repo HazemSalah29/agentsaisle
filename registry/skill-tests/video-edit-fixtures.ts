@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -28,6 +28,12 @@ export function makeClip(
   segments: Segment[],
   { audio = true, size = "320x180" } = {},
 ) {
+  // Without ffmpeg the tests that read the clip are skipped, but some suites build their fixtures while collecting
+  // (and the publish gate tests only need the file to exist): leave a placeholder instead of crashing.
+  if (!FF) {
+    writeFileSync(file, "placeholder: no ffmpeg");
+    return file;
+  }
   const inputs: string[] = [];
   const parts: string[] = [];
   segments.forEach((s) => {

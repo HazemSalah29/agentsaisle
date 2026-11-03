@@ -189,7 +189,7 @@ describe.skipIf(!haveFF)("reframe on real files", () => {
   const dir = tmp("reframe");
   const wide = path.join(dir, "wide.mp4");
   // 16:9 picture with a bright vertical bar that walks left to right: the "speaker"
-  spawnSync(FF!, [
+  spawnSync(FF ?? "ffmpeg", [
     "-y",
     "-v",
     "error",

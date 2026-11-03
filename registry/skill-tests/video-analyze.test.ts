@@ -196,7 +196,7 @@ describe.skipIf(!haveFF)("analyze on a real file", () => {
 
   it("guesses the tempo of a click track and still stores only numbers", () => {
     const track = path.join(dir, "clicks.mp4");
-    spawnSync(FF!, [
+    spawnSync(FF ?? "ffmpeg", [
       "-y",
       "-v",
       "error",
