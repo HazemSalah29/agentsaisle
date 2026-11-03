@@ -1,24 +1,7 @@
 # Providers
 
-`providers.yaml` (no keys in it):
+`test` is the only provider built in: offline, free, deterministic (a coloured gradient PNG, a short MP4 made with ffmpeg). It is for trying the flow.
 
-```yaml
-monthlyCapUsd: 5 # 0 means no paid generation
-providers:
-  - id: gem-image
-    adapter: gemini-image # or: veo
-    kind: image
-    model: <model id from the provider's docs>
-    keyEnv: GEMINI_API_KEY
-    usdPerImage: 0 # fill in the current price
-  - id: veo
-    adapter: veo
-    kind: video
-    model: <model id>
-    keyEnv: GEMINI_API_KEY
-    usdPerSecond: 0 # fill in the current price
-```
+Real AI images and clips come from the Higgsfield connector in Claude (`video/references/higgsfield.md`). This skill has no network adapter, reads no API key and holds no price list; the files the connector makes are listed with `adopt.mjs`.
 
-Adapters: `test` (offline, free, built in), `gemini-image`, `veo`. Both network adapters talk only to `generativelanguage.googleapis.com` and refuse to download from any other host. Their endpoint paths and field names are `TODO(verify)`: they were written without access to the docs, so run one cheap call and check before relying on them. Licences, watermarks and commercial-use terms are also `TODO(verify)`.
-
-Not built: music, sfx, lipsync. Higgsfield Katana is an MCP tool the agent calls, not an adapter.
+Not built: music, sfx, lipsync.

@@ -42,7 +42,7 @@ describe("the video director", () => {
 
   it("keeps the gates for money and rights in the director's steps", () => {
     const skill = text("SKILL.md");
-    expect(skill).toMatch(/typed approval of that exact number/);
+    expect(skill).toMatch(/shot list and credit total before any Higgsfield generation/);
     expect(skill).toMatch(/never suggest one/);
     expect(skill).toMatch(/never upload/i);
   });

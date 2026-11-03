@@ -30,10 +30,8 @@ Our own code (the tween helper, scene kinds, scripts) is written for this reposi
 
 ## Generation providers (optional, paid, used only by `video-generate`)
 
-| Service                               | Used by                | Terms                                                                | Notes                                                                                                                                                                            |
-| ------------------------------------- | ---------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gemini API (Google), image generation | `gemini-image` adapter | Google API terms (`TODO(verify)` commercial use, watermark)          | Only `generativelanguage.googleapis.com` is contacted. Endpoint path, model id and field names are `TODO(verify)`; the model id and price come from the user's `providers.yaml`. |
-| Veo through the Gemini API            | `veo` adapter          | Google API terms (`TODO(verify)`; outputs carry a SynthID watermark) | Same host, same key variable. A start frame may be sent; the download is refused from any other host.                                                                            |
+| Service | Used by | Terms | Notes |
+| ------- | ------- | ----- | ----- |
 
 The offline `test` provider needs nothing. Nothing is installed by our scripts, and no new npm or Python package was added for generation (it uses Node's `fetch`).
 

@@ -130,7 +130,7 @@ Analysis (`--rights own|permission|cc|public-domain` says why you may use the vi
 
 ### Stories and AI images
 
-A story short plans a short from original characters shown in images: a style bible, a reference pack per character (made first, so every shot starts from the same look), a shot list of 3 to 8 seconds per shot, and a continuity log (outfit, props, place, time of day). With `--generator stills-only` the images get a slow push-in and no video is generated. the generator (`video-generate`, `image` or `video`) makes the images or clips. Its only offline provider is `test` (a coloured gradient, to try the flow); real providers go in `providers.yaml`, which has no keys (the key is read from an environment variable such as `GEMINI_API_KEY`). The two real adapters (`gemini-image` and `veo`) were written without access to the providers' documents and are marked `TODO(verify)`: run one cheap call and check before you rely on them. Results can miss; the skill makes one try per shot and asks before any retry. Music, sound effects and lip sync are not built.
+A story short plans a short from original characters shown in images: a style bible, a reference pack per character (made first, so every shot starts from the same look), a shot list of 3 to 8 seconds per shot, and a continuity log (outfit, props, place, time of day). With `--generator stills-only` the images get a slow push-in and no video is generated. the generator (`video-generate`, `image` or `video`) makes the images or clips. Its only built-in provider is `test` (a coloured gradient, to try the flow); real AI images and clips come from the Higgsfield connector, whose files are listed with `adopt.mjs`. Results can miss; the skill makes one try per shot and asks before any retry. Music, sound effects and lip sync are not built.
 
 ### Bringing in footage (ingest)
 
@@ -158,7 +158,7 @@ Dubbing a project to Arabic (or English) makes a sibling folder, `<project>.ar/`
 
 ## 6. Costs
 
-Everything is local and free except AI image or clip generation (`video-generate`) with a real provider. Before any paid call it prints the quote (units x price from your `providers.yaml`; no price is built in) and stops. It runs only when you say yes to that exact total and the agent re-runs with `--approve <total>`; there is no `--yes`. It refuses when the project budget (`--budget`) or the monthly cap in `providers.yaml` is 0 or would be passed. A repeat of the same prompt, seed and reference images comes from the cache at no cost. Every call is logged in `projects/<slug>/generation-log.jsonl` (never the key).
+Everything is local and free except AI clips from your Higgsfield connector, which draw on your Higgsfield credits (the website's free perks do not apply through the connector). When the connector is connected in Claude, `/video` plans clips into videos that have room for pictures without being asked, but it shows the shot list and the credit total first and generates only after your yes; a no means the free local route for that video. Files the connector makes are listed in the project with `adopt.mjs`, and each one is logged in `projects/<slug>/generation-log.jsonl` with the credits as reported.
 
 ## 7. Rights and labels, in plain words
 
