@@ -16,6 +16,7 @@ type Checks = {
   textProblems: (s: string) => { level: string; text: string }[];
   sheetTimes: (t: Loose, max?: number) => number[];
   idleStretches: (m: Loose[], o: Loose) => Loose[];
+  changedCells: (b: Uint8Array, w: number, h: number, o?: Loose) => { t: number; cells: number }[];
   fastRuns: (m: Loose[], o: Loose) => Loose[];
   hardSwaps: (m: Loose[], b: Loose[], o: Loose) => Loose[];
   shortScenes: (t: Loose | null, min: number) => Loose[];
@@ -24,6 +25,43 @@ type Checks = {
 type Qa = { qaProject: (o: Loose) => Promise<{ results: Loose[]; facts: Loose }> };
 const checks = () => loadScript<Checks>("video-qa", "scripts/_checks.mjs");
 const qa = () => loadScript<Qa>("video-qa", "scripts/qa.mjs");
+
+describe("changed cells", () => {
+  const frame = (w: number, h: number, v: number, dots: [number, number][] = []) => {
+    const f = new Uint8Array(w * h).fill(v);
+    for (const [x, y] of dots) f[y * w + x] = 255;
+    return f;
+  };
+  const cat = (...fs: Uint8Array[]) => Uint8Array.from(fs.flatMap((f) => [...f]));
+  it("is zero for a still picture, whatever the level, and counts every cell that moved", async () => {
+    const { changedCells } = await checks();
+    const still = changedCells(cat(frame(4, 4, 20), frame(4, 4, 20), frame(4, 4, 20)), 4, 4);
+    expect(still.map((c) => c.cells)).toEqual([0, 0]);
+    const moved = changedCells(cat(frame(4, 4, 20, [[0, 0]]), frame(4, 4, 20, [[1, 0]])), 4, 4);
+    expect(moved).toEqual([{ t: 0.1, cells: 2 }]); // one cell lit, one cell dark again
+  });
+  it("ignores small noise but not a real change, and uses the sample spacing for time", async () => {
+    const { changedCells } = await checks();
+    const noisy = changedCells(cat(frame(4, 4, 100), frame(4, 4, 104)), 4, 4, { cellDiff: 10 });
+    expect(noisy[0].cells).toBe(0);
+    const real = changedCells(cat(frame(4, 4, 100), frame(4, 4, 140)), 4, 4, {
+      cellDiff: 10,
+      dt: 0.5,
+    });
+    expect(real).toEqual([{ t: 0.5, cells: 16 }]);
+    expect(changedCells(new Uint8Array(10), 4, 4)).toEqual([]); // less than two frames
+  });
+  it("feeds idleStretches through the key option", async () => {
+    const { idleStretches } = await checks();
+    const series = [...Array(15).fill(0), 9, 9, ...Array(5).fill(0)].map((cells, i) => ({
+      t: (i + 1) / 10,
+      cells,
+    }));
+    expect(idleStretches(series, { epsilon: 3, key: "cells", minSeconds: 1.2 })).toEqual([
+      { start: 0, seconds: expect.closeTo(1.5) },
+    ]);
+  });
+});
 
 describe("video-qa motion checks", () => {
   const m = (ys: number[], dt = 0.1) => ys.map((YAVG, i) => ({ t: (i + 1) * dt, YAVG }));
@@ -282,6 +320,26 @@ describe.skipIf(!FF || !x264)("video-qa on fixture videos", () => {
       expect(levels(swap, "joins")).toContain("warn");
       expect(levels(await go(fixture("clean-motion")), "idle")).toEqual(["pass"]);
       expect(levels(await go(fixture("clean-joins")), "joins")).toEqual(["pass"]);
+    },
+  );
+
+  it(
+    "sees a thin moving bar as motion, but not a still picture with compression noise",
+    { timeout: 180_000 },
+    async () => {
+      const bar = await go(
+        fixture("bar", {
+          graph: `color=c=0x0F1115:s=${W}x${H}:r=30:d=6[bg];color=c=white:s=200x8:r=30:d=6[b];[bg][b]overlay=x='-100+90*t':y=260[v]`,
+        }),
+      );
+      expect(levels(bar, "idle")).toEqual(["pass"]);
+      const noisy = await go(
+        fixture("noisy", {
+          graph: `color=c=0x0F1115:s=${W}x${H}:r=30:d=6,drawbox=x=100:y=200:w=60:h=60:color=white:t=fill,noise=alls=5:allf=t[v]`,
+        }),
+      );
+      expect(levels(noisy, "idle")).toEqual(["warn"]);
+      expect(noisy.results.find((x) => x.id === "idle")!.text).toMatch(/scene s0/);
     },
   );
 

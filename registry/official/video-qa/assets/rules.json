@@ -53,11 +53,13 @@
   },
   "inkThreshold": 40,
   "motion": {
-    "note": "TODO(verify): working defaults for how a picture moves. Differences are the average change between frames sampled at 10 per second (0 to 255).",
+    "note": "TODO(verify): working defaults for how a picture moves. Speed and swaps use the average change between frames sampled at 10 per second (0 to 255, on a 64x36 picture); idle counts changed cells on a 96x54 picture (a cell counts when it differs by cellDiff or more).",
     "sampleFps": 10,
     "minSceneSeconds": 2,
     "idle": {
-      "epsilon": 0.3,
+      "cells": 3,
+      "cellDiff": 10,
+      "grid": [96, 54],
       "maxSeconds": 1.2,
       "endHoldSeconds": 2
     },

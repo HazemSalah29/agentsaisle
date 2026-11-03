@@ -109,9 +109,13 @@ const inside = (t, ranges) => ranges.some(([a, b]) => t >= a && t <= b);
 /**
  * Stretches where nothing moves: `motion` is [{ t, YAVG }], the average difference between each frame and the one
  * before it (0 to 255) sampled every `dt` seconds. Returns [{ start, seconds }] for runs of at least `minSeconds`
- * whose difference stays under `epsilon`; samples inside `ignore` ranges ([[from, to]]) end a run.
+ * whose `key` value (default the average difference) stays under `epsilon`; samples inside `ignore` ranges
+ * ([[from, to]]) end a run.
  */
-export function idleStretches(motion, { epsilon, minSeconds, ignore = [], dt = 0.1 }) {
+export function idleStretches(
+  motion,
+  { epsilon, minSeconds, ignore = [], dt = 0.1, key = "YAVG" },
+) {
   const out = [];
   let run = [];
   const close = () => {
@@ -120,10 +124,28 @@ export function idleStretches(motion, { epsilon, minSeconds, ignore = [], dt = 0
     run = [];
   };
   for (const m of motion) {
-    if (m.YAVG < epsilon && !inside(m.t, ignore)) run.push(m);
+    if (m[key] < epsilon && !inside(m.t, ignore)) run.push(m);
     else close();
   }
   close();
+  return out;
+}
+
+/**
+ * How many cells of the picture changed between each frame and the one before. `buf` holds grey frames of w x h
+ * bytes one after another, sampled every `dt` seconds; a cell is a pixel of that small picture and counts when it
+ * differs by at least `cellDiff` (0 to 255). Unlike an average, this sees small localised motion (a thin bar
+ * filling, a dot moving) and is zero for a still picture, compression noise included. Returns [{ t, cells }].
+ */
+export function changedCells(buf, w, h, { cellDiff = 10, dt = 0.1 } = {}) {
+  const n = w * h;
+  const out = [];
+  for (let f = 1; (f + 1) * n <= buf.length; f++) {
+    let cells = 0;
+    for (let i = 0, a = (f - 1) * n, b = f * n; i < n; i++)
+      if (Math.abs(buf[a + i] - buf[b + i]) >= cellDiff) cells++;
+    out.push({ t: Math.round(f * dt * 1000) / 1000, cells });
+  }
   return out;
 }
 
@@ -177,6 +199,7 @@ export const shortScenes = (timing, min) =>
 const LESSON_LIMITS = {
   minSceneSeconds: [0.5, 10],
   maxIdleSeconds: [0.5, 10],
+  idleCells: [1, 200],
   maxFastDiff: [10, 120],
 };
 
@@ -202,6 +225,7 @@ export function applyLessons(rules, lessons) {
     }
     if (key === "minSceneSeconds") motion.minSceneSeconds = value;
     if (key === "maxIdleSeconds") motion.idle.maxSeconds = value;
+    if (key === "idleCells") motion.idle.cells = value;
     if (key === "maxFastDiff") motion.fast.limit = value;
     applied.push(`${key}=${value}`);
   }

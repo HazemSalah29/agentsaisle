@@ -3,11 +3,13 @@
 // changed except those two files. Programs run through run.mjs (ffmpeg and ffprobe only, no shell).
 // Usage: node qa.mjs <project-dir> [--video <file>] [--draft] [--json]
 // Exit: 0 passed (warnings allowed), 1 something failed, 2 the checks could not run.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   applyLessons,
+  changedCells,
   contrast,
   fastRuns,
   flashes,
@@ -237,17 +239,44 @@ export async function qaProject({ dir, file, draft = false }, baseRules = loadRu
   });
   if (motion.length < 3) add("motion", "warn", "could not measure motion (the video is too short)");
   else {
-    const idle = idleStretches(motion, {
-      epsilon: mo.idle.epsilon,
+    // Idle is judged on changed cells of a small grey picture, written to a temp file (the runner reads text only).
+    const [gw, gh] = mo.idle.grid;
+    const tmp = mkdtempSync(path.join(os.tmpdir(), "video-qa-"));
+    let cells = [];
+    try {
+      const raw = path.join(tmp, "frames.gray");
+      ff([
+        "-y",
+        "-i",
+        file,
+        "-an",
+        "-vf",
+        `fps=${mo.sampleFps},scale=${gw}:${gh}:flags=area,format=gray`,
+        "-f",
+        "rawvideo",
+        raw,
+      ]);
+      cells = changedCells(readFileSync(raw), gw, gh, {
+        cellDiff: mo.idle.cellDiff,
+        dt: 1 / mo.sampleFps,
+      });
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+    const idle = idleStretches(cells, {
+      epsilon: mo.idle.cells,
+      key: "cells",
       minSeconds: mo.idle.maxSeconds,
       ignore: [...sceneSpans(["broll"]), [total - mo.idle.endHoldSeconds, total + 1]],
       dt: 1 / mo.sampleFps,
     });
+    const sceneAt = (t) =>
+      (timing?.scenes ?? []).find((c) => t >= c.start && t < c.start + c.seconds)?.id;
     if (idle.length)
       add(
         "idle",
         "warn",
-        `nothing moves for ${r1(idle[0].seconds)} s from ${r1(idle[0].start)} s${idle.length > 1 ? ` (and ${idle.length - 1} more place(s))` : ""}; bring the next item or a highlight in sooner, or split the scene; a slow push is too small to count (limit ${mo.idle.maxSeconds} s)`,
+        `nothing moves for ${r1(idle[0].seconds)} s from ${r1(idle[0].start)} s${sceneAt(idle[0].start) ? ` (scene ${sceneAt(idle[0].start)})` : ""}${idle.length > 1 ? `, and in ${idle.length - 1} more place(s)` : ""}; bring the next item or a highlight in sooner, or split the scene (limit ${mo.idle.maxSeconds} s)`,
       );
     else add("idle", "pass", `something moves at least every ${mo.idle.maxSeconds} s`);
     const fast = fastRuns(motion, {
