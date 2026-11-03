@@ -1,0 +1,9 @@
+{
+  "note": "Words removed as fillers when they stand alone. Matching ignores case, punctuation and Arabic diacritics. Words that can carry meaning (like, you know, the Arabic yaani) are in `optional` and only removed with --fillers-extra.",
+  "en": ["um", "umm", "uh", "uhh", "er", "erm", "ah", "hmm", "mm", "mhm"],
+  "ar": ["امم", "اممم", "اه", "آه", "ااه", "ايوه"],
+  "optional": {
+    "en": ["like", "basically", "actually", "you know", "i mean"],
+    "ar": ["يعني", "كده", "بقى"]
+  }
+}

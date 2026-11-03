@@ -51,6 +51,10 @@ beforeAll(async () => {
       "skills/trusted/SKILL.md": skillMd("trusted"),
       "skills/trusted/scripts/check.mjs": "console.log('checked')\n",
       "skills/shared/SKILL.md": skillMd("shared"),
+      "skills/lib/SKILL.md": skillMd("lib"),
+      "skills/part-a/SKILL.md": skillMd("part-a"),
+      "skills/part-b/SKILL.md": skillMd("part-b"),
+      "skills/badlib/SKILL.md": skillMd("badlib"),
       "skills/shared/scripts/check.mjs": "console.log('checked')\n",
     }),
   );
@@ -75,6 +79,10 @@ beforeAll(async () => {
       skill("trusted", "skills/trusted", true, true, "official"),
       skill("shared", "skills/shared", true, true, "community"),
       skill("mismatch", "skills/mismatch"),
+      { ...skill("lib", "skills/lib"), requires: ["part-a", "part-b"] },
+      { ...skill("part-a", "skills/part-a"), partOf: "lib" },
+      { ...skill("part-b", "skills/part-b"), partOf: "lib" },
+      { ...skill("badlib", "skills/badlib"), requires: ["mismatch"] },
     ],
   };
   const newer: RegistryIndex = {
@@ -451,5 +459,50 @@ describe("aisle CLI (end to end, no network)", () => {
       expect(res.code).toBe(1);
       expect(res.stderr).toContain("--yes");
     });
+  });
+
+  it("installs a library with its parts, lists it as one, updates and removes it together", async () => {
+    const project = await tmpDir();
+    const before = server.hits();
+    const res = await aisle(project, ["add", "lib"]);
+    expect(res.code, res.stderr).toBe(0);
+    expect(server.hits() - before, "one download for the library and both parts").toBe(1);
+    for (const n of ["part-a", "part-b", "lib"])
+      expect(existsSync(path.join(project, ".claude", "skills", n, "SKILL.md")), n).toBe(true);
+    expect(res.stdout).toContain("part of lib: Claude uses it, you do not run it");
+    expect(res.stdout).toContain("try it: /lib and say what you want (2 parts came with it)");
+    expect(Object.keys((await lock(project)).skills).sort()).toEqual(["lib", "part-a", "part-b"]);
+
+    const list = await aisle(project, ["list"]);
+    expect(list.stdout).toMatch(/lib\s+1\.0\.0\s+\(\+2 parts\)/);
+    expect(list.stdout).not.toMatch(/^part-a/m);
+
+    const info = await aisle(project, ["info", "lib"]);
+    expect(info.stdout).toContain("Includes:  2 parts (part-a, part-b)");
+    expect((await aisle(project, ["info", "part-a"])).stdout).toContain("Part of:   lib");
+
+    const dry = await aisle(project, ["remove", "lib", "--dry-run"]);
+    expect(dry.stdout.match(/\[dry-run\]/g)).toHaveLength(3);
+
+    const removed = await aisle(project, ["remove", "lib", "--yes"]);
+    expect(removed.code, removed.stderr).toBe(0);
+    expect(removed.stdout).toContain("Removed lib and 2 parts.");
+    expect((await lock(project)).skills).toEqual({});
+    expect(existsSync(path.join(project, ".claude", "skills", "part-a"))).toBe(false);
+  });
+
+  it("does not install a library when one of its parts fails", async () => {
+    const project = await tmpDir();
+    const res = await aisle(project, ["add", "badlib"]);
+    expect(res.code).toBe(1);
+    expect(res.stderr).toContain("not installed, because a part of it failed");
+    expect(existsSync(path.join(project, ".claude", "skills", "badlib"))).toBe(false);
+  });
+
+  it("installs the same part once when two libraries share it", async () => {
+    const project = await tmpDir();
+    const res = await aisle(project, ["add", "lib", "part-a"]);
+    expect(res.code, res.stderr).toBe(0);
+    expect(res.stdout.match(/Installed part-a@/g)).toHaveLength(1);
   });
 });

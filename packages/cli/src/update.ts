@@ -4,6 +4,7 @@ import type { Context } from "./context.js";
 import { CliError } from "./errors.js";
 import { installMany } from "./install.js";
 import { readLockfile } from "./lockfile.js";
+import { partsOf } from "./library.js";
 import { loadRegistry } from "./registry.js";
 
 export interface UpdatePlan {
@@ -53,7 +54,13 @@ export async function updateSkills(name: string | undefined, ctx: Context): Prom
     return;
   }
 
-  const plan = planUpdates(lock, await loadRegistry(), name ? [name] : installed);
+  const index = await loadRegistry();
+  // `aisle update video` brings its parts along.
+  const plan = planUpdates(
+    lock,
+    index,
+    name ? [name, ...partsOf(index, name).filter((p) => p in lock.skills)] : installed,
+  );
   for (const s of plan.skipped) ctx.warn(`Skipped ${s.name}: ${s.reason}.`);
 
   if (plan.updates.length === 0) {

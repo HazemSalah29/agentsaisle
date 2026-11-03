@@ -1,0 +1,54 @@
+{
+  "karaoke": {
+    "description": "The word being spoken is highlighted; the line stays on screen.",
+    "weight": 800,
+    "size": 0.05,
+    "highlight": "word",
+    "wordIn": "none",
+    "lineIn": "fade",
+    "background": "none",
+    "stroke": 0.07,
+    "uppercase": false
+  },
+  "pop": {
+    "description": "Each word pops in as it is spoken; words stay once shown.",
+    "weight": 800,
+    "size": 0.056,
+    "highlight": "none",
+    "wordIn": "pop",
+    "lineIn": "none",
+    "background": "none",
+    "stroke": 0.08,
+    "uppercase": false
+  },
+  "clean": {
+    "description": "The whole line fades in on a soft dark panel; no word effects.",
+    "weight": 700,
+    "size": 0.045,
+    "highlight": "none",
+    "wordIn": "none",
+    "lineIn": "fade",
+    "background": "panel",
+    "stroke": 0,
+    "uppercase": false
+  },
+  "safeZones": {
+    "reel": {
+      "bottom": 0.22,
+      "side": 0.08
+    },
+    "short": {
+      "bottom": 0.22,
+      "side": 0.08
+    },
+    "youtube": {
+      "bottom": 0.08,
+      "side": 0.06
+    },
+    "none": {
+      "bottom": 0.05,
+      "side": 0.04
+    }
+  },
+  "minSizeVertical": 0.045
+}

@@ -29,7 +29,11 @@ aisles:
     name: Architecture
     description: Map how a system fits together from its code, with animated request flows and possible risks.
     niches: [arch]
+  - id: video
+    name: Video
+    description: Write, voice, animate, edit and publish videos from one editable project file.
+    niches: [video]
   - id: media
     name: Media
-    description: Images and video. Coming later.
-    niches: [image, video]
+    description: Images. Coming later.
+    niches: [image]

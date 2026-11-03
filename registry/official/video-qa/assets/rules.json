@@ -1,0 +1,75 @@
+{
+  "note": "TODO(verify): every number here is a working default, not a confirmed platform rule. Check each against the platform's current help pages before relying on it.",
+  "loudness": {
+    "targetLufs": -14,
+    "warnWithin": 2,
+    "failBeyond": 4,
+    "maxTruePeakDb": -1
+  },
+  "flash": {
+    "changeFraction": 0.1,
+    "maxPerSecond": 3
+  },
+  "black": {
+    "minSeconds": 0.4
+  },
+  "freeze": {
+    "warnSeconds": 3
+  },
+  "captionMinSize": 0.045,
+  "contrastMin": 4.5,
+  "durationTolerance": 0.35,
+  "platforms": {
+    "reel-9x16": {
+      "maxSeconds": 180,
+      "zone": "vertical"
+    },
+    "short-9x16": {
+      "maxSeconds": 180,
+      "zone": "vertical"
+    },
+    "youtube-16x9": {
+      "maxSeconds": 43200,
+      "zone": "wide"
+    },
+    "square-1x1": {
+      "maxSeconds": 180,
+      "zone": "wide"
+    }
+  },
+  "zones": {
+    "vertical": {
+      "top": 0.04,
+      "bottom": 0.08,
+      "left": 0.04,
+      "right": 0.04
+    },
+    "wide": {
+      "top": 0.04,
+      "bottom": 0.04,
+      "left": 0.04,
+      "right": 0.04
+    }
+  },
+  "inkThreshold": 40,
+  "motion": {
+    "note": "TODO(verify): working defaults for how a picture moves. Speed and swaps use the average change between frames sampled at 10 per second (0 to 255, on a 64x36 picture); idle counts changed cells on a 96x54 picture (a cell counts when it differs by cellDiff or more).",
+    "sampleFps": 10,
+    "minSceneSeconds": 2,
+    "idle": {
+      "cells": 3,
+      "cellDiff": 10,
+      "grid": [96, 54],
+      "maxSeconds": 1.2,
+      "endHoldSeconds": 2
+    },
+    "fast": {
+      "limit": 30,
+      "minSamples": 3
+    },
+    "swap": {
+      "floor": 20,
+      "ratio": 4
+    }
+  }
+}

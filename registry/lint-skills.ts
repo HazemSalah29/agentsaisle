@@ -131,7 +131,13 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
     );
 
   // name format. The core kit (niche "core") keeps short names like "plan" and "verify".
-  if (meta?.niche && meta.niche !== CORE_NICHE && !skill.startsWith(`${meta.niche}-`)) {
+  // A skill named exactly like its niche (the "video" orchestrator) is the niche's entry point.
+  if (
+    meta?.niche &&
+    meta.niche !== CORE_NICHE &&
+    skill !== meta.niche &&
+    !skill.startsWith(`${meta.niche}-`)
+  ) {
     add("SKILL.md", "name", `name must start with the niche: "${meta.niche}-<task>".`);
   }
 
@@ -189,11 +195,32 @@ export async function lintSkill(skillDir: string, opts: LintOptions): Promise<Li
   }
 
   // invocation
-  if (/^(design|image|video)-/.test(skill) && frontmatter["disable-model-invocation"] !== true) {
+  if (/^video-/.test(skill)) {
+    // The video library is one command, `/video`, that Claude directs: its parts are Claude-only.
+    if (frontmatter["user-invocable"] !== false)
+      add(
+        "SKILL.md",
+        "invocation",
+        "video library parts must set user-invocable: false (users run /video; Claude picks the parts).",
+      );
+    if (frontmatter["disable-model-invocation"] === true)
+      add(
+        "SKILL.md",
+        "invocation",
+        "video library parts must stay invocable by Claude: remove disable-model-invocation.",
+      );
+  } else if (skill === "video") {
+    if (frontmatter["user-invocable"] === false || frontmatter["disable-model-invocation"] === true)
+      add(
+        "SKILL.md",
+        "invocation",
+        "the video skill is the one visible command and must stay invocable.",
+      );
+  } else if (/^(design|image)-/.test(skill) && frontmatter["disable-model-invocation"] !== true) {
     add(
       "SKILL.md",
       "invocation",
-      "style and media skills must set disable-model-invocation: true.",
+      "style and image skills must set disable-model-invocation: true.",
     );
   }
 

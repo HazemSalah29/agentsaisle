@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "How a rate limit really works",
+    "type": "explainer",
+    "format": "short-9x16",
+    "fps": 30,
+    "lang": "en",
+    "audience": "developers who have used an API but never built a limiter"
+  },
+  "script": "script.md",
+  "scenes": [
+    {
+      "id": "s1",
+      "kind": "title",
+      "props": {
+        "text": "10 through a limit of 5",
+        "subtitle": "how a rate limit really works"
+      },
+      "narration": [
+        "l1"
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "list",
+      "props": {
+        "heading": "Not a counter per minute",
+        "items": [
+          "A bucket of tokens",
+          "Each request takes one",
+          "Tokens drip back steadily"
+        ]
+      },
+      "narration": [
+        "l2",
+        "l3"
+      ],
+      "transitionIn": "fade"
+    },
+    {
+      "id": "s3",
+      "kind": "rate-limit",
+      "props": {
+        "seed": 42,
+        "count": 60,
+        "pattern": {
+          "type": "poisson",
+          "ratePerSec": 6
+        },
+        "algos": [
+          {
+            "algo": "token-bucket",
+            "capacity": 5,
+            "refillPerSec": 3
+          }
+        ],
+        "title": "A token bucket, simulated"
+      },
+      "narration": [
+        "l4",
+        "l5",
+        "l6",
+        "l7"
+      ],
+      "transitionIn": "fade"
+    },
+    {
+      "id": "s4",
+      "kind": "code",
+      "props": {
+        "language": "js",
+        "file": "token bucket, simplified from the simulator",
+        "title": "The bucket in code",
+        "code": "const allow = (b, now) => {\n  const dt = (now - b.last) / 1000;\n  b.tokens = Math.min(b.capacity, b.tokens + dt * b.refill);\n  b.last = now;\n  if (b.tokens < 1) return false; // 429\n  b.tokens -= 1;\n  return true;\n};"
+      },
+      "narration": [
+        "l8"
+      ],
+      "transitionIn": "fade"
+    },
+    {
+      "id": "s5",
+      "kind": "rate-limit",
+      "props": {
+        "seed": 1,
+        "count": 15,
+        "pattern": {
+          "type": "burst",
+          "ratePerSec": 1,
+          "burstSize": 5,
+          "burstEverySec": 0.2,
+          "burstOffsetSec": 0.9
+        },
+        "algos": [
+          {
+            "algo": "fixed-window",
+            "limit": 5,
+            "windowSec": 1
+          },
+          {
+            "algo": "sliding-window",
+            "limit": 5,
+            "windowSec": 1
+          }
+        ],
+        "title": "Same traffic, two windows"
+      },
+      "narration": [
+        "l9",
+        "l10",
+        "l11",
+        "l12",
+        "l13"
+      ],
+      "transitionIn": "fade"
+    },
+    {
+      "id": "s6",
+      "kind": "title",
+      "props": {
+        "text": "Test it, do not guess",
+        "subtitle": "run the simulation before you pick"
+      },
+      "narration": [
+        "l14"
+      ],
+      "transitionIn": "fade"
+    }
+  ],
+  "voice": {
+    "provider": "kokoro",
+    "voiceId": "af_heart",
+    "speed": 1
+  },
+  "captions": {
+    "style": "karaoke",
+    "maxWordsPerLine": 4,
+    "safeZone": "reel",
+    "burn": true
+  }
+}

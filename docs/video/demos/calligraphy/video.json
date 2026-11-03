@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Calligraphy",
+    "type": "custom",
+    "format": "reel-9x16",
+    "fps": 30,
+    "lang": "ar",
+    "dir": "rtl",
+    "audience": "Arabic readers"
+  },
+  "voice": {
+    "provider": "none"
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "kind": "calligraphy",
+      "durationFrom": "fixed",
+      "seconds": 4.8,
+      "props": {
+        "text": "العلم نور والجهل ظلام",
+        "translation": "Knowledge is light, ignorance is darkness",
+        "by": "مثل عربي",
+        "reveal": "wipe"
+      },
+      "transitionIn": "cut"
+    },
+    {
+      "id": "s2",
+      "kind": "calligraphy",
+      "durationFrom": "fixed",
+      "seconds": 4,
+      "props": {
+        "text": "الصبر مفتاح الفرج",
+        "translation": "Patience is the key to relief",
+        "by": "مثل عربي",
+        "reveal": "wipe"
+      },
+      "transitionIn": "fade"
+    },
+    {
+      "id": "s3",
+      "kind": "calligraphy",
+      "durationFrom": "fixed",
+      "seconds": 4,
+      "props": {
+        "text": "من جد وجد",
+        "translation": "Whoever strives, finds",
+        "by": "مثل عربي",
+        "reveal": "wipe"
+      },
+      "transitionIn": "fade"
+    }
+  ]
+}

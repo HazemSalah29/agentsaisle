@@ -243,6 +243,9 @@ async function readProfiles(rootDir: string, names: Set<string>): Promise<Partia
 export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySkill> {
   return {
     ...(meta.niche ? { niche: meta.niche } : {}),
+    ...(meta.part_of ? { partOf: meta.part_of } : {}),
+    ...(meta.requires?.length ? { requires: meta.requires } : {}),
+    ...(meta.can_do?.length ? { canDo: meta.can_do } : {}),
     ...(meta.kind ? { kind: meta.kind } : {}),
     ...(meta.tier ? { tier: meta.tier } : {}),
     ...(meta.tested
@@ -281,6 +284,44 @@ export function houseStandardFields(meta: OfficialMetaType): Partial<RegistrySki
         }
       : {}),
   };
+}
+
+/**
+ * A library skill (for example `video`) lists its parts in `requires`; each part names it in `part_of`. The two must
+ * agree, every name must be an official skill, and a library cannot itself be a part. Pure.
+ */
+export function libraryProblems(
+  skills: Array<{ name: string; source: string; partOf?: string; requires?: string[] }>,
+): string[] {
+  const out: string[] = [];
+  const official = new Map(skills.filter((s) => s.source === "official").map((s) => [s.name, s]));
+  for (const s of official.values()) {
+    if (s.partOf) {
+      const lib = official.get(s.partOf);
+      if (!lib)
+        out.push(`registry/official/${s.name}: part_of "${s.partOf}" is not an official skill`);
+      else if (lib.partOf)
+        out.push(
+          `registry/official/${s.name}: "${s.partOf}" is itself a part, so libraries cannot nest`,
+        );
+      else if (!(lib.requires ?? []).includes(s.name))
+        out.push(
+          `registry/official/${lib.name}: requires must list "${s.name}" (it names ${lib.name} in part_of)`,
+        );
+    }
+    for (const r of s.requires ?? []) {
+      const part = official.get(r);
+      if (!part)
+        out.push(`registry/official/${s.name}: requires "${r}", which is not an official skill`);
+      else if (part.partOf !== s.name)
+        out.push(
+          `registry/official/${r}: ${s.name} requires it, so it must set part_of: ${s.name}`,
+        );
+    }
+    if (s.partOf && s.requires?.length)
+      out.push(`registry/official/${s.name}: a part cannot also require parts`);
+  }
+  return out;
 }
 
 /** aisles.yaml is optional. When present, ids are unique and each official niche sits in exactly one aisle. */
@@ -471,6 +512,8 @@ export async function buildRegistry(opts: BuildOptions): Promise<RegistryIndex> 
   if (errors.length) throw new Error(`Registry validation failed:\n- ${errors.join("\n- ")}`);
 
   skills.sort((a, b) => a.name.localeCompare(b.name));
+  errors.push(...libraryProblems(skills));
+  if (errors.length) throw new Error(`Registry validation failed:\n- ${errors.join("\n- ")}`);
 
   const profiles = await readProfiles(rootDir, new Set(skills.map((s) => s.name)));
   const aisles = await readAisles(

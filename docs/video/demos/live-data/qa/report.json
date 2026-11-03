@@ -1,0 +1,119 @@
+{
+  "ok": true,
+  "file": "out/live2.mp4",
+  "facts": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "codec": "h264",
+    "pixFmt": "yuv420p",
+    "audio": true,
+    "seconds": 41,
+    "sheet": {
+      "file": "qa/contact-sheet.png",
+      "times": [
+        1,
+        3,
+        5,
+        5.88,
+        7,
+        9,
+        11,
+        13,
+        13.18,
+        15,
+        17,
+        19,
+        21,
+        23,
+        25,
+        27,
+        29,
+        29.05,
+        31,
+        33,
+        35,
+        37,
+        39,
+        39.17
+      ]
+    }
+  },
+  "results": [
+    {
+      "id": "resolution",
+      "level": "pass",
+      "text": "1080x1920"
+    },
+    {
+      "id": "fps",
+      "level": "pass",
+      "text": "30 fps (project says 30)"
+    },
+    {
+      "id": "codec",
+      "level": "pass",
+      "text": "h264, yuv420p"
+    },
+    {
+      "id": "duration",
+      "level": "pass",
+      "text": "41 s"
+    },
+    {
+      "id": "loudness",
+      "level": "pass",
+      "text": "-15.1 LUFS (target -14, working default)"
+    },
+    {
+      "id": "clipping",
+      "level": "pass",
+      "text": "true peak -1.5 dBTP (limit -1)"
+    },
+    {
+      "id": "black",
+      "level": "pass",
+      "text": "no black stretch"
+    },
+    {
+      "id": "freeze",
+      "level": "warn",
+      "text": "nothing changes for 3 s from 5.3 s (pace: a change at least every 3 s)"
+    },
+    {
+      "id": "flashing",
+      "level": "pass",
+      "text": "no fast flashing"
+    },
+    {
+      "id": "safe-zone",
+      "level": "pass",
+      "text": "margins are clear"
+    },
+    {
+      "id": "caption-size",
+      "level": "pass",
+      "text": "captions are 4.5% of the height (at least 4.5% on vertical video)"
+    },
+    {
+      "id": "project",
+      "level": "pass",
+      "text": "video.json passes check.mjs (props, assets, licences)"
+    },
+    {
+      "id": "disclosure",
+      "level": "pass",
+      "text": "disclosure flags match the assets"
+    },
+    {
+      "id": "voiced",
+      "level": "pass",
+      "text": "every narration line is voiced"
+    },
+    {
+      "id": "text",
+      "level": "pass",
+      "text": "no placeholders or doubled words"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "title": "Agent Aisle: aisle add tour",
+  "voice": "kokoro",
+  "voiceDetails": {
+    "provider": "kokoro",
+    "voice": "af_heart",
+    "model": "hexgrad/Kokoro-82M",
+    "license": "Apache-2.0 (Kokoro-82M)"
+  },
+  "assets": [],
+  "disclosure": {
+    "realisticSynthetic": false,
+    "aiMusic": false,
+    "voiceClone": "none"
+  },
+  "guidance": [
+    "No synthetic-content label needed: no AI-generated assets are used.",
+    "The narration is a computer-generated voice (kokoro, model hexgrad/Kokoro-82M). Some platforms ask you to say so; check each platform's current rule (TODO(verify))."
+  ]
+}

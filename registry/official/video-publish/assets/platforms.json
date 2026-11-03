@@ -1,0 +1,93 @@
+{
+  "verified": false,
+  "checked": "2026-11-02",
+  "note": "TODO(verify): none of these numbers comes from the platform's own help pages. A web search on 2026-11-02 found only third-party pages, and they disagree on several (Reels 90 s, 3 min or 20 min; TikTok 3, 10 or 60 min). Where sources disagree the limit used here is the smaller one, so a video that passes is accepted on every account. Check each page before relying on a number.",
+  "platforms": {
+    "youtube": {
+      "name": "YouTube (landscape video)",
+      "aspects": ["16:9"],
+      "maxSeconds": 900,
+      "size": [1920, 1080],
+      "titleMax": 100,
+      "descriptionMax": 5000,
+      "descriptionUnit": "bytes",
+      "hashtagsMax": 15,
+      "noAngleBrackets": true,
+      "chapters": true,
+      "madeForKids": true,
+      "disclosure": "YouTube asks, when you upload, whether the video contains altered or synthetic content that looks real, and whether it is made for kids. Answer from disclosure.md.",
+      "unverified": [
+        "maxSeconds (15 minutes is the usual limit for accounts that are not verified)",
+        "descriptionMax",
+        "hashtagsMax"
+      ]
+    },
+    "shorts": {
+      "name": "YouTube Shorts",
+      "aspects": ["9:16", "1:1"],
+      "maxSeconds": 180,
+      "size": [1080, 1920],
+      "titleMax": 100,
+      "descriptionMax": 5000,
+      "descriptionUnit": "bytes",
+      "hashtagsMax": 15,
+      "noAngleBrackets": true,
+      "chapters": false,
+      "madeForKids": true,
+      "disclosure": "Same questions as YouTube when you upload: altered or synthetic content, and made for kids.",
+      "unverified": [
+        "maxSeconds (several third-party pages agree on 3 minutes since October 2024; no official page found)"
+      ]
+    },
+    "reels": {
+      "name": "Instagram Reels",
+      "aspects": ["9:16"],
+      "maxSeconds": 90,
+      "size": [1080, 1920],
+      "titleMax": 0,
+      "descriptionMax": 2200,
+      "descriptionUnit": "characters",
+      "hashtagsMax": 30,
+      "chapters": false,
+      "madeForKids": false,
+      "disclosure": "Instagram asks you to label AI-made content that looks real; check the label option when you post (TODO(verify) wording).",
+      "unverified": [
+        "maxSeconds (third-party pages say 90 s, 3 min or 20 min; the smallest is used)",
+        "descriptionMax",
+        "hashtagsMax"
+      ]
+    },
+    "tiktok": {
+      "name": "TikTok",
+      "aspects": ["9:16"],
+      "maxSeconds": 180,
+      "size": [1080, 1920],
+      "titleMax": 0,
+      "descriptionMax": 2200,
+      "descriptionUnit": "characters",
+      "hashtagsMax": 30,
+      "chapters": false,
+      "madeForKids": false,
+      "disclosure": "TikTok has an AI-generated content label in the post settings; turn it on if the video shows realistic AI-made scenes or voices (TODO(verify) wording).",
+      "unverified": [
+        "maxSeconds (third-party pages say 3, 10 or 60 minutes; the smallest is used)",
+        "descriptionMax",
+        "hashtagsMax"
+      ]
+    },
+    "linkedin": {
+      "name": "LinkedIn",
+      "aspects": ["16:9", "1:1", "9:16"],
+      "maxSeconds": 600,
+      "size": [1920, 1080],
+      "titleMax": 0,
+      "descriptionMax": 3000,
+      "descriptionUnit": "characters",
+      "hashtagsMax": 5,
+      "chapters": false,
+      "madeForKids": false,
+      "disclosure": "LinkedIn has no label option for this that this library knows of (TODO(verify)); say in the post text that the voice is computer-generated if it is.",
+      "unverified": ["maxSeconds", "descriptionMax", "hashtagsMax"]
+    }
+  }
+}

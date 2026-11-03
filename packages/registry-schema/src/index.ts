@@ -116,6 +116,12 @@ export const OfficialMeta = z
     tested: MetaTested.optional(),
     permissions: MetaPermissions.optional(),
     demo: SkillDemo.optional(),
+    /** This skill is a part of a library skill (for example the video parts of `video`): Claude uses it, users do not run it. */
+    part_of: SkillName.optional(),
+    /** A library skill lists the parts it installs with. Must equal the set of skills whose part_of names it. */
+    requires: z.array(SkillName).max(60).optional(),
+    /** What the skill can do, in plain words, for its page (at most 10 short lines). */
+    can_do: z.array(z.string().min(1).max(110)).max(10).optional(),
   })
   .strict();
 export type OfficialMeta = z.infer<typeof OfficialMeta>;
@@ -239,6 +245,11 @@ export const RegistrySkill = z.object({
     .optional(),
   /** Grade and counts from the stored audit (A3). Absent when the skill has not been audited. */
   audit: AuditSummary.optional(),
+  /** The library this skill is a part of; the catalog shows the library, not its parts. */
+  partOf: SkillName.optional(),
+  /** For a library: the parts installed with it. */
+  requires: z.array(SkillName).optional(),
+  canDo: z.array(z.string()).optional(),
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 

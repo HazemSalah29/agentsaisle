@@ -9,6 +9,7 @@ import { PreviewPairs } from "../../../components/PreviewPairs";
 import { InstallCommand } from "../../../components/InstallCommand";
 import { SkillMarkdown } from "../../../components/SkillMarkdown";
 import { getRepoMeta, getSkillMarkdown, githubTreeUrl } from "../../../lib/github";
+import { libraryOfPart, partsOfLibrary } from "../../../lib/library";
 import { getRegistry, getSkill } from "../../../lib/registry";
 import { pairPreviews, previewCaption, previewSrc } from "../../../lib/links";
 import { REPO_URL, reportUrl } from "../../../lib/site";
@@ -69,6 +70,9 @@ export default async function SkillPage({ params }: Props) {
     ...(meta ? ([["Stars", meta.stars.toLocaleString("en-US")]] as Array<[string, string]>) : []),
   ];
 
+  const registry = getRegistry();
+  const parts = partsOfLibrary(registry, skill);
+  const library = libraryOfPart(registry, skill);
   const shots = skill.demo?.screenshots ?? [];
   const phoneShots = shots.filter((f) => /phone/i.test(f));
   const desktopShots = shots.filter((f) => !/phone/i.test(f));
@@ -123,12 +127,66 @@ export default async function SkillPage({ params }: Props) {
           <h2 id="install" className="text-xl">
             Install
           </h2>
-          <InstallCommand name={skill.name} versions={versions.map((v) => v.version)} />
-          <p className="text-sm text-muted">
-            Installs into your project&apos;s skills folder. Add{" "}
-            <code className="font-mono">--global</code> to install it for every project.
-          </p>
+          {library ? (
+            <>
+              <p className="max-w-prose text-sm text-muted">
+                <b className="text-ink">{skill.name}</b> is a part of the{" "}
+                <a href={`/skills/${library.name}`} className="underline underline-offset-4">
+                  {library.name}
+                </a>{" "}
+                library. You do not run it yourself: you type{" "}
+                <code className="font-mono">/{library.name}</code> and describe what you want, and
+                Claude uses this part when it is needed. Installing the library installs this part
+                too.
+              </p>
+              <InstallCommand name={library.name} versions={[library.latest]} />
+            </>
+          ) : (
+            <>
+              <InstallCommand name={skill.name} versions={versions.map((v) => v.version)} />
+              <p className="text-sm text-muted">
+                Installs into your project&apos;s skills folder. Add{" "}
+                <code className="font-mono">--global</code> to install it for every project.
+              </p>
+            </>
+          )}
         </section>
+
+        {(skill.canDo?.length ?? 0) > 0 && (
+          <section aria-labelledby="can-do" className="space-y-4">
+            <h2 id="can-do" className="text-xl">
+              What it can do
+            </h2>
+            {parts.length > 0 && (
+              <p className="max-w-prose text-sm text-muted">
+                Type <code className="font-mono">/{skill.name}</code> and say what you want. Claude
+                picks the tools your request needs.
+              </p>
+            )}
+            <ul className="list-[square] space-y-2 pl-5 text-sm">
+              {skill.canDo!.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            {parts.length > 0 && (
+              <details className="text-sm text-muted">
+                <summary className="cursor-pointer hover:text-ink">
+                  Built from {parts.length} parts, each audited on its own
+                </summary>
+                <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono">
+                  {parts.map((p) => (
+                    <li key={p.name}>
+                      <a href={`/skills/${p.name}`} className="underline underline-offset-4">
+                        {p.name}
+                      </a>
+                      {p.audit ? ` ${p.audit.grade}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </section>
+        )}
 
         {skill.demo?.embed && skill.demo.url && (
           <DemoEmbed

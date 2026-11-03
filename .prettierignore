@@ -16,3 +16,13 @@ packages/audit/test/schemas
 registry/official/arch-visualize/evals/fixture-app
 registry/official/arch-visualize/evals/expected.json
 registry/official/arch-visualize/evals/hostile-model.json
+registry/official/video-core/assets/vendor
+docs/video/demos/rate-limit
+docs/video/demos/request-flow
+docs/video/demos/kids
+docs/video/demos/kids-3d
+docs/video/demos/live-data
+docs/video/demos/*/script.md
+docs/video/demos/**/*.json
+ARCH_VISUALIZE_V2_BRIEF.md
+VIDEO_SKILLS_LIBRARY_BRIEF.md

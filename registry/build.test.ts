@@ -6,6 +6,7 @@ import {
   buildRegistry,
   createShaResolver,
   fetchTagIndex,
+  libraryProblems,
   remoteTagSha,
   type SkillFetcher,
 } from "./build";
@@ -458,5 +459,38 @@ describe("aisles.yaml and elsewhere.yaml", () => {
       await writeFile(path.join(root, "profiles.yaml"), profileYaml("ghost"));
       await expect(build()).rejects.toThrow(/profile "kit" uses unknown aisle "ghost"/);
     });
+  });
+
+  it("checks that a library and its parts agree", () => {
+    const sk = (name: string, o: Record<string, unknown> = {}) => ({
+      name,
+      source: "official",
+      ...o,
+    });
+    const ok = [
+      sk("video", { requires: ["video-a", "video-b"] }),
+      sk("video-a", { partOf: "video" }),
+      sk("video-b", { partOf: "video" }),
+    ];
+    expect(libraryProblems(ok)).toEqual([]);
+    expect(libraryProblems([...ok, sk("video-c", { partOf: "video" })])[0]).toContain(
+      'requires must list "video-c"',
+    );
+    expect(libraryProblems([sk("video", { requires: ["video-a"] }), sk("video-a")])[0]).toContain(
+      "must set part_of: video",
+    );
+    expect(libraryProblems([sk("video-a", { partOf: "ghost" })])[0]).toContain(
+      "not an official skill",
+    );
+    expect(libraryProblems([sk("video", { requires: ["nope"] })])[0]).toContain(
+      "not an official skill",
+    );
+    expect(
+      libraryProblems([
+        sk("top", { requires: ["mid"] }),
+        sk("mid", { partOf: "top", requires: ["leaf"] }),
+        sk("leaf", { partOf: "mid" }),
+      ]).join("\n"),
+    ).toMatch(/cannot nest|cannot also require/);
   });
 });

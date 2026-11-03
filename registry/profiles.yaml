@@ -9,6 +9,10 @@ profiles:
     name: Writing
     description: Edit prose and keep documents on-brand.
     skills: [edit, brand-guidelines]
+  - id: video
+    name: Video
+    description: Make any video by describing it. Type /video and say what you want; Claude picks the tools.
+    skills: [video]
   - id: media
     name: Media
     description: Design and brand work. This bundle grows as video and image skills are added.

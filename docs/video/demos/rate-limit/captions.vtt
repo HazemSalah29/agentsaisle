@@ -1,0 +1,157 @@
+WEBVTT
+
+c1
+00:00:00.300 --> 00:00:01.420
+Ten requests got through
+
+c2
+00:00:01.420 --> 00:00:02.180
+a limit of five.
+
+c3
+00:00:03.400 --> 00:00:04.340
+Most people think a
+
+c4
+00:00:04.340 --> 00:00:05.700
+limit just counts
+
+c5
+00:00:05.700 --> 00:00:06.780
+requests per minute.
+
+c6
+00:00:07.150 --> 00:00:07.830
+Picture a bucket
+
+c7
+00:00:07.830 --> 00:00:08.890
+of tokens.
+
+c8
+00:00:08.890 --> 00:00:10.370
+Each request takes one.
+
+c9
+00:00:10.370 --> 00:00:12.150
+Tokens drip back steadily.
+
+c10
+00:00:12.977 --> 00:00:13.467
+Here is that
+
+c11
+00:00:13.467 --> 00:00:14.847
+bucket, simulated.
+
+c12
+00:00:15.442 --> 00:00:16.062
+It holds five
+
+c13
+00:00:16.062 --> 00:00:17.442
+tokens and refills
+
+c14
+00:00:17.442 --> 00:00:18.522
+three a second.
+
+c15
+00:00:18.967 --> 00:00:20.867
+Sixty random requests arrive,
+
+c16
+00:00:20.867 --> 00:00:22.507
+about six a second.
+
+c17
+00:00:22.652 --> 00:00:24.482
+Twenty-nine get through.
+
+c18
+00:00:24.482 --> 00:00:25.942
+Thirty-one are turned away.
+
+c19
+00:00:26.367 --> 00:00:27.467
+The bucket itself is
+
+c20
+00:00:27.467 --> 00:00:28.707
+only a few lines.
+
+c21
+00:00:29.577 --> 00:00:30.307
+But how you count
+
+c22
+00:00:30.307 --> 00:00:31.447
+the window matters.
+
+c23
+00:00:31.942 --> 00:00:33.202
+A fixed window resets
+
+c24
+00:00:33.202 --> 00:00:34.442
+on the clock.
+
+c25
+00:00:34.597 --> 00:00:35.467
+Five requests just
+
+c26
+00:00:35.467 --> 00:00:36.727
+before the reset,
+
+c27
+00:00:36.727 --> 00:00:37.947
+five just after.
+
+c28
+00:00:38.392 --> 00:00:38.992
+Two tenths of
+
+c29
+00:00:38.992 --> 00:00:39.712
+a second apart,
+
+c30
+00:00:39.712 --> 00:00:41.052
+and ten get through.
+
+c31
+00:00:41.052 --> 00:00:42.492
+Double the limit.
+
+c32
+00:00:42.627 --> 00:00:43.957
+A sliding window remembers
+
+c33
+00:00:43.957 --> 00:00:44.957
+the last second,
+
+c34
+00:00:44.957 --> 00:00:45.877
+so only five
+
+c35
+00:00:45.877 --> 00:00:46.797
+get through.
+
+c36
+00:00:47.587 --> 00:00:48.687
+Choose the algorithm for
+
+c37
+00:00:48.687 --> 00:00:49.927
+the traffic you expect,
+
+c38
+00:00:49.927 --> 00:00:50.867
+and test it
+
+c39
+00:00:50.867 --> 00:00:52.027
+in a simulation.

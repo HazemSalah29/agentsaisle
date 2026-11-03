@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "brief.json",
+  "type": "object",
+  "required": [
+    "title",
+    "mode",
+    "lang",
+    "format",
+    "audience",
+    "goal",
+    "promise",
+    "lengthSeconds",
+    "tone"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "mode": {
+      "enum": ["explain", "story"]
+    },
+    "lang": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Za-z]{2,4})?$"
+    },
+    "format": {
+      "enum": ["reel-9x16", "short-9x16", "youtube-16x9", "square-1x1"]
+    },
+    "audience": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "promise": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "lengthSeconds": {
+      "type": "number",
+      "minimum": 10
+    },
+    "tone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "cta": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "dialect": {
+      "enum": ["msa", "egyptian"]
+    }
+  }
+}
