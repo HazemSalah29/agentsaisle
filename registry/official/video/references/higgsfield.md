@@ -1,10 +1,10 @@
 # Clips from the Higgsfield connector
 
-For "make it Higgsfield style" or "use Higgsfield": the clips are made by the user's own Higgsfield connector (an MCP server at `https://mcp.higgsfield.ai/mcp`), and this library assembles, voices, captions, renders and checks them. The connector is a paid service that draws credits from the user's Higgsfield balance. Its help centre says generations through the connector always use credits, and the free or unlimited perks of the website do not apply there. So: never promise it is free, and never start a generation without a yes.
+For "make it Higgsfield style" or "use Higgsfield": the clips are made by the user's own Higgsfield connector (an MCP server at `https://mcp.higgsfield.ai/mcp`), and this library assembles, voices, captions, renders and checks them. The connector is a paid service that draws credits from the user's Higgsfield balance (new accounts get only a small free allowance, about 10 credits at the time of writing, which a single clip can use up). Its help centre says generations through the connector always use credits, and the free or unlimited perks of the website do not apply there. So: never promise it is free, and never start a generation without a yes.
 
-## Default use
+## When to use it
 
-When the connector's tools are present, use them for the visuals of any video where generated pictures help, even if the user never named Higgsfield: add the shot list to the plan you tell them in step 1, with the credit total (or "unknown, from your balance"), and ask one yes or no for the whole list. This is the only place the connector is used without being asked for, and it is never silent: credits are the user's money. A no (or "no clips") means the normal `$0` route for that video; do not ask again in the same project. If no connector is present, say nothing and do not nag.
+Only when the user asks for Higgsfield (or its look, or its clips) in their request. Never offer it, add it to a plan or mention it when they did not ask, even if the connector is connected. If they ask and it is not connected, follow "Before anything" below. It is a paid service with a small free allowance; do not describe it as free.
 
 ## Before anything
 
