@@ -112,7 +112,7 @@ test.describe("skill page", () => {
 
   test("shows trust labels, rendered SKILL.md, version history and links", async ({ page }) => {
     await page.goto("/skills/brand-guidelines");
-    await expect(page.getByText("Not reviewed by Agent Aisle")).toBeVisible();
+    await expect(page.getByText("Not reviewed by Agents Aisle")).toBeVisible();
     await openDetails(page);
     await expect(page.getByRole("link", { name: "Report this skill" })).toHaveAttribute(
       "href",
@@ -132,7 +132,7 @@ test.describe("skill page", () => {
   test("an official skill has no unverified notice, and unknown skills 404", async ({ page }) => {
     await page.goto("/skills/explore");
     await expect(page.getByRole("heading", { name: "explore", level: 1 })).toBeVisible();
-    await expect(page.getByText("Not reviewed by Agent Aisle")).toHaveCount(0);
+    await expect(page.getByText("Not reviewed by Agents Aisle")).toHaveCount(0);
     const res = await page.goto("/skills/does-not-exist");
     expect(res?.status()).toBe(404);
     await expect(page.getByText("This shelf is empty")).toBeVisible();

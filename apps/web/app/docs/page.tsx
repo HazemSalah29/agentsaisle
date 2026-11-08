@@ -9,7 +9,7 @@ import { REPO_URL } from "../../lib/site";
 
 export const metadata: Metadata = {
   title: "Docs",
-  description: "Install the Agent Aisle CLI, learn every command, and write a good skill.",
+  description: "Install the Agents Aisle CLI, learn every command, and write a good skill.",
 };
 
 const commands: Array<[string, string, boolean]> = [
@@ -47,7 +47,7 @@ const commands: Array<[string, string, boolean]> = [
   ],
   [
     "aisle init [--profile <id>] [--no-rules | --rules-only]",
-    "Install a starter bundle and add the Agent Aisle house rules to CLAUDE.md (AGENTS.md for Codex and Cursor). With --profile it never asks which bundle.",
+    "Install a starter bundle and add the Agents Aisle house rules to CLAUDE.md (AGENTS.md for Codex and Cursor). With --profile it never asks which bundle.",
     true,
   ],
 ];
@@ -171,7 +171,7 @@ export default function DocsPage() {
       <PageIntro
         size="lg"
         eyebrow="Docs"
-        lines={["Using Agent Aisle"]}
+        lines={["Using Agents Aisle"]}
         accent="step by step."
         intro="Add skills, keep them up to date, and write your own."
         actions={
@@ -230,7 +230,7 @@ export default function DocsPage() {
                   <code className="font-mono">sh: aisle: command not found</code> from npx.
                 </strong>{" "}
                 This happens when you run <code className="font-mono">npx</code> inside a clone of
-                the Agent Aisle repository, because npx finds the local package and can&apos;t run
+                the Agents Aisle repository, because npx finds the local package and can&apos;t run
                 it. Run the command from your own project folder instead, or pin the published
                 version:
               </p>

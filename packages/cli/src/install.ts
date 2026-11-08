@@ -88,7 +88,7 @@ export async function installOne(
   if (p.unverified) {
     ctx.warn(
       p.name
-        ? `Warning: ${p.label} is community-submitted and has not been verified by Agent Aisle.`
+        ? `Warning: ${p.label} is community-submitted and has not been verified by Agents Aisle.`
         : `Warning: ${p.label} is installed straight from GitHub and is unverified. Read it before you use it.`,
     );
   }
@@ -126,7 +126,7 @@ export async function installOne(
     if (scripts.length > 0 || p.runsScripts) {
       if (p.trusted) {
         // Verified official skills: show what is included, but don't make every install a question.
-        ctx.log(`${name} includes scripts (reviewed by Agent Aisle):`);
+        ctx.log(`${name} includes scripts (reviewed by Agents Aisle):`);
         for (const s of scripts) ctx.log(`  - ${s}`);
       } else {
         ctx.warn(`Warning: "${name}" includes scripts that your agent may run:`);

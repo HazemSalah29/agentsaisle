@@ -1,9 +1,9 @@
-name: Agent Aisle audit
+name: Agents Aisle audit
 description: >-
   Audit Agent Skills in your repository for risky patterns (prompt injection, data exfiltration,
   dangerous commands, hidden characters) and show the findings in GitHub's Security tab. The skills
   are read as text and never run.
-author: Agent Aisle
+author: Agents Aisle
 branding:
   icon: shield
   color: orange
@@ -75,7 +75,7 @@ runs:
           echo "grades=$grades"
         } >> "$GITHUB_OUTPUT"
         {
-          echo "## Agent Aisle audit"
+          echo "## Agents Aisle audit"
           echo
           echo '```'
           echo "$output"
@@ -97,5 +97,5 @@ runs:
       env:
         AISLE_EXIT: ${{ steps.audit.outputs.exit-code }}
       run: |
-        echo "::error title=Agent Aisle audit::Exit code ${AISLE_EXIT} (1 = findings at or above fail-on, 2 = the audit could not run)."
+        echo "::error title=Agents Aisle audit::Exit code ${AISLE_EXIT} (1 = findings at or above fail-on, 2 = the audit could not run)."
         exit 1

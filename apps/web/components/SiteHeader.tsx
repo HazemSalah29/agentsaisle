@@ -34,7 +34,9 @@ export function SiteHeader() {
             className="flex items-center gap-2.5 border-r border-line px-4 text-ink-strong hover:opacity-70"
           >
             <Mark />
-            <span className="font-display text-base font-semibold tracking-tight">Agent Aisle</span>
+            <span className="font-display text-base font-semibold tracking-tight">
+              Agents Aisle
+            </span>
           </a>
           <nav aria-label="Main" className="hidden items-stretch md:flex">
             {NAV.map((n) => (

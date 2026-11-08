@@ -63,7 +63,7 @@ function SafetyCards({ skill, sha }: { skill: RegistrySkill; sha: string }) {
     official
       ? {
           title: "Made by us",
-          text: "This is an official skill, written and kept up by the Agent Aisle team.",
+          text: "This is an official skill, written and kept up by the Agents Aisle team.",
         }
       : skill.verified
         ? {

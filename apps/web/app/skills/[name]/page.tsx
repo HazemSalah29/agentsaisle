@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: skill.name,
     description: skill.description,
-    openGraph: { title: `${skill.name} on Agent Aisle`, description: skill.description },
+    openGraph: { title: `${skill.name} on Agents Aisle`, description: skill.description },
   };
 }
 

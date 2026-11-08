@@ -1,4 +1,4 @@
-# Agent Aisle video: user guide
+# Agents Aisle video: user guide
 
 You make a short video with **one command**: type `/video` and say what you want. It makes three kinds of short, each with a tested look, and holds every one to the same quality bar (a strong hook, fast pace, big readable type, real sound design):
 

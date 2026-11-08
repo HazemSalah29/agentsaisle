@@ -23,7 +23,7 @@ const mono = Geist_Mono({ subsets: ["latin"], variable: "--f-mono" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Agent Aisle",
+  title: "Agents Aisle",
   description: "Audit Agent Skills before you trust them, and install audited skills.",
 };
 

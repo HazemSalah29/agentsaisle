@@ -15,7 +15,7 @@ import { getRegistry } from "../lib/registry";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: { absolute: "Agent Aisle: audit Agent Skills before you trust them" },
+  title: { absolute: "Agents Aisle: audit Agent Skills before you trust them" },
   description:
     "A free, open-source security audit for Agent Skills. It reads a skill as text, never runs it, and grades it A to F. Plus a store of audited skills for Claude Code, Codex and Cursor.",
 };

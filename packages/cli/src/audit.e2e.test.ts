@@ -140,7 +140,7 @@ describe("aisle audit", () => {
       "markdown",
     ]);
     expect(res.code).toBe(1);
-    expect(res.stdout).toContain("### Agent Aisle audit:");
+    expect(res.stdout).toContain("### Agents Aisle audit:");
     expect(res.stdout).toContain("grade F");
     expect(res.stdout).toContain("AA-X02");
   });

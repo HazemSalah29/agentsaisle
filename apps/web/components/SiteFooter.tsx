@@ -12,7 +12,6 @@ const columns: Array<{ title: string; links: Array<{ href: string; label: string
     title: "Resources",
     links: [
       { href: "/docs", label: "Docs" },
-      { href: "/registry.json", label: "registry.json" },
       { href: "https://github.com/HazemSalah29/agentsaisle/issues", label: "Report a skill" },
     ],
   },
@@ -30,7 +29,7 @@ export function SiteFooter() {
     <footer className="border-t border-line bg-bg-raised">
       <div className="mx-auto grid max-w-[1200px] border-x border-line md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div className="p-6">
-          <p className="font-display text-md font-semibold text-ink-strong">Agent Aisle</p>
+          <p className="font-display text-md font-semibold text-ink-strong">Agents Aisle</p>
           <p className="mt-2 text-sm text-muted">
             Audit Agent Skills before you trust them. Plus a store of audited skills.
           </p>
@@ -56,7 +55,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-line">
         <p className="hud-label mx-auto max-w-[1200px] border-x border-line px-6 py-4 text-muted">
-          © 2026 Agent Aisle
+          © 2026 Agents Aisle
         </p>
       </div>
     </footer>

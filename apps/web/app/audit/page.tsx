@@ -235,7 +235,7 @@ aisle audit . --format markdown --fail-on medium`}
           <MoreDetails
             tone="boxed"
             title="Check your own repository on every push"
-            hint="The Agent Aisle audit GitHub Action"
+            hint="The Agents Aisle audit GitHub Action"
           >
             <p className="mb-4 text-sm">
               It runs <code className="font-mono">aisle audit . --format sarif</code> and uploads

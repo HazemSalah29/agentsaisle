@@ -37,7 +37,7 @@ export function applyRulesBlock(
   }
   if (starts > 1 || ends > 1) {
     throw new CliError(
-      "Found more than one Agent Aisle rules block. Remove the extras and run again.",
+      "Found more than one Agents Aisle rules block. Remove the extras and run again.",
     );
   }
   if (starts !== ends) {
@@ -49,7 +49,7 @@ export function applyRulesBlock(
   const to = existing.indexOf(RULES_END);
   if (to < from)
     throw new CliError(
-      "The Agent Aisle rules markers are in the wrong order. Fix them and run again.",
+      "The Agents Aisle rules markers are in the wrong order. Fix them and run again.",
     );
 
   const end = to + RULES_END.length;

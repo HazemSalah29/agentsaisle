@@ -2,11 +2,11 @@
 
 exports[`auditEntries > a malicious entry fails and the comment says why in plain words 1`] = `
 "<!-- aisle-audit -->
-## Agent Aisle audit
+## Agents Aisle audit
 
 **This pull request cannot be merged yet.** 1 of 1 skill has a critical finding or could not be audited. Critical findings cannot be suppressed by the author.
 
-### Agent Aisle audit: x02@1.0.0, grade F
+### Agents Aisle audit: x02@1.0.0, grade F
 
 | Critical | High | Medium | Low | Info |
 | ---: | ---: | ---: | ---: | ---: |
