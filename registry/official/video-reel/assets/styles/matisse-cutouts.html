@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#f4eee0}
+svg{position:absolute;inset:0}
+#grain{mix-blend-mode:multiply;opacity:.35;pointer-events:none}
+.t{position:absolute;left:0;width:1080px;text-align:center;font-family:"Marker Felt","Chalkboard SE",Chalkboard,sans-serif;color:#15120f;white-space:nowrap}
+#l1{top:640px;font-size:74px}
+#l2{top:760px;font-size:74px}
+#ar{position:absolute;left:0;width:1080px;top:720px;text-align:center;font-family:Scheherazade,serif;font-size:190px;line-height:1.9;color:#15120f;direction:rtl;white-space:nowrap}
+#en{top:1210px;font-size:76px}
+#cite{top:1334px;font-size:26px;letter-spacing:9px;font-family:"Helvetica Neue",Helvetica,sans-serif;font-weight:600}
+#handle{top:1430px;font-size:24px;letter-spacing:9px;font-family:"Helvetica Neue",Helvetica,sans-serif;font-weight:700;color:#1d3fa6}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="t" id="l1">A short errand into town.</div>
+<div class="t" id="l2">And one line of care in it.</div>
+<div id="ar">وَلْيَتَلَطَّفْ</div>
+<div class="t" id="en">and let him be cautious.</div>
+<div class="t" id="cite">QURAN 18:19</div>
+<div class="t" id="handle">@YOURPAGE</div>
+<svg id="grain" viewBox="0 0 1080 1920" width="1080" height="1920"><defs><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="3" seed="3"/><feColorMatrix values="0 0 0 0 .4  0 0 0 0 .33  0 0 0 0 .22  0 0 0 -6 3.2"/></filter></defs><rect width="1080" height="1920" filter="url(#g)"/></svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const h=n=>{n=Math.imul(n^61,0x9e3779b1);n^=n>>>15;n=Math.imul(n,0x85ebca6b);n^=n>>>13;return((n>>>0)%10000)/10000};
+const BLUE='#1d3fa6',CORAL='#f0572e',YEL='#f7c40c',GRN='#1e7a4c',PINK='#f4a3bd',INK='#15120f';
+// shape outlines are polygons, so every edge reads as a scissor cut
+const N=44;
+function poly(kind,seed){
+  const P=[];
+  for(let i=0;i<N;i++){
+    const a=i/N*Math.PI*2,j=1+(h(seed*97+i)-.5)*.05;let r;
+    if(kind==='alga')r=1+.42*Math.sin(7*a+seed)*Math.cos(2*a);     // many soft lobes
+    else if(kind==='star')r=.7+.3*Math.abs(Math.cos(3*a));         // five-ish pointed lobes
+    else if(kind==='leaf'){const u=Math.cos(a);r=1;P.push([u*1.9*j,Math.sign(Math.sin(a))*.5*Math.pow(1-u*u,.75)*j]);continue}  // pointed lens
+    else r=1+.12*Math.sin(3*a+seed);                                // blob
+    let x=Math.cos(a)*r*j,y=Math.sin(a)*r*j;
+    P.push([x,y]);
+  }
+  return P;
+}
+// tile: a rough rounded rectangle for the Arabic
+function tile(w,hh,seed){
+  const P=[],n=4.2;
+  for(let i=0;i<56;i++){
+    const a=i/56*Math.PI*2,c=Math.cos(a),s=Math.sin(a),j=1+(h(seed*31+i)-.5)*.035;
+    const r=Math.pow(Math.pow(Math.abs(c),n)+Math.pow(Math.abs(s),n),-1/n);
+    P.push([c*r*w/2*j,s*r*hh/2*j]);
+  }
+  return P;
+}
+const SH=[ // kind, colour, final x,y, size, final rotation, arrives, from x offset
+  {k:'alga',c:BLUE,x:170,y:360,s:240,r:-12,t:.4,seed:2,pts:null},
+  {k:'star',c:PINK,x:930,y:430,s:150,r:20,t:1.0,seed:5},
+  {k:'leaf',c:GRN,x:90,y:1720,s:190,r:-35,t:1.6,seed:9},
+  {k:'blob',c:CORAL,x:960,y:1610,s:210,r:10,t:2.2,seed:4},
+  {k:'alga',c:BLUE,x:610,y:330,s:60,r:0,t:2.7,seed:8,small:1},
+];
+SH.forEach((o,i)=>{o.pts=poly(o.k,o.seed);add(o.t,i%2?'tick':'tap',.28)});
+const PANEL={c:YEL,x:540,y:900,w:820,hh:470,t:4.1,pts:tile(1,1,3)};
+add(4.1,'slide',.3);add(4.9,'thud',.35);add(6.0,'tap',.25);add(7.2,'rise',.3);add(7.2,'boom',.4);add(8.2,'tap',.22);
+// a cut-out arrives: it is snipped (grows in stepped), then falls and bounces onto its spot
+function pose(t,t0,fx,fy,rot,fall=520){
+  const d=t-t0;if(d<0)return null;
+  const cut=clamp(d/.35),drop=clamp((d-.25)/.7);
+  const y=fy-(1-ease(drop))*fall;
+  const rr=rot+(1-ease(drop))*(h(Math.round(fx))<.5?-40:40);
+  return {x:fx,y:y,s:.25+.75*ease(cut),r:rr};
+}
+function shapeSvg(pts,col,x,y,s,r,sx=1,sy=1){
+  const tf=`translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${r.toFixed(1)}) scale(${(s*sx).toFixed(3)} ${(s*sy).toFixed(3)})`;
+  const d='M'+pts.map(p=>p[0].toFixed(3)+' '+p[1].toFixed(3)).join('L')+'Z';
+  return `<g transform="translate(6 9)" opacity=".13"><path transform="${tf}" d="${d}" fill="#000"/></g><path transform="${tf}" d="${d}" fill="${col}"/>`;
+}
+function up(el,t,t0,d=.5){const p=Math.ceil(clamp((t-t0)/d)*5)/5;el.style.opacity=p;el.style.transform=`translateY(${(1-p)*18}px)`}
+window.frame=function(t){
+  // paper cut-outs move at 12 fps, like hand-moved stop motion
+  const q=Math.floor(t*12)/12,f=Math.floor(t*12);
+  let S='';
+  SH.forEach((o,i)=>{
+    const p=pose(q,o.t,o.x,o.y,o.r);if(!p)return;
+    const sway=q>o.t+.9?Math.sin(q*1.7+i*2)*1.6:0;
+    S+=shapeSvg(o.pts,o.c,p.x,p.y,o.s*p.s,p.r+sway);
+  });
+  // yellow panel carries the Arabic; it falls in after the first lines go
+  const pp=pose(q,PANEL.t,PANEL.x,PANEL.y,-2,700);
+  if(pp)S+=shapeSvg(PANEL.pts,PANEL.c,pp.x,pp.y,1,pp.r,PANEL.w*(.35+.65*ease((q-PANEL.t)/.35)),PANEL.hh*(.35+.65*ease((q-PANEL.t)/.35)));
+  $('s').innerHTML=S;
+  // scene 1 lines step in, then drop away to the left in steps
+  const out=clamp((q-3.7)/.4);
+  [['l1',.7],['l2',1.6]].forEach(([id,t0])=>{const el=$(id);up(el,q,t0);if(out>0){el.style.opacity=(1-Math.ceil(out*4)/4)*parseFloat(el.style.opacity);el.style.transform=`translateX(${-Math.ceil(out*4)/4*140}px)`}});
+  // scene 2: Arabic written right to left on the yellow panel
+  const w=clamp((t-5.0)/1.3),ar=$('ar');
+  ar.style.clipPath=`inset(-40px 0 -40px ${(1-inout(w))*100}% )`;ar.style.opacity=t>=5.0?1:0;
+  ar.style.transform=`translateY(${pp?(pp.y-PANEL.y):0}px)`;
+  up($('en'),q,7.3,.5);up($('cite'),q,8.2,.5);
+  $('handle').style.opacity=clamp((t-8.9)/.5)*.9;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

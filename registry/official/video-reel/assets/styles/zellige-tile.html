@@ -1,0 +1,107 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeZ;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#cbbd9c}
+svg{position:absolute;inset:0}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .15  0 0 0 -7 3.6"/></filter>
+    <filter id="glaze" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .02" numOctaves="3" seed="11"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.6 .95"/></filter>
+  </defs>
+  <rect width="1080" height="1920" fill="#cbbd9c"/>
+  <g id="wall"></g>
+  <rect width="1080" height="1920" filter="url(#glaze)" opacity=".16" style="mix-blend-mode:soft-light"/>
+  <rect width="1080" height="1920" filter="url(#grain)" opacity=".35" style="mix-blend-mode:multiply"/>
+  <g id="ui"></g>
+</svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c=1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)}; // overshoot settle: tile clicks in
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const h=n=>{n=Math.imul(n^61,0x9e3779b1);n^=n>>>15;n=Math.imul(n,0x85ebca6b);n^=n>>>13;return((n>>>0)%10000)/10000};
+const INK='#17445f',GRAPH='#33373a',TOMATO='#b8402c',CREAM='#efe8d8';
+const SERIF='Baskerville,"Baskerville Old Face",Georgia,serif';
+const STAR=['#1f5f8b','#2aa79b','#33373a','#1f5f8b','#2aa79b'];
+const TRI=['#d99a2b','#b8402c','#efe8d8','#d99a2b','#2aa79b'];
+const hex=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+const shade=(c,k)=>'rgb('+hex(c).map(v=>Math.round(clamp(v+k*255,0,255))).join(',')+')';
+const W=90/(2*Math.sin(Math.PI/8))*2*Math.cos(Math.PI/8),CART={x:130,y:800,w:820,h:490};
+const ang=d=>d*Math.PI/180;
+// ---- tiles (built once; frame(t) only sets attributes)
+const tiles=[];let seed=1;
+function mk(pts,col,cell,kind,k){
+  const cx=pts.reduce((s,p)=>s+p[0],0)/pts.length,cy=pts.reduce((s,p)=>s+p[1],0)/pts.length;
+  if(cx>CART.x+10&&cx<CART.x+CART.w-10&&cy>CART.y+10&&cy<CART.y+CART.h-10)return;
+  seed++;
+  // hand-cut: pull toward the centre (grout shows) and wobble each corner
+  const q=pts.map((p,i)=>[cx+(p[0]-cx)*.935+(h(seed*13+i)-.5)*5,cy+(p[1]-cy)*.935+(h(seed*17+i)-.5)*5]);
+  const d=Math.hypot(cx-540,cy-1050);
+  const ta=.3+d/1100*2.8+(kind==='tri'?.38+k*.04:0);
+  tiles.push({q,cx,cy,col:shade(col,(h(seed*5)-.5)*.14),edge:shade(col,-.16),ta,rot:(h(seed*3)-.5)*14,glare:h(seed*7)*.14,ox:(cx-540)/Math.max(d,1),oy:(cy-1050)/Math.max(d,1)});
+}
+// 4.8.8 tiling: octagons on a square grid, diamond squares in the gaps, an eight-point star in every octagon
+const A=90,RO=A/(2*Math.sin(ang(22.5))),RI=.765*RO;
+for(let r=-1;r<=10;r++)for(let c=-1;c<=5;c++){
+  const X=c*W,Y=r*W+40,cell=r*9+c;
+  const V=k=>[X+RO*Math.cos(ang(22.5+45*k)),Y+RO*Math.sin(ang(22.5+45*k))];
+  const I=k=>[X+RI*Math.cos(ang(45*k)),Y+RI*Math.sin(ang(45*k))];
+  const star=[];for(let k=0;k<8;k++){star.push(V(k));star.push(I(k+1))}
+  mk(star,STAR[Math.floor(h(cell+5)*5)],cell,'star',0);
+  for(let k=0;k<8;k++)mk([V(k),V(k+1),I(k+1)],TRI[Math.floor(h(cell*7+k+2)*5)],cell,'tri',k);
+  const sx=X+W/2,sy=Y+W/2,q=A*Math.SQRT1_2;
+  mk([[sx-q,sy],[sx,sy-q],[sx+q,sy],[sx,sy+q]],TRI[Math.floor(h(cell*11+3)*5)],cell,'tri',3);
+}
+const wall=$('wall');
+for(const T of tiles){
+  const g=document.createElementNS(NS,'g');
+  const p=document.createElementNS(NS,'polygon'),s=document.createElementNS(NS,'polygon');
+  const pts=T.q.map(v=>v[0].toFixed(1)+','+v[1].toFixed(1)).join(' ');
+  p.setAttribute('points',pts);p.setAttribute('fill',T.col);p.setAttribute('stroke',T.edge);p.setAttribute('stroke-width','4');p.setAttribute('stroke-linejoin','round');
+  s.setAttribute('points',pts);s.setAttribute('fill','#fff');
+  g.append(p,s);wall.append(g);T.g=g;T.s=s;
+}
+// sounds: tiles click in as a wave from the middle
+for(let t=.5;t<3.4;t+=.2)add(t,'tick',.2);
+add(.2,'tap',.2);add(3.6,'rise',.22);add(3.75,'boom',.45);
+for(let t=3.95;t<5.0;t+=.2)add(t,'key',.12);
+add(5.1,'plink',.25);add(5.6,'tap',.22);add(6.3,'tap',.2);add(7.0,'bell',.28);
+const AR='وَلْيَتَلَطَّفْ';
+function up(t,a,b){const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;return Math.min(p,q)}
+window.frame=function(t){
+  const band=(t-3.7)*420-300;
+  for(const T of tiles){
+    const p=back((t-T.ta)/.55),vis=clamp((t-T.ta)/.12);
+    if(vis<=0){T.g.setAttribute('opacity','0');continue}
+    const o=1-p; // 0 once settled
+    T.g.setAttribute('opacity',vis.toFixed(2));
+    T.g.setAttribute('transform',`translate(${(T.ox*o*60).toFixed(1)} ${(T.oy*o*60).toFixed(1)}) rotate(${(T.rot*o).toFixed(2)} ${T.cx.toFixed(1)} ${T.cy.toFixed(1)}) translate(${T.cx.toFixed(1)} ${T.cy.toFixed(1)}) scale(${(1+o*.1).toFixed(3)}) translate(${-T.cx.toFixed(1)} ${-T.cy.toFixed(1)})`);
+    const click=Math.max(0,1-(t-T.ta-.45)/.3)*(t>T.ta+.4?1:0)*.45; // glint when it seats
+    const u=(T.cx+T.cy)*.7,sweep=t>3.7?Math.exp(-Math.pow((u-band)/170,2))*.4:0;
+    T.s.setAttribute('opacity',clamp(T.glare+click+sweep,0,.7).toFixed(2));
+  }
+  // plaster cartouche (sharp, double ruled) holds the verse
+  const ca=ease((t-.15)/.5);
+  let s=`<g opacity="${ca}" transform="translate(0 ${(1-ca)*20})"><rect x="${CART.x}" y="${CART.y}" width="${CART.w}" height="${CART.h}" fill="${CREAM}" stroke="${GRAPH}" stroke-width="6"/><rect x="${CART.x+16}" y="${CART.y+16}" width="${CART.w-32}" height="${CART.h-32}" fill="none" stroke="${TOMATO}" stroke-width="2.5"/></g>`;
+  const p1=up(t,.5,3.3);
+  s+=`<g opacity="${p1}" transform="translate(0 ${(1-ease((t-.5)/.6))*16})" font-family='${SERIF}' font-size="66" fill="${GRAPH}" text-anchor="middle"><text x="540" y="1022">Every piece is set</text><text x="540" y="1100">with care.</text></g>`;
+  if(t>=3.8){
+    const pa=ease((t-3.95)/1.0),fx=900-(760)*pa;
+    s+=`<mask id="pm"><polygon fill="#fff" points="${fx},820 960,820 960,1120 ${fx-60},1120"/></mask>`;
+    s+=`<g mask="url(#pm)"><text x="540" y="1020" text-anchor="middle" direction="rtl" font-family="ScheherazadeZ" font-size="170" fill="${INK}">${AR}</text></g>`;
+    if(pa<1)s+=`<circle cx="${fx}" cy="960" r="9" fill="${TOMATO}"/>`;
+  }
+  const e1=up(t,5.3),c1=up(t,6.2);
+  s+=`<text opacity="${e1}" x="540" y="${1130+(1-e1)*12}" text-anchor="middle" font-family='${SERIF}' font-size="58" fill="${GRAPH}">and let him be cautious</text>`;
+  s+=`<text opacity="${c1}" x="540" y="1214" text-anchor="middle" font-family="Menlo,monospace" font-size="26" letter-spacing="9" fill="${TOMATO}">QURAN 18:19</text>`;
+  s+=`<rect x="360" y="1628" width="360" height="56" fill="${CREAM}" stroke="${GRAPH}" stroke-width="3"/><text x="540" y="1664" text-anchor="middle" font-family="Menlo,monospace" font-size="22" letter-spacing="6" fill="${GRAPH}">@YOURPAGE</text>`;
+  $('ui').innerHTML=s;
+  return {};
+};
+document.fonts.load('170px ScheherazadeZ').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

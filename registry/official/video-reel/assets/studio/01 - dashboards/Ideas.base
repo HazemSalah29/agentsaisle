@@ -1,0 +1,118 @@
+filters:
+  and:
+    - 'file.inFolder("00 - notes/ideas")'
+    - '!file.name.startsWith("_")'
+    - 'type == "reel_idea"'
+properties:
+  area:
+    displayName: Kind
+  format:
+    displayName: Format
+  post_date:
+    displayName: Post date
+  source_status:
+    displayName: Source
+  post_url:
+    displayName: Link
+views:
+  - type: table
+    name: "Posting plan"
+    filters:
+      and:
+        - 'if(slot, true, false)'
+        - 'status != "dropped"'
+    sort:
+      - property: slot
+        direction: ASC
+    order:
+      - file.name
+      - slot
+      - post_date
+      - area
+      - status
+  - type: table
+    name: "Make next"
+    limit: 10
+    filters:
+      and:
+        - 'status == "idea"'
+    sort:
+      - property: score
+        direction: DESC
+    order:
+      - file.name
+      - score
+      - format
+      - area
+      - hook
+  - type: table
+    name: "In progress"
+    filters:
+      or:
+        - 'status == "picked"'
+        - 'status == "building"'
+        - 'status == "built"'
+    order:
+      - file.name
+      - status
+      - format
+      - area
+      - slot
+  - type: table
+    name: "Posted"
+    filters:
+      and:
+        - 'status == "posted"'
+    sort:
+      - property: post_date
+        direction: DESC
+    order:
+      - file.name
+      - format
+      - post_date
+      - post_url
+      - views
+      - shares
+      - saves
+  - type: table
+    name: "Dated ideas"
+    filters:
+      and:
+        - 'if(season, true, false)'
+        - 'status != "posted"'
+        - 'status != "dropped"'
+    sort:
+      - property: season
+        direction: ASC
+    order:
+      - season
+      - file.name
+      - area
+      - status
+  - type: table
+    name: "Needs a source check"
+    filters:
+      and:
+        - 'source_status == "lead"'
+        - 'status != "dropped"'
+    order:
+      - file.name
+      - area
+      - source
+      - source_url
+      - status
+  - type: table
+    name: "By kind"
+    groupBy:
+      property: area
+      direction: ASC
+    sort:
+      - property: score
+        direction: DESC
+    order:
+      - file.name
+      - status
+      - score
+    summaries:
+      file.name: Filled
+      score: Average

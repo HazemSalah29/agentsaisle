@@ -1,0 +1,144 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0a1840}
+#bg{position:absolute;inset:0;background:radial-gradient(ellipse 900px 1100px at 50% 52%,#25489c 0%,#16307a 42%,#0a1840 100%)}
+svg{position:absolute;inset:0}
+.txt{position:absolute;left:90px;right:90px;text-align:center;color:#f4ead0;font-family:Baskerville,Georgia,serif;font-size:52px;line-height:1.3;text-wrap:balance;opacity:0;text-shadow:0 2px 18px rgba(0,0,0,.55)}
+.gold{color:#ecc66e;font-style:italic}
+#cap{font-size:42px;left:220px;right:220px;white-space:nowrap}
+#hd{position:absolute;bottom:230px;left:0;right:0;text-align:center;font-family:Baskerville,serif;font-size:22px;letter-spacing:.2em;color:rgba(244,234,208,.55)}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse 800px 1200px at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,12,.6) 100%)}
+</style></head>
+<body>
+<div id="bg"></div>
+<svg viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="60" y1="1500" x2="1020" y2="560">
+      <stop id="s0" offset="0" stop-color="#b8821f"/>
+      <stop id="s1" offset="0.3" stop-color="#d9a441"/>
+      <stop id="s2" offset="0.5" stop-color="#fff2c0"/>
+      <stop id="s3" offset="0.7" stop-color="#d9a441"/>
+      <stop id="s4" offset="1" stop-color="#b8821f"/>
+    </linearGradient>
+    <pattern id="dots" width="90" height="90" patternUnits="userSpaceOnUse"><path d="M45 36 L48 45 L45 54 L42 45Z M36 45 L45 42 L54 45 L45 48Z" fill="#e8c36a" opacity=".16"/><circle cx="0" cy="0" r="2" fill="#e8c36a" opacity=".12"/><circle cx="90" cy="90" r="2" fill="#e8c36a" opacity=".12"/></pattern>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#dots)"/>
+  <g id="gnd"></g>
+  <g id="L" opacity="1"></g>
+  <g id="R"></g>
+  <g id="frame"></g>
+</svg>
+<div id="vig"></div>
+<div class="txt" id="a1" style="top:330px">The Prophet ﷺ named the deed Allah loves most.</div>
+<div class="txt gold" id="a2" style="top:520px">It is not the biggest one.</div>
+<div class="txt gold" id="cap" style="top:1395px">Same days. One kept going.</div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c=2.2;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const G='url(#gold)',INK='#2a1804';
+
+// turtle: walk a curve with curvature kf(u); returns dense points with heading
+function turtle(x,y,h,L,kf,step=3){const P=[];for(let s=0;s<=L;s+=step){P.push({x,y,h,s});h+=kf(s/L)*step;x+=Math.cos(h)*step;y+=Math.sin(h)*step}return P}
+const UP=-Math.PI/2;
+// width-tapered polygon along points 0..n (n = head index), tip tapers to a point at the head
+function poly(P,n,w0,L){n=Math.min(n,P.length-1);if(n<2)return '';const A=[],B=[];
+  for(let i=0;i<=n;i++){const p=P[i],base=w0*(1-.82*p.s/L),tip=Math.pow(clamp((n-i)*3/46),.7),w=Math.max(.6,base*tip)/2;
+    A.push((p.x-Math.sin(p.h)*w).toFixed(1)+','+(p.y+Math.cos(p.h)*w).toFixed(1));B.push((p.x+Math.sin(p.h)*w).toFixed(1)+','+(p.y-Math.cos(p.h)*w).toFixed(1))}
+  return A.join(' ')+' '+B.reverse().join(' ')}
+// leaf in global coords
+function leaf(x,y,a,len,wid){const c=Math.cos(a),s=Math.sin(a),T=(u,v)=>(x+u*c-v*s).toFixed(1)+' '+(y+u*s+v*c).toFixed(1);
+  return `M${T(0,0)} C${T(len*.2,-wid)} ${T(len*.7,-wid*.9)} ${T(len,0)} C${T(len*.7,wid*.9)} ${T(len*.2,wid)} ${T(0,0)}Z`}
+function rib(x,y,a,len){return `M${x.toFixed(1)} ${y.toFixed(1)} L${(x+Math.cos(a)*len*.8).toFixed(1)} ${(y+Math.sin(a)*len*.8).toFixed(1)}`}
+const sway=(u,A,c,ph)=>A*Math.sin(2*Math.PI*c*u+ph);
+
+// ---- vine specs (all precomputed, deterministic) ----
+function makeVine(o){
+  const main=turtle(o.x,o.y,UP,o.L,u=>sway(u,o.A,o.c,o.ph)+o.sp*Math.pow(clamp((u-.72)/.28),2)*o.dir);
+  const branches=o.br.map(b=>{const i=Math.round(b.at*(main.length-1)),p=main[i];
+    const P=turtle(p.x,p.y,p.h+b.side*0.95,b.L,u=>b.side*(0.004+0.045*Math.pow(u,2.2)));
+    return {P,L:b.L,w0:o.w0*.42,sb:p.s}});
+  // leaves: along main every o.gap px, alternating
+  const leaves=[];let k=0;for(let s=o.s0;s<o.L*.93;s+=o.gap,k++){const p=main[Math.round(s/3)],u=s/o.L;
+    leaves.push({x:p.x,y:p.y,a:p.h+(k%2?1:-1)*1.05,len:o.ll*(1-.35*u),s})}
+  branches.forEach(b=>{for(let s=40;s<b.L*.85;s+=48){const p=b.P[Math.round(s/3)];leaves.push({x:p.x,y:p.y,a:p.h-Math.sign(b.P[8].h-b.P[0].h)*1.0,len:o.ll*.62,s:b.sb+s,onB:true,bs:s,b})}});
+  return Object.assign({main,branches,leaves},o)}
+function drawVine(V,len,tNow,leafT,gId){
+  // len = px of main drawn; branches grow at same speed once main passes their root
+  let out='';
+  for(const b of V.branches){const bl=(len-b.sb)*V.bk;if(bl<4)continue;out+=`<polygon points="${poly(b.P,Math.round(bl/3),b.w0,b.L)}" fill="${G}" stroke="${INK}" stroke-width="4" paint-order="stroke" stroke-linejoin="round"/>`}
+  out+=`<polygon points="${poly(V.main,Math.round(len/3),V.w0,V.L)}" fill="${G}" stroke="${INK}" stroke-width="5" paint-order="stroke" stroke-linejoin="round"/>`;
+  for(const l of V.leaves){const tl=leafT(l),q=back((tNow-tl)/.4);if(tNow<tl||q<=0)continue;
+    const L=l.len*q,W=l.len*.34*q;out+=`<path d="${leaf(l.x,l.y,l.a,L,W)}" fill="${G}" stroke="${INK}" stroke-width="3.5" paint-order="stroke" stroke-linejoin="round"/><path d="${rib(l.x,l.y,l.a,L)}" stroke="${INK}" stroke-width="2" opacity=".7" fill="none"/>`}
+  return out}
+
+// LEFT: big, thick, quick. stops at 5.9
+const VL=makeVine({x:300,y:1235,L:520,w0:34,A:.0075,c:1,ph:Math.PI/2,sp:.034,dir:1,gap:100,s0:80,ll:60,bk:1,br:[{at:.28,side:-1,L:200},{at:.52,side:1,L:180}]});
+const LT0=4.7,LT1=5.9;
+const lenL=t=>VL.L*ease((t-LT0)/(LT1-LT0));
+const leafTL=l=>{ // time when the eased head reaches distance l.s
+  const f=clamp(l.s/VL.L);return LT0+(LT1-LT0)*(1-Math.pow(1-f,1/3))};
+// RIGHT: thin, steady, keeps going to the end
+const VR=makeVine({x:790,y:1235,L:725,w0:13,A:.0085,c:1.7,ph:Math.PI/2,sp:.034,dir:-1,gap:78,s0:60,ll:36,bk:1,br:[{at:.14,side:1,L:150},{at:.26,side:-1,L:170},{at:.38,side:1,L:170},{at:.5,side:-1,L:180},{at:.62,side:1,L:170},{at:.74,side:-1,L:150},{at:.86,side:1,L:120}]});
+const RT0=4.9,RT1=9.4,RSP=VR.L/(RT1-RT0);
+const lenR=t=>clamp((t-RT0)*RSP,0,VR.L);
+VR.bk=1;
+const leafTR=l=>RT0+l.s/RSP;
+// sounds: left leaves + thud, right leaves (every other main leaf)
+add(.2,'bong',.4);add(.4,'drop',.2);add(1.7,'plink',.12);add(2.5,'drop',.2);
+add(4.4,'slide',.2);add(4.7,'bong',.3);add(5.1,'plink',.2);add(5.45,'plink',.2);add(5.95,'tap',.22);add(6.2,'thud',.35);
+VR.leaves.filter(l=>!l.onB&&l.s>200).forEach((l,i)=>{if(i%2===0)add(leafTR(l),'plink',.14)});
+add(8.3,'slide',.2);add(8.75,'tap',.2);add(9.2,'bell',.3);
+
+// left rosette at end of stem
+const LE=VL.main[VL.main.length-1];
+function rosette(cx,cy,q,R){let o='';for(let i=0;i<12;i++){const a=i/12*Math.PI*2+.2;o+=`<path d="${leaf(cx+Math.cos(a)*6*q,cy+Math.sin(a)*6*q,a,R*q,R*.19*q)}" fill="${G}" stroke="${INK}" stroke-width="3" paint-order="stroke"/>`}
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2+.4;o+=`<path d="${leaf(cx+Math.cos(a)*4*q,cy+Math.sin(a)*4*q,a,R*.62*q,R*.15*q)}" fill="#0f2563" stroke="${G}" stroke-width="2.5"/>`}
+  o+=`<circle cx="${cx}" cy="${cy}" r="${R*.18*q}" fill="${G}" stroke="${INK}" stroke-width="3"/><circle cx="${cx}" cy="${cy}" r="${R*.07*q}" fill="#0f2563"/>`;return o}
+// bud at right tip
+const RE=VR.main[VR.main.length-1];
+
+// ground line with small knots
+function ground(p){let o=`<path d="M120 1245 L${120+840*p} 1245" stroke="${G}" stroke-width="5" stroke-linecap="round"/><path d="M120 1257 L${120+840*p} 1257" stroke="${G}" stroke-width="1.8" opacity=".8"/>`;
+  for(let i=0;i<=14;i++){const x=120+i*60;if(x<=120+840*p)o+=`<path d="M${x} 1268 l5 6 l-5 6 l-5 -6z" fill="${G}" opacity=".9"/>`}return o}
+
+// illuminated frame: double border, corner rosettes, cartouche
+const FX0=62,FX1=1018,FY0=598,FY1=1534;
+function pth(x0,y0,x1,y1,r){return `M${x0+r} ${y0} L${x1-r} ${y0} Q${x1} ${y0} ${x1} ${y0+r} L${x1} ${y1-r} Q${x1} ${y1} ${x1-r} ${y1} L${x0+r} ${y1} Q${x0} ${y1} ${x0} ${y1-r} L${x0} ${y0+r} Q${x0} ${y0} ${x0+r} ${y0}Z`}
+const CART=`M200 1420 Q370 1336 540 1334 Q710 1336 880 1420 Q710 1504 540 1506 Q370 1504 200 1420Z`;
+function drawFrame(p,pc){ // p: border draw 0..1, pc: cartouche 0..1
+  if(p<=.002)return '';let o='';const d1=pth(FX0,FY0,FX1,FY1,26),d2=pth(FX0+18,FY0+18,FX1-18,FY1-18,14);
+  o+=`<path d="${d1}" pathLength="1" fill="none" stroke="${INK}" stroke-width="12" stroke-dasharray="${p} 2" stroke-linecap="round"/><path d="${d1}" pathLength="1" fill="none" stroke="${G}" stroke-width="7" stroke-dasharray="${p} 2" stroke-linecap="round"/>`;
+  o+=`<path d="${d2}" pathLength="1" fill="none" stroke="${G}" stroke-width="2.4" stroke-dasharray="${clamp(p*1.1-.1)} 2" opacity=".9"/>`;
+  if(p>.0){const cs=[[FX0,FY0],[FX1,FY0],[FX1,FY1],[FX0,FY1]];cs.forEach(([x,y],i)=>{const q=back((p-.15*i)*1.6-.2);if(q>0)o+=rosette(x,y,q,30).replace(/#0f2563/g,'#0f2563')})}
+  if(pc>0){const q=ease(pc);o+=`<path d="${CART}" fill="#0f2563" fill-opacity="${.92*q}" stroke="${INK}" stroke-width="10" pathLength="1" stroke-dasharray="${q} 2"/><path d="${CART}" fill="none" stroke="${G}" stroke-width="5" pathLength="1" stroke-dasharray="${q} 2"/>`;
+    o+=`<path d="M232 1420 Q390 1352 540 1350 Q690 1352 848 1420" fill="none" stroke="${G}" stroke-width="1.8" opacity="${q*.8}"/>`}
+  return o}
+
+window.frame=function(t){
+  // glint: bright band travelling along the gold gradient
+  const gp=-.25+1.5*clamp((t-9.15)/.8),hidden=gp<=-.1||gp>=1.1;
+  if(hidden){$('s1').setAttribute('offset',.3);$('s2').setAttribute('stop-color','#e9bd5e');$('s2').setAttribute('offset',.5);$('s3').setAttribute('offset',.7)}
+  else{const o1=clamp(gp-.12),o2=clamp(gp),o3=clamp(gp+.12);$('s2').setAttribute('stop-color','#fff6cc');$('s1').setAttribute('offset',o1);$('s2').setAttribute('offset',o2);$('s3').setAttribute('offset',o3)}
+  $('gnd').innerHTML=ground(ease((t-4.4)/.7));
+  // left vine, bloom, and the quiet after it stops
+  const tl=Math.min(t,99);let L=drawVine(VL,lenL(t),t,leafTL);
+  const bq=back((t-5.7)/.55);if(t>5.7&&bq>0)L+=rosette(LE.x,LE.y,bq,70);
+  $('L').innerHTML=L;$('L').style.filter=`brightness(${1-.38*inout((t-6.4)/1.0)}) saturate(${1-.25*inout((t-6.4)/1.0)})`;
+  // right vine keeps going
+  let R=drawVine(VR,lenR(t),t,leafTR);
+  const rq=ease((t-9.1)/.4);if(t>RT0){R+=`<circle cx="${RE.x}" cy="${RE.y}" r="${9*back((t-9.3)/.4)}" fill="${G}" stroke="${INK}" stroke-width="3" paint-order="stroke"/>`}
+  $('R').innerHTML=R;
+  $('frame').innerHTML=drawFrame(inout((t-8.2)/1.0),ease((t-8.4)/.7));
+  const up=(id,a,b,y0)=>{const p=ease((t-a)/.8),o=b?1-ease((t-b)/.5):1;$(id).style.opacity=Math.min(p,o);$(id).style.transform=`translateY(${(1-p)*14+(y0||0)}px)`};
+  up('a1',.4,4.3);
+  const p2=ease((t-2.5)/.8);$('a2').style.opacity=Math.min(p2,1-.35*ease((t-4.6)/.8));$('a2').style.transform=`translateY(${(1-p2)*14-190*inout((t-4.4)/.9)}px)`;
+  $('cap').style.opacity=ease((t-8.7)/.6);$('cap').style.transform=`translateY(${(1-ease((t-8.7)/.6))*10}px)`;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

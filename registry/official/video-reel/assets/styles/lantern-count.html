@@ -1,0 +1,112 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheh;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0d0a12}
+svg,canvas{position:absolute;left:0;top:0}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Lantern count test in Cinema sand (look D code).
+// 0-7 s, beat 3: the camera flies down the hall; 114 lanterns light ahead of it; lantern 9 (At-Tawbah) stays dark.
+// 7.4-15 s, beat 14: strings of lanterns, 19 each, light in the hall; Ar-Rahman 3 strings (57), Ar-Rahim 6 strings (114).
+const G='#f0b862',INK='#fff4e2';
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,p)=>a+(b-a)*p;
+const eio=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const ramp=(t,a,d)=>clamp((t-a)/d);
+const A=[.6,6.4],B=[7.4,15];
+window.DURATION=15;window.SFX=[];
+
+const DEFS=`<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b0912"/><stop offset=".42" stop-color="#241824"/><stop offset=".56" stop-color="#5a3a26"/><stop offset=".64" stop-color="#2a1a14"/></linearGradient>
+<linearGradient id="wallR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#120c0e"/><stop offset="1" stop-color="#1d1418"/></linearGradient>
+<linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1214"/><stop offset="1" stop-color="#0a0708"/></linearGradient>
+<radialGradient id="lamp"><stop offset="0" stop-color="#ffc77a" stop-opacity=".9"/><stop offset="1" stop-color="#ffc77a" stop-opacity="0"/></radialGradient>
+<radialGradient id="vig" cx="50%" cy="45%" r="70%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".75"/></radialGradient>
+<filter id="blur"><feGaussianBlur stdDeviation="22"/></filter>
+</defs>`;
+const grp=(inner,op=1)=>op<=0.001?'':`<g${op<1?` opacity="${op.toFixed(3)}"`:''}>${inner}</g>`;
+const f1=n=>n.toFixed(1);
+function stars(t,n=70,ymax=900){let s='';for(let i=0;i<n;i++){const o=.25+.5*rnd(i+3)*(.7+.3*Math.sin(t*2+i));s+=`<circle cx="${f1(rnd(i)*1080)}" cy="${f1(rnd(i+9)*ymax)}" r="${(1+rnd(i+5)*2).toFixed(2)}" fill="#fff4dc" opacity="${o.toFixed(2)}"/>`}return s}
+function dust(t,y0=500,h=1200,n=46,seed=70){let s='';for(let i=0;i<n;i++){const x=((rnd(i+seed)*1080+t*8*(rnd(i)-.5)*4)%1100+1100)%1100-10,y=y0+((rnd(i+seed+10)*h-t*10*rnd(i+3))%h+h)%h;s+=`<circle cx="${f1(x)}" cy="${f1(y)}" r="${(1.5+rnd(i+2)*2.5).toFixed(2)}" fill="#ffd9a0" opacity="${(.12+.3*rnd(i+4)).toFixed(2)}"/>`}return s}
+// lantern with a light level L (0 = dark brass, 1 = lit)
+function lantern(x,y,t,i,k,L){const fl=.85+.15*Math.sin(t*7+i)*Math.sin(t*3.1+i*2);
+ return `<g transform="translate(${f1(x)} ${f1(y)}) scale(${k.toFixed(3)})"><line x1="0" y1="-400" x2="0" y2="-8" stroke="#2a1c18" stroke-width="2"/>${L>0?`<circle cy="10" r="80" fill="url(#lamp)" opacity="${(.6*fl*L).toFixed(2)}"/>`:''}<path d="M-10 -8 h20 l5 14 l-5 22 h-20 l-5 -22 z" fill="${L>0?'#f7c072':'#2e211a'}" opacity="${L>0?(.35+.65*fl*L).toFixed(2):1}" stroke="#4a3220" stroke-width="1.5"/><path d="M-13 -10 h26" stroke="#3a2614" stroke-width="3"/></g>`}
+
+// the hall, seen from camera depth Zc (it repeats, so the flight never ends)
+const VX=540,VY=1040,FX=560,FY=800,NEAR=.4,ZB=18;
+let Zc=0;const P=(x,y,z)=>[VX+x*FX/(z-Zc),VY-y*FY/(z-Zc)],pt=p=>`${f1(p[0])},${f1(p[1])}`;
+const poly=(ps,fill,extra='')=>`<polygon points="${ps.map(pt).join(' ')}" fill="${fill}" ${extra}/>`;
+function archPts(x,z1,z2,yb,yt,rise,steps=16){const ps=[P(x,yb,z1),P(x,yt,z1)];const zc=(z1+z2)/2,rz=(z2-z1)/2;
+ for(let i=1;i<steps;i++){const a=Math.PI*i/steps;ps.push(P(x,yt+rise*Math.sin(a),zc-rz*Math.cos(a)))}ps.push(P(x,yt,z2),P(x,yb,z2));return ps}
+const vis=z=>z-Zc>NEAR&&z-Zc<ZB;
+function hall(t){
+ let s=`<rect width="1080" height="1920" fill="url(#sky)"/>${stars(t)}<ellipse cx="540" cy="${VY+10}" rx="420" ry="60" fill="#c98a5a" opacity=".22" filter="url(#blur)"/>`;
+ const Z0=Zc+NEAR,Z1=Zc+ZB;
+ s+=poly([P(-1,-1,Z0),P(1,-1,Z0),P(1,-1,Z1),P(-1,-1,Z1)],'url(#floor)');
+ s+=poly([P(-1,1.25,Z0),P(1,1.25,Z0),P(1,1.25,Z1),P(-1,1.25,Z1)],'#0b0809');
+ s+=poly([P(1,-1,Z0),P(1,1.25,Z0),P(1,1.25,Z1),P(1,-1,Z1)],'url(#wallR)');
+ // doors on the right wall, far to near
+ const k0=Math.floor((Zc-1.22)/.72)-1;
+ for(let k=k0+28;k>=Math.max(0,k0);k--){const z1=1.22+k*.72,z2=z1+.5;if(!vis(z1-.05)||!vis(z2+.05))continue;const far=clamp((z1-Zc-1)/(ZB-1));
+  s+=poly(archPts(1,z1-.05,z2+.05,-1,.27,.31),'#2a1c18',`opacity="${(1-far*.6).toFixed(2)}"`);
+  s+=poly(archPts(1,z1,z2,-1,.25,.28),'#0a0708');
+  const a=P(1,-1,z1+.04),b=P(1,-1,z2-.04);s+=`<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" stroke="#ffb862" stroke-width="${f1(Math.max(1,7/(z1-Zc)))}" stroke-opacity="${(.4*(1-far)).toFixed(2)}"/>`}
+ // pillars on the open left side
+ const j0=Math.floor((Zc-1.05)/.9)-1;
+ for(let j=j0+22;j>=Math.max(0,j0);j--){const z=1.05+j*.9;if(!vis(z))continue;const w=.16,a=P(-1,-1,z),b=P(-1,1.25,z),c=P(-1+w,1.25,z),d=P(-1+w,-1,z);
+  s+=poly([a,b,c,d],'#0d0909');s+=`<line x1="${f1(c[0])}" y1="${f1(c[1])}" x2="${f1(d[0])}" y2="${f1(d[1])}" stroke="${G}" stroke-width="2" stroke-opacity=".2"/>`}
+ return s}
+const nearArch=`<path d="M0 0 H1080 V1920 H1010 V560 Q1010 200 540 170 Q70 200 70 560 V1920 H0 Z" fill="#070506"/><path d="M1010 1920 V560 Q1010 200 540 170 Q70 200 70 560 V1920" fill="none" stroke="${G}" stroke-width="2.5" stroke-opacity=".28"/>`;
+
+// ---- beat 3: the flight. s = how many lanterns are lit (the lit front runs ahead of the camera)
+const LZ=i=>1.6+i*.62;
+function frontA(t){ // fast, slow past lantern 9, then faster to 114
+ if(t<A[0])return 0;if(t<1.7)return 8.4*eio(ramp(t,A[0],1.1));if(t<3.0)return lerp(8.4,10.2,ramp(t,1.7,1.3));
+ const p=ramp(t,3.0,A[1]-3.0);return lerp(10.2,114,p*p*(1.6-.6*p))}
+function sceneA(t){const s=frontA(t);Zc=Math.max(0,LZ(s)-6.2);let o=hall(t);
+ for(let i=114;i>=1;i--){const z=LZ(i);if(!vis(z))continue;if(z-Zc<1.6)continue;const p=P(i%2?-.52:.52,.5,z),L=i===9?0:clamp(s-i+1);o+=lantern(p[0],p[1],t,i,2.8/(z-Zc),L);
+  if(i===9&&z-Zc<9)o+=`<text x="${f1(p[0])}" y="${f1(p[1]+150/(z-Zc)*2.4)}" fill="${INK}" fill-opacity=".85" font-family="Menlo, monospace" font-size="${f1(clamp(110/(z-Zc),18,34))}" letter-spacing="4" text-anchor="middle">9 · AT-TAWBAH</text>`}
+ return o+dust(t)}
+
+// ---- beat 14: two chains drop in the hall. each lit bead is one time the name is said.
+const CH={top:500,gap:46},LX=250,RX=680,LXS=[170,250,330],RXS=[480,560,640,720,800,880];
+const fa=t=>57*eio(ramp(t,B[0]+.6,2.4)),fb=t=>114*eio(ramp(t,B[0]+3.4,3.2));
+function strings(xs,lit,t,seed){let o='';xs.forEach((x0,k)=>{const n=clamp(lit-k*19,0,19);
+ o+=`<line x1="${x0}" y1="${CH.top-300}" x2="${x0}" y2="${CH.top-14}" stroke="#3a2614" stroke-width="2"/>`;
+ for(let i=0;i<19;i++){const y=CH.top+i*CH.gap,x=x0+Math.sin(t*1.1+k*1.7+seed)*4*(i/18),L=clamp(n-i),fl=.85+.15*Math.sin(t*6+i*.7+k+seed);
+  o+=`<line x1="${f1(x0+(x-x0)*(i?(i-1)/i:0))}" y1="${f1(y-CH.gap+14)}" x2="${f1(x)}" y2="${f1(y-10)}" stroke="#3a2614" stroke-width="1.5"/>`;
+  if(L>0)o+=`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(34*L)}" fill="url(#lamp)" opacity="${(.55*fl).toFixed(2)}"/>`;
+  o+=`<path transform="translate(${f1(x)} ${f1(y)}) scale(.62)" d="M-10 -8 h20 l5 14 l-5 22 h-20 l-5 -22 z" fill="${L>0?'#f7c072':'#2e211a'}" opacity="${L>0?(.4+.6*fl*L).toFixed(2):1}" stroke="#4a3220" stroke-width="2"/>`}});return o}
+
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const line=(txt,y,font,col,a=1)=>{ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=20;ctx.fillStyle=col;ctx.font=font;ctx.fillText(txt,540,y);ctx.restore()};
+const spaced=(txt,x,y,size,col,a=1)=>{ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=16;ctx.fillStyle=col;ctx.font=`${size}px Menlo, monospace`;ctx.letterSpacing='7px';ctx.fillText(txt,x,y);ctx.restore()};
+function canvasLayer(t){ctx.clearRect(0,0,1080,1920);
+ if(t<B[0]){const a=1-ramp(t,B[0]-.5,.5),s=frontA(t),n=Math.floor(s)-(s>=9?1:0);
+  spaced('SURAHS THAT OPEN WITH',540,330,24,G,a);
+  line(String(Math.max(0,n)),470,'130px Baskerville, Georgia, serif',INK,a);
+  line('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',575,'64px Scheh',G,a*(.4+.6*ramp(t,.6,.6)));
+  spaced('OF 114',540,640,22,'rgba(255,244,226,.6)',a)}
+ else{const a=ramp(t,B[0],.5);
+  ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=20;
+  ctx.fillStyle=G;ctx.font='72px Scheh';ctx.fillText('ٱلرَّحْمَـٰن',LX,330);ctx.fillText('ٱلرَّحِيم',RX,330);
+  ctx.fillStyle=INK;ctx.font='64px Baskerville, Georgia, serif';ctx.fillText(String(Math.floor(fa(t))),LX,420);ctx.globalAlpha=a*ramp(t,B[0]+3.2,.4);ctx.fillText(String(Math.floor(fb(t))),RX,420);ctx.restore();
+  line('Exactly double.',1430,'italic 52px Baskerville, Georgia, serif','rgba(255,244,226,.85)',ramp(t,B[0]+6.8,.6))}
+ ctx.save();ctx.globalAlpha=.2;ctx.textAlign='center';ctx.fillStyle=INK;ctx.font='30px Baskerville, Georgia, serif';ctx.fillText('@yourpage',540,1490);ctx.restore()}
+
+window.frame=function(t){
+ let s=DEFS+`<rect width="1080" height="1920" fill="#0d0a12"/>`;
+ if(t<B[0]){s+=grp(sceneA(t),1-ramp(t,B[0]-.5,.5))}
+ else{Zc=0;let h=hall(t);for(let k=5;k>=0;k--){const z=3+k*1.6,p=P(0,.95,z);h+=lantern(p[0],p[1],t,k,2.2/z,.5)}
+  s+=grp(h+dust(t),.35*ramp(t,B[0],.5));
+  s+=grp(strings(LXS,fa(t),t,1)+strings(RXS,fb(t),t,2),ramp(t,B[0],.4))}
+ s+=nearArch+`<rect width="1080" height="1920" fill="url(#vig)"/>`;
+ s+=`<filter id="gr"><feTurbulence baseFrequency=".85" numOctaves="2" seed="${Math.floor(t*12)%9+1}"/><feColorMatrix values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0"/></filter><rect width="1080" height="1920" filter="url(#gr)"/>`;
+ document.getElementById('s').innerHTML=s;canvasLayer(t);return {}};
+(async()=>{await document.fonts.load('64px Scheh');await document.fonts.load('60px Baskerville');await document.fonts.ready;window.frame(0);window.ready=true})();
+</script></body></html>

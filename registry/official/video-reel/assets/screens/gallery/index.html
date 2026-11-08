@@ -1,0 +1,116 @@
+<!doctype html>
+<html data-palette="olive"><head><meta charset="utf-8">
+<!-- The motion screen gallery: every screen in turn, 6 s each, joined by the transitions.
+     A frame(t) page like any reel scene, so the skill's scripts can capture it:
+       node <skill>/scripts/capture.mjs <skill>/assets/screens/gallery stills 2,8,14
+     Render it from a copy outside the skill (render.sh writes frames and audio into the folder).
+     Change data-palette above to "oxblood" to see the second palette. Demo text only: nothing here is for posting. -->
+<link rel="stylesheet" href="../palettes.css">
+<style>
+@font-face{font-family:Scheherazade;src:url(../../ScheherazadeNew-Regular.ttf)}
+:root{--serif:Baskerville,"Libre Baskerville",Georgia,serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+#mo{position:relative;width:1080px;height:1920px;overflow:hidden;color:var(--ink);font-family:var(--serif)}
+.win{position:absolute;inset:0;opacity:0;z-index:5}
+.name{position:absolute;left:0;right:0;top:1580px;text-align:center;font-size:26px;letter-spacing:.32em;text-transform:uppercase;color:var(--quiet);opacity:.75}
+</style></head>
+<body><div id="mo"></div>
+<script src="../kit.js"></script>
+<script src="../transitions.js"></script>
+<script src="../counter-lock.js"></script>
+<script src="../dot-grid.js"></script>
+<script src="../bar-race.js"></script>
+<script src="../arabic-highlight.js"></script>
+<script src="../ayah-map.js"></script>
+<script src="../dial.js"></script>
+<script src="../orbit-rings.js"></script>
+<script src="../card-grid.js"></script>
+<script src="../timeline-bar.js"></script>
+<script src="../polygon-draw.js"></script>
+<script src="../../motion.js"></script>
+<script src="../shape-morph.js"></script>
+<script src="../particle-field.js"></script>
+<script src="../scale-zoom.js"></script>
+<script src="../lantern-count.js"></script>
+<script>
+// [screen, params, label, palette?]. t0 is relative to the screen's own window.
+const DEMOS = [
+  ['particleField', { target: 'word', text: 'barakah', gatherAt: 0.15, scatterAt: 0.85 }, 'Particle field'],
+  ['counterLock', { from: 0, to: 365, label: 'days', dur: 3.5 }, 'Counter lock'],
+  ['dotGrid', { cols: 7, rows: 5, fill: 30, order: 'row', missing: [12, 13] , label: 'one month' }, 'Dot grid fill'],
+  ['barRace', { bars: [{ label: 'little, every day', value: 24, role: 'accent' }, { label: 'big, once', value: 24, role: 'ink' }], steps: [[0.3, [4, 18]], [0.7, [16, 22]], [1, [24, 24]]], lockEqual: true }, 'Bar race'],
+  ['arabicHighlight', { ar: 'هَٰذِهِ كَلِمَةٌ تُضِيءُ', key: 'تُضِيءُ', en: 'This is a word that lights up', reveal: 'pen', underline: 'draw' }, 'Arabic word highlight'],
+  ['ayahMap', { hits: [{ surah: 2, ayah: 1 }, { surah: 7, ayah: 1 }, { surah: 18, ayah: 1 }, { surah: 24, ayah: 1 }, { surah: 36, ayah: 1 }, { surah: 55, ayah: 1 }, { surah: 67, ayah: 1 }, { surah: 96, ayah: 1 }, { surah: 112, ayah: 1 }], layout: 'strip', label: 'demo data' }, 'Ayah map'],
+  ['dial', { from: 0, to: 18, max: 24, marks: 24, kind: 'clock' }, 'Dial'],
+  ['orbitRings', { rings: [{ r: 160, count: 3, speed: 1 }, { r: 270, count: 5, speed: 0.7 }, { r: 380, count: 7, speed: 0.5 }], centre: 'dot', tilt: 0.55, settleAt: 0.75 }, 'Orbit rings'],
+  ['cardGrid', { cards: [{ text: 'Wake' }, { text: 'Pray' }, { text: 'Read' }, { text: 'Give' }, { text: 'Thank' }, { text: 'Rest' }], cols: 2, flip: true, checks: true }, 'Card grid'],
+  ['timelineBar', { span: { start: 'Fri', end: 'Fri', unit: 'days' }, events: [{ at: 0, label: 'Fri' }, { at: 0.5, label: 'Mon' }, { at: 1, label: 'Fri' }], runner: 'light', fillTo: 1 }, 'Timeline bar'],
+  ['polygonDraw', { sides: 8, kind: 'star', draw: 'lines', fill: true }, 'Polygon draw'],
+  ['lanternCount', { mode: 'hall', y: 1040, total: 114, misses: [9], missLabels: { 9: 'AT-TAWBAH' }, label: 'surahs that open with bismillah', dur: 5 }, 'Lantern count: hall', 'dusk'],
+  ['lanternCount', { mode: 'strings', y: 1000, groups: [{ label: 'ٱلرَّحْمَـٰن', n: 57, arabic: true }, { label: 'ٱلرَّحِيم', n: 114, arabic: true }], label: 'Exactly double.', dur: 4.6 }, 'Lantern count: strings', 'dusk'],
+  ['scaleZoom', { levels: [{ label: 'one day', kind: 'dot' }, { label: 'one month', kind: 'grid' }, { label: 'one year', kind: 'grid' }, { label: 'a life', kind: 'rings' }] }, 'Scale zoom-out'],
+  ['shapeMorph', { shapes: ['lamp', 'crescent', 'door'].map((k) => Screens.shapeMorph.shapes[k]), fill: true }, 'Shape morph'],
+];
+const W = 6;
+const mo = document.getElementById('mo'), K = Kit, atm = K.atmosphere(mo, { seed: 3 });
+const build = ([name, prm, label, pal], i) => {
+  const w = K.el('div', { class: 'win' }, mo);
+  // a demo with its own palette gets its own ground in that palette
+  if (pal) { w.dataset.palette = pal; w.style.background = 'radial-gradient(ellipse 900px 1250px at 50% 45%, var(--lift) 0%, var(--bg) 55%, var(--deep) 100%)'; }
+  K.el('div', { class: 'name', text: label }, w);
+  const s = Screens[name](w, { ...prm, t0: i * W + (prm.t0 ?? 0.5) });
+  return { w, s, a: i * W };
+};
+const wins = DEMOS.map(build);
+// demo-only markers for the lead-in and match cut: a dot at the end of a window, a ring at the start of the next
+const dot = (w, x, y, d) => K.el('div', { style: { position: 'absolute', left: x - d / 2 + 'px', top: y - d / 2 + 'px', width: d + 'px', height: d + 'px', borderRadius: '50%', background: 'var(--accent-hi)', boxShadow: '0 0 50px 10px var(--accent)', opacity: '0', zIndex: '9' } }, w);
+const ring = (w, x, y, d) => K.el('div', { style: { position: 'absolute', left: x - d / 2 + 'px', top: y - d / 2 + 'px', width: d + 'px', height: d + 'px', borderRadius: '50%', border: '8px solid var(--accent-hi)', opacity: '0', zIndex: '9' } }, w);
+const marks = []; // [element, fn(t) -> opacity]
+const star = Array.from({ length: 16 }, (_, i) => { const r = i % 2 ? 38 : 50, an = i * Math.PI / 8 - Math.PI / 2; return (i ? 'L' : 'M') + (50 + r * Math.cos(an)).toFixed(1) + ' ' + (50 + r * Math.sin(an)).toFixed(1); }).join('') + 'Z';
+// [maker, params]; each join is centred on the next window's start
+const JOINS = [
+  ['crossfade', { dur: 0.5 }],
+  ['fold', { dur: 0.9, axis: 'y', hinge: 'left' }],
+  ['dipSeed', { dur: 1.6, seed: 'dot' }],
+  ['maskWipe', { dur: 0.9, shape: 'circle', soft: 40, lead: true }],
+  ['mirrorFold', { dur: 0.9, twin: true }],
+  ['dipSeed', { dur: 1.6, seed: 'dot' }],
+  ['pageTurn', { dur: 1.1, corner: 'br' }],
+  ['maskWipe', { dur: 0.9, shape: 'arch', y: 1100 }],
+  ['matchCut', { dur: 0.9, marks: true }],
+  ['fold', { dur: 0.9, axis: 'x', hinge: 'top' }],
+  ['maskWipe', { dur: 0.9, shape: 'line', y: 960, soft: 24 }],
+  ['maskWipe', { dur: 0.9, shape: star, rin: 33 }],
+  ['crossfade', { dur: 0.5 }],
+];
+const twins = [];
+const joins = JOINS.map(([kind, { twin, marks: mk, ...prm }], i) => {
+  const A = wins[i], B = wins[i + 1], t0 = B.a - prm.dur / 2, o = { ...prm, t0 };
+  if (kind === 'dipSeed') o.parent = mo;
+  if (twin) { const tw = build(DEMOS[i], i); twins.push([A, tw]); o.right = tw.w; }
+  if (prm.lead) { const d = dot(A.w, 540, 1760, 80); marks.push([d, (t) => K.prog(t, A.a + W - 2.2, 0.5)]); o.lead = d; }
+  if (mk) {
+    const d = dot(A.w, 540, 1760, 90), r = ring(B.w, 540, 960, 420);
+    marks.push([d, (t) => K.prog(t, A.a + W - 2.4, 0.5)], [r, (t) => 1 - K.prog(t, B.a + 1.6, 0.6)]);
+    o.fromEl = d; o.toEl = r;
+  }
+  return Transitions[kind](A.w, B.w, o);
+});
+window.SFX = [...wins.flatMap((x) => x.s.sfx), ...joins.flatMap((j) => j.sfx)];
+window.DURATION = DEMOS.length * W;
+const spans = JOINS.map(([, p], i) => [wins[i + 1].a - p.dur / 2, p.dur]);
+window.frame = (t) => {
+  atm.frame(t);
+  wins.forEach((x) => { if (t >= x.a - 1 && t < x.a + W + 1) x.s.frame(t); });
+  twins.forEach(([x, tw]) => { if (t >= x.a - 1 && t < x.a + W + 1) tw.s.frame(t); });
+  marks.forEach(([e, f]) => { e.style.opacity = String(f(t)); });
+  // every join runs every frame (so seeds and leftovers depend on t alone),
+  // then each window gets its plain on/off, then the one join in progress wins
+  joins.forEach((j) => j.frame(t));
+  wins.forEach((x) => { x.w.style.opacity = t >= x.a && t < x.a + W ? '1' : '0'; });
+  const k = spans.findIndex(([t0, d]) => t >= t0 && t <= t0 + d);
+  if (k >= 0) joins[k].frame(t);
+};
+document.fonts.ready.then(() => { window.frame(0); window.ready = true; });
+</script></body></html>

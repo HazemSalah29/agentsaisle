@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#008080}
+svg{position:absolute;inset:0;shape-rendering:crispEdges}
+text{font-family:Menlo,Monaco,monospace;font-weight:700}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const GREY='#c0c0c0',NAVY='#000080',WHITE='#ffffff',DK='#404040',MID='#808080',BLK='#000';
+const R=(x,y,w,h,f)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}"/>`;
+const T=(x,y,str,sz,f=BLK,a='start')=>`<text x="${x}" y="${y}" font-size="${sz}" fill="${f}" text-anchor="${a}">${str}</text>`;
+// raised bevel box
+function raised(x,y,w,h,f=GREY){return R(x,y,w,h,BLK)+R(x,y,w-2,h-2,WHITE)+R(x+2,y+2,w-4,h-4,DK)+R(x+2,y+2,w-6,h-6,'#dfdfdf')+R(x+4,y+4,w-8,h-8,f)}
+function sunken(x,y,w,h,f=WHITE){return R(x,y,w,h,WHITE)+R(x,y,w-2,h-2,MID)+R(x+2,y+2,w-4,h-4,BLK)+R(x+2,y+2,w-5,h-5,DK)+R(x+4,y+4,w-8,h-8,f)}
+function win(x,y,w,h,title,active,body){
+  const tb=active?NAVY:MID;
+  return raised(x,y,w,h)+R(x+8,y+8,w-16,48,tb)+T(x+22,y+43,title,28,WHITE)
+   +raised(x+w-62,y+13,40,38)+T(x+w-42,y+42,'x',28,BLK,'middle')+raised(x+w-110,y+13,40,38)+R(x+w-98,y+40,16,5,BLK)+body;
+}
+function btn(x,y,w,h,label,pressed){return pressed?R(x,y,w,h,BLK)+R(x+2,y+2,w-2,h-2,WHITE)+R(x+2,y+2,w-4,h-4,MID)+R(x+4,y+4,w-8,h-8,GREY)+T(x+w/2+2,y+h/2+11,label,28,BLK,'middle'):raised(x,y,w,h)+T(x+w/2,y+h/2+9,label,28,BLK,'middle')}
+// pop: outline first, then window
+function pop(t,t0,fn,x,y,w,h){
+  if(t<t0)return '';
+  if(t<t0+.17)return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${WHITE}" stroke-width="4" stroke-dasharray="8 8"/>`;
+  return fn();
+}
+// word wrap typed lines
+function lines(str,n){return str.slice(0,n)}
+function bar(x,y,w,h,frac,blocks){
+  let s=sunken(x,y,w,h),n=Math.floor(frac*blocks),bw=(w-16)/blocks;
+  for(let i=0;i<n;i++)s+=R(x+8+i*bw+2,y+8,bw-4,h-16,NAVY);
+  return s;
+}
+// pixel cursor arrow (stepped), tip at (x,y)
+const CUR=['X','XX','XXX','XXXX','XXXXX','XXXXXX','XXXXXXX','XXXXXXXX','XXXXXXXXX','XXXXXX','XXXXXX','XX XXX','X  XXX','    XXX','    XXX'];
+function cursor(x,y){let s='';const p=4;CUR.forEach((row,j)=>{for(let i=0;i<row.length;i++)if(row[i]==='X')s+=R(x+i*p-2,y+j*p-2,p+4,p+4,i===0||j===0?WHITE:WHITE)});
+  CUR.forEach((row,j)=>{for(let i=0;i<row.length;i++)if(row[i]==='X')s+=R(x+i*p,y+j*p,p,p,BLK)});return s}
+function keys(pts,t){ // piecewise linear path, t quantised to 6fps
+  t=Math.floor(t*6)/6;let a=pts[0];if(t<=a[0])return[a[1],a[2]];
+  for(let i=1;i<pts.length;i++){const b=pts[i];if(t<=b[0]){const k=inout((t-a[0])/(b[0]-a[0]));return[Math.round((a[1]+(b[1]-a[1])*k)/8)*8,Math.round((a[2]+(b[2]-a[2])*k)/8)*8]}a=b}
+  return[a[1],a[2]];
+}
+const PATH=[[0,900,1200],[3.4,880,760],[4.3,640,640],[4.9,740,720],[5.0,740,720],[5.5,640,960],[7.0,900,1300],[7.4,860,700],[7.8,880,720],[8.6,800,1200],[10,800,1200]];
+const L1='The Prophet ﷺ named the deed Allah loves most.',L2='It is not the biggest one.';
+const SP=.045;
+for(let i=0;i<46;i+=3)add(.35+i*SP,'key',.1);
+for(let i=0;i<26;i+=3)add(2.7+i*SP,'key',.1);
+add(4.4,'tap',.25);add(4.9,'drop',.25);
+for(let k=0;k<5;k++)add(5.2+k*.32,'key',.12);
+add(6.8,'thud',.3);add(7.0,'plink',.3);add(7.6,'tap',.25);
+for(let k=0;k<12;k++)add(5.5+k*.3,'tick',.12);
+add(9.25,'bell',.3);
+const CAP=['The Prophet ﷺ named','the deed Allah loves most.'];
+window.frame=function(t){
+  let s=R(0,0,1080,1920,'#008080');
+  // desktop icons
+  const ico=(x,y,l)=>R(x,y,64,48,'#f0d060')+R(x,y-8,28,10,'#f0d060')+R(x,y+40,64,8,'#b09020')+T(x+32,y+84,l,20,WHITE,'middle');
+  s+=ico(50,70,'Notes')+ico(50,200,'Days');
+  // taskbar
+  s+=raised(0,1800,1080,120)+raised(14,1816,220,84)+T(124,1870,'Start',30,BLK,'middle')+sunken(760,1816,306,84,GREY)+T(913,1868,'@YOURPAGE',22,BLK,'middle');
+  // phase 1: notes window
+  if(t<4.5){
+    const out=t>4.3;
+    s+=pop(t,0.0,()=>{
+      const n1=Math.floor(clamp((t-.35)/(SP*L1.length))*L1.length),n2=Math.floor(clamp((t-2.7)/(SP*L2.length))*L2.length);
+      const a=L1.slice(0,n1),sp=a.length>26?a.lastIndexOf(' ',26):a.length;
+      const l1a=a.slice(0,sp),l1b=a.slice(sp).trim();
+      let b=sunken(120,420,840,560,WHITE);
+      b+=T(150,500,l1a,40,BLK)+T(150,560,l1b,40,BLK);
+      b+=T(150,680,L2.slice(0,n2),40,BLK);
+      const blink=Math.floor(t*3)%2===0;
+      if(blink){const cy=t<2.7?(l1b?560:500):680,cx=150+24.1*(t<2.7?(l1b?l1b.length:l1a.length):L2.slice(0,n2).length);b+=R(cx,cy-34,22,40,BLK)}
+      return win(90,330,900,700,'Notes.txt',true,'')+b;
+    },90,330,900,700);
+    if(out)s=s.replace('','');
+  }
+  // window A: big install
+  const ax=90,ay=330,aw=900,ah=560;
+  if(t>=4.5){
+    const done=t>=6.6,inactive=t>=7.2;
+    const frac=clamp((t-5.1)/1.5);
+    s+=pop(t,4.5,()=>{
+      let b=T(130,440,'Installing: one big deed',32,BLK)+T(130,490,'Please wait.',28,DK);
+      b+=bar(130,540,820,86,done?1:frac,20);
+      b+=T(130,690,Math.round((done?1:frac)*100)+' %',44,BLK);
+      b+=T(130,745,done?'Setup finished.':'Copying nights...',28,done?BLK:DK);
+      b+=btn(740,790,200,64,'Cancel',false);
+      return win(ax,ay,aw,ah,'Setup',!inactive,b);
+    },ax,ay,aw,ah);
+    // closes: replaced by greyed ghost
+    if(t>=7.6){
+      s=s.replace(/$/,'');
+    }
+  }
+  // dialog "complete" over A
+  if(t>=6.8&&t<7.6){
+    s+=pop(t,6.8,()=>{
+      let b=R(360,480,0,0,BLK)+T(410,578,'Setup complete.',30,BLK)+T(410,626,'Closing.',28,MID)+btn(560,664,170,60,'OK',t>7.35);
+      return win(330,440,420,330,'Done',true,b);
+    },330,440,420,330);
+  }
+  // window B: daily task
+  const bx=90,by=930,bw=900,bh=600;
+  if(t>=5.0){
+    const k=clamp((t-5.5)/3.7),n=Math.floor(214*ease(k)),fin=t>=9.2;
+    s+=pop(t,5.0,()=>{
+      let b=T(130,1040,'Daily task: one small deed',32,BLK);
+      const cols=22,pitch=32,gx=170,gy=1075;
+      let g=sunken(gx-12,gy-12,cols*pitch+16,10*pitch+16,'#000');
+      for(let i=0;i<214;i++){const cx=gx+(i%cols)*pitch,cy=gy+Math.floor(i/cols)*pitch;
+        const on=i<n;g+=R(cx,cy,pitch-6,pitch-6,on?(i===n-1&&!fin?WHITE:'#00e000'):'#1c3a1c')}
+      b+=g;
+      b+=T(130,1445,fin?'Day 214 of 214 ... done.':'Day '+Math.max(1,n)+' of 214',fin?32:36,BLK);
+      return win(bx,by,bw,bh,'Daily.task',true,b);
+    },bx,by,bw,bh);
+    if(fin&&t>=9.2)s+=pop(t,9.2,()=>raised(150,1560,780,0,GREY),0,0,0,0);
+  }
+  // final line sits in B window bottom: draw extra status bar
+  if(t>=9.2){
+    s+=sunken(122,1458,836,56,GREY)+T(140,1496,'Scheduled again tomorrow.',30,'#006000');
+  } else if(t>=5.0){
+    s+=sunken(122,1458,836,56,GREY)+T(140,1496,'Running...',28,DK);
+  }
+  // cursor
+  const [cx,cy]=keys(PATH,t);s+=cursor(cx,cy);
+  $('s').innerHTML=s;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

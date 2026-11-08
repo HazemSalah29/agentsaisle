@@ -1,0 +1,81 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeP;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0f1310}
+svg{position:absolute;inset:0}
+.h{position:absolute;left:90px;width:900px;color:#eee6d2;font-family:Baskerville,Georgia,serif;font-size:70px;line-height:1.12;opacity:0}
+.h em{font-style:italic;color:#dcb064}
+#hd{position:absolute;bottom:250px;left:0;right:0;text-align:center;font-family:Menlo,monospace;font-size:20px;letter-spacing:.2em;color:rgba(238,230,210,.4)}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="h" id="h0" style="top:330px">One saying.<br><em>Three layers.</em></div>
+<div class="h" id="h1" style="top:330px">Allah <em>loves</em> it most.</div>
+<div class="h" id="h2" style="top:330px">It is kept up, <em>day after day.</em></div>
+<div class="h" id="h3" style="top:330px">Even when it is <em>small.</em></div>
+<div class="h" id="h4" style="top:330px">Small, and it <em>never stopped.</em></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan});
+const INK='#eee6d2',GOLD='#dcb064',DIM='#3a4038';
+const strip=s=>s.replace(/[ً-ٰٟ]/g,'');
+// Each layer: a word on the bead thread, a line drawing (pathLength=1, so dash 1 draws it), and its Arabic.
+const L=[
+ {k:'LOVED',a:1.8,ar:'أَحَبَّ الأَعْمَالِ',icon:`<path pathLength="1" d="M0 70 C -130 -15, -78 -120, 0 -54 C 78 -120, 130 -15, 0 70 Z"/>`},
+ {k:'KEPT UP',a:4.2,ar:'أَدْوَمُهَا',icon:[...Array(7)].map((_,i)=>`<path pathLength="1" d="M${-180+i*60} 70 V -30"/>`).join('')+`<path pathLength="1" d="M-210 70 H210" stroke-opacity=".4"/>`},
+ {k:'SMALL',a:6.6,ar:'وَإِنْ قَلَّ',icon:`<g transform="translate(0 10) scale(1.6)"><path pathLength="1" d="M0 60 C -22 34, -18 -4, 0 -24 C 18 -4, 22 34, 0 60 Z"/><path pathLength="1" d="M0 -24 C 4 -54, 22 -66, 36 -72"/><path pathLength="1" d="M36 -72 q 14 -18 30 -6 q -14 14 -30 6"/></g>`}
+];
+const END=8.6,CX=540,CY=790,AY=1000;
+L.forEach((l,i)=>{add(l.a,'tap',.2);add(l.a+.3,'tick',.14);for(let t=l.a+.7;t<l.a+1.5;t+=.22)add(t,'key',.09);add(l.a+1.6,'plink',.2,(170+i*130-540)/540*.7)});
+add(.3,'tap',.2);add(END,'bell',.28);[0,1,2].forEach(i=>add(END+.15+i*.12,'plink',.14,(i-1)*.5));
+// which layer is on screen, and how far in
+const cur=t=>t<L[0].a?-1:t<L[1].a?0:t<L[2].a?1:2;
+
+function beads(t){
+  const on=ease((t-.4)/.6);let s=`<g opacity="${on}"><path d="M150 268 H470" stroke="${GOLD}" stroke-opacity=".35" stroke-width="2"/>`;
+  const c=cur(t),all=t>=END;
+  L.forEach((l,i)=>{const x=170+i*130,lit=all||i<=c,now=!all&&i===c,g=now?ease((t-l.a)/.5):0;
+    s+=`<circle cx="${x}" cy="268" r="${11+g*5}" fill="${lit?GOLD:'#0f1310'}" stroke="${GOLD}" stroke-width="2"/>`;
+    if(now)s+=`<circle cx="${x}" cy="268" r="${30*g}" fill="${GOLD}" opacity="${.18*g}"/>`});
+  const label=all?'ALL THREE':c<0?'':L[c].k;
+  s+=`<text x="1000" y="276" text-anchor="end" font-family="Menlo,monospace" font-size="20" letter-spacing="4" fill="${GOLD}">${label}</text></g>`;
+  return s;
+}
+function penArabic(t,txt,y,t0,t1,size,op){
+  // one pass right to left over the full height, then the vowel marks cross-fade in last
+  const p=ease((t-t0)/(t1-t0)),f=800-520*p,pf=ease((t-t1-.15)/.35);
+  if(t<t0)return '';
+  const id='m'+Math.round(t0*10);
+  return `<mask id="${id}"><polygon fill="#fff" points="${f},${y-120} 1000,${y-120} 1000,${y+80} ${f-40},${y+80}"/></mask>
+  <g mask="url(#${id})" opacity="${op*(1-pf)}"><text x="540" y="${y}" text-anchor="middle" direction="rtl" font-family="ScheherazadeP" font-size="${size}" fill="${INK}">${strip(txt)}</text></g>
+  <text x="540" y="${y}" text-anchor="middle" direction="rtl" font-family="ScheherazadeP" font-size="${size}" fill="${INK}" opacity="${op*pf}">${txt}</text>`+
+  (p>0&&p<1?`<circle cx="${f-16}" cy="${y-40}" r="6" fill="${GOLD}"/><circle cx="${f-16}" cy="${y-40}" r="24" fill="${GOLD}" opacity=".2"/>`:'');
+}
+window.frame=function(t){
+  let s=beads(t);
+  const fin=inout((t-END)/.9);
+  // the big card shrinks into the middle of a row of three at the end
+  const cw=900-610*fin,ch=460-210*fin,cy=CY+300*fin,cardOp=ease((t-L[0].a+.3)/.5);
+  const box=(x,y,w,h,o)=>`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="22" fill="#151a15" stroke="${GOLD}" stroke-opacity="${.35*o}" stroke-width="2" opacity="${o}"/>`;
+  if(fin<1)s+=box(CX,cy+20,cw,ch+40,cardOp*(1-fin));
+  const c=cur(t);
+  if(c>=0&&fin<.01){const l=L[c],p=ease((t-l.a-.15)/1.1),out=c<2?1-ease((t-L[c+1].a+.35)/.3):1-ease((t-END+.3)/.3);
+    s+=`<g transform="translate(${CX} ${CY-40})" fill="none" stroke="${GOLD}" stroke-width="5" stroke-linecap="round" stroke-dasharray="1" stroke-dashoffset="${1-p}" opacity="${out}">${l.icon}</g>`;
+    s+=`<circle cx="${CX}" cy="${CY-40}" r="${150+Math.sin(t*1.5)*8}" fill="${GOLD}" opacity="${.05*out}"/>`;
+    s+=penArabic(t,l.ar,AY,l.a+.7,l.a+1.5,86,out);}
+  // end: three small cards, each with its drawing and Arabic, then the citation
+  if(t>=END){L.forEach((l,i)=>{const o=ease((t-END-.2-i*.12)/.5),x=CX+(i-1)*310,y=CY+300;
+    s+=box(x,y,280,250,o)+`<g transform="translate(${x} ${y-20}) scale(.55)" fill="none" stroke="${GOLD}" stroke-width="7" stroke-linecap="round" opacity="${o}">${l.icon}</g>`+
+      `<text x="${x}" y="${y+92}" text-anchor="middle" direction="rtl" font-family="ScheherazadeP" font-size="40" fill="${INK}" opacity="${o}">${l.ar}</text>`});
+    s+=`<text x="540" y="1300" text-anchor="middle" font-family="Menlo,monospace" font-size="20" letter-spacing="5" fill="${INK}" fill-opacity=".55" opacity="${ease((t-END-.8)/.5)}">SAHIH AL-BUKHARI 6464</text>`;}
+  $('s').innerHTML=s;
+  const H=[[.3,L[0].a-.3],[L[0].a,L[1].a-.3],[L[1].a,L[2].a-.3],[L[2].a,END-.3],[END+.2,0]];
+  H.forEach(([a,b],i)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.3):1;$('h'+i).style.opacity=Math.min(p,q);$('h'+i).style.transform=`translateY(${(1-p)*14}px)`});
+  return {};
+};
+document.fonts.load('86px ScheherazadeP').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

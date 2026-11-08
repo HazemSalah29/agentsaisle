@@ -1,0 +1,97 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#241b14}
+#bg{position:absolute;inset:0}
+.ln{position:absolute;left:0;width:1080px;text-align:center;font-family:Baskerville,Georgia,serif;font-size:56px;line-height:1.25;color:#2b1d12;white-space:nowrap}
+.w{padding:0 4px;border-radius:4px;opacity:0}
+#flap{position:absolute;left:0;width:1080px;display:flex;justify-content:center;gap:6px}
+.cell{width:62px;height:92px;background:#2b1d12;color:#efe3c8;font-family:Menlo,monospace;font-weight:700;font-size:58px;line-height:92px;text-align:center;border-radius:6px;position:relative;overflow:hidden;transform-origin:50% 50%}
+.cell:after{content:"";position:absolute;left:0;right:0;top:45px;height:3px;background:#0d0804}
+#hd{position:absolute;bottom:200px;left:0;right:0;text-align:center;font-family:Menlo,monospace;font-size:20px;letter-spacing:.2em;color:rgba(239,227,200,.55)}
+</style></head>
+<body>
+<svg id="bg" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="ln" id="l1a" style="top:430px"></div>
+<div class="ln" id="l1b" style="top:500px"></div>
+<div class="ln" id="l2" style="top:640px"></div>
+<div id="flap" style="top:1330px"></div>
+<div id="flap2" style="position:absolute;left:0;width:1080px;display:flex;justify-content:center;gap:6px;top:1440px"></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const INK='#2b1d12',RED='#8a2b1c',GRN='#3f5a2a';
+const hash=n=>{n=Math.imul(n^(n>>>15),2246822519);n=Math.imul(n^(n>>>13),3266489917);return ((n^(n>>>16))>>>0)/4294967296};
+// text: words with start times
+const W1a=['The','Prophet ﷺ','named','the'],W1b=['deed','Allah','loves','most.'],W2=['It','is','not','the','biggest','one.'];
+const D=.27,S1=.3,S2=2.75;
+const words=[];W1a.concat(W1b).forEach((w,i)=>words.push([w,S1+i*D]));W2.forEach((w,i)=>words.push([w,S2+i*D]));
+words.forEach(([w,t])=>add(t,'key',.5));
+add(4.6,'slide',.25);add(5.25,'thud',.4);
+const BX0=148,BW=100,BG=14,NB=7,RA=900,RB=1090,BH=130;
+const TICKS=[];for(let i=0;i<NB;i++){TICKS.push(5.9+i*.6);add(5.9+i*.6,'tick',.35)}
+const LINE1='A SMALL ONE,',LINE2='EVERY DAY',F0=7.3;
+add(F0,'tap',.3);add(9.2,'bell',.3);
+function wordsHTML(arr,t,off){return arr.map(([w],i)=>{const st=words[off+i][1],p=ease((t-st)/.18),hot=t>=st&&t<st+D+.12;
+ return `<span class="w" style="opacity:${p};display:inline-block;transform:translateY(${(1-p)*8}px);background:${hot?'rgba(196,140,40,.38)':'transparent'}">${w}</span>`}).join(' ')}
+function flapRow(el,txt,t,base){
+ let h='';
+ for(let i=0;i<txt.length;i++){
+  const c=txt[i];if(c===' '){h+='<div style="width:30px"></div>';continue}
+  const st=F0+base+i*.07,end=st+.55;let ch=c,sy=1;
+  if(t<st){ch=' '}
+  else if(t<end){const k=Math.floor((t-st)*16);ch='ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(hash(i*97+k*13+base*7)*26)];sy=Math.abs(Math.cos(((t-st)*16%1)*Math.PI/2*1))}
+  else{const q=(t-end)/.12;sy=q<1?Math.abs(Math.cos((1-q)*Math.PI/2*0+0)):1}
+  h+=`<div class="cell" style="opacity:${t<st?0.0:1};transform:scaleY(${Math.max(.08,sy)})">${ch}</div>`;
+ }
+ el.innerHTML=h;
+}
+const sealPath=(cx,cy,r)=>{let d='';for(let i=0;i<=24;i++){const a=i/24*Math.PI*2,rr=r*(i%2?0.88:1);d+=(i?'L':'M')+(cx+Math.cos(a)*rr).toFixed(1)+' '+(cy+Math.sin(a)*rr).toFixed(1)}return d+'Z'};
+window.frame=function(t){
+ let s='<rect width="1080" height="1920" fill="#241b14"/>';
+ const pg=1+0.012*ease(t/10);
+ s+=`<g transform="translate(540 960) scale(${pg}) translate(-540 -960)">`;
+ s+=`<rect x="70" y="230" width="940" height="1420" rx="6" fill="#efe3c8"/>`;
+ for(let i=0;i<60;i++){const x=90+hash(i*3)*900,y=250+hash(i*5+1)*1380;s+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(2+hash(i*7)*5).toFixed(1)}" fill="#b89a5e" opacity="${(.05+hash(i*11)*.08).toFixed(3)}"/>`}
+ s+=`<rect x="100" y="260" width="880" height="1360" fill="none" stroke="${INK}" stroke-width="4"/><rect x="116" y="276" width="848" height="1328" fill="none" stroke="${INK}" stroke-width="1.5"/>`;
+ [[100,260],[980,260],[100,1620],[980,1620]].forEach(([x,y])=>s+=`<rect x="${x-9}" y="${y-9}" width="18" height="18" fill="${INK}"/>`);
+ // cartouche
+ const co=ease((t-0)/.5);
+ s+=`<g opacity="${co}"><path d="M300 330 H780 L808 358 L780 386 H300 L272 358 Z" fill="none" stroke="${RED}" stroke-width="2.5"/><path d="M308 338 H772 L794 358 L772 378 H308 L286 358 Z" fill="none" stroke="${RED}" stroke-width="1"/><text x="540" y="367" text-anchor="middle" font-family="Baskerville,Georgia,serif" font-size="25" letter-spacing="5" fill="${RED}">SAHIH AL-BUKHARI 6464</text></g>`;
+ // ruled lines under text
+ [500,570,710].forEach((y,i)=>{s+=`<path d="M170 ${y} H910" stroke="${INK}" stroke-width="1" opacity=".28"/>`});
+ // tally
+ const ta=ease((t-4.5)/.5);
+ s+=`<g opacity="${ta}">`;
+ s+=`<path d="M170 780 H910" stroke="${INK}" stroke-width="1.5" opacity=".5"/>`;
+ [[RA,'ONE BIG DEED'],[RB,'A SMALL ONE, EVERY DAY']].forEach(([y,lb])=>{
+  s+=`<text x="${BX0}" y="${y-18}" font-family="Baskerville,Georgia,serif" font-style="italic" font-size="30" fill="${INK}" opacity=".75">${lb}</text>`;
+  for(let i=0;i<NB;i++){const x=BX0+i*(BW+BG)+0;s+=`<rect x="${x+4}" y="${y}" width="${BW-8}" height="${BH}" fill="none" stroke="${INK}" stroke-width="2" opacity=".6"/>`}
+ });
+ // big seal in box 1
+ const sp=ease((t-5.1)/.35),sx=BX0+BW/2,sy=RA+BH/2;
+ if(sp>0)s+=`<g transform="translate(${sx} ${sy}) scale(${.4+.6*sp}) translate(${-sx} ${-sy})" opacity="${sp}"><path d="${sealPath(sx,sy,52)}" fill="${RED}" opacity=".9"/><circle cx="${sx}" cy="${sy}" r="36" fill="none" stroke="#efe3c8" stroke-width="3"/><path d="M${sx-16} ${sy} L${sx-4} ${sy+13} L${sx+18} ${sy-14}" fill="none" stroke="#efe3c8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+ // after: empty boxes in row A get a faded dash
+ for(let i=1;i<NB;i++){const p=ease((t-(5.9+i*.6))/.3);s+=`<path d="M${BX0+i*(BW+BG)+26} ${RA+BH/2} h${BW-52}" stroke="${INK}" stroke-width="2" opacity="${.28*p}" stroke-dasharray="4 6"/>`}
+ // small ticks
+ for(let i=0;i<NB;i++){const p=ease((t-TICKS[i])/.28);if(p<=0)continue;const x=BX0+i*(BW+BG)+BW/2,y=RB+BH/2;
+  s+=`<path d="M${x-22} ${y+2} L${x-6} ${y+20} L${x+24} ${y-22}" fill="none" stroke="${GRN}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="90" stroke-dashoffset="${(1-p)*90}"/>`}
+ // connecting line on row B
+ const lp=clamp((t-5.9)/3.6);s+=`<path d="M${BX0+BW/2} ${RB+BH+40} H${BX0+BW/2+lp*(6*(BW+BG))}" stroke="${GRN}" stroke-width="3" opacity=".6"/>`;
+ s+='</g></g>';
+ $('bg').innerHTML=s;
+ // text
+ const a=t<4.5?1:1-.4*ease((t-4.5)/.5);
+ $('l1a').innerHTML=wordsHTML(words.slice(0,4),t,0);
+ $('l1b').innerHTML=wordsHTML(words.slice(4,8),t,4);
+ $('l2').innerHTML=wordsHTML(words.slice(8),t,8);
+ ['l1a','l1b','l2'].forEach(id=>$(id).style.opacity=a);
+ flapRow($('flap'),LINE1,t,0);flapRow($('flap2'),LINE2,t,.8);
+ $('hd').style.opacity=ease(t/1);
+ return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

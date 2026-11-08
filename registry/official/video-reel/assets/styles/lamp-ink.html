@@ -1,0 +1,219 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0c0b10}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style></head>
+<body>
+<canvas id="world" width="1080" height="1920"></canvas>
+<canvas id="ui" width="1080" height="1920"></canvas>
+<script src="../motion.js"></script>
+<script src="../camera.js"></script>
+<script src="../ink/ink.js"></script>
+<script src="../ink/finish.js"></script>
+<script src="../ink/light.js"></script>
+<script src="../ink/room3d.js"></script>
+<script src="../ink/hand.js"></script>
+<script src="../ink/figure.js"></script>
+<script>
+// Lamplit ink look test (ink kit, lamplit preset): an inked room at night, one lamp the only warm light.
+// A faceless figure sits in the chair (0-3.2 s), stands (3.2-4.6), walks to the window (4.6-7.6).
+// A handwritten line appears word by word (5-6.6), a cream card with a number lands (8.6). The drawing boils at 8 fps.
+// Two canvases: #world moves with the camera push, #ui (text and card) stays put. frame(t) is a pure function of t.
+const W = 1080, H = 1920, DUR = 12;
+window.DURATION = DUR; window.SFX = [];
+const { clamp, lerp, inv, ease, hash, mix, shape, stroke, fill, line, ellipsePts, rectPts, P2, box, poly3, line3, cylinder } = Ink;
+Ink.setPalette('lamplit');
+const pal = Ink.pal;
+const wctx = document.getElementById('world').getContext('2d');
+const uctx = document.getElementById('ui').getContext('2d');
+
+// ---- the room (metres) and the camera ----
+const ROOM = { L: -2.1, R: 2.1, B: 4.0, Hc: 2.7, win: { x0: -0.75, x1: 0.95, y0: 0.7, y1: 2.25, m: [0.1] } };
+const LAMP = [-1.1, 0, 3.5], CHAIR = { x0: 0.35, x1: 1.25, z0: 2.6, z1: 3.4 };
+const cam = new Ink.Cam({ x: 0, y: 1.25, z: -0.2, f: 1000, cx: 540, cy: 860 });
+
+// ---- timeline ----
+const SIT_A = [0.8, 2.5], WIN_AT = [0.1, 3.5];
+const T = { rise: [3.2, 3.9], stand: [3.9, 4.6], walk: [4.6, 7.6], text: 5.0, card: 8.6 };
+const LINE = 'Some answers wait by the window.';
+const PER = 0.25;
+
+// ---- the world ----
+function outside(ctx, winPts) {
+  const wl = winPts[0][0], wr = winPts[1][0], wt = winPts[0][1], wb = winPts[2][1];
+  ctx.save();
+  ctx.beginPath(); winPts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.closePath(); ctx.clip();
+  ctx.fillStyle = pal.glass; ctx.fillRect(wl, wt, wr - wl, wb - wt);
+  const n = 8, bw = (wr - wl) / n;
+  for (let i = 0; i < n; i++) {
+    const bh = (wt - wb) * -(0.22 + hash(i, 4) * 0.3), x = wl + i * bw - bw * 0.1;
+    fill(ctx, rectPts(x, wb - bh, bw * 1.15, bh + 8), mix(pal.glass, '#4A5C94', 0.28 + hash(i, 7) * 0.12), { seed: 300 + i, amp: 0.8 });
+    for (let k = 0; k < 6; k++) if (hash(i * 9 + k, 5) < 0.5) {
+      const wx = x + 8 + hash(i * 9 + k, 6) * (bw - 24), wy = wb - bh + 14 + hash(i * 9 + k, 8) * (bh - 30);
+      ctx.fillStyle = 'rgba(176,196,230,0.55)'; ctx.fillRect(wx, wy, 6, 8);
+    }
+  }
+  // faint diagonal reflections on the glass
+  ctx.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 3; i++) {
+    const x0 = lerp(wl, wr, 0.1 + i * 0.3), wd = 16 + (i % 3) * 12;
+    ctx.fillStyle = `rgba(190,205,235,${0.05 + (i % 2) * 0.03})`;
+    ctx.beginPath(); ctx.moveTo(x0, wb); ctx.lineTo(x0 + wd, wb); ctx.lineTo(x0 + wd - 130, wt); ctx.lineTo(x0 - 130, wt); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function armchair(a) {
+  const C = CHAIR, M = pal.moss, Ms = mix(M, '#1d2b22', 0.3), Mt = mix(M, '#86a58c', 0.22);
+  box(a, cam, [C.x0 + 0.05, 0.14, C.z1 - 0.2], [C.x1 - 0.05, 1.0, C.z1], { front: M, side: Ms, top: Mt }, { seed: 150, round: 10, w: 2.6 });
+  box(a, cam, [C.x0 + 0.05, 0.14, C.z0 + 0.05], [C.x1 - 0.05, 0.42, C.z1 - 0.15], { front: Ms, side: Ms, top: M }, { seed: 151, round: 8, w: 2.6 });
+  box(a, cam, [C.x0 + 0.2, 0.4, C.z0 + 0.06], [C.x1 - 0.2, 0.52, C.z1 - 0.22], { front: M, side: Ms, top: Mt }, { seed: 152, round: 9, w: 2.4 });
+  box(a, cam, [C.x0, 0.14, C.z0], [C.x0 + 0.17, 0.66, C.z1], { front: M, side: Ms, top: Mt }, { seed: 154, round: 10, w: 2.6 });
+  box(a, cam, [C.x1 - 0.17, 0.14, C.z0], [C.x1, 0.66, C.z1], { front: M, side: Ms, top: Mt }, { seed: 155, round: 10, w: 2.6 });
+  for (const lx of [C.x0 + 0.08, C.x1 - 0.08]) line3(a, cam, [lx, 0.14, C.z0 + 0.06], [lx, 0, C.z0 + 0.08], { w: 3.4, seed: 156 + lx });
+}
+
+function bookcase(a) {
+  const x0 = -2.05, x1 = -1.4, Z = 3.7;
+  box(a, cam, [x0, 0, Z], [x1, 1.9, 4.0], { front: '#5C4532', side: '#6D523C', top: '#7B5F46' }, { seed: 60, w: 2.4 });
+  const cols = ['#5E7A63', '#8B5E45', '#3E4C6E', '#B8AA8C', '#6F5B7A', '#A07A3E', '#4D6B5A', '#C7BBA0'];
+  [0.08, 0.64, 1.2].forEach((y0, si) => {
+    line3(a, cam, [x0 + 0.03, y0 + 0.5, Z], [x1 - 0.03, y0 + 0.5, Z], { w: 2, seed: 70 + si });
+    let x = x0 + 0.05, k = 0;
+    while (x < x1 - 0.1) {
+      const bw = 0.04 + hash(k, si) * 0.04, bh = 0.3 + hash(k, si + 9) * 0.14;
+      if (hash(k, si + 3) < 0.12) { x += 0.07; k++; continue; }
+      poly3(a, cam, [[x, y0 + 0.02, Z], [x + bw, y0 + 0.02, Z], [x + bw, y0 + bh, Z], [x, y0 + bh, Z]], { fill: cols[(k + si * 3) % cols.length], w: 1.2, seed: 80 + k + si * 30 });
+      x += bw + 0.004; k++;
+    }
+  });
+}
+
+function figureAt(t) {
+  const { POSES, mixPose, walkPose } = Ink;
+  let pose, x = SIT_A[0], z = SIT_A[1];
+  if (t < T.rise[0]) pose = POSES.sit;
+  else if (t < T.rise[1]) pose = mixPose(POSES.sit, POSES.rise, ease.inOut(inv(T.rise[0], T.rise[1], t)));
+  else if (t < T.stand[1]) pose = mixPose(POSES.rise, POSES.stand, ease.inOut(inv(T.stand[0], T.stand[1], t)));
+  else {
+    const u = inv(T.walk[0], T.walk[1], t), e = Ink.smooth(u);
+    const amt = Ink.smooth(inv(0, 0.1, u)) * (1 - Ink.smooth(inv(0.86, 1, u)));
+    pose = mixPose(POSES.stand, walkPose(e * 1.5), amt);
+    x = lerp(SIT_A[0], WIN_AT[0], e); z = lerp(SIT_A[1], WIN_AT[1], e);
+  }
+  return { pose, x, z };
+}
+
+function drawWorld(ctx, t) {
+  // outside, through the glass (drawn first, the room layer has a hole where the glass is)
+  const winPts = Ink.windowPts(cam, ROOM);
+  ctx.fillStyle = '#10131f'; ctx.fillRect(0, 0, W, H);
+  outside(ctx, winPts);
+
+  // the room layer (lit separately)
+  const [A, a] = Ink.scratch('room', W, H);
+  a.clearRect(0, 0, W, H);
+  Ink.roomShell(a, cam, ROOM, { nearZ: 0.2, colors: { wall: '#7C8496', floor: '#7A5A40' } });
+  // ceiling beams
+  for (const bz of [2.9, 3.7]) box(a, cam, [ROOM.L, 2.5, bz], [ROOM.R, ROOM.Hc, bz + 0.16], { front: '#5A4A40', side: '#4A3F38', bottom: '#4A3F38', top: '#4A3F38' }, { seed: 200 + bz * 10, w: 2.4 });
+  // picture on the back wall
+  shape(a, P2(cam, [[1.35, 1.3, ROOM.B], [1.85, 1.3, ROOM.B], [1.85, 1.95, ROOM.B], [1.35, 1.95, ROOM.B]]), { fill: '#6B5440', w: 2.2, seed: 40 });
+  shape(a, P2(cam, [[1.41, 1.37, ROOM.B], [1.79, 1.37, ROOM.B], [1.79, 1.88, ROOM.B], [1.41, 1.88, ROOM.B]]), { fill: '#B8AE96', w: 1.4, seed: 41 });
+  shape(a, P2(cam, [[1.46, 1.43, ROOM.B], [1.58, 1.65, ROOM.B], [1.67, 1.5, ROOM.B], [1.74, 1.43, ROOM.B]]), { fill: '#7E8C79', w: 1.2, seed: 42 });
+  // rug
+  shape(a, P2(cam, [[-1.5, 0.004, 0.9], [1.3, 0.004, 0.9], [1.3, 0.004, 3.4], [-1.5, 0.004, 3.4]]), { fill: pal.rug, w: 2, seed: 110 });
+  poly3(a, cam, [[-1.35, 0.005, 1.05], [1.15, 0.005, 1.05], [1.15, 0.005, 3.25], [-1.35, 0.005, 3.25]], { w: 1.3, seed: 111, inkAlpha: 0.55 });
+  for (let i = 0; i < 4; i++) { const zc = 1.55 + i * 0.55; poly3(a, cam, [[-0.1 - 0.4, 0.006, zc], [-0.1, 0.006, zc - 0.2], [-0.1 + 0.4, 0.006, zc], [-0.1, 0.006, zc + 0.2]], { w: 1.1, seed: 112 + i, inkAlpha: 0.4 }); }
+
+  // depth sorted: bookcase, chair, lamp, figure
+  const fg = figureAt(t), feet = [fg.x, 0, fg.z], items = [];
+  let shade = null, info = null;
+  items.push({ d: cam.depth([-1.7, 1, 3.8]), f: () => bookcase(a) });
+  items.push({ d: cam.depth([0.8, 0.5, 3.0]), f: () => armchair(a) });
+  items.push({ d: cam.depth(LAMP), f: () => {
+    const [lx, , lz] = LAMP;
+    cylinder(a, cam, [lx, 0, lz], 0.17, 0.03, { fill: '#3C3A3A', seed: 90 });
+    line3(a, cam, [lx, 0.03, lz], [lx, 1.48, lz], { w: 3.4, seed: 91, taper: 0.9 });
+    shade = cylinder(a, cam, [lx, 1.44, lz], 0.25, 0.34, { rTop: 0.16, fill: '#E2CE9E', seed: 92, top: '#8D8371' });
+  } });
+  items.push({ d: cam.depth(feet) - 0.3, f: () => {
+    const p = cam.p(feet), k = cam.k(feet), s = (k * 1.62) / 7.1;
+    fill(a, ellipsePts(p[0], p[1], s * 1.25, s * 0.3), 'rgba(30,25,30,0.35)', { seed: 120 });
+    info = Ink.figure(a, p[0], p[1], s, { pose: fg.pose, t, seed: 7, faceless: true });
+  } });
+  items.sort((p, q) => q.d - p.d).forEach((it) => it.f());
+
+  // light the room: one warm practical (the lamp) plus the cool pool from the window
+  const lp = cam.p([LAMP[0], 1.6, LAMP[2]]), lk = cam.k([LAMP[0], 1.6, LAMP[2]]);
+  const lamp = Ink.practical('lamp', lp[0], lp[1], { k: lk, a: 1 + 0.03 * Ink.noise1(t * 5, 2) });
+  const wc = [(winPts[0][0] + winPts[1][0]) / 2, (winPts[0][1] + winPts[2][1]) / 2];
+  const win = Ink.practical('window', wc[0], wc[1], { w: winPts[1][0] - winPts[0][0], color: '#3C4C80', a: 0.5 });
+  Ink.lightPass(a, W, H, { ambient: '#3F4970', lights: [...lamp.lights, ...win.lights], keepAlpha: true });
+  ctx.drawImage(A, 0, 0);
+
+  // emissive: the shade, the bloom, then the head stays the only pure white
+  shape(ctx, shade.hull, { fill: '#F6D49A', w: 2.2, seed: 92 });
+  lamp.emit(ctx);
+  Ink.relightHead(ctx, info, 0.7);
+}
+
+// ---- the card and the line (screen space, no camera) ----
+function drawUI(ctx, t) {
+  ctx.clearRect(0, 0, W, H);
+  const dark = 'rgba(32,26,24,0.75)';
+  // handwriting, word by word; a hard offset ink shadow keeps it readable over the ceiling
+  for (const [dx, dy, col, al] of [[3, 4, '#2B2724', 0.8], [0, 0, '#EFE6D3', 1]]) {
+    Ink.handWords(ctx, LINE, 540 + dx, 330 + dy, { t, t0: T.text, per: PER, size: 104, font: 'Patrick Hand', color: col, alpha: al, align: 'center', maxW: 900, seed: 20 });
+  }
+  // the card lands: a spring drop from below, then it sits
+  const lt = t - T.card;
+  if (lt > 0) {
+    const sp = Motion.spring(lt, 0.5, 2.2), y = 1450 + (1 - sp) * 520, rot = -0.03 + (1 - sp) * 0.06;
+    const cw = 720, ch = 360;
+    ctx.save(); ctx.translate(540, y); ctx.rotate(rot);
+    // flat offset shadow, no blur
+    shape(ctx, rectPts(-cw / 2 + 14, -ch / 2 + 16, cw, ch), { fill: dark, ink: false, seed: 40 });
+    ctx.fillStyle = pal.cream; ctx.fillRect(-cw / 2, -ch / 2, cw, ch);
+    ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(Ink.paperTexture(360, 200, 8), -cw / 2, -ch / 2, cw, ch); ctx.globalCompositeOperation = 'source-over';
+    shape(ctx, rectPts(-cw / 2, -ch / 2, cw, ch), { w: 4, seed: 31, amp: 1 });
+    Ink.hand(ctx, '3:00', 0, 50, { font: 'Permanent Marker', size: 230, color: pal.ink, align: 'center', seed: 3, jitter: 0.8, reveal: clamp(lt / 0.5), pop: 1 });
+    stroke(ctx, [[-250, 84], [-60, 92], [110, 82], [250, 88]], { w: 6, color: pal.ink, seed: 55, amp: 1.2, reveal: clamp((lt - 0.5) / 0.4) });
+    Ink.hand(ctx, 'the quiet hour', 0, 148, { font: 'Patrick Hand', size: 76, color: pal.ink, align: 'center', seed: 5, reveal: clamp((lt - 0.8) / 0.9) });
+    // a scrap of tape
+    ctx.fillStyle = 'rgba(214,204,180,0.8)'; ctx.save(); ctx.translate(cw / 2 - 40, -ch / 2 + 8); ctx.rotate(0.5); ctx.fillRect(-46, -16, 92, 32); ctx.restore();
+    ctx.restore();
+  }
+}
+
+// ---- camera: a slow push, then a small drift toward the window ----
+const rig = Camera.rig([{ el: document.getElementById('world'), depth: 1 }], { guard: false });
+rig.push(0, 12, 1.1).pan(4.2, 4.5, 500, 930);
+
+function frame(t) {
+  Ink.setBoil(t, 0.45);               // re-wobble from floor(t * 8)
+  drawWorld(wctx, t);
+  Ink.finish(wctx, W, H, { grain: 0.14, wash: 0.2, vignette: 0.32, seed: 3 });
+  rig.frame(t);
+  drawUI(uctx, t);
+}
+window.frame = frame;
+
+// ---- sounds ----
+(function () {
+  const add = (t, type, v) => SFX.push({ t, type, v });
+  add(T.rise[0] + 0.05, 'wood', 0.25);
+  // one soft step each time a foot lands (the walk phase is a pure function of time, so find the half-cycles)
+  let last = 0;
+  for (let tt = T.walk[0]; tt <= T.walk[1]; tt += 1 / 60) {
+    const ph = Ink.smooth(inv(T.walk[0], T.walk[1], tt)) * 1.5, step = Math.floor(ph * 2 + 0.25);
+    if (step > last && step <= 3) { add(tt, 'tap', 0.1); last = step; }
+  }
+  LINE.split(' ').forEach((w, i) => add(T.text + i * PER, 'key', 0.15));
+  add(T.card, 'thud', 0.35); add(T.card + 0.5, 'tap', 0.2);
+})();
+
+Ink.loadFonts('../ink/fonts/').then(() => document.fonts.ready).then(() => { frame(0); window.ready = true; });
+</script>
+</body></html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html data-palette="olive"><head><meta charset="utf-8">
+<!-- Elements demo: each force in turn, about 4 s each. A frame(t) page like any reel scene:
+       copy assets/screens to a scratch folder, put this page in a folder beside kit.js as index.html, then capture.mjs that folder
+     Render it from a copy outside the skill. Demo text only: nothing here is for posting. -->
+<link rel="stylesheet" href="../palettes.css">
+<style>
+:root{--serif:Baskerville,"Libre Baskerville",Georgia,serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+#mo{position:relative;width:1080px;height:1920px;overflow:hidden;color:var(--ink);font-family:var(--serif)}
+.cap{position:absolute;left:90px;width:900px;top:330px;text-align:center;font-size:64px;line-height:1.25;opacity:0;z-index:12}
+.acc{color:var(--accent-hi)}
+.name{position:absolute;left:0;right:0;top:1580px;text-align:center;font-size:26px;letter-spacing:.32em;text-transform:uppercase;color:var(--quiet);opacity:0;z-index:12}
+</style></head>
+<body><div id="mo"></div>
+<script src="../kit.js"></script>
+<script src="../elements.js"></script>
+<script>
+const K = Kit, E = Elements, mo = document.getElementById('mo'), SFX = [], parts = [], caps = [];
+const atm = K.atmosphere(mo, { seed: 3 });
+const cap = (html, name, a, b) => { const c = K.el('div', { class: 'cap' }, mo); c.innerHTML = html; const n = K.el('div', { class: 'name', text: name }, mo); caps.push({ c, n, a, b }); return c; };
+const use = (x) => { parts.push(x); SFX.push(...x.sfx); return x; };
+
+cap('Light rays', 'rays', 0, 4); use(E.rays(mo, { t0: 0, dur: 4 }));
+cap('His greatest weapon is <span class="acc">deception.</span>', 'lightning + flash', 4, 8); use(E.lightning(mo, { t0: 5.2, x0: 760, x1: 520, y1: 1150, rise: true }));
+cap('He makes the fire look like <span class="acc">water...</span>', 'water, then fire', 8, 14); use(E.water(mo, { t0: 8.4, dur: 3.2, y: 1150 })); use(E.fire(mo, { t0: 11.2, dur: 2.8, y: 1300 })); use(E.flash(mo, { t0: 11.2, peak: 0.5 }));
+const shield = K.el('div', { style: { position: 'absolute', left: '400px', top: '820px', width: '280px', height: '280px', borderRadius: '50%', border: '3px solid var(--accent-hi)', boxShadow: '0 0 40px var(--accent)', opacity: '0', zIndex: '9' } }, mo);
+cap('It trains you against <span class="acc">a mindset.</span>', 'cracks', 14, 18.5); use(E.cracks(mo, { t0: 14.4, dur: 4, x: 540, y: 960, ring: 150 }));
+const g = cap('The era of <span class="acc">information warfare.</span>', 'glitch', 18.5, 22); use(E.glitch(g, { t0: 19.6, dur: 0.8 }));
+cap('It clears <span class="acc">the fog.</span>', 'fog', 22, 27.5); use(E.fog(mo, { t0: 22.0, dur: 5.5, clearAt: 0.55 }));
+
+const DUR = 27.5;
+function frame(t) {
+  atm.frame(t);
+  for (const { c, n, a, b } of caps) { const v = Math.min(K.ease(K.prog(t, a + 0.2, 0.5)), 1 - K.ease(K.prog(t, b - 0.4, 0.4))); c.style.opacity = n.style.opacity = String(Math.max(0, v)); }
+  shield.style.opacity = String(Math.min(K.ease(K.prog(t, 14.2, 0.4)), 1 - K.ease(K.prog(t, 18.1, 0.4))));
+  parts.forEach((x) => x.frame(t));
+}
+window.frame = frame; window.SFX = SFX; window.DURATION = DUR; window.SIZE = { W: 1080, H: 1920 }; window.ready = true;
+frame(0);
+</script>
+</body></html>

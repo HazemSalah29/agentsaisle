@@ -1,0 +1,66 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#fbf4ea}
+canvas,#grain{position:absolute;inset:0}
+#grain{mix-blend-mode:multiply;opacity:.45;pointer-events:none}
+.t{position:absolute;left:0;width:1080px;text-align:center;font-family:Georgia,"Times New Roman",serif;color:#4a3548;opacity:0}
+#l1{top:340px;font-size:64px;font-style:italic;line-height:1.25;padding:0 120px;text-wrap:balance}
+#card{position:absolute;left:90px;top:560px;width:900px;height:700px;border-radius:64px;background:rgba(255,255,255,.3);border:1.5px solid rgba(255,255,255,.7);
+  backdrop-filter:blur(26px) saturate(1.2);-webkit-backdrop-filter:blur(26px) saturate(1.2);box-shadow:0 30px 80px rgba(120,90,130,.18),inset 0 1px 0 rgba(255,255,255,.8);opacity:0}
+#ar{position:absolute;left:0;width:900px;top:70px;text-align:center;font-family:Scheherazade,serif;font-size:96px;line-height:1.75;color:#3f2c45;direction:rtl;padding:0 50px}
+#ar span{display:inline-block}
+#en{position:absolute;left:0;width:900px;top:420px;color:#4a3548;text-align:center;font-size:50px;line-height:1.3;padding:0 70px;text-wrap:balance;opacity:0}
+#cit{position:absolute;left:0;width:900px;top:610px;text-align:center;font-family:Menlo,monospace;font-size:24px;letter-spacing:7px;color:#7a6a83;opacity:0}
+#l2{top:1310px;font-size:54px;font-style:italic;padding:0 120px}
+#hd{top:1420px;font-family:Menlo,monospace;font-size:26px;letter-spacing:7px;color:#7a6a83}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<svg id="grain" viewBox="0 0 1080 1920" width="1080" height="1920"><defs><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" seed="11"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .38  0 0 0 0 .42  0 0 0 -3 1.55"/></filter></defs><rect width="1080" height="1920" filter="url(#g)"/></svg>
+<div id="l1" class="t">When the mind will not slow down, and the heart will not settle,</div>
+<div id="card"><div id="ar"></div><div id="en">Unquestionably, by the remembrance of Allah hearts are assured.</div><div id="cit">QURAN 13:28</div></div>
+<div id="l2" class="t">Start with one remembrance.</div>
+<div id="hd" class="t">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+add(.4,'tap',.2);add(2.0,'slide',.3);add(2.6,'tap',.2);add(5.2,'tap',.2);add(5.8,'rise',.3);add(6.6,'bell',.3);add(7.6,'tap',.2);add(8.6,'bell',.25);
+const ctx=$('c').getContext('2d');
+// Arabic split into WORDS only (never letters), each word gets its own pen reveal
+const WORDS=['أَلَا','بِذِكْرِ','ٱللَّهِ','تَطْمَئِنُّ','ٱلْقُلُوبُ'];
+$('ar').innerHTML=WORDS.map(w=>`<span>${w}</span>`).join(' ');
+const ws=[...$('ar').children];
+// aura blobs: [hue colour, base x, base y, base radius, orbit speed, phase]; rgb for radial gradient
+const B=[[[234,178,184],300,520,520,1.0,0],[[201,184,232],800,640,560,1.3,1.7],[[246,231,168],540,1100,540,.9,3.1],[[188,208,181],240,1500,500,1.1,4.4],[[234,178,184],860,1560,520,.8,5.2],[[201,184,232],540,1850,480,1.2,2.3]];
+window.frame=function(t){
+  // calm: 0 = restless (small, quick, tight), 1 = settled (wide, slow, soft). It turns at the word "assured".
+  const calm=inout((t-5.6)/2.2);
+  ctx.globalCompositeOperation='source-over';ctx.fillStyle='#fbf4ea';ctx.fillRect(0,0,1080,1920);
+  // blobs fade in over the first second
+  B.forEach((b,i)=>{
+    const sp=b[4]*(1.6-calm*1.2),orb=(70+90*calm)*(1.2-calm*.5);
+    const x=b[1]+Math.cos(t*.5*sp+b[5])*orb*(1.6-calm),y=b[2]+Math.sin(t*.42*sp+b[5]*1.3)*orb*(1.6-calm);
+    const r=b[3]*(.7+.45*calm)*(1+.04*Math.sin(t*.8+i));
+    const a=clamp(t/1.2)*(.78-.1*(1-calm)+.0),c=b[0];
+    const g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgba(${c[0]},${c[1]},${c[2]},${a})`);g.addColorStop(.55,`rgba(${c[0]},${c[1]},${c[2]},${a*.45})`);g.addColorStop(1,`rgba(${c[0]},${c[1]},${c[2]},0)`);
+    ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);
+  });
+  // a warm butter bloom lifts behind the card once the heart settles
+  const lg=ctx.createRadialGradient(540,880,0,540,880,700*calm+1);const la=.55*calm;
+  lg.addColorStop(0,`rgba(255,244,205,${la})`);lg.addColorStop(1,'rgba(255,244,205,0)');ctx.fillStyle=lg;ctx.fillRect(0,0,1080,1920);
+  const up=(el,t0,t1,d=24)=>{const p=ease((t-t0)/.9);el.style.opacity=p*(t1==null?1:1-clamp((t-t1)/.6));el.style.transform=`translateY(${(1-p)*d}px)`;};
+  up($('l1'),.5,2.6);
+  const cp=ease((t-2.0)/.9);$('card').style.opacity=cp;$('card').style.transform=`translateY(${(1-cp)*40}px) scale(${.97+.03*cp})`;
+  // each word is written right to left, one after another (RTL order = array order)
+  ws.forEach((w,i)=>{const p=clamp((t-2.8-i*.5)/.55);w.style.clipPath=`inset(-30% 0 -30% ${(1-inout(p))*100}%)`;w.style.opacity=p>0?1:0;});
+  up($('en'),5.2,null,16);up($('cit'),5.7,null,8);
+  up($('l2'),7.5);up($('hd'),8.6,null,0);
+  return {};
+};
+document.fonts.load('96px Scheherazade','أَلَا').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

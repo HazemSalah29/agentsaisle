@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url(ScheherazadeNew-Regular.ttf)}
+:root{--bg:#45111a;--deep:#2e0a10;--dim:#6b2430;--ink:#ffffff;--gold:#d6a84f;--gold-hi:#f0cf87;--quiet:#c3c1bd;--serif:Baskerville,"Libre Baskerville",serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+.mo{position:relative;width:1080px;height:1920px;background:radial-gradient(ellipse 900px 1200px at 50% 45%,#541520 0%,var(--bg) 55%,var(--deep) 100%);color:var(--ink);font-family:var(--serif)}
+.scene{position:absolute;inset:0;opacity:0}
+.line{position:absolute;left:100px;width:880px;text-align:center;font-size:78px;line-height:1.2;text-wrap:balance}
+.it{font-style:italic;color:var(--gold)}
+.kick{position:absolute;left:0;right:0;text-align:center;font-size:30px;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+.kick:before,.kick:after{content:"";display:inline-block;width:60px;height:1.5px;background:var(--gold);vertical-align:middle;margin:0 24px;opacity:.7}
+.ch{visibility:hidden}
+.ar{position:absolute;left:70px;width:940px;direction:rtl;text-align:center;font-family:Scheherazade,serif;font-size:94px;line-height:1.85}
+.ar span{display:inline-block;margin:0 10px}
+.quiet{color:var(--quiet)}
+</style></head>
+<body><div class="mo">
+  <!-- one .scene per beat; ids must match SC below -->
+  <div class="scene" id="hook">
+    <div class="kick" style="top:420px">Topic</div>
+    <div class="line" id="h1" style="top:640px">Hook line one.</div>
+    <div class="line it" id="h2" style="top:1000px">Hook line two.</div>
+  </div>
+  <div class="scene" id="end">
+    <div class="line" style="top:860px;font-size:64px;letter-spacing:.04em">@yourpage</div>
+    <div class="kick" style="top:980px;font-size:26px">Follow for more</div>
+  </div>
+</div>
+<script>
+// Scene windows [id, start, end] in seconds. DURATION is the last end.
+const SC=[["hook",0,5],["end",5,8]];
+window.SIZE={W:1080,H:1920};window.DURATION=SC[SC.length-1][2];
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+// sound events: add(t, type, gain?) - types in references/sound.md
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+// fade a line up 22px while its blur clears
+function up(el,t,t0,d=.7){const p=ease((t-t0)/d);el.style.opacity=p;el.style.transform=`translateY(${(1-p)*22}px)`;el.style.filter=`blur(${(1-p)*6}px)`}
+// type an element in, character by character, with a key sound per visible character
+const typers=[];
+function typer(el,t0,cps=26){const cs=[];(function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType===3){const f=document.createDocumentFragment();for(const ch of c.textContent){const s=document.createElement('span');s.className='ch';s.textContent=ch;f.appendChild(s);cs.push(s)}c.replaceWith(f)}else w(c)})})(el);
+  typers.push({cs,t0,cps});cs.forEach((c,i)=>{if(c.textContent.trim()&&i%2===0)add(t0+i/cps,'key')});return t0+cs.length/cps}
+SC.forEach(([,a])=>{if(a>0)add(a-.05,'tap')});
+
+// ---- scene set-up: typers, sound events, built shapes ----
+add(.2,'bong');
+typer($('h1'),.3);typer($('h2'),2.4);
+
+window.speed=()=>0;
+window.frame=function(t){
+  SC.forEach(([id,a,b])=>{const fi=a===0?1:inout((t-a)/.4),fo=b===DURATION?1:1-inout((t-(b-.4))/.4);$(id).style.opacity=(t>=a-.01&&t<b+.01)?Math.min(fi,fo):0});
+  for(const {cs,t0,cps} of typers){const n=Math.floor((t-t0)*cps);cs.forEach((c,i)=>c.style.visibility=i<n?'visible':'hidden')}
+  // ---- per-scene motion, all from t ----
+  return {};
+};
+document.fonts.ready.then(()=>{window.frame(0);window.ready=true});
+</script></body></html>

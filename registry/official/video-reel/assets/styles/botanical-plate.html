@@ -1,0 +1,188 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#efe5cf}
+canvas{position:absolute;inset:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+// ---- core: seeded random, noise, easing, grain, vignette, pen-written Arabic (pure functions of t)
+const TAU=Math.PI*2,W=1080,HH=1920;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,t)=>a+(b-a)*t;
+const ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+function rng(seed){let a=(seed>>>0)||1;const r=()=>{a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(lo,hi)=>lo+r()*(hi-lo);r.pick=a=>a[Math.floor(r()*a.length)];r.chance=p=>r()<p;return r}
+function makeNoise(seed){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];
+  for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}
+  for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lp=(a,b,t)=>a+(b-a)*t;
+  const g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);
+    const u=fade(x),v=fade(y),w=fade(z),A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return lp(lp(lp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),
+      lp(lp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  const n2=(x,y)=>n3(x,y,.5);
+  const fbm3=(x,y,z,o=4)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,z*f);n+=a;a*=.5;f*=2}return s/n};
+  return{n2,n3,fbm3,fbm2:(x,y,o=4)=>fbm3(x,y,.5,o)}}
+const hexa=h=>{h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const rgba=(c,a=1)=>{const[r,g,b]=Array.isArray(c)?c:hexa(c);return`rgba(${r|0},${g|0},${b|0},${a})`};
+const mixc=(a,b,t)=>{const A=Array.isArray(a)?a:hexa(a),B=Array.isArray(b)?b:hexa(b);return[0,1,2].map(i=>A[i]+(B[i]-A[i])*t)};
+const layer=(w=W,h=HH)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+// grain: six pre-built noise tiles (seeded), one picked per 1/12 s and laid on with 'overlay'
+const GT=[];
+function grainTiles(){if(GT.length)return;for(let k=0;k<6;k++){const c=layer(540,960),x=c.getContext('2d'),im=x.createImageData(540,960),d=im.data,r=rng(900+k);
+  for(let i=0;i<d.length;i+=4){const n=r()*255;d[i]=d[i+1]=d[i+2]=n;d[i+3]=255}x.putImageData(im,0,0);GT.push(c)}}
+function grain(ctx,amount,t,mono=true){grainTiles();const k=Math.floor(t*12)%6;ctx.save();ctx.globalCompositeOperation='overlay';ctx.globalAlpha=Math.min(1,amount*2.2);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(GT[k],0,0,W,HH);ctx.restore()}
+function vignette(ctx,strength=.5,col='0,0,0'){const g=ctx.createRadialGradient(W/2,HH/2,W*.35,W/2,HH/2,Math.hypot(W,HH)*.6);
+  g.addColorStop(0,`rgba(${col},0)`);g.addColorStop(1,`rgba(${col},${strength})`);ctx.save();ctx.fillStyle=g;ctx.fillRect(0,0,W,HH);ctx.restore()}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+// Arabic written with the pen: lines are written one after another, a slanted edge sweeps right to left,
+// the body (no vowel marks) goes first and the tashkeel comes in last, on its own pass.
+const MARKS=/[ً-ْٰٓ-ٕ]/g;
+function penArabic(c,lines,cx,y0,lh,size,fill,p,o={}){
+  const n=lines.length;c.save();c.direction='rtl';c.textAlign='center';c.textBaseline='alphabetic';c.font=`${size}px ScheherazadeG`;
+  const marks=ease(clamp((p-.86)/.14)),res=[];
+  lines.forEach((s,i)=>{const lp=clamp(p/.86*n-i,0,1),w=c.measureText(s).width,y=y0+i*lh,R=cx+w/2+30,L=cx-w/2-30,fx=R-(R-L)*inout(lp);
+    if(lp<=0)return;res.push({fx,y,w});
+    const clipp=()=>{c.beginPath();c.moveTo(fx,y-size*1.25);c.lineTo(R+60,y-size*1.25);c.lineTo(R+60,y+size*.85);c.lineTo(fx-46,y+size*.85);c.closePath()};
+    const draw=(str,a)=>{if(o.under)o.under(str,cx,y,a);c.fillStyle=typeof fill==='function'?fill(y):fill;c.globalAlpha=a;c.fillText(str,cx,y)};
+    c.save();clipp();c.clip();draw(s.replace(MARKS,''),1-marks);c.restore();
+    if(marks>0){c.save();clipp();c.clip();draw(s,marks);c.restore()}});
+  c.restore();return res}
+const fontsReady=specs=>Promise.all(specs.map(f=>document.fonts.load(f,'Aa'+(window.FONT_SAMPLE||'')))).then(()=>document.fonts.ready);
+
+// ---- style: botanical plate. Engraved black ink (tapered hatching, stipple) + a granular watercolour tint, on foxed paper.
+const SERIF='Baskerville,"Baskerville Old Face",Georgia,serif';
+const TK=[1.3,2.1,2.9,3.7,4.5],GROW=.75;
+// sounds: a soft reel
+TK.forEach((t,i)=>add(t,'plink',.15+i*.012));
+add(.3,'tap',.14);for(let t=3.2;t<4.8;t+=.22)add(t,'key',.09);
+add(5.0,'tap',.2);add(6.4,'tap',.2);add(7.0,'bell',.24);add(7.5,'glass',.16);
+// ---- engraving toolkit (ported from the reference)
+function ribbonPath(c,run){const n=run.length,L=[],R=[];
+  for(let i=0;i<n;i++){const a=run[Math.max(0,i-1)],b=run[Math.min(n-1,i+1)],tx=b[0]-a[0],ty=b[1]-a[1],mm=Math.hypot(tx,ty)||1,nx=-ty/mm,ny=tx/mm;let w=run[i][2]/2;if(i===0||i===n-1)w*=.35;
+    L.push([run[i][0]+nx*w,run[i][1]+ny*w]);R.push([run[i][0]-nx*w,run[i][1]-ny*w])}
+  const poly=L.concat(R.reverse());let area=0;for(let i=0;i<poly.length;i++){const p=poly[i],q=poly[(i+1)%poly.length];area+=p[0]*q[1]-q[0]*p[1]}if(area<0)poly.reverse();
+  c.moveTo(poly[0][0],poly[0][1]);for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0],poly[i][1]);c.closePath()}
+function engrave(c,lines,maxW=1.2,thr=.3,gamma=.8){c.beginPath();
+  for(const ln of lines){let run=[];for(const p of ln){const w=maxW*Math.pow(clamp((p[2]-thr)/(1-thr)),gamma);if(w>.14)run.push([p[0],p[1],w]);else{if(run.length>1)ribbonPath(c,run);run=[]}}if(run.length>1)ribbonPath(c,run)}c.fill()}
+function surfLines(S,sh,n,mm,along='u',a0=-1,a1=1){const out=[];
+  for(let i=0;i<n;i++){const line=[];
+    if(along==='u'){const v=a0+(a1-a0)*(i+.5)/n;for(let k=0;k<=mm;k++){const u=k/mm,p=S(u,v);line.push([p[0],p[1],sh(u,v)])}}
+    else{const u=a0+(a1-a0)*(i+.5)/n;for(let k=0;k<=mm;k++){const v=-1+2*k/mm,p=S(u,v);line.push([p[0],p[1],sh(u,v)])}}out.push(line)}return out}
+function outline(S,n=48){const o=[];for(let k=0;k<=n;k++)o.push(S(k/n,-1));for(let k=n;k>=0;k--)o.push(S(k/n,1));return o}
+function poly(c,pts,close=true){c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);if(close)c.closePath()}
+function erase(c,pts){c.save();c.globalCompositeOperation='destination-out';poly(c,pts);c.fill();c.restore()}
+function contour(c,pts,w0=.7,w1=1.7,close=true){const run=[],n=pts.length;
+  for(let i=0;i<n;i++){const a=pts[(i-1+n)%n],b=pts[(i+1)%n],tx=b[0]-a[0],ty=b[1]-a[1],mm=Math.hypot(tx,ty)||1,k=clamp(.5+.5*((-ty/mm)*.6+(tx/mm)*.8));run.push([pts[i][0],pts[i][1],w0+(w1-w0)*k])}
+  if(close)run.push(run[0]);c.beginPath();ribbonPath(c,run);c.fill()}
+function stipple(c,clip,n,dens,r,rad=.6){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of clip){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])}
+  c.save();poly(c,clip);c.clip();c.beginPath();for(let i=0;i<n;i++){const x=r.range(x0,x1),y=r.range(y0,y1);if(r()<dens(x,y)){const q=rad*r.range(.6,1.3);c.moveTo(x+q,y);c.arc(x,y,q,0,TAU)}}c.fill();c.restore()}
+function wash(tc,pts,col,a,mis=[1.5,-1],edge=.9){tc.save();tc.translate(mis[0],mis[1]);poly(tc,pts);tc.fillStyle=rgba(col,a);tc.fill();tc.strokeStyle=rgba(col,a*edge);tc.lineWidth=3;tc.stroke();tc.restore()}
+function bladeS(bx,by,ang,len,wid,bend,shapeP=.75){const dx=Math.cos(ang),dy=Math.sin(ang),px=-dy,py=dx;
+  const C=u=>[bx+dx*len*u+px*bend*len*u*u,by+dy*len*u+py*bend*len*u*u];
+  return(u,v)=>{const c=C(u),c2=C(Math.min(1,u+.01)),c1=C(Math.max(0,u-.01));let tx=c2[0]-c1[0],ty=c2[1]-c1[1];const m=Math.hypot(tx,ty)||1;tx/=m;ty/=m;
+    const w=wid*Math.pow(Math.sin(Math.PI*Math.pow(Math.min(u,.999),shapeP)),.85);return[c[0]-ty*w*v,c[1]+tx*w*v]}}
+const ell=(cx,cy,rx,ry,n=40,rot=0)=>{const o=[];for(let k=0;k<n;k++){const a=k/n*TAU,x=Math.cos(a)*rx,y=Math.sin(a)*ry;o.push([cx+x*Math.cos(rot)-y*Math.sin(rot),cy+x*Math.sin(rot)+y*Math.cos(rot)])}return o};
+function hatch(c,shape,ang,gap,shade,maxW=1.15){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;shape.forEach(p=>{x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])});
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,R=Math.hypot(x1-x0,y1-y0)/2+2,dx=Math.cos(ang),dy=Math.sin(ang),lines=[];
+  for(let o=-R;o<R;o+=gap){const ln=[];for(let k=0;k<=24;k++){const u=-R+2*R*k/24,x=cx-dy*o+dx*u,y=cy+dx*o+dy*u;ln.push([x,y,shade(x,y)])}lines.push(ln)}
+  c.save();poly(c,shape);c.clip();engrave(c,lines,maxW,.25);c.restore()}
+function ring(tc,x,y,rx,ry,p,col='#b8382c'){if(p<=0)return;tc.save();tc.strokeStyle=rgba(col,.75);tc.lineCap='round';
+  [9,4].forEach((w,k)=>{tc.lineWidth=w;tc.beginPath();const a0=-.6;for(let i=0;i<=48*p;i++){const a=a0+i/48*TAU*1.08,wob=1+.03*Math.sin(a*5+k);const px=x+Math.cos(a)*rx*wob,py=y+Math.sin(a)*ry*wob;i?tc.lineTo(px,py):tc.moveTo(px,py)}tc.stroke()});tc.restore()}
+// ---- cached paper and the pigment grain
+let PAPER=null,WASHTEX=null;
+function paper(){if(PAPER)return PAPER;const L=layer(),c=L.getContext('2d'),r=rng(1847),nz=makeNoise(19),cell=4,[br,bg,bb]=hexa('#efe5cf');
+  for(let y=0;y<HH;y+=cell)for(let x=0;x<W;x+=cell){const v=nz.fbm2(x*.01,y*.01,3)*.6+nz.n2(x*.15,y*.04)*.4,s=1+v*.04*2;c.fillStyle=`rgb(${br*s|0},${bg*s|0},${bb*s|0})`;c.fillRect(x,y,cell,cell)}
+  const eg=c.createRadialGradient(W/2,HH/2,420,W/2,HH/2,1150);eg.addColorStop(0,'rgba(170,130,70,0)');eg.addColorStop(1,'rgba(160,115,50,0.32)');c.fillStyle=eg;c.fillRect(0,0,W,HH);
+  const PM=[46,160,W-46,HH-150];c.fillStyle='rgba(150,120,80,0.06)';c.fillRect(PM[0],PM[1],PM[2]-PM[0],PM[3]-PM[1]);
+  c.globalCompositeOperation='multiply';
+  for(let i=0;i<190;i++){let x=r()*W,y=r()*HH;if(r.chance(.55))x=r.chance(.5)?r()*230:W-r()*230;const rad=r.range(1.5,r.chance(.12)?16:5.5),fg=c.createRadialGradient(x,y,0,x,y,rad);fg.addColorStop(0,`rgba(160,100,45,${r.range(.2,.5)})`);fg.addColorStop(1,'rgba(170,110,55,0)');c.fillStyle=fg;c.beginPath();c.arc(x,y,rad,0,TAU);c.fill()}
+  c.globalCompositeOperation='source-over';c.strokeStyle='rgba(110,80,40,0.35)';c.lineWidth=1.5;c.strokeRect(PM[0],PM[1],PM[2]-PM[0],PM[3]-PM[1]);c.strokeStyle='rgba(255,250,235,0.55)';c.lineWidth=2;c.strokeRect(PM[0]-2,PM[1]-2,PM[2]-PM[0]+4,PM[3]-PM[1]+4);
+  return PAPER=L}
+function washTex(){if(WASHTEX)return WASHTEX;const w=540,h=960,nz=makeNoise(31),B=layer(w,h),b=B.getContext('2d'),img=b.createImageData(w,h),d=img.data;
+  const st=3,gw=Math.ceil(w/st)+2,gh=Math.ceil(h/st)+2,Gd=new Float32Array(gw*gh);
+  for(let j=0;j<gh;j++)for(let i=0;i<gw;i++)Gd[j*gw+i]=nz.fbm2(i*st*2*.018,j*st*2*.018,3);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const fx=x/st,fy=y/st,i=fx|0,j=fy|0,u=fx-i,v=fy-j,o=j*gw+i,f=(Gd[o]*(1-u)+Gd[o+1]*u)*(1-v)+(Gd[o+gw]*(1-u)+Gd[o+gw+1]*u)*v;
+    d[(y*w+x)*4+3]=clamp(.7+.42*f+.14*nz.n2(x*.7,y*.7))*255}
+  b.putImageData(img,0,0);WASHTEX=layer();const q=WASHTEX.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(B,0,0,W,HH);return WASHTEX}
+// ---- the date palm sapling
+const GX=540,GY=1040;
+const FR=[{a:-92,len:195,lm:78,dr:.1},{a:-146,len:300,lm:106,dr:.3},{a:-34,len:300,lm:106,dr:.3},{a:-178,len:340,lm:118,dr:.5},{a:-2,len:340,lm:118,dr:.5}];
+function crownY(t){let g=0;TK.forEach(T=>g+=ease((t-T)/GROW));return GY-70-g*52}
+function trunk(c,tc,t){const cy=crownY(t),H=GY-cy,cx=u=>GX+Math.sin(u*2.2)*7,yy=u=>GY-H*u;
+  const S=(u,v)=>{const w=(17-5*u)*(1+.7*Math.pow(1-u,7));return[cx(u)+w*v,yy(u)]};
+  const o=outline(S,24);erase(c,o);wash(tc,o,'#a98a55',.6,[2,-1]);
+  const sh=(u,v)=>clamp(.3+.55*(v>0?1:0)+.25*Math.pow(Math.abs(v),3));engrave(c,surfLines(S,sh,6,22,'u'),1.1,.28);
+  // leaf-base scales: short curved ticks across the stem
+  c.save();c.lineWidth=1.1;c.lineCap='round';c.beginPath();for(let k=1;k<H/15;k++){const u=k*15/H,p=S(u,-.9),q=S(u,.9),mid=S(u+.012,0);c.moveTo(p[0],p[1]);c.quadraticCurveTo(mid[0],mid[1]-3,q[0],q[1])}c.stroke();c.restore();
+  contour(c,o,.6,1.8);return[cx(1),cy]}
+function frond(c,tc,k,p,t,C){const F=FR[k],gp=ease(p);if(gp<=0)return;const ang=F.a*Math.PI/180,len=F.len*gp,dx=Math.cos(ang),dy=Math.sin(ang);
+  const sway=Math.sin(t*1.1+k*1.7)*.025,pos=u=>[C[0]+dx*len*u,C[1]+dy*len*u+F.dr*len*u*u*.9];
+  const tg=u=>{const a=pos(Math.max(0,u-.02)),b=pos(Math.min(1,u+.02));return Math.atan2(b[1]-a[1],b[0]-a[0])};
+  // rachis: tapered engraved ribbon
+  const rr_=[];for(let i=0;i<=16;i++){const q=pos(i/16);rr_.push([q[0],q[1],3.4*(1-i/16)+.7])}c.beginPath();ribbonPath(c,rr_);c.fill();
+  const n=13;
+  for(let i=0;i<n;i++){const u=.14+.86*i/(n-1);if(u>1.01)continue;
+    const open=ease(clamp((p-.2-u*.5)*2.2)),b=pos(u),ta=tg(u),sizeP=clamp((gp-u*.25)*1.6),Ll=F.lm*(Math.sin(Math.PI*Math.pow(.12+.88*(1-u*.72),.9)))*sizeP+1;
+    if(Ll<4)continue;
+    [-1,1].forEach(sd=>{const a=ta+sd*lerp(.16,.78,open)+sd*sway+sd*(-.12)*F.dr*open*0,L=bladeS(b[0],b[1],a+(sd>0?0:0),Ll,Ll*.1+1,sd*.06,.7),o=outline(L,16);
+      erase(c,o);wash(tc,o,(i+k)%3===0?'#58773a':'#6d8c45',.55,[2,-1.5]);
+      const lsh=(uu,v)=>clamp(.33+.4*(v*sd>0?1:0)+.3*Math.pow(Math.abs(v),3)+.2*Math.pow(1-uu,3));
+      engrave(c,surfLines(L,lsh,3,10,'u'),.95,.3);
+      const mr=[];for(let q=0;q<=8;q++){const pp=L(q/8*.95,0);mr.push([pp[0],pp[1],1.1*(1-q/8)+.35])}c.beginPath();ribbonPath(c,mr);c.fill();
+      contour(c,o,.4,1.3)})}}
+window.frame=function(t){
+  const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+  if(!window.__L){window.__L={ink:layer(),tint:layer()}}const ink=window.__L.ink,tint=window.__L.tint,c=ink.getContext('2d'),tc=tint.getContext('2d');
+  c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,HH);tc.setTransform(1,0,0,1,0,0);tc.clearRect(0,0,W,HH);
+  c.fillStyle=c.strokeStyle='#000';c.lineCap='round';c.lineJoin='round';
+  // plate rules draw on
+  const pr=inout(clamp((t-.2)/1.1));c.lineWidth=1.6;c.setLineDash([5000*pr+.01,9000]);c.strokeRect(70,196,940,1384);c.lineWidth=.8;c.strokeRect(77,203,926,1370);c.setLineDash([]);
+  c.save();c.globalAlpha=fade(t,.5);c.font=`26px ${SERIF}`;c.letterSpacing='5px';c.textBaseline='alphabetic';c.textAlign='left';c.fillText('PLATE I.',96,248);c.textAlign='right';c.fillText('DATE PALM',988,248);c.restore();
+  c.letterSpacing='0px';
+  // hook, as the plate's title
+  const h=fade(t,.9);if(h>0){c.save();c.globalAlpha=h;c.font=`italic 54px ${SERIF}`;c.textAlign='center';c.fillText('A small deed, kept up every day.',540,350+(1-h)*10);c.restore()}
+  // ground, the date stone beside it
+  const gp=ease((t-.5)/.8);
+  if(gp>0){const mound=ell(GX,GY+6,260*gp,32,50);erase(c,mound);wash(tc,mound,'#8a6a45',.55,[2,-1]);
+    hatch(c,mound,.5,3.2,(x,y)=>clamp(.25+.5*((x-GX)/260+(y-GY)/40)/2+.35));contour(c,mound,.8,2.2);
+    const st=ell(GX-200,GY+12,38*gp,21*gp,32,-.18);erase(c,st);wash(tc,st,'#7a5230',.65,[2,-1]);hatch(c,st,.9,2.4,(x,y)=>clamp(.3+.6*((x-(GX-200))/40+(y-GY)/24)/2+.3));contour(c,st,.7,1.9);
+    c.lineWidth=1.3;c.beginPath();c.moveTo(GX-226,GY+9);c.quadraticCurveTo(GX-200,GY+14,GX-174,GY+7);c.stroke()}
+  // tally of days: five small rings that fill, one for each frond
+  for(let i=0;i<5;i++){const x=GX+(i-2)*130,y=1085,on=ease((t-TK[i])/.4),o=ell(x,y,24,24,30);
+    if(t>.9){erase(c,o);contour(c,o,.8,1.6);if(on>0){wash(tc,o,'#c8a25a',.7*on,[1.5,-1]);hatch(c,o,Math.PI/4,3,(px,py)=>clamp(.3+.5*((px-x)+(py-y))/24/1.4+.3),1.0*on)}}
+    const la=fade(t,TK[i]-.1);if(la>0){c.save();c.globalAlpha=la;c.font=`italic 29px ${SERIF}`;c.textAlign='center';c.fillText('day '+(i+1),x,1142);c.restore()}}
+  // the plant
+  if(t>TK[0]-.1){const C=trunk(c,tc,t);
+    // the crown bud
+    const bud=ell(C[0],C[1]+4,13,10,24);erase(c,bud);wash(tc,bud,'#6d8c45',.6);contour(c,bud,.6,1.6);
+    for(let k=0;k<5;k++)frond(c,tc,k,(t-TK[k])/GROW,t,C)}
+  // rule and the words
+  const rl=inout(clamp((t-2.0)/.8));c.lineWidth=1.3;c.beginPath();c.moveTo(540-(330)*rl,1176);c.lineTo(540+330*rl,1176);c.stroke();
+  if(rl>=1){c.beginPath();c.moveTo(540,1169);c.lineTo(547,1176);c.lineTo(540,1183);c.lineTo(533,1176);c.closePath();c.fill()}
+  if(t>=3.15){penArabic(c,['أَحَبَّ الأَعْمَالِ أَدْوَمُهَا','إِلَى اللَّهِ، وَإِنْ قَلَّ'],540,1262,92,76,'#000',clamp((t-3.2)/1.6))}
+  c.direction='ltr';c.textAlign='center';c.font=`italic 38px ${SERIF}`;
+  const e1=fade(t,5.0),e2=fade(t,6.4),e3=fade(t,7.0);
+  c.save();c.globalAlpha=e1;c.fillText('The most beloved deed to Allah is the most regular',540,1430+(1-e1)*10);c.globalAlpha=e2;c.fillText('and constant even if it were little.',540,1473+(1-e2)*10);
+  c.globalAlpha=e3;c.font='22px Menlo,monospace';c.letterSpacing='9px';c.fillText('SAHIH AL-BUKHARI 6464',544,1505);c.letterSpacing='0px';c.restore();
+  // the colourist circles the word "little"
+  {c.font=`italic 38px ${SERIF}`;const full='and constant even if it were little.',w=c.measureText(full).width,pre=c.measureText('and constant even if it were ').width,lw=c.measureText('little.').width,x=540-w/2+pre+lw/2-20;ring(tc,x,1466,lw/2+18,30,ease((t-7.5)/.7))}
+  // ---- composite: paper, tint through the pigment grain, then the engraved ink
+  tc.globalCompositeOperation='destination-in';tc.drawImage(washTex(),0,0);tc.globalCompositeOperation='source-over';
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.filter='none';ctx.globalCompositeOperation='source-over';ctx.drawImage(paper(),0,0);
+  ctx.globalCompositeOperation='multiply';ctx.filter='blur(0.8px)';ctx.drawImage(tint,0,0);ctx.filter='blur(0.9px)';ctx.globalAlpha=.25;ctx.drawImage(ink,0,0);ctx.filter='none';ctx.globalAlpha=.92;ctx.drawImage(ink,0,0);
+  ctx.globalCompositeOperation='lighten';ctx.globalAlpha=1;ctx.fillStyle='rgb(38,30,24)';ctx.fillRect(0,0,W,HH);ctx.globalCompositeOperation='source-over';
+  vignette(ctx,.28,'60,40,15');grain(ctx,.04,t);
+  return{};
+};
+const fade=(t,a,b)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;return Math.min(p,q)};
+fontsReady(['80px ScheherazadeG','italic 54px Baskerville','26px Baskerville','22px Menlo']).then(()=>{paper();washTex();frame(0);window.ready=true});
+</script></body></html>

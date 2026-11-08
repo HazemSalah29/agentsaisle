@@ -1,0 +1,121 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url('../ScheherazadeNew-Regular.ttf')}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#070d1f}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.t{position:absolute;left:110px;right:110px;text-align:center;color:#f6e9cf;font-family:Baskerville,"Baskerville Old Face",Georgia,serif;opacity:0;text-wrap:balance}
+.hook{font-size:70px;line-height:1.22;text-shadow:0 0 30px rgba(255,170,70,.35)}
+#ar{position:absolute;left:90px;right:90px;top:880px;text-align:center;direction:rtl;font-family:Scheherazade,serif;font-size:84px;white-space:nowrap;line-height:1.85;color:#ffe3a8;text-shadow:0 0 28px rgba(255,160,60,.55),0 0 80px rgba(255,140,40,.25);opacity:0}
+#en{font-size:50px;line-height:1.3;top:1180px;font-style:italic;color:#f6e9cf}
+#cit{font-family:Menlo,monospace;font-size:26px;letter-spacing:.34em;color:rgba(255,200,130,.78);top:1345px}
+#hd{font-family:Menlo,monospace;font-size:22px;letter-spacing:.3em;color:rgba(246,233,207,.5);top:1450px}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="t hook" id="h1" style="top:900px">Some nights, the heart is loud.</div>
+<div class="t hook" id="h2" style="top:1060px;color:#ffd98a">One small light is enough.</div>
+<div id="ar">أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ</div>
+<div class="t" id="en">Unquestionably, by the remembrance of Allah hearts are assured.</div>
+<div class="t" id="cit">QURAN 13:28</div>
+<div class="t" id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const H=(n)=>{let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+// sound: a match-strike tap, the flame catching, then soft lines
+add(.55,'tap',.28);add(.75,'plink',.3);add(1.2,'bong',.3);
+add(2.3,'tap',.2);add(3.9,'tap',.2);
+add(5.3,'slide',.3);add(7.0,'bell',.3);add(8.3,'plink',.2);
+const cv=$('c'),g=cv.getContext('2d');
+const flick=t=>.86+.07*Math.sin(t*13+1)+.05*Math.sin(t*23.7+2)+.04*Math.sin(t*7.3+4);
+// bokeh discs: seeded, drift upward, wrap
+const BK=[];const COLS=['255,179,71','255,138,61','255,217,138','255,160,90','210,170,255'];
+for(let i=0;i<48;i++)BK.push({x:H(i+1)*1080,y:H(i+60)*2100,r:30+H(i+120)*85,sp:8+H(i+180)*22,a:.07+H(i+240)*.15,c:COLS[Math.floor(H(i+300)*(i%7===0?5:4))],ph:H(i+360)*6.28});
+// moths of light
+const MO=[];for(let i=0;i<7;i++)MO.push({rx:150+H(i+500)*140,ry:90+H(i+520)*120,w:.8+H(i+540)*1.1,ph:H(i+560)*6.28,y:(H(i+580)-.5)*120});
+function lantern(t,L){
+  const sw=.03*Math.sin(t*.8);
+  g.save();g.translate(540,-60);g.rotate(sw);g.translate(0,700);
+  // cord
+  g.strokeStyle='#241a2e';g.lineWidth=5;g.beginPath();g.moveTo(0,-700);g.lineTo(0,-205);g.stroke();
+  g.beginPath();g.arc(0,-198,10,0,7);g.stroke();
+  // body glow fill
+  const f=flick(t)*L;
+  const body=new Path2D();body.moveTo(-88,-150);body.bezierCurveTo(-140,-60,-140,60,-88,150);body.lineTo(88,150);body.bezierCurveTo(140,60,140,-60,88,-150);body.closePath();
+  const gr=g.createRadialGradient(0,30,6,0,10,150);
+  gr.addColorStop(0,`rgba(255,240,200,${.15+.85*f})`);gr.addColorStop(.35,`rgba(255,186,90,${.1+.7*f})`);gr.addColorStop(1,`rgba(120,50,20,${.25+.3*f})`);
+  g.fillStyle=gr;g.fill(body);
+  // flame and candle
+  g.fillStyle='#d9c9a3';g.fillRect(-9,50,18,90);
+  if(L>0){
+    const fh=44*f,sx=Math.sin(t*9)*2.5+Math.sin(t*17+1)*1.5;
+    g.save();g.globalCompositeOperation='lighter';
+    g.fillStyle=`rgba(255,200,110,${.9*L})`;g.beginPath();g.moveTo(-10,50);g.quadraticCurveTo(-14,30,sx,50-fh);g.quadraticCurveTo(14,30,10,50);g.quadraticCurveTo(0,60,-10,50);g.fill();
+    g.fillStyle=`rgba(255,250,225,${L})`;g.beginPath();g.ellipse(sx*.4,40,4.5,12*f,0,0,7);g.fill();g.restore();
+  }
+  // ribs, bands, cap, base (dark metal over the glass)
+  g.strokeStyle='#150f20';g.lineWidth=7;g.lineJoin='round';
+  for(const k of[-.66,-.33,0,.33,.66]){g.beginPath();g.moveTo(k*88,-150);g.quadraticCurveTo(k*158,0,k*88,150);g.stroke()}
+  g.lineWidth=9;g.stroke(body);
+  g.fillStyle='#150f20';
+  g.beginPath();g.moveTo(-102,-150);g.lineTo(-34,-196);g.lineTo(34,-196);g.lineTo(102,-150);g.closePath();g.fill();
+  g.fillRect(-100,-110,200,0);g.fillRect(-98,148,196,26);g.beginPath();g.moveTo(-50,174);g.lineTo(0,200);g.lineTo(50,174);g.fill();
+  // glow halo (additive)
+  g.save();g.globalCompositeOperation='lighter';
+  const R=g.createRadialGradient(0,20,10,0,20,520);
+  R.addColorStop(0,`rgba(255,170,70,${.5*f})`);R.addColorStop(.35,`rgba(255,120,40,${.16*f})`);R.addColorStop(1,'rgba(255,100,30,0)');
+  g.fillStyle=R;g.fillRect(-600,-500,1200,1200);
+  // moths of light
+  const mA=clamp((t-3)/1.2);
+  if(mA>0)for(const m of MO){
+    for(let k=0;k<12;k++){
+      const tt=t-k*.035,ph=m.ph+tt*m.w,wob=Math.sin(tt*5+m.ph)*10;
+      const x=Math.cos(ph)*m.rx+wob,y=m.y+Math.sin(ph*1.3)*m.ry*.7;
+      const a=mA*(1-k/12)*.8*(.7+.3*Math.sin(tt*20+m.ph));
+      g.fillStyle=`rgba(255,225,160,${a})`;g.beginPath();g.arc(x,y,(k?2.4:3.6)*(1-k/20),0,7);g.fill();
+      if(!k){g.fillStyle=`rgba(255,200,110,${a*.25})`;g.beginPath();g.arc(x,y,12,0,7);g.fill()}
+    }
+  }
+  g.restore();g.restore();
+}
+function draw(t){
+  const L=clamp((t-.75)/1.1);
+  const bg=g.createLinearGradient(0,0,0,1920);bg.addColorStop(0,'#070d1f');bg.addColorStop(.55,'#0d1b3a');bg.addColorStop(1,'#080f22');
+  g.fillStyle=bg;g.fillRect(0,0,1080,1920);
+  // bokeh
+  g.save();g.globalCompositeOperation='lighter';
+  const vis=.25+.75*L;
+  for(const b of BK){
+    const y=((b.y-t*b.sp)%2200+2200)%2200-150,x=b.x+Math.sin(t*.3+b.ph)*18;
+    const a=b.a*vis*(.8+.2*Math.sin(t*.9+b.ph));
+    const gr=g.createRadialGradient(x,y,b.r*.1,x,y,b.r);
+    gr.addColorStop(0,`rgba(${b.c},${a*.55})`);gr.addColorStop(.82,`rgba(${b.c},${a*.75})`);gr.addColorStop(.92,`rgba(${b.c},${a*1.1})`);gr.addColorStop(1,`rgba(${b.c},0)`);
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,b.r,0,7);g.fill();
+  }
+  g.restore();
+  lantern(t,L);
+  // vignette
+  const v=g.createRadialGradient(540,900,500,540,900,1250);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(2,4,12,.6)');
+  g.fillStyle=v;g.fillRect(0,0,1080,1920);
+}
+// line fades up 24 px; out = time it fades away
+function up(el,t,t0,t1,out){
+  const a=ease((t-t0)/.7)*(out?1-clamp((t-out)/.5):1);
+  el.style.opacity=t1&&t>t1?0:a;el.style.transform=`translateY(${(1-ease((t-t0)/.9))*24}px)`;
+}
+window.frame=function(t){
+  draw(t);
+  up($('h1'),t,2.1,0,5.0);up($('h2'),t,3.7,0,5.0);
+  // Arabic: written right to left with a soft mask edge (dots and marks last is left to a fuller build)
+  const p=clamp((t-5.3)/1.9),ar=$('ar');
+  const a=p*118-18;
+  ar.style.opacity=t>5.3?1:0;
+  ar.style.webkitMaskImage=p>=1?'none':`linear-gradient(to left,#000 ${a}%,transparent ${a+18}%)`;
+  up($('en'),t,7.4);up($('cit'),t,8.2);up($('hd'),t,9.0);
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

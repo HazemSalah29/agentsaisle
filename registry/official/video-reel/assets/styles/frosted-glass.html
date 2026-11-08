@@ -1,0 +1,189 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0c0a24}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2},lerp=(a,b,k)=>a+(b-a)*k,ph=(t,a,b)=>clamp((t-a)/(b-a));
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan});
+// ---------------------------------------------------------------- sound (soft reel: glass, whoosh, shimmer, pen)
+add(.2,'kit:pop-small-in',.8);
+add(2.95,'kit:whoosh-slow-soft',.7,-.3);add(3.25,'kit:whoosh-slow-soft',.6,.4);
+add(3.9,'glass',.2);
+add(4.2,'kit:writing-pen-write',.6);
+add(5.7,'kit:foley-glass-touch',.5);add(6.0,'plink',.2);
+add(5.95,'kit:shimmer-medium-soft',.5);
+add(6.7,'kit:pop-small-in',.6);
+add(8.2,'bell2',.14);
+// ---------------------------------------------------------------- canvas, noise, helpers
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const mkc=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const NOISE=mkc(160,160);
+{const x=NOISE.getContext('2d'),id=x.createImageData(160,160);let s=99;const r=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296};
+ for(let i=0;i<id.data.length;i+=4){const v=r()<.5?0:255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=r()*60}x.putImageData(id,0,0)}
+const NP=ctx.createPattern(NOISE,'repeat');
+const SNAP=mkc(540,960),BLUR=mkc(1080,1920);
+const SANS='"SF Pro Display","Avenir Next","Helvetica Neue",Arial,sans-serif';
+// ---------------------------------------------------------------- 3D: a pinhole camera that sways, points are (x right, y up, z away)
+const F=1500;let CY=0;
+const camXf=p=>{const c=Math.cos(CY),s=Math.sin(CY),x=p[0],z=p[2]-1500;return[c*x+s*z,p[1],-s*x+c*z+1500]};
+const proj=p=>{const q=camXf(p);return[540+F*q[0]/q[2],960-F*q[1]/q[2],q[2]]};
+const rotYX=(v,yaw,pitch)=>{let[x,y,z]=v;let c=Math.cos(pitch),s=Math.sin(pitch);[y,z]=[c*y-s*z,s*y+c*z];c=Math.cos(yaw);s=Math.sin(yaw);[x,z]=[c*x+s*z,-s*x+c*z];return[x,y,z]};
+function rrPts(w,h,r,n=8){const P=[];const cs=[[w/2-r,h/2-r,0],[-w/2+r,h/2-r,90],[-w/2+r,-h/2+r,180],[w/2-r,-h/2+r,270]];
+  for(const[cx,cy,a0]of cs)for(let i=0;i<=n;i++){const a=(a0+90*i/n)*Math.PI/180;P.push([cx+r*Math.cos(a),cy+r*Math.sin(a)])}return P}
+// ---------------------------------------------------------------- orbs (spheres seen in perspective)
+const ORB={
+  pink:['#ffd2f4','#ff4fc1','#6a1497'],blue:['#c7f2ff','#3aa0ff','#1a2a8a'],orange:['#ffe3b8','#ff8a2a','#9a2f12'],violet:['#e8d6ff','#8b4dff','#2a1070'],
+  night:['#7d70d8','#2c1b82','#0b0530'],ease:['#fffbe6','#ffc15a','#e8553a'],cyan:['#d6fbff','#19c9ff','#0b4f9a']};
+const d=(p,a)=>Math.sin(p)*a;
+const easeTrip=t=>inout(ph(t,4.7,7.2));
+// ease travels BEHIND the verse pane, then climbs round its top-right corner and arrives in front: [u, screenX, screenY]
+const WP=[[0,300,830],[.35,720,650],[.62,960,400],[1,870,495]];
+function easePos(t){const u=easeTrip(t);let i=0;while(i<WP.length-2&&u>WP[i+1][0])i++;const A=WP[i],B=WP[i+1],k=clamp((u-A[0])/(B[0]-A[0])),e=k*k*(3-2*k)*.65+k*.35;
+  const z=2650-1400*Math.pow(Math.max(u,1e-4),.4),xs=lerp(A[1],B[1],e),ys=lerp(A[2],B[2],e);return[(xs-540)*z/F,(960-ys)*z/F+Math.sin(t*1.3)*12*u,z]}
+const ORBS=[
+  {id:'night',col:ORB.night,r:300,pos:t=>[-210+d(t*.4,26),170+d(t*.5+1,22),2150]},                                    // hardship: big, dark, behind the glass
+  {id:'violet',col:ORB.violet,r:190,pos:t=>[-470+d(t*.5+2,30),-330+d(t*.6,24),1750]},
+  {id:'pink',col:ORB.pink,r:170,pos:t=>[420+d(t*.45+3,34),560+d(t*.5+2,26),1900]},
+  {id:'blue',col:ORB.blue,r:230,pos:t=>[380+d(t*.35+1,40),-470+d(t*.45+4,28),2300]},
+  {id:'cyan',col:ORB.cyan,r:120,pos:t=>[-520+d(t*.55+5,24),620+d(t*.4+1,20),1650]},
+  {id:'orange',col:ORB.orange,r:95,pos:t=>[-360+d(t*.5+6,22),-720+d(t*.55,18),1400]},
+  // ease: starts far behind, slides round the right edge of the pane and arrives in front of the glass, sharp
+  {id:'ease',col:ORB.ease,r:150,pos:easePos,vis:t=>ph(t,4.4,5.0)},
+];
+function glowAndOrb(o,t,withGlow){
+  const vis=o.vis?o.vis(t):1;if(vis<=.01)return;
+  const P=proj(o.pos(t)),s=F/P[2],R=o.r*s,[c1,c2,c3]=o.col;
+  ctx.save();ctx.globalAlpha=vis;
+  if(withGlow){const g=ctx.createRadialGradient(P[0],P[1],R*.4,P[0],P[1],R*2.1);g.addColorStop(0,c2+'66');g.addColorStop(1,c2+'00');ctx.globalCompositeOperation='screen';ctx.fillStyle=g;ctx.fillRect(P[0]-R*2.2,P[1]-R*2.2,R*4.4,R*4.4);ctx.globalCompositeOperation='source-over'}
+  const g=ctx.createRadialGradient(P[0]-R*.4,P[1]-R*.45,R*.05,P[0],P[1],R);g.addColorStop(0,c1);g.addColorStop(.55,c2);g.addColorStop(1,c3);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(P[0],P[1],R*vis,0,7);ctx.fill();
+  // bounce light on the shaded rim and a crisp specular
+  const rg=ctx.createRadialGradient(P[0]+R*.35,P[1]+R*.4,R*.55,P[0]+R*.35,P[1]+R*.4,R*1.05);rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(1,c2+'55');
+  ctx.fillStyle=rg;ctx.beginPath();ctx.arc(P[0],P[1],R*vis,0,7);ctx.fill();
+  const sp=ctx.createRadialGradient(P[0]-R*.38,P[1]-R*.46,0,P[0]-R*.38,P[1]-R*.46,R*.3);sp.addColorStop(0,'rgba(255,255,255,.85)');sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=sp;ctx.beginPath();ctx.arc(P[0],P[1],R*vis,0,7);ctx.fill();
+  ctx.restore();
+}
+// ---------------------------------------------------------------- background (blobs + grid + dither), same as the reference but in portrait
+function drawBG(t){
+  const b=ctx;const g=b.createLinearGradient(0,0,1080,1920);g.addColorStop(0,'#0c0a24');g.addColorStop(1,'#170f3a');b.fillStyle=g;b.fillRect(0,0,1080,1920);
+  const par=x=>540+(x)*.5-Math.sin(CY)*900;
+  const blob=(x,y,r,col,a=1)=>{const hot=col==='#ff7a1a',mid=hot?'#ff5a4a':col,tail=hot?'#ff2b8a':col;const gg=b.createRadialGradient(x,y,0,x,y,r);gg.addColorStop(0,col+'ff');gg.addColorStop(.5,mid+'8c');gg.addColorStop(1,tail+'00');b.globalAlpha=a;b.fillStyle=gg;b.fillRect(x-r,y-r,r*2,r*2);b.globalAlpha=1};
+  b.globalCompositeOperation='screen';
+  const BL=[[-300,380,'#7a2bff',620],[260,1500,'#2b6bff',680],[300,340,'#ff2bd6',560],[-260,1140,'#00d1ff',520],[320,1000,'#ff7a1a',480],[-120,1750,'#ff2bd6',560]];
+  BL.forEach(([x,y,c,r],i)=>blob(par(x)+d(t*.4+i,40),y+d(t*.5+i*2,30),r,c,.7));
+  b.globalCompositeOperation='source-over';
+  const pool=(x,y,r,a)=>{const gg=b.createRadialGradient(x,y,0,x,y,r);gg.addColorStop(0,`rgba(12,10,36,${a})`);gg.addColorStop(.55,`rgba(12,10,36,${a*.6})`);gg.addColorStop(1,'rgba(12,10,36,0)');b.fillStyle=gg;b.fillRect(x-r,y-r,r*2,r*2)};
+  pool(0,1920,760,.6);pool(1080,0,620,.4);
+  b.strokeStyle='rgba(255,255,255,0.035)';b.lineWidth=1;b.beginPath();const gx=(((-Math.sin(CY)*900)%72)+72)%72;
+  for(let x=gx;x<=1080;x+=72){b.moveTo(x+.5,0);b.lineTo(x+.5,1920)}for(let y=0;y<=1920;y+=72){b.moveTo(0,y+.5);b.lineTo(1080,y+.5)}b.stroke();
+  b.globalAlpha=.05;b.fillStyle=NP;b.fillRect(0,0,1080,1920);b.globalAlpha=1;
+}
+// ---------------------------------------------------------------- the frosted pane: shadow, blurred backdrop clipped to the projected slab, tint, grain, sheen, 1px border
+function pane(o,blurPx,fn){
+  const{c,yaw,pitch,w,h,r,a}=o;if(a<=.01)return;
+  const thick=30;const L=rrPts(w,h,r);
+  const to3=(u,v,zo)=>{const q=rotYX([u,v,zo],yaw,pitch);return[c[0]+q[0],c[1]+q[1],c[2]+q[2]]};
+  const front=L.map(([u,v])=>proj(to3(u,v,0))),back=L.map(([u,v])=>proj(to3(u,v,thick)));
+  const path=(P)=>{ctx.beginPath();P.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath()};
+  // snapshot of everything behind this pane, blurred and saturated
+  SNAP.getContext('2d').clearRect(0,0,540,960);SNAP.getContext('2d').drawImage(cv,0,0,540,960);
+  const bc=BLUR.getContext('2d');bc.setTransform(1,0,0,1,0,0);bc.clearRect(0,0,1080,1920);bc.filter=`blur(${blurPx/2}px) saturate(150%)`;bc.drawImage(SNAP,0,0,1080,1920);bc.filter='none';
+  ctx.save();ctx.globalAlpha=a;
+  // shadow
+  ctx.save();ctx.shadowColor='rgba(8,4,30,.5)';ctx.shadowBlur=70;ctx.shadowOffsetY=34;ctx.fillStyle='rgba(20,10,50,1)';path(front);ctx.fill();ctx.restore();
+  // slab thickness: the back face and the side walls catch the light
+  ctx.save();path(back);ctx.fillStyle='rgba(150,190,255,.16)';ctx.fill();ctx.strokeStyle='rgba(200,225,255,.35)';ctx.lineWidth=1;ctx.stroke();
+  for(let i=0;i<front.length;i++){const j=(i+1)%front.length;ctx.beginPath();ctx.moveTo(front[i][0],front[i][1]);ctx.lineTo(front[j][0],front[j][1]);ctx.lineTo(back[j][0],back[j][1]);ctx.lineTo(back[i][0],back[i][1]);ctx.closePath();
+    const shade=.05+.22*Math.max(0,Math.cos((i/front.length)*Math.PI*2-.8));ctx.fillStyle=`rgba(190,220,255,${shade})`;ctx.fill()}
+  ctx.restore();
+  // front face
+  const xs=front.map(p=>p[0]),ys=front.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  ctx.save();path(front);ctx.clip();
+  ctx.drawImage(BLUR,0,0);
+  ctx.fillStyle='rgba(14,8,44,.16)';ctx.fillRect(x0,y0,x1-x0,y1-y0);
+  const tg=ctx.createLinearGradient(x0,y0,x0+(x1-x0)*.6,y1);tg.addColorStop(0,'rgba(255,255,255,.17)');tg.addColorStop(1,'rgba(255,255,255,.05)');ctx.fillStyle=tg;ctx.fillRect(x0,y0,x1-x0,y1-y0);
+  ctx.save();ctx.globalAlpha=a*.22;ctx.fillStyle=NP;ctx.fillRect(x0,y0,x1-x0,y1-y0);ctx.restore();
+  // diagonal specular sheen: slides across as the pane turns
+  const sh=.35+.5*Math.sin(yaw*2.2+pitch*3+.3);const sx=x0+(x1-x0)*sh;
+  const sg=ctx.createLinearGradient(sx-(x1-x0)*.35,y0,sx+(x1-x0)*.05,y0+(y1-y0)*.55);sg.addColorStop(0,'rgba(255,255,255,.16)');sg.addColorStop(.45,'rgba(255,255,255,.04)');sg.addColorStop(.46,'rgba(255,255,255,0)');
+  ctx.fillStyle=sg;ctx.fillRect(x0,y0,x1-x0,y1-y0);
+  ctx.restore();
+  // 1px border, brighter top-left, plus the inner top highlight along the real top edge
+  ctx.save();const bg=ctx.createLinearGradient(x0,y0,x1,y1);bg.addColorStop(0,'rgba(255,255,255,.7)');bg.addColorStop(.35,'rgba(255,255,255,.2)');bg.addColorStop(.7,'rgba(255,255,255,.09)');bg.addColorStop(1,'rgba(255,255,255,.35)');
+  ctx.strokeStyle=bg;ctx.lineWidth=1.5;path(front);ctx.stroke();
+  const tl=proj(to3(-w/2+r,h/2-2.5,0)),tr=proj(to3(w/2-r,h/2-2.5,0));const hg=ctx.createLinearGradient(tl[0],tl[1],tr[0],tr[1]);hg.addColorStop(0,'rgba(255,255,255,0)');hg.addColorStop(.3,'rgba(255,255,255,.6)');hg.addColorStop(.7,'rgba(255,255,255,.16)');hg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.strokeStyle=hg;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(tl[0],tl[1]);ctx.lineTo(tr[0],tr[1]);ctx.stroke();
+  ctx.restore();
+  // content lives on the pane plane: an affine map of local (x right, y down from top-left) onto the projected corners
+  if(fn){const TL=proj(to3(-w/2,h/2,0)),TR=proj(to3(w/2,h/2,0)),BL=proj(to3(-w/2,-h/2,0));
+    ctx.save();ctx.setTransform((TR[0]-TL[0])/w,(TR[1]-TL[1])/w,(BL[0]-TL[0])/h,(BL[1]-TL[1])/h,TL[0],TL[1]);fn();ctx.restore()}
+  ctx.restore();
+}
+// ---------------------------------------------------------------- content
+const AR='فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا',BODY=AR.replace(/[ً-ٰٟۖ-ۭ]/g,'');
+const up=(t,a,b)=>b?Math.min(ease((t-a)/.5),1-ease((t-b)/.4)):ease((t-a)/.5);
+function txt(s,x,y,font,col,al,shadow=true){if(al<=.01)return;ctx.save();ctx.globalAlpha*=al;ctx.font=font;ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  if(shadow){ctx.shadowColor='rgba(10,4,40,.55)';ctx.shadowBlur=18;ctx.shadowOffsetY=3}ctx.fillStyle=col;ctx.fillText(s,x,y);ctx.restore()}
+function chip(x,y,text,k,dot){if(k<=.01)return;ctx.save();ctx.font='600 26px '+SANS;const w=ctx.measureText(text).width+60,h=48;ctx.globalAlpha*=Math.min(1,k*1.5);ctx.translate(x,y);ctx.scale(.85+.15*k,.85+.15*k);
+  ctx.fillStyle='rgba(255,255,255,.16)';ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,h/2);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(-w/2+.75,-h/2+.75,w-1.5,h-1.5,h/2);ctx.stroke();
+  ctx.fillStyle=dot;ctx.shadowColor=dot;ctx.shadowBlur=14;ctx.beginPath();ctx.arc(-w/2+26,0,7,0,7);ctx.fill();ctx.shadowBlur=0;
+  ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,10,2);ctx.restore()}
+// ---------------------------------------------------------------- frame
+window.frame=function(t){
+  CY=Math.sin(t*.38-.5)*.075;                                   // the camera sways, so near and far things slide against each other
+  drawBG(t);
+  const clear=inout(ph(t,5.2,7.4));                              // the glass clears as the ease arrives
+  const blurPx=lerp(46,15,clear);
+  // pane A: the hook, turns away like a door
+  const aIn=ease(ph(t,.05,.9)),aOut=inout(ph(t,2.85,4.0));
+  const A={c:[lerp(0,-1050,aOut),60,1500+aOut*500],yaw:-aOut*1.35+(1-aIn)*.5+Math.sin(t*.7)*.1,pitch:.06*Math.sin(t*.5+1),w:860,h:600,r:62,a:aIn*(1-ph(t,3.7,4.05))};
+  // pane B: the verse, swings in from the right
+  const bk=inout(ph(t,3.0,4.15));
+  const B={c:[lerp(1100,0,bk),0,1500+(1-bk)*350],yaw:(1-bk)*1.25+Math.sin(t*.45)*.045,pitch:.025*Math.sin(t*.37+1),w:900,h:760,r:66,a:ph(t,3.0,3.3)};
+  // pane C: the citation pill
+  const ck=ease(ph(t,6.7,7.35));
+  const Cc={c:[0,-480-(1-ck)*60,1500],yaw:Math.sin(t*.5+.5)*.07,pitch:0,w:430,h:66,r:33,a:ck};
+  // depth order: far to near, glass blurs everything already drawn behind it
+  const items=[];
+  ORBS.forEach(o=>{const z=camXf(o.pos(t))[2];items.push({z,k:'orb',o})});
+  items.push({z:camXf(A.c)[2],k:'a'});items.push({z:camXf(B.c)[2],k:'b'});items.push({z:camXf(Cc.c)[2],k:'c'});
+  items.sort((p,q)=>q.z-p.z);
+  for(const it of items){
+    if(it.k==='orb'){glowAndOrb(it.o,t,true)}
+    else if(it.k==='a'){pane(A,blurPx,()=>{
+      // local coords: x 0..860 right, y 0..600 down
+      chip(430,86,'HARDSHIP',ease(ph(t,.7,1.2)),'#7a6bff');
+      txt('Some days you can only',430,300,'600 60px '+SANS,'#fff',up(t,.8,3.1));
+      txt('see the blur.',430,376,'600 60px '+SANS,'#fff',up(t,1.0,3.1));
+      // the blur reads in the glass itself: a small clear window opens near the end
+    })}
+    else if(it.k==='b'){pane(B,blurPx,()=>{
+      chip(450,92,'EASE',ease(ph(t,4.3,4.8)),'#ffb347');
+      // Arabic written with the pen, right to left, body first then the vowel marks
+      if(t>=4.3){const pa=ease((t-4.3)/1.25),fx=830-760*pa;
+        ctx.save();ctx.beginPath();ctx.moveTo(fx,120);ctx.lineTo(900,120);ctx.lineTo(900,330);ctx.lineTo(fx-50,330);ctx.closePath();ctx.clip();
+        ctx.direction='rtl';
+        const dr=(s,al)=>{ctx.save();ctx.globalAlpha*=al;ctx.font='116px ScheherazadeG';ctx.textAlign='center';ctx.shadowColor='rgba(255,190,90,.65)';ctx.shadowBlur=26;ctx.fillStyle='#fff';ctx.fillText(s,450,280);ctx.restore()};
+        {const fa=ease((t-5.45)/.45);dr(BODY,1-fa);dr(AR,fa);}ctx.restore();
+        if(pa<1){ctx.save();ctx.fillStyle='#fff';ctx.shadowColor='#ffd27a';ctx.shadowBlur=26;ctx.globalAlpha*=.8;ctx.beginPath();ctx.arc(fx,232+Math.sin(t*30)*8,10,0,7);ctx.fill();ctx.restore()}}
+      txt('For indeed, with hardship',450,480,'600 54px '+SANS,'#fff',up(t,5.8));
+      txt('[will be] ease.',450,556,'600 54px '+SANS,'#ffe2a8',up(t,6.35));
+    })}
+    else{pane(Cc,blurPx*.6,()=>{ctx.save();ctx.font='600 30px Menlo,monospace';ctx.letterSpacing='10px';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.shadowColor='rgba(10,4,40,.5)';ctx.shadowBlur=10;ctx.fillText('QURAN 94:5',215+5,34);ctx.restore()})}
+  }
+  // soft vignette + a touch of grain over the whole frame
+  const vg=ctx.createRadialGradient(540,960,600,540,960,1300);vg.addColorStop(0,'rgba(5,3,20,0)');vg.addColorStop(1,'rgba(5,3,20,.4)');ctx.fillStyle=vg;ctx.fillRect(0,0,1080,1920);
+  ctx.save();ctx.globalAlpha=.04;ctx.fillStyle=NP;ctx.translate(-Math.floor(((t*12)|0)*37%160),-Math.floor(((t*12)|0)*91%160));ctx.fillRect(0,0,1080+160,1920+160);ctx.restore();
+  ctx.save();ctx.globalAlpha=.7*ease(ph(t,7.2,7.8));ctx.font='500 24px Menlo,monospace';ctx.letterSpacing='6px';ctx.textAlign='center';ctx.fillStyle='#d8d0ff';ctx.fillText('@YOURPAGE',540,1500);ctx.restore();
+  return{};
+};
+document.fonts.load('116px ScheherazadeG').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

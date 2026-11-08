@@ -1,0 +1,193 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Iso night</title>
+<style>html,body{margin:0;background:#070a14}canvas{display:block}</style></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Iso night: a true isometric room floating in a night void. Midnight blue world, cream moonlight,
+// one amber lamp as the only warm colour, labels lying flat on the floor plane.
+// Contract: frame(t) is pure (seeded), window.TEXTS(t) lists readable text for readcheck.mjs.
+const c = document.getElementById('c'), g = c.getContext('2d');
+const W = 1080, H = 1920, S = 46, OX = 540, OY = 1040, DUR = 14;
+const C30 = Math.cos(Math.PI / 6), S30 = 0.5, R2 = Math.SQRT2;
+const P = (x, y, z = 0) => [OX + (x - y) * C30 * S, OY + (x + y) * S30 * S - z * S];
+const ease = u => u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+const poly = (pts, fill, stroke, lw = 2) => {
+  g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(...p) : g.moveTo(...p)); g.closePath();
+  if (fill) { g.fillStyle = fill; g.fill(); }
+  if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); }
+};
+// faces: top, the face toward +y (left on screen), the face toward +x (right on screen)
+const box = (x, y, z, w, d, h, top, left, right, edge) => {
+  poly([P(x, y + d, z), P(x + w, y + d, z), P(x + w, y + d, z + h), P(x, y + d, z + h)], left, edge);
+  poly([P(x + w, y, z), P(x + w, y + d, z), P(x + w, y + d, z + h), P(x + w, y, z + h)], right, edge);
+  poly([P(x, y, z + h), P(x + w, y, z + h), P(x + w, y + d, z + h), P(x, y + d, z + h)], top, edge);
+};
+const lin = (x0, y0, x1, y1, stops) => { const gr = g.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, col]) => gr.addColorStop(o, col)); return gr; };
+const glow = (x, y, r, col, a) => { const gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+let rnd = 7; const rand = () => (rnd = (rnd * 16807) % 2147483647) / 2147483647;
+
+// A jointed figure. Each pose is a side view in the figure's own plane: [forward, up] per joint,
+// forward = toward the qibla (world -y), plus a radius per body part. Poses blend joint by joint.
+// Parts are tapered capsules (two projected circles joined by tangents), outlined as one silhouette.
+const POSES = {
+  stand:  { foot: [0, 0],    knee: [0, 1.2],   hip: [0, 2.2],    sh: [0, 3.55],   head: [0, 4.28],   hand: [.45, 3.05],
+            r: { hip: .62, knee: .6, foot: .68, sh: .66, arm: .17, head: .44 } },
+  ruku:   { foot: [0, 0],    knee: [0, 1.2],   hip: [-.15, 2.2], sh: [1.35, 2.35], head: [1.98, 2.42], hand: [.32, 1.3],
+            r: { hip: .62, knee: .6, foot: .68, sh: .64, arm: .17, head: .44 } },
+  sujood: { foot: [-1.35, .3], knee: [0, .32], hip: [-.8, 1.2],  sh: [.8, .82],   head: [1.36, .42], hand: [1.1, .14],
+            r: { hip: .64, knee: .52, foot: .4, sh: .62, arm: .16, head: .44 } },
+};
+const mixPose = (A, B, k) => {
+  const o = { r: {} };
+  for (const j of ['foot', 'knee', 'hip', 'sh', 'head', 'hand']) o[j] = [A[j][0] + (B[j][0] - A[j][0]) * k, A[j][1] + (B[j][1] - A[j][1]) * k];
+  for (const j in A.r) o.r[j] = A.r[j] + (B.r[j] - A.r[j]) * k;
+  return o;
+};
+// keyframes: [time, pose]; between two keys the pose eases from one to the next
+const poseAt = (t, keys) => {
+  if (t <= keys[0][0]) return POSES[keys[0][1]];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [t0, p0] = keys[i], [t1, p1] = keys[i + 1];
+    if (t <= t1) return mixPose(POSES[p0], POSES[p1], ease((t - t0) / Math.max(.001, t1 - t0)));
+  }
+  return POSES[keys[keys.length - 1][1]];
+};
+const capsule = (path, a, ra, b, rb) => {
+  const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || .001, ux = dx / d, uy = dy / d;
+  const s1 = Math.max(-1, Math.min(1, (ra - rb) / d)), c1 = Math.sqrt(1 - s1 * s1);
+  const nx = ux * s1 - uy * c1, ny = uy * s1 + ux * c1, mx = ux * s1 + uy * c1, my = uy * s1 - ux * c1;
+  path.moveTo(a[0] + nx * ra, a[1] + ny * ra); path.lineTo(b[0] + nx * rb, b[1] + ny * rb);
+  path.lineTo(b[0] + mx * rb, b[1] + my * rb); path.lineTo(a[0] + mx * ra, a[1] + my * ra); path.closePath();
+  const ca = new Path2D(), cb = new Path2D(); ca.arc(a[0], a[1], ra, 0, 7); cb.arc(b[0], b[1], rb, 0, 7);
+  return [path, ca, cb];  // filled one by one, so opposite windings never cancel
+};
+function figure(x, y, pose, breath = 0) {
+  const k = S * 1.05;  // screen radius per world radius, between the iso ellipse's two axes
+  const J = {}; for (const j of ['foot', 'knee', 'hip', 'sh', 'head', 'hand']) J[j] = P(x, y - pose[j][0], pose[j][1]);
+  const r = pose.r, rs = r.sh + breath;
+  const parts = [  // far parts first: the head and the hands are nearest the qibla wall
+    [J.sh, r.arm, J.hand, r.arm * .85], [J.knee, r.knee, J.foot, r.foot], [J.hip, r.hip, J.knee, r.knee],
+    [J.hip, r.hip * .95, J.sh, rs], [J.sh, .2, J.head, .2],
+  ];
+  const xs = Object.values(J).map(q => q[0]), x0 = Math.min(...xs) - .7 * k, x1 = Math.max(...xs) + .7 * k;
+  // each part is filled on its own (separate paths never cancel), rims first, so only the outer edge shows
+  const each = (grow, style) => parts.forEach(([a, ra, b, rb]) => { g.fillStyle = style; capsule(new Path2D(), a, ra * k + grow, b, rb * k + grow).forEach(q => g.fill(q)); });
+  each(2.5, '#7c7d8a');
+  each(0, lin(x0, 0, x1, 0, [[0, '#8a6844'], [.25, '#3e3646'], [.62, '#262d4a'], [1, '#6576aa']]));
+  // the arm again on top as a soft lighter sleeve, so it reads against the torso
+  g.fillStyle = 'rgba(150,160,200,.16)'; capsule(new Path2D(), J.sh, r.arm * k, J.hand, r.arm * .85 * k).forEach(q => g.fill(q));
+  // head and kufi; the cap sits on the side of the head away from the neck
+  const [hx, hy] = J.head, hr = r.head * S;
+  g.beginPath(); g.arc(hx, hy, hr, 0, 7);
+  g.fillStyle = lin(hx - hr, 0, hx + hr, 0, [[0, '#5a4630'], [.45, '#24283c'], [1, '#4a5a8c']]); g.fill();
+  g.strokeStyle = 'rgba(232,226,206,.5)'; g.lineWidth = 2; g.stroke();
+  const ang = Math.atan2(hy - J.sh[1], hx - J.sh[0]);
+  g.save(); g.beginPath(); g.arc(hx, hy, hr + 1, 0, 7); g.clip(); g.translate(hx, hy); g.rotate(ang);
+  g.beginPath(); g.moveTo(hr * .2, -hr - 2); g.quadraticCurveTo(-hr * .05, 0, hr * .2, hr + 2); g.lineTo(hr + 2, hr + 2); g.lineTo(hr + 2, -hr - 2); g.closePath();
+  g.fillStyle = '#e8e2ce'; g.fill(); g.restore();
+}
+
+const LINES = [
+  { id: 'a', t0: .5, t1: 4.4, text: ['He woke before fajr,', 'and the house was silent.'] },
+  { id: 'b', t0: 4.9, t1: 8.8, text: ['He bowed,', 'and the room was still.'] },
+  { id: 'c', t0: 9.6, t1: 13.8, text: ['Then he went down,', 'his forehead on the floor.'] },
+];
+const CAP_Y = 300, FONT = 'italic 54px Baskerville, "Libre Baskerville", serif';
+window.TEXTS = t => { g.font = FONT; return LINES.filter(L => t >= L.t0 + .45 && t < L.t1 - .3).map(L => { const w = Math.max(...L.text.map(s => g.measureText(s).width)); return { id: L.id, text: L.text.join(' '), x0: W / 2 - w / 2, y0: CAP_Y - 50, x1: W / 2 + w / 2, y1: CAP_Y + 70 + 14 }; }); };
+
+window.frame = (t) => {
+  rnd = 7;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = lin(0, 0, 0, H, [[0, '#060912'], [.55, '#0b1226'], [1, '#070a14']]); g.fillRect(0, 0, W, H);
+  glow(540, 1380, 640, '70,98,170', .36);
+  for (let i = 0; i < 80; i++) { const x = rand() * W, y = rand() * 560 + 30, a = .3 + .35 * Math.sin(t * 1.3 + i * 2.1); g.fillStyle = `rgba(232,226,206,${Math.max(0, a) * .55})`; g.fillRect(x, y, 2, 2); }
+
+  // camera: slow push in toward the man, the iso angle never turns
+  const z = 1 + .07 * ease(t / DUR), cx = 540, cy = 900;
+  g.setTransform(z, 0, 0, z, cx * (1 - z), cy * (1 - z));
+
+  const edge = 'rgba(160,180,230,.16)', L = -5.8, R = 5.8, WH = 6.6, T = .35;
+  // floor slab with a bevel, then the floor
+  box(-6.2, -6.2, -1.2, 12.4, 12.4, .85, '#151e38', '#0b1226', '#0f1830', edge);
+  box(-6, -6, -.35, 12, 12, .35, '#1b2646', '#0e1730', '#121d39', edge);
+  // solid back walls with thickness: the top edge shows they are walls, not glass
+  poly([P(L, L, 0), P(R, L, 0), P(R, L, WH), P(L, L, WH)], lin(0, P(0, L, WH)[1], 0, P(0, L, 0)[1], [[0, '#101a34'], [1, '#1a2648']]), edge);
+  poly([P(L, L, 0), P(L, R, 0), P(L, R, WH), P(L, L, WH)], lin(0, P(L, 0, WH)[1], 0, P(L, 0, 0)[1], [[0, '#0c1428'], [1, '#141f3c']]), edge);
+  poly([P(L - T, L - T, WH), P(R, L - T, WH), P(R, L, WH), P(L, L, WH), P(L, R, WH), P(L - T, R, WH)], '#26345e', edge);
+  poly([P(R, L - T, 0), P(R, L, 0), P(R, L, WH), P(R, L - T, WH)], '#1d2a50', edge);
+  poly([P(L - T, R, 0), P(L, R, 0), P(L, R, WH), P(L - T, R, WH)], '#16213f', edge);
+  // a skirting line where the walls meet the floor
+  g.strokeStyle = 'rgba(8,12,26,.7)'; g.lineWidth = 4; g.beginPath(); g.moveTo(...P(R, L, .02)); g.lineTo(...P(L, L, .02)); g.lineTo(...P(L, R, .02)); g.stroke();
+
+  // window in the back-right wall, deep sill, moon behind
+  const wx0 = 1, wx1 = 3.6, wz0 = 2.6, wz1 = 5.4;
+  poly([P(wx0, L, wz0), P(wx1, L, wz0), P(wx1, L, wz1), P(wx0, L, wz1)], lin(0, P(0, L, wz1)[1], 0, P(0, L, wz0)[1], [[0, '#1e2c58'], [1, '#33477e']]));
+  const mc = P(2.6, L, 4.5); glow(mc[0], mc[1], 90, '244,238,214', .9); glow(mc[0], mc[1], 26, '250,246,232', 1);
+  poly([P(wx0, L, wz0), P(wx1, L, wz0), P(wx1, L + .35, wz0), P(wx0, L + .35, wz0)], '#3a4a7a', edge);
+  g.strokeStyle = '#0d1428'; g.lineWidth = 6;
+  g.beginPath(); g.moveTo(...P((wx0 + wx1) / 2, L, wz0)); g.lineTo(...P((wx0 + wx1) / 2, L, wz1)); g.moveTo(...P(wx0, L, (wz0 + wz1) / 2)); g.lineTo(...P(wx1, L, (wz0 + wz1) / 2)); g.stroke();
+  poly([P(wx0, L, wz0), P(wx1, L, wz0), P(wx1, L, wz1), P(wx0, L, wz1)], null, 'rgba(232,226,206,.35)', 3);
+
+  // moonlight: a beam from the window to a lit patch on the floor, with dust drifting in it
+  const fp = [[wx0 + .5, L + 3.9], [wx1 + .5, L + 3.9], [wx1 - .1, L + 1.1], [wx0 - .1, L + 1.1]];
+  g.save(); g.globalCompositeOperation = 'lighter';
+  poly([P(wx0, L, wz1), P(wx1, L, wz1), P(...fp[1], 0), P(...fp[0], 0)], 'rgba(150,170,235,.045)');
+  poly(fp.map(([x, y]) => P(x, y, 0)), 'rgba(200,212,248,.13)');
+  for (let i = 0; i < 46; i++) {
+    const u = rand(), v = rand(), sp = .04 + rand() * .05, k = ((v + t * sp) % 1);
+    const bx = wx0 + u * (wx1 - wx0) + k * .4, by = L + k * 3.4, bz = wz1 - k * (wz1 - .2) + .25 * Math.sin(t * .8 + i);
+    const [px, py] = P(bx, by, bz), a = .25 + .3 * Math.sin(t * 2 + i * 1.7);
+    g.fillStyle = `rgba(230,234,255,${Math.max(.05, a)})`; g.fillRect(px, py, 2.4, 2.4);
+  }
+  g.restore();
+
+  // prayer mat
+  const mx = -1.4, my = -2.4;
+  poly([P(mx, my, .03), P(mx + 1.6, my, .03), P(mx + 1.6, my + 3.2, .03), P(mx, my + 3.2, .03)], '#2b5658', 'rgba(232,226,206,.4)', 2);
+  poly([P(mx + .18, my + .18, .04), P(mx + 1.42, my + .18, .04), P(mx + 1.42, my + 3.02, .04), P(mx + .18, my + 3.02, .04)], null, 'rgba(232,226,206,.22)', 1.5);
+  poly([P(mx + .5, my + .25, .04), P(mx + 1.1, my + .25, .04), P(mx + .8, my + .7, .04)], 'rgba(232,226,206,.18)');
+
+  // a label lying flat on the floor, at the iso angle
+  const la = ease((t - 1.2) / .8) * (1 - ease((t - 8.3) / .5));
+  g.save(); g.translate(...P(1.6, 2.6, .03)); g.transform(C30, S30, -C30, S30, 0, 0);
+  g.fillStyle = `rgba(232,226,206,${.55 * la})`; g.font = '600 22px Menlo, monospace'; g.fillText('B E F O R E   F A J R', 0, 0); g.restore();
+
+  // the lamp on a low stool: the one warm colour, with a flicker
+  box(-4.8, 1.6, 0, .9, .9, 1.1, '#2a2f45', '#151a2c', '#1d2338', edge);
+  const fl = 1 + .06 * Math.sin(t * 9) + .04 * Math.sin(t * 13.7 + 1);
+  const lc = P(-4.35, 2.05, 1.62);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  glow(lc[0], lc[1] + 120, 420 * fl, '255,150,60', .1);
+  glow(lc[0], lc[1], 240 * fl, '255,170,80', .32);
+  g.restore();
+  g.fillStyle = '#ffd38a'; g.beginPath(); g.ellipse(lc[0], lc[1] - 4, 7, 16 * fl, 0, 0, 7); g.fill();
+  g.fillStyle = '#fff4d6'; g.beginPath(); g.ellipse(lc[0], lc[1] + 1, 3, 7 * fl, 0, 0, 7); g.fill();
+
+  // his shadow from the lamp, falling to the right across the floor
+  const fx = mx + .8, fy = my + 1.15;
+  const ph = poseAt(t, [[0, 'stand'], [4.7, 'stand'], [5.9, 'ruku'], [8.1, 'ruku'], [9, 'stand'], [9.4, 'stand'], [10.9, 'sujood']]).head[1] / 4.28;
+  poly([P(fx - .3, fy + .35, .05), P(fx + .35, fy - .3, .05), P(fx + .35 + 3.05 * ph, fy - .3 - 1.6 * ph, .05), P(fx - .3 + 3.1 * ph, fy + .35 - 2.65 * ph, .05)], 'rgba(4,6,14,.42)');
+
+  // the man standing in salah, a slow small breath in the shoulders, faceless
+  const br = .012 * Math.sin(t * 1.6);
+  const PK = [[0, 'stand'], [4.7, 'stand'], [5.9, 'ruku'], [8.1, 'ruku'], [9, 'stand'], [9.4, 'stand'], [10.9, 'sujood']];
+  figure(fx, fy, poseAt(t, PK), br);
+
+  // text in the top third, crisp, with a soft dark glow
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.textAlign = 'center'; g.font = FONT;
+  LINES.forEach(Lx => {
+    const a = ease((t - Lx.t0) / .5) * (1 - ease((t - Lx.t1 + .4) / .4));
+    if (a <= 0) return;
+    g.save(); g.globalAlpha = a; g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 18; g.fillStyle = '#ece6d2';
+    Lx.text.forEach((s, i) => g.fillText(s, 540, CAP_Y + i * 70 + (1 - a) * 10)); g.restore();
+  });
+  g.font = '500 24px Menlo, monospace'; g.fillStyle = 'rgba(232,226,206,.6)'; g.fillText('C I T A T I O N   H E R E', 540, 1440);
+  g.font = '30px Baskerville, serif'; g.fillStyle = 'rgba(232,226,206,.2)'; g.fillText('@yourpage', 540, 1490);
+  // grain, re-seeded per frame so it moves but stays deterministic
+  rnd = 11 + Math.floor(t * 30);
+  for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(255,255,255,${rand() * .035})`; g.fillRect(rand() * W, rand() * H, 1.5, 1.5); }
+};
+window.DURATION = DUR; window.SFX = [];
+document.fonts.ready.then(() => { window.frame(0); window.ready = true; });
+</script></body></html>

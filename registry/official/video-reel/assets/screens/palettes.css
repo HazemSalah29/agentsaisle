@@ -1,0 +1,5 @@
+/* Page palettes for the motion screens. Set data-palette on <html> or any wrapper.
+   Screens read only these tokens, so a reel can add its own palette block. */
+[data-palette="olive"]{--bg:#1c2620;--lift:#26332b;--deep:#111813;--ink:#e9e3d4;--quiet:#a9a99a;--dim:#3a4a40;--accent:#b08d57;--accent-hi:#e2c48f}
+[data-palette="dusk"]{--bg:#1a1218;--lift:#2a1c22;--deep:#0b0912;--ink:#fff4e2;--quiet:#c9b49a;--dim:#3a2a26;--accent:#f0b862;--accent-hi:#ffd590}
+[data-palette="oxblood"]{--bg:#45111a;--lift:#561622;--deep:#2e0a10;--ink:#ffffff;--quiet:#c3c1bd;--dim:#6b2430;--accent:#d6a84f;--accent-hi:#f0cf87}

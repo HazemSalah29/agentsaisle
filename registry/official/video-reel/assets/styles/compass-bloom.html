@@ -1,0 +1,92 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0a0e28}
+svg{position:absolute;inset:0}
+.cap{position:absolute;left:90px;width:900px;text-align:center;color:#efe6cf;font-family:"Baskerville","Georgia",serif;font-size:52px;line-height:1.3;opacity:0}
+.cap em{font-style:italic;color:#e0b552}
+#hd{position:absolute;bottom:230px;left:0;right:0;text-align:center;font-family:Menlo,monospace;font-size:20px;letter-spacing:.2em;color:rgba(239,230,207,.55)}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="cap" id="c1" style="top:300px">The Prophet ﷺ named the deed Allah loves most.</div>
+<div class="cap" id="c2" style="top:470px">It is <em>not the biggest one.</em></div>
+<div class="cap" id="c3" style="top:1430px;font-size:56px">A small one, <em>every day.</em></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const CREAM='#efe6cf',GOLD='#e0b552';
+const seg=(u,a,b)=>clamp((u-a)/(b-a));
+// one stroke that draws itself (pathLength 1)
+const P=(d,p,w,c,o)=>p<=0?'':`<path d="${d}" pathLength="1" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="${1-p}" opacity="${o}"/>`;
+const V=(cx,cy,R,i)=>{const a=(i*45-90)*Math.PI/180;return [cx+R*Math.cos(a),cy+R*Math.sin(a)]};
+// compass bloom: circle -> 8 radii -> octagon -> {8/3} star; hairlines fade as gold takes over
+function bloom(cx,cy,R,u,gm,hw,gw){
+  if(u<=0)return '';
+  const fade=1-.8*seg(u,.78,1),co=.42*fade;
+  let s='';
+  s+=P(`M${cx} ${cy-R} A${R} ${R} 0 1 1 ${cx-.01} ${cy-R}`,ease(seg(u,0,.22)),hw,CREAM,co);
+  for(let i=0;i<8;i++){const [x,y]=V(cx,cy,R,i);s+=P(`M${cx} ${cy} L${x} ${y}`,ease(seg(u,.18+i*.025,.3+i*.025)),hw,CREAM,co)}
+  let oct='';for(let i=0;i<8;i++){const [x,y]=V(cx,cy,R,i);oct+=(i?'L':'M')+x+' '+y}
+  s+=P(oct+'Z',ease(seg(u,.4,.55)),hw,CREAM,co);
+  s+=P(`M${cx} ${cy-R*.38} A${R*.38} ${R*.38} 0 1 1 ${cx-.01} ${cy-R*.38}`,ease(seg(u,.4,.55)),hw,CREAM,co);
+  for(let i=0;i<8;i++){const [x,y]=V(cx,cy,R,i),[x2,y2]=V(cx,cy,R,i+3);
+    s+=P(`M${x} ${y} L${x2} ${y2}`,ease(seg(u,.5+i*.04,.66+i*.04)),gw,GOLD,gm)}
+  // lock: soft fill in the star once all lines are in
+  const lk=seg(u,.88,1);
+  if(lk>0){let st='';for(let i=0;i<8;i++){const [x,y]=V(cx,cy,R*.62,i);st+=(i?'L':'M')+x+' '+y}
+    s+=`<path d="${st}Z" fill="${GOLD}" opacity="${.16*lk*gm}"/>`}
+  return s;
+}
+// timeline
+const H0=.3,HD=3.5;                 // hook bloom 0.3 .. 3.8
+const MV0=4.3,MV1=5.0;              // star slides up into the top panel
+const T0=4.9,TS=.32,COLS=5,ROWS=3,CELL=160,GX=140,GY=860;
+const TL=k=>T0+k*TS;
+add(.3,'tap',.22);add(2.5,'tap',.22);
+add(.45,'tick',.2);for(let i=0;i<8;i++)add(1.1+i*.12,'tick',.12);add(2.05,'tick',.2);add(2.1,'tick',.12);
+for(let i=0;i<8;i++)add(2.3+i*.14,'tick',.2);
+add(3.7,'plink',.3);add(3.9,'bell',.22);
+add(4.5,'slide',.22);add(5.3,'thud',.25);
+for(let k=0;k<COLS*ROWS;k++)add(TL(k),'tick',.2);
+add(9.45,'bell2',.25);
+window.frame=function(t){
+  let s='';
+  const mv=inout((t-MV0)/(MV1-MV0));
+  // the one big star: drawn once, then it fades and does not come back
+  const cx=540,cy=1010+(540-1010)*mv,R=330+(190-330)*mv;
+  const gm=1-.9*ease((t-5.3)/2.2)*(t>5.3?1:0);
+  const u=(t-H0)/HD;
+  const big=bloom(cx,cy,R,Math.min(u,1.0),gm,1.5+.5*mv,3);
+  s+=big;
+  const lab=(x,y,txt,o,c=CREAM)=>`<text x="${x}" y="${y}" font-family="Menlo,monospace" font-size="19" letter-spacing="4" fill="${c}" opacity="${o}">${txt}</text>`;
+  const po=ease((t-4.6)/.5);
+  if(po>0){
+    s+=`<rect x="${GX}" y="300" width="800" height="480" fill="none" stroke="${CREAM}" stroke-opacity="${.22*po}" stroke-width="1.5"/>`;
+    s+=lab(GX+20,334,'DONE ONCE',.7*po,GOLD);
+    s+=`<rect x="${GX}" y="${GY-40}" width="800" height="510" fill="none" stroke="${CREAM}" stroke-opacity="${.22*po}" stroke-width="1.5"/>`;
+    const n=Math.max(0,Math.min(COLS*ROWS,Math.floor((t-T0)/TS)+1));
+    s+=lab(GX+20,GY-8,'ONE TILE A DAY',.7*po,GOLD);
+    s+=lab(GX+780,GY-8,n?'DAY '+String(n).padStart(2,'0'):'',.7*po,CREAM).replace('<text','<text text-anchor="end"');
+  }
+  // the small tile, repeated: each day one more star; tips meet and a pattern appears
+  for(let k=0;k<COLS*ROWS;k++){
+    const c=k%COLS,r=Math.floor(k/COLS),tx=GX+CELL/2+c*CELL,ty=GY+10+CELL/2+r*CELL;
+    const uk=(t-TL(k))/.42;
+    s+=bloom(tx,ty,CELL/2-4,uk,1,1,2.2);
+  }
+  // gap diamonds appear once all four neighbours exist
+  for(let r=0;r<ROWS-1;r++)for(let c=0;c<COLS-1;c++){
+    const last=Math.max(r*COLS+c,r*COLS+c+1,(r+1)*COLS+c,(r+1)*COLS+c+1),p=ease((t-TL(last)-.35)/.3);
+    if(p>0){const x=GX+CELL+c*CELL,y=GY+10+CELL+r*CELL,d=14*p;s+=`<path d="M${x} ${y-d}L${x+d} ${y}L${x} ${y+d}L${x-d} ${y}Z" fill="${GOLD}" opacity=".55"/>`}
+  }
+  $('s').innerHTML=s;
+  const up=(id,a,b)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;$(id).style.opacity=Math.min(p,q);$(id).style.transform=`translateY(${(1-p)*12}px)`};
+  up('c1',.3,4.0);up('c2',2.5,4.0);up('c3',5.4);
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

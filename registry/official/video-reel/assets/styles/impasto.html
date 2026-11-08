@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#2a1e18}
+canvas{position:absolute;left:0;top:0}
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="t" width="1080" height="1920"></canvas>
+<script type="module">
+// Impasto (palette knife): a moving oil painting laid with a knife, lit by a raking light. Pure function of t.
+// Engine: ../impasto/ (lemo-opuscar, MIT). Grey room, one coloured flame; at 4 s the knife re-lays colour
+// from the window outward, then he bows into ruku. Captions are crisp 2D text on their own canvas.
+import { Impasto, Strokes, KNIFE, DAB, LINE, hex, shade } from '../impasto/impasto.js';
+import { Ref, paintRef } from '../impasto/plate.js';
+
+window.SIZE = { W: 1080, H: 1920 }; window.DURATION = 10;
+const SFX = []; window.SFX = SFX; const add = (t, type, v) => SFX.push({ t, type, v });
+add(.3, 'plink', .5); add(4.0, 'glass', .5); add(5.9, 'tap', .4); add(6.6, 'bell', .45);
+
+const W = 1080, H = 1920;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const inOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, out3 = t => 1 - Math.pow(1 - t, 3);
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+
+const E = new Impasto(document.getElementById('c'), { W, H, ss: 2 });
+const WIN = [780, 750], REV_T = 4.0, REV_SPEED = 650;       // colour spreads from the window, 650 px a second
+const revAt = (x, y) => Math.hypot(x - WIN[0], (y - WIN[1]) / 1.3) / REV_SPEED;
+
+// ---- the static plate: a flat, value-planned room, turned into knife strokes once
+const ref = new Ref(W, H, .5), R = (x, y, w, h) => c => c.rect(x, y, w, h);
+const lin = (y0, y1, stops) => c => { const g = c.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, k]) => g.addColorStop(o, k)); return g; };
+const rad = (x, y, r, stops) => c => { const g = c.createRadialGradient(x, y, 0, x, y, r); stops.forEach(([o, k]) => g.addColorStop(o, k)); return g; };
+ref.fill(R(0, 0, W, 1400), rad(780, 700, 1100, [[0, '#7a5a44'], [.45, '#5a3e30'], [1, '#2e211c']]), { dir: 90, maxR: 40, group: 1 });
+ref.fill(R(0, 1400, W, 520), lin(1400, 1920, [[0, '#6a4630'], [1, '#3a271c']]), { dir: 0, maxR: 36, group: 2 });
+ref.fill(c => { c.moveTo(560, 1400); c.lineTo(980, 1400); c.lineTo(1080, 1760); c.lineTo(420, 1760); c.closePath(); }, '#8a6448', { dir: 0, maxR: 22, group: 3 });
+ref.fill(R(590, 400, 380, 730), '#2a1a14', { dir: 90, maxR: 10, group: 4 });
+ref.fill(R(620, 430, 320, 670), lin(430, 1100, [[0, '#26407e'], [.55, '#5a7ab0'], [.85, '#e0a070'], [1, '#f2c27a']]), { dir: 0, maxR: 18, group: 5 });
+ref.fill(R(772, 430, 16, 670), '#2a1a14', { dir: 90, maxR: 5, group: 4 });
+ref.fill(R(620, 750, 320, 16), '#2a1a14', { dir: 0, maxR: 5, group: 4 });
+ref.fill(R(570, 1120, 420, 34), '#4a3224', { dir: 0, maxR: 10, group: 6 });
+ref.fill(c => { c.moveTo(250, 1500); c.lineTo(760, 1500); c.lineTo(800, 1600); c.lineTo(200, 1600); c.closePath(); }, '#8a2c2a', { dir: 0, maxR: 12, group: 7 });
+ref.fill(c => { c.moveTo(280, 1512); c.lineTo(735, 1512); c.lineTo(765, 1588); c.lineTo(235, 1588); c.closePath(); }, '#a8443a', { dir: 0, maxR: 9, group: 8 });
+ref.fill(R(60, 1420, 190, 46), '#5a4030', { dir: 0, maxR: 6, group: 9 });          // the lamp's small stool
+ref.fill(c => c.ellipse(155, 1404, 72, 24, 0, 0, Math.PI * 2), '#9a6a3a', { dir: 0, maxR: 6, group: 10 });  // clay lamp
+const plate = E.batch(paintRef(ref, { seed: 7, rev: revAt }).data());
+const under = E.texture(ref.ctx.canvas);
+
+// ---- the man: faceless, thobe and kufi, rebuilt every frame from fixed seeds so the paint never boils
+const THOBE = hex('#e6dcc6'), KUFI = hex('#f6f1e4'), SKIN = hex('#a07a5c');
+function man(s, x, y, Hh, bow, t) {
+  const rev = revAt(x, y - Hh * .6), br = Math.sin(t * 1.6) * Hh * .004;
+  const hip = [x, y - Hh * .5];
+  const a = -Math.PI / 2 + bow * Math.PI * .47;               // torso angle: up when standing, forward in ruku
+  const d = [Math.cos(a), Math.sin(a)], p = [-d[1], d[0]], tl = Hh * .34;
+  const sh = [hip[0] + d[0] * tl, hip[1] + d[1] * tl + br];
+  // the cloth is several overlapping vertical knife strokes (not one slab), darker away from the window
+  // skirt: hip to floor, outer strokes flare a little; torso strokes start below the hip so the two overlap
+  for (let j = -2; j <= 2; j++) { const fx = x + j * Hh * .036, tx = fx + j * Hh * .008, top = hip[1] - Hh * .04;
+    s.push({ x: (fx + tx) / 2, y: (top + y) / 2, ang: Math.atan2(y - top, tx - fx), len: y - top, wid: Hh * .068, c: shade(THOBE, .8 + (j + 2) * .065), c2: shade(THOBE, .76 + (j + 2) * .06), seed: 30 + j, type: KNIFE, rev, hgt: .55, bend: .04 * j, skew: 0 }); }
+  const b0 = [hip[0] - d[0] * Hh * .12, hip[1] - d[1] * Hh * .12], tm = [(b0[0] + sh[0]) / 2, (b0[1] + sh[1]) / 2];
+  for (let j = -1; j <= 1; j++) s.push({ x: tm[0] + p[0] * j * Hh * .042, y: tm[1] + p[1] * j * Hh * .042, ang: a + Math.PI, len: tl + Hh * .14, wid: Hh * .072 * (j ? .9 : 1.05), c: shade(THOBE, .84 + (j + 1) * .09), c2: shade(THOBE, .8 + (j + 1) * .08), seed: 36 + j, type: KNIFE, rev, hgt: .5, taper: j ? .55 : .3, skew: 0 });   // starts at the shoulder, tapered: sloped shoulders
+  s.push({ x: sh[0] + d[0] * Hh * .035, y: sh[1] + d[1] * Hh * .035, ang: a, len: Hh * .05, wid: Hh * .05, c: shade(SKIN, .85), seed: 13, type: KNIFE, rev, hgt: .5 });   // neck
+  const hd = [sh[0] + d[0] * Hh * .09 + Hh * .012 * bow, sh[1] + d[1] * Hh * .09];
+  s.push({ x: hd[0], y: hd[1], ang: a, len: Hh * .12, wid: Hh * .105, c: SKIN, c2: shade(SKIN, .82), seed: 14, type: DAB, rev, hgt: .3 });
+  s.push({ x: hd[0] + d[0] * Hh * .03, y: hd[1] + d[1] * Hh * .03, ang: a + Math.PI / 2, len: Hh * .11, wid: Hh * .06, c: KUFI, c2: shade(KUFI, .9), seed: 15, type: DAB, rev, hgt: .35 });
+  if (bow < .5) {   // qiyam: right hand over left on the chest
+    const ch = [lerp(hip[0], sh[0], .55) + Hh * .07, lerp(hip[1], sh[1], .55)];
+    s.push({ x: ch[0] - Hh * .03, y: ch[1] + Hh * .02, ang: -.35, len: Hh * .15, wid: Hh * .05, c: shade(THOBE, .95), seed: 16, type: KNIFE, rev });
+    s.push({ x: ch[0] + Hh * .03, y: ch[1], ang: 0, len: Hh * .05, wid: Hh * .04, c: SKIN, seed: 17, type: DAB, rev });
+  } else {          // ruku: arms straight down to the knees
+    const kn = [x + Hh * .06, y - Hh * .27];
+    s.push({ x: (sh[0] + kn[0]) / 2, y: (sh[1] + kn[1]) / 2, ang: Math.atan2(kn[1] - sh[1], kn[0] - sh[0]), len: Math.hypot(kn[0] - sh[0], kn[1] - sh[1]), wid: Hh * .05, c: shade(THOBE, .93), seed: 18, type: KNIFE, rev });
+    s.push({ x: kn[0], y: kn[1], ang: 0, len: Hh * .05, wid: Hh * .04, c: SKIN, seed: 19, type: DAB, rev });
+  }
+  for (const k of [0, 1]) s.push({ x: x + Hh * (.03 + k * .05), y: y - Hh * .01, ang: 0, len: Hh * .08, wid: Hh * .03, c: SKIN, seed: 20 + k, type: DAB, rev });
+}
+
+// ---- small living details: dust in the window light, the lamp flame
+function dust(s, t) {
+  for (let i = 0; i < 22; i++) {
+    const r1 = hash(i * 1.7), r2 = hash(i * 5.3), per = 7 + r2 * 5, p = ((t / per + r1) % 1);
+    const x = lerp(620, 940, r2) - p * 160 + Math.sin(t * .7 + i) * 12, y = lerp(1380, 640, p);
+    s.push({ x, y, ang: 0, len: 5 + r1 * 4, wid: 5 + r1 * 4, c: hex('#f2dcb0'), seed: 40 + i, type: DAB, alpha: .35 * Math.sin(p * Math.PI), rev: revAt(x, y), hgt: .4 });
+  }
+}
+function flame(s, t) {
+  const f = 1 + .12 * Math.sin(t * 13.1) + .07 * Math.sin(t * 7.3 + 1), sw = .08 * Math.sin(t * 5.2);
+  s.push({ x: 178, y: 1346, ang: -Math.PI / 2 + sw, len: 74 * f, wid: 32, c: hex('#ffb347'), c2: hex('#fff0b8'), seed: 60, type: KNIFE, taper: .9, hgt: .6 });
+  s.push({ x: 178, y: 1366, ang: 0, len: 18, wid: 18, c: hex('#fff6d8'), seed: 61, type: DAB, hgt: .5 });
+}
+
+// ---- camera: one slow push toward the figure and the window, the world edge never shown
+function camAt(t) {
+  const z = lerp(1, 1.08, inOut(seg(t, 0, 10))), fx = lerp(540, 600, inOut(seg(t, 0, 10))), fy = lerp(960, 1010, inOut(seg(t, 0, 10)));
+  return { x: clamp(fx, W / 2 / z, W - W / 2 / z), y: clamp(fy, H / 2 / z, H - H / 2 / z), zoom: z, rot: 0 };
+}
+
+// ---- captions: crisp text on its own canvas, outside the camera
+const tc = document.getElementById('t').getContext('2d');
+const LINES = [{ id: 'l1', text: 'He stood to pray before fajr.', t0: .8, t1: 3.7 }, { id: 'l2', text: 'That fajr, he felt his salah again.', t0: 6.4, t1: 9.8 }];
+const FONT = '500 62px Baskerville, "Baskerville Old Face", Georgia, serif', CAP_Y = 330;
+function captions(t) {
+  tc.clearRect(0, 0, W, H);
+  tc.font = FONT; tc.textAlign = 'center'; tc.textBaseline = 'alphabetic';
+  for (const L of LINES) {
+    const a = Math.min(out3(seg(t, L.t0, L.t0 + .9)), 1 - seg(t, L.t1 - .4, L.t1));
+    if (a <= 0) continue;
+    tc.save(); tc.globalAlpha = a; tc.translate(0, (1 - out3(seg(t, L.t0, L.t0 + .9))) * 24);
+    tc.shadowColor = 'rgba(20,12,8,.85)'; tc.shadowBlur = 28; tc.fillStyle = '#fbf3e2'; tc.fillText(L.text, W / 2, CAP_Y);
+    tc.restore();
+  }
+  tc.save(); tc.globalAlpha = .2; tc.font = '30px Baskerville, Georgia, serif'; tc.fillStyle = '#fbf3e2'; tc.fillText('@yourpage', W / 2, 1475); tc.restore();
+}
+// readcheck contract (scripts/readcheck.mjs): text that is readable at t, with its box
+window.TEXTS = t => { tc.font = FONT; return LINES.filter(L => t >= L.t0 + .45 && t < L.t1 - .2).map(L => { const w = tc.measureText(L.text).width; return { id: L.id, text: L.text, x0: W / 2 - w / 2, y0: CAP_Y - 52, x1: W / 2 + w / 2, y1: CAP_Y + 14 }; }); };
+
+const dyn = new Strokes(256);
+window.frame = function (t) {
+  const cam = camAt(t), o = { t, cam, grey: 1, reveal: REV_T, revDur: .35 };
+  E.begin([.36, .28, .22]);
+  E.under(under, W, H, { ...o, revC: [WIN[0], WIN[1], REV_SPEED] });
+  E.draw(plate, o);
+  dyn.clear(); dust(dyn, t); man(dyn, 430, 1545, 470, inOut(seg(t, 5.8, 6.8)), t);
+  E.drawNow(dyn.data(), { ...o, run: 0 });
+  dyn.clear(); flame(dyn, t);
+  E.drawNow(dyn.data(), { t, cam, grey: 0, run: 0 });       // the one coloured thing, even in the grey room
+  const lift = .5 + .5 * out3(seg(t, REV_T, REV_T + 3));
+  E.finish({ light: [-.75, -.45, .6], ground: [.36, .28, .22], vig: .3, expo: lerp(.92, 1.04, lift), lightCol: [1, .93, .8] });
+  captions(t);
+};
+document.fonts.ready.then(() => { window.frame(0); window.ready = true; });
+</script>
+</body></html>

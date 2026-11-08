@@ -1,0 +1,276 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#fbd6b8}
+canvas{position:absolute;inset:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Voxel Diorama: a floating voxel island with a small domed masjid, date palms and a pond. Orthographic dimetric
+// camera that orbits, baked per-vertex ambient occlusion, ray-marched soft shadows toward a fixed world light,
+// voxels that rain down layer by layer, block-pixel title, vignette and a fine speckle grain.
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const W=1080,HH=1920,cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,t)=>a+(b-a)*t;
+const E={out:t=>1-Math.pow(1-clamp(t),3),inOut:t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2},back:t=>{t=clamp(t);const c=1.70158;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)}};
+const hexA=h=>{h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const mix=(a,b,t)=>{a=Array.isArray(a)?a:hexA(a);b=Array.isArray(b)?b:hexA(b);return[0,1,2].map(i=>a[i]+(b[i]-a[i])*t)};
+function rng(seed){let a=seed>>>0||1;const r=()=>{a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(l,h)=>l+r()*(h-l);r.int=(l,h)=>Math.floor(l+r()*(h-l+1));r.pick=a=>a[Math.floor(r()*a.length)];return r}
+function makeNoise(seed){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lp=(a,b,t)=>a+(b-a)*t,g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);const u=fade(x),v=fade(y),w=fade(z);
+    const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return lp(lp(lp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),lp(lp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  const n2=(x,y)=>n3(x,y,.5),fbm2=(x,y,o=4)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,.5);n+=a;a*=.5;f*=2}return s/n};return{n2,fbm2}}
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const INK='#5a3320',SUBC='#9a6a4c',CREAM='#fff4e2';
+const ROUND='"Arial Rounded MT Bold","Avenir Next","Helvetica Neue",Arial,sans-serif';
+const AR1='أَلَا بِذِكْرِ ٱللَّهِ',AR2='تَطْمَئِنُّ ٱلْقُلُوبُ';
+const EN=['Unquestionably, by the remembrance','of Allah hearts are assured.'];
+// ---------------- the voxel world (built once; lighting baked once)
+const GX=44,GY=44,GZ=40;
+const grid=new Int32Array(GX*GY*GZ);const KI=(x,y,z)=>(z*GY+y)*GX+x;
+const V={x:[],y:[],z:[],c:[],at:[],fl:[]};
+const hs=(x,y,z)=>{const q=Math.sin(x*12.9898+y*78.233+z*37.719)*43758.5453;return q-Math.floor(q)};
+function setV(x,y,z,c,fl=0,at=0){if(x<0||y<0||z<0||x>=GX||y>=GY||z>=GZ)return;c=Array.isArray(c)?c:hexA(c);const k=KI(x,y,z),id=grid[k]-1;
+  if(id>=0){V.c[id]=c;V.fl[id]=fl;V.at[id]=at;return}
+  grid[k]=V.x.length+1;V.x.push(x);V.y.push(y);V.z.push(z);V.c.push(c);V.at.push(at);V.fl.push(fl)}
+function delV(x,y,z){const k=KI(x,y,z);const id=grid[k]-1;if(id<0)return;grid[k]=0;V.fl[id]=-1}  // lazily dropped
+const has=(x,y,z)=>x>=0&&y>=0&&z>=0&&x<GX&&y<GY&&z<GZ&&grid[KI(x,y,z)]>0;
+const fillV=(x0,x1,y0,y1,z0,z1,c,fl,at)=>{for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++)setV(x,y,z,c,fl,at(x,y,z))};
+function build(){
+  const nz=makeNoise(4),r=rng(8),C=20.5,R=13.4,TOP=12;
+  const gAt=(x,y,z)=>.1+(z/TOP)*1.9+hs(x,y,z)*.45;
+  // island: earth tapers into a rocky underside
+  for(let x=0;x<41;x++)for(let y=0;y<41;y++){
+    const ang=Math.atan2(y-C,x-C),d=Math.hypot(x-C,y-C)+nz.n2(Math.cos(ang)*1.7,Math.sin(ang)*1.7)*2.2;
+    if(d>R)continue;
+    const top=TOP+((nz.fbm2(x*.12,y*.12,2)>.14&&d<R-2)?0:0);
+    for(let k=0;;k++){
+      const z=top-k,rk=R*(1-Math.pow(Math.max(0,k-1)/12.5,1.35))+nz.n2(x*.3,y*.3+k)*1.1;
+      if(d>rk||z<0)break;
+      let c;
+      if(k===0)c=mix('#9fcb55','#b9d65e',clamp(.5+nz.n2(x*.4,y*.4)*.8+(r()-.5)*.3));
+      else if(k<=2)c=mix('#d08a4f','#c27c4a',r());
+      else if(k<=5)c=(z%3===0)?hexA('#b06a40'):mix('#bd7548','#a9653e',r());
+      else c=mix('#8d5a44','#7a4c3d',r());
+      setV(x,y,z,c,0,gAt(x,y,z));
+    }
+  }
+  const onTop=(x,y)=>has(x,y,TOP)&&!has(x,y,TOP+1);
+  // pond (front-left) with a sand rim
+  for(let x=6;x<=16;x++)for(let y=24;y<=33;y++){const d=Math.hypot((x-11)/3.6,(y-28.5)/3);
+    if(d<1&&onTop(x,y)){delV(x,y,TOP);setV(x,y,TOP-1,d<.72?'#5ec7dc':'#7fd6e3',0,2.2)}
+    else if(d<1.32&&has(x,y,TOP)&&!has(x,y,TOP+1))setV(x,y,TOP,'#f2d49a',0,2.2)}
+  // stone path from the door
+  for(let y=22;y<=29;y++)for(const x of(y%2?[19,20]:[20,21]))if(has(x,y,TOP))setV(x,y,TOP,'#e9dcc4',0,2.3);
+  // ---- masjid: walls, arched door, windows, parapet, teal dome, minaret
+  const MA=(z)=>3.3+(z-13)/18*1.3;
+  const wallC=(x,y,z)=>z<=14?'#e3d6c0':'#f4ead8';
+  for(let x=16;x<=23;x++)for(let y=13;y<=20;y++)for(let z=13;z<=19;z++){
+    const edge=x===16||x===23||y===13||y===20;
+    if(!edge&&z<19)continue;                      // hollow, only shell and roof
+    setV(x,y,z,wallC(x,y,z),0,MA(z)+hs(x,y,z)*.18);
+  }
+  for(let x=16;x<=23;x++)for(let y=13;y<=20;y++)if(x===16||x===23||y===13||y===20)setV(x,y,20,'#fff9ec',0,MA(20)+hs(x,y,20)*.18);
+  // door on the +y face (x 19..20): wood with a gold arch
+  for(const x of[19,20])for(const z of[13,14,15])setV(x,20,z,'#8a5a3b',0,MA(z));
+  for(const x of[18,19,20,21])setV(x,20,16,'#e8b84a',0,MA(16));
+  setV(18,20,15,'#e8b84a',0,MA(15));setV(21,20,15,'#e8b84a',0,MA(15));
+  // windows (dark glass that lights up later) on both visible faces
+  for(const y of[15,18])for(const z of[15,16])setV(23,y,z,'#3b4766',1,MA(z)+.05);
+  for(const x of[17,22])for(const z of[15,16])setV(x,20,z,'#3b4766',1,MA(z)+.05);
+  // dome
+  const dcx=20,dcy=17,dz=21,dr=3.7;
+  for(let x=15;x<=25;x++)for(let y=12;y<=22;y++)for(let z=dz;z<=dz+4;z++){
+    const d=Math.hypot(x+.5-dcx,y+.5-dcy,(z+.5-dz)*1.0);
+    if(d<=dr){const band=z===dz&&d>2.7;setV(x,y,z,band?'#e8b84a':mix('#3aa093','#58c2b2',(z-dz)/4),0,MA(z+1)+.3+hs(x,y,z)*.2)}
+  }
+  fillV(19,19,16,16,dz+4,dz+5,'#e8b84a',0,()=>4.55);setV(19,16,dz+6,'#e8b84a',0,4.6);
+  // minaret on the front corner
+  for(let z=13;z<=29;z++)for(let x=25;x<=27;x++)for(let y=12;y<=14;y++){
+    if(x===26&&y===13&&z>13&&z<27)continue;
+    const c=(z>=24&&z<=25)?'#3aa093':(z===13?'#e3d6c0':'#f4ead8');
+    setV(x,y,z,c,0,MA(z)+.05+hs(x,y,z)*.15);
+  }
+  for(let x=24;x<=28;x++)for(let y=11;y<=15;y++)setV(x,y,22,(x===24||x===28||y===11||y===15)?'#fff9ec':'#f4ead8',0,4.3);
+  for(let x=24;x<=28;x++)for(let y=11;y<=15;y++)if(x===24||x===28||y===11||y===15)setV(x,y,23,'#e8b84a',0,4.35);
+  fillV(25,27,12,14,30,30,'#3aa093',0,()=>4.6);fillV(26,26,13,13,31,32,'#3aa093',0,()=>4.65);setV(26,13,33,'#e8b84a',0,4.7);
+  setV(26,15,26,'#3b4766',1,4.4);setV(28,13,26,'#3b4766',1,4.4);setV(27,15,18,'#3b4766',1,4.4);
+  // lanterns on little wooden posts either side of the door
+  for(const x of[17,22]){fillV(x,x,22,22,13,14,'#8a5a3b',0,()=>4.0);setV(x,22,15,'#ffd98a',2,4.0)}
+  // ---- date palms
+  const palm=(bx,by,h,lean,seed,a0)=>{
+    const rr=rng(seed);let tx=bx,ty=by;
+    for(let z=0;z<h;z++){const lx=Math.floor(z*lean[0]),ly=Math.floor(z*lean[1]);tx=bx+lx;ty=by+ly;setV(tx,ty,13+z,z%2?'#8a5a3b':'#9a6844',0,a0+z*.07)}
+    const tz=13+h;
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]])for(let i=1;i<=4;i++){
+      const zz=tz+(i<=2?1:(i===3?0:-1)),cl=rr()<.5?'#5f9f42':'#6fb04a',aa=a0+h*.07+.1+i*.05;setV(tx+dx*i,ty+dy*i,zz,cl,0,aa);if(i<=3&&(dx===0||dy===0)){setV(tx+dx*i+dy,ty+dy*i+dx,zz-1,'#7dbb52',0,aa);setV(tx+dx*i-dy,ty+dy*i-dx,zz-1,'#7dbb52',0,aa)}}
+    setV(tx,ty,tz,'#6fb04a',0,a0+h*.07);setV(tx,ty,tz+1,'#86c35a',0,a0+h*.07+.05);
+    setV(tx+1,ty,tz-1,'#d9822b',0,a0+h*.07+.2);setV(tx-1,ty,tz-1,'#d9822b',0,a0+h*.07+.2);
+  };
+  palm(9,16,7,[.28,.12],3,2.4);palm(31,24,5,[.2,.1],5,2.7);palm(12,9,4,[.1,.1],6,2.9);
+  // well: stone ring with water, two posts and a little roof
+  for(let x=27;x<=29;x++)for(let y=29;y<=31;y++){if(!has(x,y,TOP))continue;if(x===28&&y===30){setV(x,y,TOP,'#4ea6c6',0,2.6);continue}setV(x,y,13,'#b8afa6',0,2.6+hs(x,y,1)*.2)}
+  for(const[x,y]of[[27,29],[29,29]])fillV(x,x,y,y,14,16,'#8a5a3b',0,()=>2.7);
+  fillV(27,29,29,29,17,17,'#a9653e',0,()=>2.8);fillV(27,29,30,30,17,17,'#8a5a3b',0,()=>2.8);setV(28,29,18,'#a9653e',0,2.85);
+  // flowers and stones on the grass, kept off the building and path
+  const fr=rng(14);
+  for(let i=0;i<46;i++){const x=fr.int(8,33),y=fr.int(8,33);if(!onTop(x,y)||V.c[grid[KI(x,y,TOP)]-1][1]<150)continue;
+    if(x>=14&&x<=29&&y>=11&&y<=24)continue;setV(x,y,TOP+1,fr.pick(['#ff6b6b','#fff3d6','#ffd23f','#ff9ecb']),0,2.5+fr()*.5)}
+  setV(13,22,13,'#b8afa6',0,2.5);setV(14,22,13,'#b8afa6',0,2.5);setV(14,22,14,'#cfc7bf',0,2.55);
+}
+// ---------------- baked lighting: per-vertex AO on each visible face and a ray-marched shadow toward the light
+const FACES=[{n:[0,0,1],o:[0,0,1],t1:[1,0,0],t2:[0,1,0],light:1.0,tint:[1,.98,.93]},{n:[0,1,0],o:[0,1,0],t1:[1,0,0],t2:[0,0,1],light:.8,tint:[.97,.95,1]},{n:[1,0,0],o:[1,0,0],t1:[0,1,0],t2:[0,0,1],light:.64,tint:[.92,.92,1.04]}];
+const LDIR=[-.42,-.62,.66];
+let VL=null,BAKED=false;
+function bake(){
+  build();
+  const ids=[];for(let i=0;i<V.x.length;i++)if(V.fl[i]>=0&&grid[KI(V.x[i],V.y[i],V.z[i])]===i+1)ids.push(i);
+  const faces=new Array(V.x.length).fill(null);
+  const shadowed=(px,py,pz)=>{for(let i=1;i<44;i++){const x=px+LDIR[0]*i*.5,y=py+LDIR[1]*i*.5,z=pz+LDIR[2]*i*.5;if(z>40)return 0;if(has(Math.floor(x),Math.floor(y),Math.floor(z)))return 1}return 0};
+  const list=[];
+  for(const i of ids){
+    const x=V.x[i],y=V.y[i],z=V.z[i],fs=[null,null,null];let any=false;
+    FACES.forEach((F,fi)=>{
+      const fx=x+F.n[0],fy=y+F.n[1],fz=z+F.n[2];if(has(fx,fy,fz))return;
+      const occ=(a,b)=>has(fx+a[0]+b[0],fy+a[1]+b[1],fz+a[2]+b[2])?1:0,neg=a=>[-a[0],-a[1],-a[2]],Z=[0,0,0],ao=[];
+      for(const[ii,jj]of[[0,0],[1,0],[0,1],[1,1]]){const d1=ii?F.t1:neg(F.t1),d2=jj?F.t2:neg(F.t2),s1=occ(d1,Z),s2=occ(d2,Z),cc=occ(d1,d2);ao.push(s1&&s2?3:s1+s2+cc)}
+      const O=[x+F.o[0],y+F.o[1],z+F.o[2]],cx=O[0]+(F.t1[0]+F.t2[0])/2+F.n[0]*.01,cy=O[1]+(F.t1[1]+F.t2[1])/2+F.n[1]*.01,cz=O[2]+(F.t1[2]+F.t2[2])/2+F.n[2]*.01;
+      const facing=F.n[0]*LDIR[0]+F.n[1]*LDIR[1]+F.n[2]*LDIR[2];
+      fs[fi]={ao,sh:facing>0?shadowed(cx,cy,cz):0,any:ao[0]+ao[1]+ao[2]+ao[3]};any=true;
+    });
+    if(any){faces[i]=fs;list.push(i)}
+  }
+  VL={faces,list};BAKED=true;
+}
+// ---------------- projection (ortho dimetric, elevation 30 degrees, yaw orbits)
+const ELEV=Math.PI/6,sP=Math.sin(ELEV),cP=Math.cos(ELEV);
+let ca=1,sa=0;
+// ---------------- finishing: grain layer and block-pixel title
+let GR=null;
+function grain(){if(GR)return;GR=document.createElement('canvas');GR.width=W;GR.height=HH;const g=GR.getContext('2d'),id=g.createImageData(W,HH),d=id.data,r=rng(3);
+  for(let i=0;i<d.length;i+=4){const n=(r()-.5)*.025*255,v=n>0?255:0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=Math.min(255,Math.abs(n)*(n>0?5:1.1))}g.putImageData(id,0,0)}
+const RASTER={};
+function raster(str,fpx){const key=str+fpx;if(RASTER[key])return RASTER[key];
+  const c=document.createElement('canvas');c.width=fpx*str.length*.9+8;c.height=fpx+6;const g=c.getContext('2d');g.font='700 '+fpx+'px '+ROUND;g.textBaseline='top';g.fillStyle='#000';g.fillText(str,2,1);
+  const d=g.getImageData(0,0,c.width,c.height).data,cells=[];let mx=0;
+  for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(d[(y*c.width+x)*4+3]>110){cells.push([x,y]);mx=Math.max(mx,x)}
+  return RASTER[key]={cells,w:mx+1,h:c.height}}
+function blockLine(str,cx,y,ts,inP,outP,tAbs){
+  const R=raster(str,13),x0=cx-R.w*ts/2,top=hexA('#8a5236'),bot=hexA('#ff7a2f');
+  for(const[x,yy]of R.cells){
+    const u=x/R.w;if(u>inP*1.2||u<outP)continue;
+    const land=E.back((inP*(R.w+9)-x)/9);if(land<=.01)continue;
+    const dy=(1-clamp((inP*(R.w+9)-x)/9))*-60;
+    const px=x0+x*ts,py=y+yy*ts+dy,k=yy/R.h,c=mix(top,bot,k),dd=ts*.45;
+    ctx.fillStyle=`rgb(${c[0]*.55|0},${c[1]*.55|0},${c[2]*.55|0})`;ctx.beginPath();ctx.moveTo(px+ts,py);ctx.lineTo(px+ts+dd,py+dd);ctx.lineTo(px+ts+dd,py+ts+dd);ctx.lineTo(px+ts,py+ts);ctx.fill();
+    ctx.fillStyle=`rgb(${c[0]*.78|0},${c[1]*.78|0},${c[2]*.78|0})`;ctx.beginPath();ctx.moveTo(px,py+ts);ctx.lineTo(px+ts,py+ts);ctx.lineTo(px+ts+dd,py+ts+dd);ctx.lineTo(px+dd,py+ts+dd);ctx.fill();
+    ctx.fillStyle=`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;ctx.fillRect(px-.3,py-.3,ts+.6,ts+.6);
+    ctx.fillStyle='rgba(255,255,255,.28)';ctx.fillRect(px,py,ts,1.4);
+  }
+}
+// ---------------- Arabic pen (body band, then marks fade in)
+const STRIP=s=>s.replace(/[ً-ٰٟۖ-ۭ]/g,'');
+function pen(str,y,size,col,t,a,b,glow){
+  if(t<a)return;
+  const p=E.out((t-a)/(b-a)),X0=70,X1=1010,SL=60,fx=X1+SL-(X1-X0+SL*2)*p;
+  ctx.save();ctx.font=size+'px ScheherazadeG';ctx.direction='rtl';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.beginPath();ctx.moveTo(fx,y-size*1.1);ctx.lineTo(X1+60,y-size*1.1);ctx.lineTo(X1+60,y+size*.7);ctx.lineTo(fx-SL,y+size*.7);ctx.closePath();ctx.clip();
+  const marks=E.out((t-b)/.5);
+  if(glow){ctx.save();ctx.globalAlpha=.45;ctx.filter='blur(10px)';ctx.fillStyle=glow;ctx.fillText(str,540,y);ctx.restore()}
+  ctx.fillStyle=col;ctx.globalAlpha=1-marks;ctx.fillText(STRIP(str),540,y);ctx.globalAlpha=marks;ctx.fillText(str,540,y);
+  ctx.restore();
+}
+function fit(str,font,maxW){const sz=+font.match(/(\d+)px/)[1];ctx.font=font;const w=ctx.measureText(str).width;return w>maxW?sz*maxW/w:sz}
+// sounds: little blocks clattering down, light and wooden
+for(let i=0;i<22;i++)add(.3+i*.115+(i%3)*.02,i%2?'wood':'tick',.1+.04*((i*7)%3)/3);
+add(3.3,'tap',.2);for(let i=0;i<7;i++)add(3.4+i*.16,'wood',.14);add(4.7,'tap',.15);
+add(5.4,'glass',.3);add(5.55,'plink',.25);add(6.4,'bell',.26);
+// clouds of voxels drifting behind the island
+const CL=[];{const r=rng(21);for(let k=0;k<5;k++){const bx=-6+k*9,by=-14-r()*6,bz=26+r()*7,vs=[];for(let i=0;i<9;i++)vs.push([r.int(0,5),r.int(0,2),r.int(0,1)]);for(let i=0;i<4;i++)vs.push([r.int(1,4),r.int(0,1),2]);CL.push({bx,by,bz,vs})}}
+window.frame=function(t){
+  if(!BAKED)bake();
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.filter='none';ctx.globalCompositeOperation='source-over';
+  const yaw=.38+.7*E.inOut(t/10);ca=Math.cos(yaw);sa=Math.sin(yaw);
+  const s=lerp(25.5,28,E.inOut(t/10)),bob=Math.sin(t*1.4)*3,fx=20.5,fy=19,fz=15.5,cy0=655+bob;
+  const P=(x,y,z)=>[540+((x-fx)*ca-(y-fy)*sa)*s,cy0+((x-fx)*sa+(y-fy)*ca)*sP*s-(z-fz)*cP*s];
+  // sky and soft glow
+  const bg=ctx.createLinearGradient(0,0,0,HH);bg.addColorStop(0,'#ffe6c9');bg.addColorStop(.6,'#fbd6b8');bg.addColorStop(1,'#f2c3a6');ctx.fillStyle=bg;ctx.fillRect(0,0,W,HH);
+  const g0=ctx.createRadialGradient(540,640,60,540,640,900);g0.addColorStop(0,'rgba(255,248,236,0.85)');g0.addColorStop(1,'rgba(255,248,236,0)');ctx.fillStyle=g0;ctx.fillRect(0,0,W,HH);
+  // clouds (flat-lit voxels)
+  for(const c of CL){const dx=((t*.7+c.bx+10)%50)-10,list=c.vs.map(v=>({x:dx+v[0],y:c.by+v[1],z:c.bz+v[2]})).sort((a,b)=>(a.x*sa+a.y*ca)*cP+a.z*sP-((b.x*sa+b.y*ca)*cP+b.z*sP));
+    for(const v of list){const p0=P(v.x+1,v.y+1,v.z+1),a=P(v.x,v.y+1,v.z+1),b=P(v.x+1,v.y,v.z+1),c0=P(v.x,v.y,v.z+1);
+      ctx.fillStyle='#fff6ea';ctx.beginPath();ctx.moveTo(c0[0],c0[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(p0[0],p0[1]);ctx.lineTo(a[0],a[1]);ctx.fill();
+      const e1=P(v.x,v.y+1,v.z),e2=P(v.x+1,v.y+1,v.z),e3=P(v.x+1,v.y,v.z);
+      ctx.fillStyle='#f6dcc8';ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(p0[0],p0[1]);ctx.lineTo(e2[0],e2[1]);ctx.lineTo(e1[0],e1[1]);ctx.fill();
+      ctx.fillStyle='#ecc9b6';ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(e3[0],e3[1]);ctx.lineTo(e2[0],e2[1]);ctx.fill()}}
+  // ---- island voxels
+  const DROP=.32,lit=E.out((t-5.4)/.7),lamp=E.out((t-5.5)/.7);
+  const L=VL.list,depth=new Float32Array(V.x.length);
+  const ord=L.filter(i=>t>V.at[i]);
+  for(const i of ord)depth[i]=(V.x[i]*sa+V.y[i]*ca)*cP+V.z[i]*sP;
+  ord.sort((a,b)=>depth[a]-depth[b]);
+  const glows=[];
+  const N=4;
+  for(const i of ord){
+    const x=V.x[i],y=V.y[i],z=V.z[i],fl=V.fl[i],q=(t-V.at[i])/DROP,falling=q<1,zz=falling?z+(1-E.out(q))*7:z;
+    const base=V.c[i];
+    for(let fi=0;fi<3;fi++){
+      const fc=VL.faces[i][fi];if(!fc)continue;const F=FACES[fi];
+      const O=[x+F.o[0],y+F.o[1],zz+F.o[2]],p0=P(...O),p1=P(O[0]+F.t1[0],O[1]+F.t1[1],O[2]+F.t1[2]),p3=P(O[0]+F.t2[0],O[1]+F.t2[1],O[2]+F.t2[2]);
+      const e1=[p1[0]-p0[0],p1[1]-p0[1]],e2=[p3[0]-p0[0],p3[1]-p0[1]];
+      const quad=(st)=>{ctx.fillStyle=st;ctx.strokeStyle=st;ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p0[0]+e1[0],p0[1]+e1[1]);ctx.lineTo(p0[0]+e1[0]+e2[0],p0[1]+e1[1]+e2[1]);ctx.lineTo(p0[0]+e2[0],p0[1]+e2[1]);ctx.closePath();ctx.fill();ctx.stroke()};
+      // emissive things: windows on once lit, lanterns on once lit
+      const isEm=(fl===1&&lit>0)||(fl===2&&lamp>0);
+      if(isEm&&!falling){
+        const k=fl===1?lit:lamp,c=mix(fl===1?'#3b4766':'#ffd98a',[255,230,150],k*(fi===0?.9:.7));
+        quad(`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`);
+        if(fi<2)glows.push([p0[0]+(e1[0]+e2[0])/2,p0[1]+(e1[1]+e2[1])/2,k,fl]);continue;
+      }
+      let cc=base.map((ch,j)=>ch*F.light*F.tint[j]);
+      if(falling){quad(`rgb(${cc[0]|0},${cc[1]|0},${cc[2]|0})`);continue}
+      if(fc.sh)cc=mix(cc.map(ch=>ch*.7),[96,84,150],.18);
+      if(z<8)cc=mix(cc,[70,50,70],clamp((8-z)/16)*.5);
+      if(!fc.any){quad(`rgb(${cc[0]|0},${cc[1]|0},${cc[2]|0})`);continue}
+      const ao=fc.ao,darkAt=(u,w)=>1-lerp(lerp(ao[0],ao[1],u),lerp(ao[2],ao[3],u),w)*.13;
+      for(let a=0;a<N;a++)for(let b=0;b<N;b++){
+        const k=darkAt((a+.5)/N,(b+.5)/N),c=mix(cc.map(ch=>ch*k),[80,60,110],(1-k)*.35);
+        const u0=a/N,u1=(a+1)/N,w0=b/N,w1=(b+1)/N;
+        ctx.fillStyle=ctx.strokeStyle=`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;ctx.lineWidth=.5;ctx.beginPath();
+        ctx.moveTo(p0[0]+e1[0]*u0+e2[0]*w0,p0[1]+e1[1]*u0+e2[1]*w0);ctx.lineTo(p0[0]+e1[0]*u1+e2[0]*w0,p0[1]+e1[1]*u1+e2[1]*w0);
+        ctx.lineTo(p0[0]+e1[0]*u1+e2[0]*w1,p0[1]+e1[1]*u1+e2[1]*w1);ctx.lineTo(p0[0]+e1[0]*u0+e2[0]*w1,p0[1]+e1[1]*u0+e2[1]*w1);ctx.closePath();ctx.fill();ctx.stroke();
+      }
+    }
+  }
+  // warm halos around lit windows and lanterns
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(const[gx,gy,k,fl]of glows){const r=(fl===2?58:40)*s/25.5,g=ctx.createRadialGradient(gx,gy,2,gx,gy,r);g.addColorStop(0,`rgba(255,200,110,${.35*k})`);g.addColorStop(1,'rgba(255,200,110,0)');ctx.fillStyle=g;ctx.fillRect(gx-r,gy-r,2*r,2*r)}
+  ctx.restore();
+  // hook, built from blocks
+  const inP=Math.floor(E.out((t-.15)/.9)*18)/18,outP=Math.floor(E.out((t-3.3)/.6)*18)/18;
+  if(t<4){blockLine('Where does a',540,262,7.4,inP,outP,t);blockLine('heart find rest?',540,372,7.4,inP,outP,t)}
+  // copy card, a cream block with a hard offset shadow
+  const ck=E.back((t-.1)/.5);
+  ctx.save();ctx.translate(540,1300);ctx.scale(ck,ck);ctx.translate(-540,-1300);
+  ctx.fillStyle='#b89a80';ctx.beginPath();ctx.roundRect(78,1100,940,430,34);ctx.fill();
+  ctx.fillStyle=CREAM;ctx.beginPath();ctx.roundRect(70,1088,940,430,34);ctx.fill();
+  ctx.fillStyle='#e8b84a';ctx.beginPath();ctx.roundRect(116,1122,64,10,5);ctx.fill();
+  ctx.restore();
+  pen(AR1,1228,86,INK,t,3.5,4.3,'#ff9a50');pen(AR2,1330,86,INK,t,4.4,5.1,'#ff9a50');
+  const e1=E.out((t-5.2)/.5),e2=E.out((t-5.8)/.5),c3=E.out((t-6.4)/.5);
+  ctx.textAlign='center';
+  ctx.save();ctx.globalAlpha=e1;ctx.fillStyle=INK;let f=fit(EN[0],'400 40px '+ROUND,830);ctx.font=f+'px '+ROUND;ctx.fillText(EN[0],540,1412+(1-e1)*10);ctx.restore();
+  ctx.save();ctx.globalAlpha=e2;ctx.fillStyle=INK;f=fit(EN[1],'400 40px '+ROUND,830);ctx.font=f+'px '+ROUND;ctx.fillText(EN[1],540,1454+(1-e2)*10);ctx.restore();
+  ctx.save();ctx.globalAlpha=c3;ctx.fillStyle='#c4731f';ctx.font='700 26px Menlo,monospace';if('letterSpacing' in ctx)ctx.letterSpacing='9px';ctx.fillText('QURAN 13:28',540+4,1496);ctx.restore();
+  ctx.save();ctx.globalAlpha=.75*E.out(t/.6);ctx.fillStyle=SUBC;ctx.font='700 24px Menlo,monospace';if('letterSpacing' in ctx)ctx.letterSpacing='6px';ctx.textAlign='center';ctx.fillText('@YOURPAGE',540+3,1660);ctx.restore();
+  // finishing: vignette and speckle grain
+  const vg=ctx.createRadialGradient(540,960,Math.min(W,HH)*.3,540,960,Math.hypot(W,HH)*.6);vg.addColorStop(0,'rgba(120,60,40,0)');vg.addColorStop(1,'rgba(120,60,40,0.18)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,HH);
+  grain();ctx.drawImage(GR,0,0);
+  return{};
+};
+document.fonts.load('86px ScheherazadeG').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

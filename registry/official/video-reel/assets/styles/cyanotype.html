@@ -1,0 +1,105 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeC;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#e8e2cf}
+svg{position:absolute;inset:0}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const h=n=>{n=Math.imul(n^61,0x9e3779b1);n^=n>>>15;n=Math.imul(n,0x85ebca6b);n^=n>>>13;return((n>>>0)%10000)/10000};
+const rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+const mix=(a,b,k)=>{const A=rgb(a),B=rgb(b);return'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')+')'};
+const PAPER='#e8e2cf',COAT='#c9cf7c',WET='#5d86ab',PRUSSIAN='#0f3a6b',WHITE='#f1f0e6',INK='#2f3a2a';
+const SERIF='Baskerville,"Baskerville Old Face",Georgia,serif';
+// ---- brushed coating: a rectangle with a ragged hand-painted edge, built once
+const X0=70,X1=1010,Y0=200,Y1=1640;let edge=[],n=0;
+const side=(ax,ay,bx,by)=>{const L=Math.hypot(bx-ax,by-ay),st=Math.round(L/22);for(let i=0;i<st;i++){const f=i/st;edge.push([ax+(bx-ax)*f+(h(n*3)-.5)*9,ay+(by-ay)*f+(h(n*3+1)-.5)*9]);n++}};
+side(X0,Y0,X1,Y0);side(X1,Y0,X1,Y1);side(X1,Y1,X0,Y1);side(X0,Y1,X0,Y0);
+const COATPATH='M'+edge.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L')+'Z';
+// ---- things laid on the paper (shapes only; fill and vein colour come from where they are used)
+const leaf=(x,y,a,L=74,Wd=19)=>`<g transform="translate(${x} ${y}) rotate(${a})"><path d="M${-L} 0Q0 ${-Wd*1.6} ${L} 0Q0 ${Wd*1.6} ${-L} 0Z"/><path d="M${-L+8} 0H${L-8}" fill="none" stroke="var(--v)" stroke-width="3.5"/></g>`;
+const ITEMS=[`
+<g transform="rotate(-8 300 400)">
+  <path d="M110 470C240 440 380 380 540 330" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+  ${leaf(190,420,-42)}${leaf(215,452,12)}${leaf(290,392,-46)}${leaf(320,432,8)}${leaf(390,360,-48)}${leaf(420,402,6)}${leaf(500,326,-40)}${leaf(535,352,10)}
+</g>`,`
+<g transform="translate(830 430) rotate(-28)">
+  <path fill-rule="evenodd" d="M-130 0a52 52 0 1 0 104 0a52 52 0 1 0 -104 0ZM-106 0a28 28 0 1 1 56 0a28 28 0 1 1 -56 0Z"/>
+  <rect x="-30" y="-9" width="190" height="18" rx="4"/><rect x="104" y="9" width="16" height="40"/><rect x="132" y="9" width="16" height="30"/><rect x="76" y="9" width="12" height="24"/>
+</g>`,`
+<g transform="translate(250 1470)">
+  <circle r="98"/><circle r="80" fill="none" stroke="var(--v)" stroke-width="3.5"/>
+  <path d="M-34 -34H34V34H-34ZM0 -48L48 0L0 48L-48 0Z" fill="none" stroke="var(--v)" stroke-width="3.5" stroke-linejoin="round"/>
+</g>`,
+`${leaf(760,1440,24,84,22)}${leaf(850,1500,-30,70,18)}${leaf(920,1420,64,66,17)}`];
+const OBJ=ITEMS.join('');
+const GHOST='translate(-18 12)'; // the sun moved a little: a faint second shadow, like a sun-dial print
+const ENTER=[.5,.9,1.3,1.7];
+ENTER.forEach(t=>add(t,'tap',.26));
+add(3.9,'slide',.3);add(4.25,'rise',.22);add(4.4,'boom',.45);
+for(let t=5.3;t<6.1;t+=.2)add(t,'key',.12);for(let t=6.3;t<7.1;t+=.2)add(t,'key',.12);
+add(7.2,'plink',.25);add(7.7,'tap',.22);add(8.3,'tap',.2);add(8.8,'bell',.28);
+const AR1='أَلَا بِذِكْرِ ٱللَّهِ',AR2='تَطْمَئِنُّ ٱلْقُلُوبُ';
+function up(t,a,b){const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;return Math.min(p,q)}
+function pen(id,t,a,b,y,txt,size){
+  if(t<a)return'';
+  const p=ease((t-a)/(b-a)),fx=1000-(920)*p;
+  const tx=(c,f='')=>`<text x="540" y="${y}" text-anchor="middle" direction="rtl" font-family="ScheherazadeC" font-size="${size}" fill="${c}" ${f}>${txt}</text>`;
+  return`<mask id="${id}"><polygon fill="#fff" points="${fx},${y-200} 1040,${y-200} 1040,${y+130} ${fx-60},${y+130}"/></mask><g mask="url(#${id})"><g filter="url(#soft)" opacity=".3">${tx('#fff')}</g>${tx(WHITE)}</g>`;
+}
+window.frame=function(t){
+  const front=-250+clamp((t-2.4)/1.8)*1580;           // the sun's edge crosses the sheet
+  const rin=ease((t-4.3)/.9);                          // the rinse
+  const lift=ease((t-3.7)/.5);                         // things are lifted off
+  const exposed=mix(WET,PRUSSIAN,rin),pale=mix(COAT,WHITE,rin);
+  let o='';
+  o+=`<defs>
+   <clipPath id="coat"><path d="${COATPATH}"/></clipPath>
+   <filter id="soft" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+   <filter id="edge" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="1.6"/></filter>
+   <filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".035 .6" numOctaves="3" seed="8"/><feColorMatrix values="0 0 0 0 .9  0 0 0 0 .95  0 0 0 0 .8  0 0 0 -1.5 1.15"/></filter>
+   <filter id="fib" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="5"/><feColorMatrix values="0 0 0 0 .25  0 0 0 0 .22  0 0 0 0 .15  0 0 0 -6 3.1"/></filter>
+   <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="${6+lift*14}" dy="${10+lift*20}" stdDeviation="${6+lift*10}" flood-color="#142018" flood-opacity="${(.4-lift*.3).toFixed(2)}"/></filter>
+   <linearGradient id="band"><stop offset="0" stop-color="#fff6d0" stop-opacity="0"/><stop offset=".6" stop-color="#fff6d0" stop-opacity=".9"/><stop offset="1" stop-color="#fff6d0" stop-opacity="0"/></linearGradient>
+   <linearGradient id="sun" gradientUnits="userSpaceOnUse" x1="${front-190}" y1="0" x2="${front}" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+   ${ITEMS.map((x,i)=>`<g id="o${i}">${x}</g>`).join('')}<g id="objs">${OBJ}</g>
+   <mask id="expo" maskUnits="userSpaceOnUse" x="0" y="0" width="1080" height="1920">
+     <rect width="1080" height="1920" fill="url(#sun)"/>
+     <g filter="url(#edge)" fill="#000" color="#000" style="--v:#fff"><use href="#objs"/></g>
+     <g filter="url(#edge)" fill="#000" color="#000" style="--v:#fff" opacity=".18" transform="${GHOST}"><use href="#objs"/></g>
+   </mask></defs>`;
+  o+=`<rect width="1080" height="1920" fill="${PAPER}"/><rect width="1080" height="1920" filter="url(#paper)" opacity=".5" style="mix-blend-mode:multiply"/>`;
+  // coated area: unexposed colour, then the blue wherever light reached and nothing covered it
+  o+=`<g clip-path="url(#coat)"><rect x="40" y="170" width="1000" height="1500" fill="${pale}"/><rect x="40" y="170" width="1000" height="1500" fill="${exposed}" mask="url(#expo)"/></g>`;
+  // sun band
+  if(t>2.3&&t<4.5){const a=Math.sin(clamp((t-2.3)/2.2)*Math.PI)*.4;o+=`<g clip-path="url(#coat)"><rect x="${front-220}" y="170" width="420" height="1500" fill="url(#band)" opacity="${a.toFixed(2)}" style="mix-blend-mode:screen"/></g>`}
+  // physical things on the sheet until they are lifted
+  if(lift<1){
+    o+=`<g opacity="${(1-lift).toFixed(2)}" transform="translate(0 ${(-lift*60).toFixed(1)}) rotate(${(lift*2.5).toFixed(2)} 540 960)">`;
+    ITEMS.forEach((_,i)=>{const d=ease((t-ENTER[i])/.35);if(t<ENTER[i])return;
+      o+=`<g opacity="${clamp((t-ENTER[i])/.12).toFixed(2)}" transform="translate(0 ${(-70*(1-d)).toFixed(1)})" filter="url(#sh)" fill="${INK}" color="${INK}" style="--v:#9aa68a"><use href="#o${i}"/></g>`});
+    o+=`</g>`;
+  }
+  // fibre grain on top
+  o+=`<rect width="1080" height="1920" filter="url(#fib)" opacity=".22" style="mix-blend-mode:multiply"/>`;
+  // hook, printed in ink before the sun comes
+  const p1=up(t,.4,2.1);
+  o+=`<g opacity="${p1}" transform="translate(0 ${(1-ease((t-.4)/.6))*14})" font-family='${SERIF}' font-size="62" fill="${INK}" text-anchor="middle"><text x="540" y="1000">Whatever the sun</text><text x="540" y="1078">can't reach stays pale.</text></g>`;
+  // the verse, exposed white on Prussian blue
+  o+=pen('p1',t,5.3,6.1,930,AR1,104)+pen('p2',t,6.3,7.1,1110,AR2,104);
+  const e1=up(t,7.6),e2=up(t,8.0),c3=up(t,8.6);
+  o+=`<g font-family='${SERIF}' font-size="50" fill="${WHITE}" text-anchor="middle"><text opacity="${e1}" x="540" y="${1240+(1-e1)*12}">Unquestionably, by the remembrance</text><text opacity="${e2}" x="540" y="${1300+(1-e2)*12}">of Allah hearts are assured.</text></g>`;
+  o+=`<text opacity="${c3}" x="540" y="1372" text-anchor="middle" font-family="Menlo,monospace" font-size="26" letter-spacing="9" fill="#a9c6e0">QURAN 13:28</text>`;
+  const hb=ease((t-5.6)/.6);
+  o+=`<text opacity="${(.8*Math.max(hb,t<2?1:0)).toFixed(2)}" x="540" y="1720" text-anchor="middle" font-family="Menlo,monospace" font-size="24" letter-spacing="6" fill="#5b5a4c">@YOURPAGE</text>`;
+  $('s').innerHTML=o;
+  return {};
+};
+document.fonts.load('104px ScheherazadeC').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

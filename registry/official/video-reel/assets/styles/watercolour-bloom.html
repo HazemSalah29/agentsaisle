@@ -1,0 +1,93 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#f6efe3}
+canvas,svg.paper{position:absolute;inset:0}
+svg.paper{mix-blend-mode:multiply;pointer-events:none;opacity:.55}
+.t{position:absolute;left:0;width:1080px;text-align:center;color:#5b4a5e;font-family:Georgia,"Times New Roman",serif;opacity:0}
+.it{font-style:italic;font-size:64px;line-height:1.25;padding:0 110px;text-wrap:balance}
+#ar{font-family:Scheherazade,serif;font-size:120px;line-height:1.7;color:#4a2f4f;top:770px;direction:rtl}
+#en{font-size:56px;line-height:1.3;padding:0 130px;top:1010px;color:#4a2f4f;text-wrap:balance}
+#cit{font-family:Menlo,monospace;font-size:24px;letter-spacing:7px;top:1190px;color:#7a6a7d}
+#l1{top:400px}#l2{top:400px}
+#hd{font-family:Menlo,monospace;font-size:26px;letter-spacing:7px;top:1420px;color:#7a6a7d}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<svg class="paper" viewBox="0 0 1080 1920" width="1080" height="1920"><defs><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="3" seed="4"/><feColorMatrix values="0 0 0 0 .55  0 0 0 0 .48  0 0 0 0 .4  0 0 0 -2.2 1.35"/></filter></defs><rect width="1080" height="1920" filter="url(#g)"/></svg>
+<div id="l1" class="t it">Some days feel like they will never end.</div>
+<div id="l2" class="t it">Be gentle with yourself. Ease is already walking toward you.</div>
+<div id="ar" class="t">فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</div>
+<div id="en" class="t">For indeed, with hardship [will be] ease.</div>
+<div id="cit" class="t">QURAN 94:5</div>
+<div id="hd" class="t">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+add(.3,'tap',.2);add(1.9,'rise',.3);add(2.9,'tap',.2);add(3.1,'slide',.3);add(5.2,'bell',.3);add(5.5,'tap',.2);add(7.3,'tap',.2);add(8.4,'bell',.25);
+const ctx=$('c').getContext('2d');
+const PAPER='#f6efe3',ROSE='#d9a1a8',LILAC='#b9a6d3',BUTTER='#f1dc9b',SAGE='#a9bc9a',DEEP='#c7838f';
+// wobbly outline: a closed ellipse whose radius breathes with sines (deterministic per seed)
+function wob(cx,cy,rx,ry,rot,seed,n=56){
+  const c=Math.cos(rot),s=Math.sin(rot),P=[];
+  for(let i=0;i<n;i++){const a=i/n*6.2832,w=1+.13*Math.sin(a*3+seed)+.09*Math.sin(a*5+seed*2.1)+.05*Math.sin(a*9+seed*3.7);
+    const x=Math.cos(a)*rx*w,y=Math.sin(a)*ry*w;P.push([cx+x*c-y*s,cy+x*s+y*c]);}
+  return P;
+}
+function poly(P){ctx.beginPath();P.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();}
+// one watercolour wash: soft bleed halo, three layers, then a darker pigment ring at the edge
+function wash(cx,cy,rx,ry,rot,seed,col,p,a){
+  if(p<=0)return;const s=ease(p);
+  ctx.fillStyle=col;ctx.strokeStyle=col;
+  poly(wob(cx,cy,rx*s*1.07,ry*s*1.07,rot,seed+9));ctx.globalAlpha=a*.28;ctx.fill();
+  for(let k=0;k<3;k++){poly(wob(cx+(k-1)*5,cy+(1-k)*4,rx*s*(1-k*.12),ry*s*(1-k*.12),rot,seed+k*1.3));ctx.globalAlpha=a*(.5-k*.1);ctx.fill();}
+  poly(wob(cx,cy,rx*s,ry*s,rot,seed));ctx.globalAlpha=a*.55;ctx.lineWidth=2.2;ctx.stroke();
+  ctx.globalAlpha=1;
+}
+function stem(x0,y0,x1,y1,bend,p,sway){
+  const q=ease(p);if(q<=0)return;
+  ctx.strokeStyle='#8fa683';ctx.lineWidth=6;ctx.lineCap='round';ctx.globalAlpha=.8;ctx.beginPath();
+  for(let i=0;i<=40;i++){const u=i/40*q,x=(1-u)*(1-u)*x0+2*u*(1-u)*(x0+bend)+u*u*(x1+sway),y=(1-u)*(1-u)*y0+2*u*(1-u)*((y0+y1)/2)+u*u*y1;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.stroke();ctx.globalAlpha=1;
+}
+function flower(x,y,size,n,seed,col,col2,p){
+  for(let i=0;i<n;i++){
+    const pp=clamp((p-i*.07)/.6);if(pp<=0)continue;const a=i/n*6.2832+seed*.3;
+    wash(x+Math.cos(a)*size*.5*ease(pp),y+Math.sin(a)*size*.5*ease(pp),size*.5,size*.27,a,seed+i*2.7,i%2?col:col2,pp,.8);
+  }
+  wash(x,y,size*.2,size*.2,0,seed+4,BUTTER,clamp((p-.45)/.5),.95);
+}
+window.frame=function(t){
+  ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.fillStyle=PAPER;ctx.fillRect(0,0,1080,1920);
+  ctx.globalCompositeOperation='multiply';
+  const dr=(k)=>Math.sin(t*.5+k)*14;
+  // background washes, they spread first and keep drifting a little
+  wash(220+dr(1),430+dr(2),430,330,.4,1.1,LILAC,t/2.2,.5);
+  wash(880+dr(3),1330+dr(4),500,380,-.3,2.2,ROSE,(t-.4)/2.4,.5);
+  wash(560+dr(5),900+dr(6),360,300,.2,3.3,BUTTER,(t-.8)/2.4,.45);
+  wash(120+dr(7),1620+dr(8),300,260,.5,4.4,SAGE,(t-1.2)/2.4,.5);
+  // flowers on stems
+  const sw=(k)=>Math.sin(t*.9+k)*7;
+  const F=[[330,1620,150,5,5.1,ROSE,DEEP,1.8,380],[580,1650,175,6,7.3,LILAC,'#9d8cc0',2.3,-300],[820,1640,140,5,9.9,'#e9b7a6',ROSE,2.8,300]];
+  F.forEach((f,i)=>{
+    const sx=f[0]+sw(i),p=(t-f[7])/2.2;
+    stem(f[0]-(i-1)*60,1960,sx,f[1],f[8]*.2,(t-f[7]+.3)/1.0,0);
+    if(p>0)flower(sx,f[1]+Math.sin(t*.7+i)*4,f[2],f[3],f[4],f[5],f[6],p);
+  });
+  // leaves
+  wash(250,1790,90,34,-.7,11.2,SAGE,(t-3.2)/1.4,.8);wash(700,1820,100,34,.6,12.4,SAGE,(t-3.6)/1.4,.8);wash(930,1790,80,30,-.5,13.5,SAGE,(t-3.9)/1.4,.8);
+  ctx.globalCompositeOperation='source-over';
+  // text
+  const up=(el,t0,t1,d=26)=>{const a=ease((t-t0)/.9)*(t1==null?1:1-clamp((t-t1)/.6));el.style.opacity=a;el.style.transform=`translateY(${(1-ease((t-t0)/.9))*d}px)`;};
+  up($('l1'),.4,6.6);up($('l2'),7.2);
+  // Arabic: pen edge moves right to left, mask edge softened
+  const pen=clamp((t-3.0)/1.8),ar=$('ar');ar.style.opacity=pen>0?1:0;
+  ar.style.clipPath=`inset(-30% 0 -30% ${(1-inout(pen))*100}%)`;
+  up($('en'),5.1);up($('cit'),5.6,null,10);up($('hd'),8.6,null,0);
+  return {};
+};
+document.fonts.load('120px Scheherazade','فَإِنَّ').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

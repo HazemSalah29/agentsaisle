@@ -1,0 +1,315 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block;position:absolute;left:0;top:0}</style>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js" } }</script>
+<script src="../stick-rig.js"></script>
+<script src="../rider.js"></script>
+</head><body>
+<script type="module">
+// Ink 3D world (style page): our 2D rider card standing in an inked three.js world. Demo: Khalid on the dusk ridge over Makkah with the letter.
+// Method ported from mromidev/claude-animated-shorts (MIT): two-tone world shading with a frozen low sun,
+// screen-space ink (depth jumps + normal creases), 2D card figure lit by the scene, fog = horizon, Neutral tone map + grade.
+// Changed for our rules: no lens blur (depth = sharp near rock + haze), our faceless rider (assets/rider.js), gold only on the letter.
+import * as THREE from 'three';
+const W = 1080, H = 1920;
+const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping;
+renderer.autoClear = false;
+document.body.appendChild(renderer.domElement);
+
+// ---------- seeded helpers ----------
+let seed = 7; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const sstep = (a, b, v) => { const u = clamp01((v - a) / (b - a)); return u * u * (3 - 2 * u); };
+const hash2 = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+const vnoise = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash2(xi, yi), b = hash2(xi + 1, yi), c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+const fbm = (x, y) => vnoise(x, y) * .5 + vnoise(x * 2.1, y * 2.1) * .3 + vnoise(x * 4.3, y * 4.3) * .2 - .5;
+const lin = hex => new THREE.Color(hex); // sRGB hex -> linear working colour
+
+// ---------- looks: only colours and light differ; the world, ink and camera are shared ----------
+// Pick with ?look=light in the URL or window.REEL_LOOK = 'light' before this script. Colours are easy to tune per reel:
+// change the numbers here. The win of this style is the 3D world (buildings, terrain, ink), not a fixed palette.
+const LOOKS = {
+  golden: { // backlit low sun at dusk, violet shade, peach horizon (2026-11-03 first still)
+    sun: [0.16, 0.22, -1], lit: [1.55, 1.08, 0.66], shade: [0.40, 0.39, 0.68], lift: [0.03, 0.025, 0.07], horizon: '#ffcf8e', fog: [55, 540],
+    sand: '#e2b47c', rock: '#b8845e', floor: '#d9b08a', rocks: '#c08d64', nearRock: '#a87a55',
+    houses: ['#e6cda4', '#d7b083', '#c9996a', '#e9d8b8', '#b98762', '#dcbf96'], door: '#5d3d31', win: '#4e3a3c', kaaba: '#2b2633', trunk: '#8d5f40', leaf: '#6f8f4c',
+    sky: [[1, .81, .56], [.97, .62, .47], [.76, .52, .62], [.40, .31, .56]], skyE: [[.01, .08], [.07, .22], [.2, .55]], clouds: .55,
+    sunCol: [1, .83, .6], disc: [.99935, .99965, 3.5], halo: [260, 1.1, 12, .22],
+    ink: '#060507', inkW: [4.6, 2.6], cardTint: [.96, .9, .93], blob: [.11, .09, .2, .5], glow: [1.6, 1.05, .35, 1], exposure: 1.0, grade: 0 },
+  light: { // Part 3 light cinematic: pale blue to cream sky, soft day light, brown ink, Part 3 grainVignette grade
+    sun: [-0.15, 0.23, -1], lit: [1.12, 1.06, 0.95], shade: [0.84, 0.82, 0.88], lift: [0.03, 0.03, 0.04], horizon: '#F8ECD6', fog: [35, 360],
+    sand: '#E0D1B6', rock: '#C9B38F', floor: '#E6D8BE', rocks: '#C9B699', nearRock: '#B9A99A',
+    houses: ['#E7D9C2', '#CDBB9C', '#ECDFC3', '#D9C6A3', '#E9E3DC', '#D2BF9C'], door: '#6E5A3A', win: '#7A6A55', kaaba: '#3F3424', trunk: '#9A8064', leaf: '#A9B99A',
+    sky: [[.973, .925, .839], [.953, .914, .855], [.914, .890, .863], [.827, .882, .902]], skyE: [[0, .08], [.04, .13], [.12, .3]], clouds: 0,
+    sunCol: [1, .97, .9], disc: [.9990, .9994, 1.4], halo: [250, .7, 18, .45],
+    ink: '#3F3424', inkW: [3.8, 2.2], cardTint: [1, 1, 1], blob: [.35, .3, .24, .35], glow: [.96, .76, .44, 1], exposure: 1.18, grade: 1 },
+};
+const LOOK_NAME = new URLSearchParams(location.search).get('look') || window.REEL_LOOK || 'golden', LK = LOOKS[LOOK_NAME] || LOOKS.golden;
+const SUN = new THREE.Vector3(...LK.sun).normalize();
+const LIT = new THREE.Vector3(...LK.lit), SHADE = new THREE.Vector3(...LK.shade), LIFT = new THREE.Vector3(...LK.lift);
+const HORIZON = lin(LK.horizon), FOG = new THREE.Vector2(...LK.fog);
+
+// ---------- terrain: ridge in front, Makkah valley below, mountains round it ----------
+function hgt(x, z) {
+  const n = fbm(x * .02, z * .02) * 6 + fbm(x * .1, z * .1) * 1.3;
+  const top = .35 * Math.sin(x * .15) + fbm(x * .35, z * .35) * .3;
+  const fall = sstep(-2.6, -16, z) * .55 + sstep(-10, -46, z) * .45;
+  let y = top * (1 - fall) + (-28 + n * .5) * fall;
+  y += sstep(70, 150, Math.abs(x)) * sstep(-30, -75, z) * (36 + n * 4);
+  y += sstep(-205, -330, z) * (46 + n * 5);
+  return y;
+}
+const worldMat = new THREE.ShaderMaterial({
+  vertexColors: true,
+  uniforms: { uLit: { value: LIT }, uShade: { value: SHADE }, uLift: { value: LIFT }, uSun: { value: SUN }, uFog: { value: new THREE.Vector3(HORIZON.r, HORIZON.g, HORIZON.b) },
+    uFogR: { value: FOG }, uSh: { value: null }, uShM: { value: new THREE.Matrix4() }, uShTexel: { value: 1 / 4096 } },
+  vertexShader: `varying vec3 vW; varying vec3 vN; varying vec3 vC;
+    void main(){ vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vC = color; gl_Position = projectionMatrix * viewMatrix * w; }`,
+  fragmentShader: `uniform vec3 uLit, uShade, uLift, uSun, uFog; uniform vec2 uFogR; uniform sampler2D uSh; uniform mat4 uShM; uniform float uShTexel;
+    varying vec3 vW; varying vec3 vN; varying vec3 vC;
+    float h3(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7))) * 43758.5453); }
+    float n3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+      return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x), mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x), f.y),
+                 mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x), mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x), f.y), f.z); }
+    void main(){
+      vec3 n = normalize(vN);
+      vec4 sc = uShM * vec4(vW, 1.); vec3 s = sc.xyz / sc.w * .5 + .5;
+      float vis = 0.;
+      for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) vis += (s.z - .0004 <= texture2D(uSh, s.xy + vec2(i,j) * uShTexel).r) ? 1. : 0.;
+      vis /= 25.;
+      if (s.x < 0. || s.x > 1. || s.y < 0. || s.y > 1.) vis = 1.;
+      float ndl = max(dot(n, uSun), 0.);
+      float st = vis * smoothstep(0., .3, ndl);                        // 0 = shade, 1 = lit
+      float skyK = mix(.84, 1., .5 + .5 * n.y);
+      vec3 lit = uLit * mix(1., ndl, .35);
+      float paint = n3(vW * .45) * .6 + n3(vW * 2.3) * .4;             // painted variation, never flat fills
+      vec3 alb = vC * (.88 + .24 * paint);
+      vec3 col = alb * mix(uShade, lit, st) * skyK + uLift * (1. - st);
+      float d = length(vW - cameraPosition);
+      col = mix(col, uFog, clamp((d - uFogR.x) / (uFogR.y - uFogR.x), 0., 1.) * .8);
+      gl_FragColor = vec4(col, 1.);
+    }`,
+});
+const tint = (geo, hex, jitter = 0) => {
+  const c = lin(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const k = 1 + (rnd() - .5) * jitter; a[i * 3] = c.r * k; a[i * 3 + 1] = c.g * k; a[i * 3 + 2] = c.b * k; }
+  geo.setAttribute('color', new THREE.BufferAttribute(a, 3)); return geo;
+};
+const world = new THREE.Scene();      // layer 0: inked + shadowed
+const mk = (geo, hex, jitter) => { const m = new THREE.Mesh(tint(geo, hex, jitter), worldMat); world.add(m); return m; };
+
+{ // ground, dense near the camera
+  const g = new THREE.PlaneGeometry(1, 1, 320, 320), p = g.attributes.position;
+  const cols = new Float32Array(p.count * 3), sand = lin(LK.sand), rock = lin(LK.rock), floor = lin(LK.floor);
+  for (let i = 0; i < p.count; i++) {
+    const u = p.getX(i) * 2, v = p.getY(i) + .5;            // u -1..1, v 0..1
+    const x = Math.sign(u) * 430 * Math.abs(u) ** 1.7, z = 14 - 820 * v ** 1.9;
+    const y = hgt(x, z); p.setXYZ(i, x, y, z);
+    const slope = Math.abs(hgt(x + 1, z) - y) + Math.abs(hgt(x, z + 1) - y);
+    const c = sand.clone().lerp(floor, sstep(-10, -45, z)).lerp(rock, sstep(.5, 1.6, slope));
+    cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); g.computeVertexNormals();
+  world.add(new THREE.Mesh(g, worldMat));
+}
+const rockGeo = (s) => { let g = new THREE.DodecahedronGeometry(1, 1); g = g.toNonIndexed(); const p = g.attributes.position, seen = new Map();
+  for (let i = 0; i < p.count; i++) { const key = [p.getX(i), p.getY(i), p.getZ(i)].map(v => v.toFixed(3)).join(); if (!seen.has(key)) seen.set(key, .78 + rnd() * .4);
+    const k = seen.get(key); p.setXYZ(i, p.getX(i) * s * k * 1.25, p.getY(i) * s * k * .7, p.getZ(i) * s * k); }
+  g.computeVertexNormals(); return g; };
+const rock = (x, z, s, hex = LK.rocks) => { const m = mk(rockGeo(s), hex, .06); m.position.set(x, hgt(x, z) + s * .2, z); m.rotation.y = rnd() * 6; return m; };
+[[-4.5, -.5], [3.4, -2], [-6.5, 1.8], [5.2, .8], [2.6, 2.6], [-3.5, -2.3]].forEach(([x, z], i) => rock(x, z, .35 + rnd() * .7));
+rock(-2.7, 4.2, 1.5, LK.nearRock);                                      // near frame rock, bottom-left
+rock(-1.4, -1.6, .3);                                                 // the rock where the letter lay
+
+// Makkah below: mud-brick houses, the Kaaba, palms
+const houseCols = LK.houses;
+for (let i = 0; i < 95; i++) {
+  const x = (rnd() - .5) ** 3 * 4 * 85 + (rnd() - .5) * 34, z = -72 - rnd() * 125;
+  if (Math.abs(x) < 15 && Math.abs(z + 126) < 15) continue;
+  const w = 5 + rnd() * 6, d = 5 + rnd() * 6, hh = 4 + rnd() * 6, y = hgt(x, z);
+  const b = mk(new THREE.BoxGeometry(w, hh + 2, d), houseCols[i % 6], .04); b.position.set(x, y + hh / 2 - 1, z);
+  const door = mk(new THREE.BoxGeometry(1.2, 2.2, .3), LK.door); door.position.set(x + (rnd() - .5) * w * .5, y + .1 + 1.1, z + d / 2 + .1);
+  for (let k = 0; k < 2; k++) { const wn = mk(new THREE.BoxGeometry(.8, .8, .3), LK.win); wn.position.set(x + (k ? .25 : -.25) * w, y + hh - 1.4, z + d / 2 + .1); }
+  const lip = mk(new THREE.BoxGeometry(w + .4, .5, d + .4), houseCols[(i + 3) % 6], .03); lip.position.set(x, y + hh + 1.2, z);
+}
+{ const y = hgt(0, -126); const k = mk(new THREE.BoxGeometry(8, 9, 8), LK.kaaba); k.position.set(0, y + 4.5, -126); k.rotation.y = .25;
+  const ring = mk(new THREE.CylinderGeometry(13, 13, .3, 48), '#ecdcbc'); ring.position.set(0, y + .1, -126); }
+for (let i = 0; i < 16; i++) {
+  const x = (rnd() - .5) * 120, z = -74 - rnd() * 110, y = hgt(x, z), hh = 7 + rnd() * 4;
+  const t = mk(new THREE.CylinderGeometry(.22, .35, hh, 7), LK.trunk); t.position.set(x, y + hh / 2, z); t.rotation.z = (rnd() - .5) * .2;
+  for (let f = 0; f < 7; f++) { const lf = mk(new THREE.SphereGeometry(1, 8, 4), LK.leaf, .1); lf.scale.set(3, .22, .7);
+    const a = f / 7 * Math.PI * 2; lf.position.set(x + Math.cos(a) * 2.2, y + hh - .4, z + Math.sin(a) * 2.2); lf.rotation.set(0, -a, -.35); }
+}
+
+// sky (not inked): peach horizon -> coral -> lilac -> violet, low sun, thin streak clouds
+const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
+  uniforms: { uSun: { value: SUN }, uC: { value: LK.sky.map(c => new THREE.Vector3(...c)) }, uE: { value: LK.skyE.map(e => new THREE.Vector2(...e)) }, uCloud: { value: LK.clouds },
+    uSunCol: { value: new THREE.Vector3(...LK.sunCol) }, uDisc: { value: new THREE.Vector3(...LK.disc) }, uHalo: { value: new THREE.Vector4(...LK.halo) } },
+  vertexShader: `varying vec3 vD; void main(){ vD = normalize((modelMatrix * vec4(position,1.)).xyz - cameraPosition); gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.); }`,
+  fragmentShader: `uniform vec3 uSun; uniform vec3 uC[4]; uniform vec2 uE[3]; uniform float uCloud; uniform vec3 uSunCol; uniform vec3 uDisc; uniform vec4 uHalo; varying vec3 vD;
+    vec3 L(vec3 c){ return pow(c, vec3(2.2)); }
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9,78.2))) * 43758.5); }
+    float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }
+    void main(){
+      vec3 d = normalize(vD); float e = d.y;
+      vec3 c = L(uC[0]);
+      for (int i = 0; i < 3; i++) c = mix(c, L(uC[i + 1]), smoothstep(uE[i].x, uE[i].y, e));
+      vec2 q = d.xz / max(e + .12, .05);
+      float cl = smoothstep(.55, .8, n(q * vec2(.9, 5.) + 3.) * .7 + n(q * 3.1) * .3) * smoothstep(.03,.09,e) * (1. - smoothstep(.2,.38,e));
+      c = mix(c, L(vec3(1.,.74,.62)) * 1.15, cl * uCloud);
+      float s = max(dot(d, uSun), 0.);
+      c += L(uSunCol) * (smoothstep(uDisc.x, uDisc.y, s) * uDisc.z + pow(s, uHalo.x) * uHalo.y + pow(s, uHalo.z) * uHalo.w);
+      gl_FragColor = vec4(c, 1.);
+    }` });
+const sky = new THREE.Mesh(new THREE.SphereGeometry(1200, 48, 24), skyMat);
+
+// ---------- the figure: a faceless 2D card seen from behind, lit by the scene ----------
+const cards = new THREE.Scene();
+const cardMat = new THREE.ShaderMaterial({ transparent: true, depthTest: false,
+  uniforms: { map: { value: (() => { const tx = new THREE.CanvasTexture(window.drawRiderCard(0)); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8; return tx; })() }, uTint: { value: new THREE.Vector3(...LK.cardTint) } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D map; uniform vec3 uTint; varying vec2 vUv; void main(){ vec4 c = texture2D(map, vUv); if (c.a < .5) discard; gl_FragColor = vec4(c.rgb * uTint, 1.); }` });
+const FX = .35, FZ = -3.2, FY = hgt(FX, FZ);
+const CW = 5.36, CH = 4.0;                                            // card size in metres (horse withers ~1.6 m)
+const card = new THREE.Mesh(new THREE.PlaneGeometry(CW, CH), cardMat); card.position.set(FX, FY + CH / 2 - .134, FZ); card.renderOrder = 3;
+// contact shadow + long tail toward the camera (the sun is ahead of him)
+const blobMat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, uniforms: { uCol: { value: new THREE.Vector4(...LK.blob) } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+  fragmentShader: `uniform vec4 uCol; varying vec2 vUv; void main(){ vec2 p = vUv * 2. - 1.; float a = smoothstep(1., .35, length(p)); gl_FragColor = vec4(uCol.rgb, a * uCol.a); }` });
+const blob = new THREE.Mesh(new THREE.PlaneGeometry(3.6, .9), blobMat); blob.rotation.x = -Math.PI / 2; blob.position.set(FX - .2, FY + .03, FZ); blob.renderOrder = 1;
+// the letter's glow, spilling round his body; gold motes rising
+const glowMat = new THREE.ShaderMaterial({ transparent: true, depthTest: false, blending: THREE.AdditiveBlending, uniforms: { uCol: { value: new THREE.Vector3(...LK.glow.slice(0, 3)) } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+  fragmentShader: `uniform vec3 uCol; varying vec2 vUv; void main(){ float r = length(vUv * 2. - 1.); float a = exp(-r * r * 6.) * .5 + exp(-r * r * 40.) * .45; gl_FragColor = vec4(uCol * a, 1.); }` });
+const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), glowMat); glow.renderOrder = 2;
+const motes = []; for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(.05, .05), glowMat); m.userData = { a: rnd() * 6.28, r: .1 + rnd() * .45, s: .15 + rnd() * .3, ph: rnd() }; m.renderOrder = 2; motes.push(m); cards.add(m); }
+cards.add(blob, glow, card);
+
+// ---------- camera ----------
+const cam = new THREE.PerspectiveCamera(50, W / H, .1, 2000);
+const CAM0 = new THREE.Vector3(-.6, hgt(-.6, 8.6) + 3.4, 8.6), LOOK = new THREE.Vector3(.2, -8.5, -70);
+const sunCam = new THREE.OrthographicCamera(-100, 100, 100, -100, 1, 900);
+{ const c = new THREE.Vector3(0, -14, -80); sunCam.position.copy(c).addScaledVector(SUN, 420); sunCam.lookAt(c); sunCam.updateMatrixWorld(); }
+
+// ---------- targets + passes ----------
+const rtS = new THREE.WebGLRenderTarget(4096, 4096); rtS.depthTexture = new THREE.DepthTexture(4096, 4096); rtS.depthTexture.type = THREE.FloatType;
+const rtW = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+const rtN = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+rtN.depthTexture = new THREE.DepthTexture(W, H); rtN.depthTexture.type = THREE.FloatType;
+const rtM = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
+const rtI = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType });
+const shadowOverride = new THREE.MeshBasicMaterial({ colorWrite: false });
+const normalOverride = new THREE.ShaderMaterial({
+  vertexShader: `varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.); vV = mv.xyz; gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying vec3 vN; varying vec3 vV; void main(){ vec3 n = dot(vN,vN) < 1e-8 ? normalize(cross(dFdx(vV), dFdy(vV))) : normalize(vN) * (gl_FrontFacing ? 1. : -1.); gl_FragColor = vec4(n, 1.); }` });
+const FSV = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`;
+const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)), quadScene = new THREE.Scene(); quadScene.add(quad);
+const runPass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); renderer.clear(); renderer.render(quadScene, quadCam); };
+
+// ink mask: ported from the repo's ink.ts (depth jumps = 2nd difference of 1/z, near side only; normal creases, concave folds weaker)
+const maskMat = new THREE.ShaderMaterial({ vertexShader: FSV, uniforms: {
+    tNormal: { value: rtN.texture }, tDepth: { value: rtN.depthTexture }, texel: { value: new THREE.Vector2(1 / W, 1 / H) },
+    cNear: { value: cam.near }, cFar: { value: cam.far }, p00: { value: 1 }, p11: { value: 1 },
+    wNear: { value: LK.inkW[0] }, wFar: { value: LK.inkW[1] }, dNear: { value: 6 }, dFar: { value: 120 }, creaseScale: { value: .8 },
+    depthLo: { value: .01 }, depthHi: { value: .03 }, cosLo: { value: Math.cos(35 * Math.PI / 180) }, cosHi: { value: Math.cos(50 * Math.PI / 180) },
+    concaveGain: { value: .7 }, farOpacity: { value: .85 }, fadeNear: { value: 180 }, fadeFar: { value: 480 }, fogRange: { value: FOG } },
+  fragmentShader: `#include <packing>
+    uniform sampler2D tNormal, tDepth; uniform vec2 texel; uniform float cNear, cFar, p00, p11, wNear, wFar, dNear, dFar, creaseScale, depthLo, depthHi, cosLo, cosHi, concaveGain, farOpacity, fadeNear, fadeFar; uniform vec2 fogRange;
+    varying vec2 vUv;
+    const vec2 STEP[4] = vec2[4](vec2(1.,0.), vec2(0.,1.), vec2(1.,1.), vec2(1.,-1.));
+    const float SLEN[4] = float[4](1., 1., 1.41421, 1.41421);
+    float dist(vec2 uv){ return -perspectiveDepthToViewZ(textureLod(tDepth, uv, 0.).x, cNear, cFar); }
+    vec3 viewPos(vec2 uv, float d){ vec2 n = uv * 2. - 1.; return vec3(n.x * d / p00, n.y * d / p11, -d); }
+    float crease(vec3 n0, vec3 P0, float zc, vec2 uq, float zq){
+      vec4 nq = textureLod(tNormal, uq, 0.); if (nq.a < .5 || abs(zq - zc) > zc * depthLo) return 0.;
+      float k = 1. - smoothstep(cosHi, cosLo, dot(n0, nq.xyz)); if (dot(viewPos(uq, zq) - P0, n0) > 0.) k *= concaveGain; return k; }
+    void main(){
+      vec4 nc = textureLod(tNormal, vUv, 0.); if (nc.a < .5) { gl_FragColor = vec4(0.); return; }
+      float zc = dist(vUv); float t = clamp(log(zc / dNear) / log(dFar / dNear), 0., 1.);
+      float w = mix(wNear, wFar, t), hc = .5 * w * creaseScale, Wc = 1. / zc; vec3 n0 = nc.xyz, P0 = viewPos(vUv, zc);
+      float eD = 0., eN = 0.;
+      for (int a = 0; a < 4; a++) for (int r = 1; r <= 7; r++) {
+        vec2 o = STEP[a] * texel * float(r); float d = (float(r) - .5) * SLEN[a];
+        float cw = clamp(w + .5 - d, 0., 1.), ch = clamp(hc + .5 - d, 0., 1.); if (cw <= 0. && ch <= 0.) break;
+        float z1 = dist(vUv - o), z2 = dist(vUv + o); float s = (1. / z1 + 1. / z2 - 2. * Wc) / Wc;
+        eD = max(eD, smoothstep(depthLo, depthHi, -s) * cw);
+        if (ch > 0.) eN = max(eN, max(crease(n0, P0, zc, vUv - o, z1), crease(n0, P0, zc, vUv + o, z2)) * ch);
+      }
+      float ink = max(eD, eN) * mix(1., farOpacity, t) * (1. - smoothstep(fadeNear, fadeFar, zc));
+      float fogK = clamp((zc - fogRange.x) / (fogRange.y - fogRange.x), 0., 1.);
+      gl_FragColor = vec4(ink, fogK, 0., 1.);
+    }` });
+const compMat = new THREE.ShaderMaterial({ vertexShader: FSV, uniforms: { tCol: { value: rtW.texture }, tMask: { value: rtM.texture }, texel: { value: new THREE.Vector2(1 / W, 1 / H) },
+    inkCol: { value: lin(LK.ink) }, fogCol: { value: HORIZON } },
+  fragmentShader: `uniform sampler2D tCol, tMask; uniform vec2 texel; uniform vec3 inkCol, fogCol; varying vec2 vUv;
+    float m(float x, float y){ return texture2D(tMask, vUv + vec2(x, y) * texel).r; }
+    void main(){
+      float a = (4. * m(0.,0.) + 2. * (m(1.,0.) + m(-1.,0.) + m(0.,1.) + m(0.,-1.)) + m(1.,1.) + m(-1.,1.) + m(1.,-1.) + m(-1.,-1.)) / 16.;
+      vec3 ink = mix(inkCol, fogCol, texture2D(tMask, vUv).g * .35);
+      gl_FragColor = vec4(mix(texture2D(tCol, vUv).rgb, ink, a), 1.);
+    }` });
+// grade: Khronos PBR Neutral tone map, saturation, warm vignette, sRGB, light grain (our texture rule)
+const gradeMat = new THREE.ShaderMaterial({ vertexShader: FSV, uniforms: { tCol: { value: rtI.texture }, uT: { value: 0 }, uExp: { value: LK.exposure }, uMode: { value: LK.grade } },
+  fragmentShader: `uniform sampler2D tCol; uniform float uT, uExp; uniform int uMode; varying vec2 vUv;
+    vec3 neutral(vec3 c){ float x = min(c.r, min(c.g, c.b)); float off = x < .08 ? x - 6.25 * x * x : .04; c -= off;
+      float pk = max(c.r, max(c.g, c.b)); const float S = .76; if (pk < S) return c; float d = 1. - S; float np = 1. - d * d / (pk + d - S);
+      c *= np / pk; float g = 1. - 1. / (.15 * (pk - np) + 1.); return mix(c, vec3(np), g); }
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main(){
+      vec3 c = neutral(texture2D(tCol, vUv).rgb * uExp);
+      if (uMode == 0) {
+        float y = dot(c, vec3(.2126,.7152,.0722)); c = max(mix(vec3(y), c, 1.1), 0.);
+        vec2 q = vUv - .5; q.x *= .62; float v = smoothstep(.75, .25, length(q)); c *= mix(vec3(.80,.74,.86), vec3(1.), v);
+        c = pow(clamp(c, 0., 1.), vec3(1. / 2.2));
+        c += (h(vUv * 1920. + fract(uT * 7.13) * 91.) - .5) * .045;
+      } else {   // Part 3 grainVignette: lavender multiply corners, warm brown edge, 7 % sparse grain dots
+        c = pow(clamp(c, 0., 1.), vec3(1. / 2.2));
+        vec2 px = vUv * vec2(1080., 1920.); px.y = 1920. - px.y;
+        float r1 = clamp((length(px - vec2(540., 1050.)) - 380.) / 920., 0., 1.);
+        c *= mix(vec3(1.), vec3(184., 186., 206.) / 255., .5 * r1);
+        float r2 = clamp((length(px - vec2(540., 1000.)) - 520.) / 730., 0., 1.);
+        c = mix(c, vec3(90., 70., 40.) / 255., .28 * r2);
+        vec2 cell = floor(px / 2.); float g = h(cell + floor(uT * 24.) * 17.31);
+        if (g < .0174) c = mix(c, h(cell * 1.7 + 3.1) < .5 ? vec3(1.) : vec3(58., 46., 26.) / 255., .07);
+      }
+      gl_FragColor = vec4(c, 1.);
+    }` });
+
+// screen layer: watermark (brand constant), outside the camera
+const ui = document.createElement('canvas'); ui.width = W; ui.height = H; document.body.appendChild(ui); const ux = ui.getContext('2d');
+
+window.frame = (t) => {
+  seed = 99;
+  const push = 1 - Math.min(t, 6) * .012;                            // every hold creeps in
+  cam.position.copy(LOOK).lerp(CAM0, 1).sub(LOOK).multiplyScalar(push).add(LOOK);
+  cam.position.y = CAM0.y - (1 - push) * 2; cam.lookAt(LOOK); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+  maskMat.uniforms.p00.value = cam.projectionMatrix.elements[0]; maskMat.uniforms.p11.value = cam.projectionMatrix.elements[5];
+  sky.position.copy(cam.position);
+  card.lookAt(cam.position.x, card.position.y, cam.position.z);
+  const right = new THREE.Vector3().subVectors(cam.position, card.position).cross(new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(-1);
+  const pulse = 1 + .06 * Math.sin(t * 2.2);
+  glow.position.copy(card.position).addScaledVector(right, .885).add(new THREE.Vector3(0, .27, .05)); glow.scale.setScalar(pulse); glow.lookAt(cam.position); glow.renderOrder = 4;
+  motes.forEach(m => { const u = m.userData, k = ((t * u.s + u.ph) % 1);
+    m.position.copy(glow.position).addScaledVector(right, Math.cos(u.a) * u.r).add(new THREE.Vector3(0, -.1 + k * 1.1, Math.sin(u.a) * u.r * .3)); m.scale.setScalar(1 - k); m.lookAt(cam.position); });
+
+  // 1 sun depth (shadows), 2 world colour with sky, 3 world normals + depth, 4 ink mask, 5 ink composite, 6 cards, 7 grade
+  world.overrideMaterial = shadowOverride; renderer.setRenderTarget(rtS); renderer.clear(); renderer.render(world, sunCam); world.overrideMaterial = null;
+  worldMat.uniforms.uSh.value = rtS.depthTexture;
+  worldMat.uniforms.uShM.value.multiplyMatrices(sunCam.projectionMatrix, sunCam.matrixWorldInverse);
+  renderer.setRenderTarget(rtW); renderer.setClearColor(0x000000, 1); renderer.clear(); renderer.render(sky, cam); renderer.render(world, cam);
+  world.overrideMaterial = normalOverride; renderer.setRenderTarget(rtN); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(world, cam); world.overrideMaterial = null;
+  renderer.setClearColor(0x000000, 1);
+  runPass(maskMat, rtM); runPass(compMat, rtI);
+  renderer.setRenderTarget(rtI); renderer.clearDepth(); renderer.render(cards, cam);
+  gradeMat.uniforms.uT.value = t; runPass(gradeMat, null);
+
+  ux.clearRect(0, 0, W, H); ux.font = '600 30px Manrope, Helvetica, Arial, sans-serif'; ux.textAlign = 'center'; ux.fillStyle = 'rgba(255,255,255,.2)'; ux.fillText('@YOURPAGE', W / 2, 1475);
+  return {};
+};
+window.frame(0);
+window.ready = true;
+</script>
+</body></html>

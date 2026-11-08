@@ -1,0 +1,136 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url('../ScheherazadeNew-Regular.ttf')}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#efe8d8}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.t{position:absolute;left:120px;right:120px;text-align:center;color:#16140f;font-family:Baskerville,"Baskerville Old Face",Georgia,serif;opacity:0;text-wrap:balance}
+.hook{font-size:68px;line-height:1.25}
+#ar{position:absolute;left:100px;right:100px;top:930px;text-align:center;direction:rtl;font-family:Scheherazade,serif;font-size:150px;line-height:1.7;color:#16140f;text-shadow:0 0 5px rgba(22,20,15,.35);opacity:0}
+#en{font-size:54px;font-style:italic;top:1190px}
+#cit{font-family:Menlo,monospace;font-size:26px;letter-spacing:.34em;color:#6b675e;top:1330px}
+#hd{font-family:Menlo,monospace;font-size:22px;letter-spacing:.3em;color:#6b675e;top:1455px}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="t hook" id="h1" style="top:960px">Ink does not forgive a heavy hand.</div>
+<div class="t hook" id="h2" style="top:1130px;color:#6b675e">So you go gently.</div>
+<div id="ar">وَلْيَتَلَطَّفْ</div>
+<div class="t" id="en">and let him be cautious</div>
+<div class="t" id="cit">QURAN 18:19</div>
+<div class="t" id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const H=(n)=>{let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const cv=$('c'),g=cv.getContext('2d');
+const INK='#16140f';
+// ---- strokes: branch, then leaves, one brush press each
+const BR={p:[[1140,310],[880,250],[600,470]],W:11,t0:1.2,d:1.1,a:.95,seed:3};
+const LEAVES=[];
+[[1040,300,2.1,230,26,.95],[950,278,2.5,260,28,.95],[860,285,2.0,200,22,.5],[780,335,2.7,250,27,.9],[720,380,2.25,210,22,.5],[650,435,2.95,230,25,.95],[900,300,3.0,200,20,.5],[830,320,2.35,240,24,.9]].forEach((l,i)=>LEAVES.push({base:[l[0],l[1]],ang:l[2],len:l[3],W:l[4],a:l[5]<.7?.85:l[5],col:l[5]<.7?'#7a766c':INK,t0:2.0+i*.34,d:.5,seed:20+i}));
+const bez=(p,u)=>{const a=1-u;return[a*a*p[0][0]+2*a*u*p[1][0]+u*u*p[2][0],a*a*p[0][1]+2*a*u*p[1][1]+u*u*p[2][1]]};
+function leafPts(L){const[x,y]=L.base,c=Math.cos(L.ang),s=Math.sin(L.ang);return[[x,y],[x+c*L.len*.5-s*40,y+s*L.len*.5+c*40],[x+c*L.len,y+s*L.len]]}
+// draw a stroke up to progress p (0..1) onto context k
+function stroke(k,P,W,p,a,seed,leaf,col){
+  if(p<=0)return;const N=140,n=Math.max(1,Math.floor(N*p));
+  k.fillStyle=col||INK;
+  for(let i=0;i<=n;i++){
+    const u=i/N,[x,y]=bez(P,u);
+    const w=leaf?W*Math.pow(Math.sin(Math.PI*clamp(u*.92+.05)),.8):W*(.35+.65*Math.sin(Math.PI*clamp(u*.9+.05)));
+    const r=w/2;
+    if(u>.88){ // dry brush: separate bristles that give out at different points
+      for(let b=-3;b<=3;b++){
+        if(H(seed+b+10)*.1+.9<u)continue;
+        const nx=-(bez(P,Math.min(1,u+.01))[1]-y),ny=bez(P,Math.min(1,u+.01))[0]-x,nl=Math.hypot(nx,ny)||1;
+        k.globalAlpha=a*.8;k.beginPath();k.arc(x+nx/nl*r*b/3,y+ny/nl*r*b/3,Math.max(.7,r/7),0,7);k.fill();
+      }
+    }else{k.globalAlpha=a;k.beginPath();k.arc(x,y,r,0,7);k.fill()}
+  }
+  k.globalAlpha=1;
+}
+// ---- static layers built once from seeded noise (same every call)
+const paper=document.createElement('canvas');paper.width=1080;paper.height=1920;
+const ink=document.createElement('canvas');ink.width=1080;ink.height=1920;const ig=ink.getContext('2d');
+(function(){
+  const p=paper.getContext('2d');p.fillStyle='#efe8d8';p.fillRect(0,0,1080,1920);
+  const vg=p.createRadialGradient(540,900,200,540,900,1300);vg.addColorStop(0,'rgba(255,252,240,.5)');vg.addColorStop(1,'rgba(200,185,150,.35)');p.fillStyle=vg;p.fillRect(0,0,1080,1920);
+  p.lineCap='round';
+  for(let i=0;i<2600;i++){ // kozo fibres
+    const x=H(i+1)*1080,y=H(i+4000)*1920,a=H(i+8000)*6.28,l=10+H(i+12000)*40;
+    p.strokeStyle=`rgba(${H(i)<.5?'150,130,100':'255,252,240'},${.05+H(i+300)*.1})`;p.lineWidth=.6+H(i+500)*.9;
+    p.beginPath();p.moveTo(x,y);p.quadraticCurveTo(x+Math.cos(a+.5)*l*.5,y+Math.sin(a+.5)*l*.5,x+Math.cos(a)*l,y+Math.sin(a)*l);p.stroke();
+  }
+  for(let i=0;i<500;i++){p.fillStyle=`rgba(120,100,70,${.05+H(i+90)*.12})`;p.fillRect(H(i+2)*1080,H(i+5000)*1920,1+H(i+7)*2,1+H(i+9)*2)}
+})();
+function hills(t){
+  const L=[[1620,.2,70,.0011,0],[1700,.3,60,.0016,2],[1800,.45,50,.0021,5]];
+  L.forEach(([y0,al,amp,fr,ph],i)=>{
+    const dx=Math.sin(t*.15+i)*20;
+    g.beginPath();g.moveTo(-20,1920);
+    for(let x=-20;x<=1100;x+=20)g.lineTo(x,y0-Math.abs(Math.sin((x+dx)*fr*6+ph))*amp-Math.sin((x+dx)*fr*14+ph*3)*amp*.25);
+    g.lineTo(1100,1920);g.closePath();
+    const gr=g.createLinearGradient(0,y0-amp,0,y0+160);gr.addColorStop(0,`rgba(107,103,94,${al*.0})`);gr.addColorStop(.3,`rgba(107,103,94,${al*.55})`);gr.addColorStop(1,`rgba(22,20,15,${al*.75})`);
+    g.fillStyle=gr;g.fill();
+  });
+  // mist band
+  const m=g.createLinearGradient(0,1560,0,1720);m.addColorStop(0,'rgba(239,232,216,0)');m.addColorStop(.5,'rgba(239,232,216,.55)');m.addColorStop(1,'rgba(239,232,216,0)');
+  g.fillStyle=m;g.fillRect(0,1560,1080,160);
+}
+function moon(t){
+  const p=ease((t-.4)/1.8);if(p<=0)return;
+  const cx=260,cy=470,r=70+85*p;
+  g.save();g.filter='blur(5px)';
+  const gr=g.createRadialGradient(cx,cy,r*.1,cx,cy,r);gr.addColorStop(0,`rgba(169,164,152,${.18*p})`);gr.addColorStop(.85,`rgba(130,125,115,${.3*p})`);gr.addColorStop(1,'rgba(130,125,115,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,7);g.fill();
+  g.strokeStyle=`rgba(80,76,68,${.22*p})`;g.lineWidth=4;g.beginPath();g.arc(cx,cy,r*.93,0,7);g.stroke();
+  g.restore();
+  // a thin cloud wash across it, drifting
+  g.save();g.filter='blur(14px)';g.fillStyle=`rgba(239,232,216,${.7*p})`;
+  g.beginPath();g.ellipse(cx+60+Math.sin(t*.3)*25,cy+78,230,24,0,0,7);g.fill();g.restore();
+  g.save();g.filter='blur(8px)';g.fillStyle=`rgba(107,103,94,${.16*p})`;g.beginPath();g.ellipse(cx-40+Math.sin(t*.3)*25,cy+112,180,12,0,0,7);g.fill();g.restore();
+}
+function seal(t){
+  const s=t-8.7;if(s<0)return;
+  const sc=s<.18?1.35-.35*ease(s/.18):1,cx=895,cy=1395,R=44;
+  g.save();g.translate(cx,cy);g.scale(sc,sc);g.rotate(-.04);
+  const j=i=>(H(i+777)-.5)*2.4;
+  g.fillStyle='rgba(179,38,30,.93)';g.beginPath();
+  const C=[[-R,-R],[R,-R],[R,R],[-R,R]];
+  C.forEach((c,i)=>{const n=C[(i+1)%4];for(let k=0;k<6;k++){const u=k/6;g.lineTo(c[0]+(n[0]-c[0])*u+j(i*9+k),c[1]+(n[1]-c[1])*u+j(i*9+k+50))}});
+  g.closePath();g.fill();
+  g.strokeStyle='#efe8d8';g.lineWidth=5;g.globalAlpha=.9;g.lineJoin='miter';
+  g.strokeRect(-20,-20,40,40);g.save();g.rotate(Math.PI/4);g.strokeRect(-20,-20,40,40);g.restore();
+  for(let i=0;i<40;i++){g.fillStyle='rgba(239,232,216,.55)';g.fillRect((H(i+31)-.5)*88,(H(i+61)-.5)*88,2+H(i+91)*3,2+H(i+121)*3)} // ink gaps
+  g.restore();
+}
+function draw(t){
+  g.drawImage(paper,0,0);
+  hills(t);moon(t);
+  // ink layer: all brush strokes
+  ig.clearRect(0,0,1080,1920);
+  stroke(ig,BR.p,BR.W,clamp((t-BR.t0)/BR.d),BR.a,BR.seed,false);
+  LEAVES.forEach(L=>stroke(ig,leafPts(L),L.W,ease((t-L.t0)/L.d),L.a,L.seed,true,L.col));
+  g.save();g.filter='blur(7px)';g.globalAlpha=.3;g.drawImage(ink,0,0);g.restore(); // wet bleed
+  g.drawImage(ink,0,0);
+}
+function up(el,t,t0,out){
+  const a=ease((t-t0)/.8)*(out?1-clamp((t-out)/.6):1);
+  el.style.opacity=a;el.style.transform=`translateY(${(1-ease((t-t0)/.9))*18}px)`;
+}
+window.frame=function(t){
+  draw(t);
+  up($('h1'),t,2.7,5.2);up($('h2'),t,4.2,5.2);
+  const p=clamp((t-5.5)/1.6),ar=$('ar'),a=p*118-18;
+  ar.style.opacity=t>5.5?1:0;
+  ar.style.webkitMaskImage=p>=1?'none':`linear-gradient(to left,#000 ${a}%,transparent ${a+18}%)`;
+  up($('en'),t,7.4);up($('cit'),t,8.1);up($('hd'),t,9.2);
+  return {};
+};
+// sound: brush press on every stroke, a dry tap
+add(1.2,'slide',.25);LEAVES.forEach(L=>add(L.t0,'tap',.18));
+add(2.7,'plink',.15);add(4.2,'plink',.15);add(5.5,'slide',.3);add(7.4,'drop',.2);
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

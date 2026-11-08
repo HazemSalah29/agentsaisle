@@ -1,0 +1,178 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#05091f}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2},lerp=(a,b,k)=>a+(b-a)*k,ph=(t,a,b)=>clamp((t-a)/(b-a)),smooth=(a,b,x)=>{const k=clamp((x-a)/(b-a));return k*k*(3-2*k)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan});
+// ---------------------------------------------------------------- seeded noise (from the reference harness)
+function rng(seed){let a=seed>>>0||1;return()=>{a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296}}
+function makeNoise(seed){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),L=(a,b,t)=>a+(b-a)*t,g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);const u=fade(x),v=fade(y),w=fade(z);const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return L(L(L(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),L(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),L(L(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),L(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  const n2=(x,y)=>n3(x,y,.5),fbm2=(x,y,oct=4)=>{let s=0,a=.5,f=1,nm=0;for(let i=0;i<oct;i++){s+=a*n3(x*f,y*f,.5);nm+=a;a*=.5;f*=2}return s/nm};return{n2,fbm2}}
+const mix=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k),rgba=(c,a=1)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`,hex=h=>{const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const NAVY=[5,10,34],HAZE=[14,30,88],CYN='#7feaff',AMB='#ffd36b',AMBc=[255,211,107];
+// ---------------------------------------------------------------- the land: a valley with a winding route, fixed in the world
+const nz=makeNoise(12);
+const pathX=z=>9*Math.sin(z*.045)+3.5*Math.sin(z*.11+1);
+function height(x,z){const dp=Math.abs(x-pathX(z));const ridge=(u,v)=>1-Math.abs(nz.n2(u,v));
+  let h=Math.pow(ridge(x*.035,z*.035),2.2)*13+nz.fbm2(x*.09,z*.09,3)*3.2;const v=smooth(2.2,17,dp);const walls=Math.pow(dp/55,1.7)*14;
+  h=h*(.16+.84*v)+walls*(.3+.7*v);return h-2+nz.n2(z*.22,3.3)*.3*(1-v)}
+// ---------------------------------------------------------------- the deeds: one small lamp planted every 0.3 s, steadily, all the way to the horizon
+const NM=28,T0=.9,DT=.3,Z0=14,DZ=3.2;
+const mT=i=>T0+i*DT,mZ=i=>Z0+i*DZ;
+const planted=t=>clamp(Math.floor((t-T0)/DT)+1,0,NM);
+// sound: a soft steady tick for each small deed, then the rest
+for(let i=0;i<NM;i++)if(i%2===0)add(mT(i)+.05,'tick',.07+.02*(i%3),(Math.sin(i*1.7))*.3);
+add(.2,'kit:shimmer-short-soft',.4);
+add(4.2,'kit:pop-small-in',.6);add(4.45,'kit:writing-pen-write',.55);add(5.4,'kit:writing-pen-write',.5);
+add(5.95,'kit:whoosh-slow-soft',.7);
+add(6.3,'glass',.18);add(6.8,'glass',.16);add(7.3,'plink',.2);
+add(7.9,'kit:shimmer-medium-soft',.45);add(8.6,'bell2',.14);
+// ---------------------------------------------------------------- camera: flies the route low, then rises and looks back down it
+const F=1100,CX=540,CYS=900;
+function camAt(t){
+  const zA=2+4.6*Math.min(t,6);                                 // steady flight
+  let z,h,pit;
+  if(t<6){z=zA;h=6.5;pit=.2}
+  else{const k=inout(ph(t,6,8.5));z=lerp(zA,-6,k);h=lerp(6.5,34,k);pit=lerp(.2,.5,k)}
+  if(t>8.5){z+=(t-8.5)*.9}
+  const x=pathX(z);const gy=height(x,z);
+  const yaw=Math.atan2(pathX(z+26)-x,26)*.9+Math.sin(t*.5)*.02;
+  return{pos:[x,Math.max(gy,0)+h,z],yaw,pit};
+}
+function mkCam(pos,yaw,pitch){const cy=Math.cos(yaw),sy=Math.sin(yaw),c=Math.cos(pitch),s=Math.sin(pitch);
+  return(x,y,z)=>{const dx0=x-pos[0],dy=y-pos[1],dz0=z-pos[2];const dx=dx0*cy-dz0*sy,dz=dx0*sy+dz0*cy;const yc=dy*c+dz*s,zc=-dy*s+dz*c;return[CX+F*dx/zc,CYS-F*yc/zc,zc]}}
+// ---------------------------------------------------------------- canvas and finishing layers
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const mkc=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const HALF=mkc(540,960),SCAN=mkc(8,3);
+{const x=SCAN.getContext('2d');x.fillStyle='rgba(0,0,0,.14)';x.fillRect(0,0,8,1)}
+const SCANP=ctx.createPattern(SCAN,'repeat');
+const STARS=(()=>{const r=rng(3),a=[];for(let i=0;i<180;i++)a.push([r()*1080,r()*1000,r()*.7,r()*6.28]);return a})();
+// ---------------------------------------------------------------- the wire crescent: a pillow-thick crescent (outer circle minus a bite), two sheets meeting at the edge, hidden-line by painter's order
+const CRES=(()=>{const R=1,d=.72,rc=1.2,r2=a=>-d*Math.cos(a)+Math.sqrt(rc*rc-d*d*Math.sin(a)*Math.sin(a));let A=0;for(let a=0;a<Math.PI;a+=.0005){if(r2(a)>=R){A=a;break}}
+  const NA=28,NW=6,Zm=.3,Q=[];
+  const P=(a,w,sd)=>{const rho=lerp(r2(a),R,w);return[-rho*Math.cos(a),rho*Math.sin(a),sd*Zm*Math.pow(Math.sin(Math.PI*w),.9)*Math.pow(Math.max(0,Math.cos(Math.PI*a/(2*A))),.7)]};
+  for(const sd of[1,-1])for(let i=0;i<NA;i++)for(let j=0;j<NW;j++){const a0=-A+2*A*i/NA,a1=-A+2*A*(i+1)/NA,w0=j/NW,w1=(j+1)/NW;Q.push([P(a0,w0,sd),P(a1,w0,sd),P(a1,w1,sd),P(a0,w1,sd)])}
+  return Q})();
+const MOON={pos:[pathX(150)+6,33,152],R:22};
+function drawMoon(cam,t){
+  const spin=.95*Math.sin(t*.55+.4),tilt=-.35;const cs=Math.cos(spin),ss=Math.sin(spin),ct=Math.cos(tilt),st=Math.sin(tilt);
+  const X=p=>{let x=p[0],y=p[1],z=p[2];[x,z]=[cs*x+ss*z,-ss*x+cs*z];[x,y]=[ct*x-st*y,st*x+ct*y];return[MOON.pos[0]+x*MOON.R,MOON.pos[1]+y*MOON.R,MOON.pos[2]+z*MOON.R]};
+  const mc=cam(...MOON.pos);if(mc[2]<1)return;
+  const faces=CRES.map(q=>{const P=q.map(p=>cam(...X(p)));return{P,d:(P[0][2]+P[1][2]+P[2][2]+P[3][2])/4}});faces.sort((a,b)=>b.d-a.d);
+  const rr=MOON.R*F/mc[2];const halo=ctx.createRadialGradient(mc[0],mc[1],rr*.7,mc[0],mc[1],rr*2.6);halo.addColorStop(0,'rgba(80,220,255,.2)');halo.addColorStop(1,'rgba(80,220,255,0)');ctx.fillStyle=halo;ctx.fillRect(mc[0]-rr*3,mc[1]-rr*3,rr*6,rr*6);
+  ctx.lineJoin='round';
+  for(const f of faces){ctx.beginPath();f.P.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle='rgb(6,16,52)';ctx.fill();ctx.strokeStyle='rgba(150,245,255,.9)';ctx.lineWidth=1.3;ctx.stroke()}
+}
+// ---------------------------------------------------------------- a small lantern, hidden-line (cube + pyramid roof), planted on the route
+function lantern(cam,x,gy,z,s,glow,fillc,t){
+  if(s<=.01)return;const y0=gy,hw=.5*s,cy1=gy+1.15*s,cy2=gy+2.15*s,roof=gy+2.95*s;
+  const V=(dx,y,dz)=>cam(x+dx*hw/.5*.5,y,z+dz*hw/.5*.5);
+  const b=[[-1,cy1,-1],[1,cy1,-1],[1,cy1,1],[-1,cy1,1]].map(p=>V(p[0],p[1],p[2])),u=[[-1,cy2,-1],[1,cy2,-1],[1,cy2,1],[-1,cy2,1]].map(p=>V(p[0],p[1],p[2])),ap=V(0,roof,0),gr=cam(x,gy,z);
+  if(gr[2]<2)return;
+  const faces=[];for(let i=0;i<4;i++){const j=(i+1)%4;faces.push({P:[b[i],b[j],u[j],u[i]]});faces.push({P:[u[i],u[j],ap]})}
+  faces.forEach(f=>f.d=f.P.reduce((a,p)=>a+p[2],0)/f.P.length);faces.sort((a,c)=>c.d-a.d);
+  const lw=clamp(2.2-gr[2]/40,.7,2.2);
+  ctx.save();ctx.lineJoin='round';ctx.strokeStyle=rgba(AMBc,.95);ctx.lineWidth=lw;
+  ctx.beginPath();ctx.moveTo(gr[0],gr[1]);const pb=cam(x,cy1,z);ctx.lineTo(pb[0],pb[1]);ctx.stroke();               // pole
+  for(const f of faces){ctx.beginPath();f.P.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=fillc;ctx.fill();ctx.stroke()}
+  // the flame inside, with a halo that makes the light read from far away
+  const c=cam(x,(cy1+cy2)/2,z),rr=Math.max(2.8,F*.34*s/c[2]);const g=ctx.createRadialGradient(c[0],c[1],0,c[0],c[1],rr*6);g.addColorStop(0,`rgba(255,236,170,${.7*glow})`);g.addColorStop(.25,`rgba(255,200,90,${.2*glow})`);g.addColorStop(1,'rgba(255,170,60,0)');
+  ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;ctx.fillRect(c[0]-rr*6,c[1]-rr*6,rr*12,rr*12);ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle=`rgba(255,246,210,${glow})`;ctx.beginPath();ctx.arc(c[0],c[1],rr*.7,0,7);ctx.fill();ctx.restore();
+}
+function ring(cam,x,gy,z,k){if(k<=0||k>=1)return;const r=.3+3.4*ease(k),pts=[];for(let a=0;a<=24;a++){const an=a/24*Math.PI*2;const px=x+r*Math.cos(an),pz=z+r*Math.sin(an);pts.push(cam(px,height(px,pz)+.15,pz))}
+  if(pts.some(p=>p[2]<2))return;ctx.save();ctx.strokeStyle=`rgba(255,226,150,${.9*(1-k)})`;ctx.lineWidth=2;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore()}
+// ---------------------------------------------------------------- HUD, ported from the reference (vector-display panels with corner ticks)
+const MONO='Menlo,"SF Mono",monospace';
+function hudBox(x,y,w,h,prog,accent=CYN){if(prog<=0)return;const ww=w*prog;ctx.fillStyle='rgba(3,8,30,.88)';ctx.fillRect(x,y,ww,h);ctx.strokeStyle=rgba(hex(accent),.45);ctx.lineWidth=1.5;ctx.strokeRect(x+.5,y+.5,ww-1,h-1);ctx.fillStyle=accent;ctx.fillRect(x,y,5,h);
+  const c=16;ctx.strokeStyle=accent;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(x+ww-c,y);ctx.lineTo(x+ww,y);ctx.lineTo(x+ww,y+c);ctx.moveTo(x+ww,y+h-c);ctx.lineTo(x+ww,y+h);ctx.lineTo(x+ww-c,y+h);ctx.stroke()}
+function hudTag(x,y,text,k,o={}){if(k<=0)return;ctx.save();ctx.font=o.font||`600 30px ${MONO}`;const full=text,shown=full.slice(0,Math.ceil(full.length*Math.min(1,k*1.4)));
+  const w=ctx.measureText(full).width+36,h=o.h||56,col=o.col||CYN;const bx=o.align==='left'?x:o.align==='right'?x-w:x-w/2;
+  ctx.fillStyle='rgba(3,8,30,.9)';ctx.fillRect(bx,y-h/2,w*Math.min(1,k*2),h);ctx.strokeStyle=rgba(hex(col),.8);ctx.lineWidth=1.8;ctx.strokeRect(bx+.5,y-h/2+.5,w*Math.min(1,k*2)-1,h-1);
+  ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(shown,bx+18,y+2);ctx.restore()}
+const AR1='أَحَبَّ الأَعْمَالِ أَدْوَمُهَا',AR2='إِلَى اللَّهِ، وَإِنْ قَلَّ',strip=s=>s.replace(/[ً-ٰٟۖ-ۭ]/g,''),B1=strip(AR1),B2=strip(AR2);
+function arabicLine(full,body,t0,t1,y,t){
+  if(t<t0)return;const pa=ease((t-t0)/(t1-t0-.05)),fx=980-900*pa;
+  ctx.save();ctx.beginPath();ctx.moveTo(fx,y-110);ctx.lineTo(1040,y-110);ctx.lineTo(1040,y+66);ctx.lineTo(fx-55,y+66);ctx.closePath();ctx.clip();ctx.direction='rtl';
+  const dr=(s,a)=>{ctx.save();ctx.globalAlpha=a;ctx.font='86px ScheherazadeG';ctx.textAlign='center';ctx.shadowColor='rgba(80,230,255,.85)';ctx.shadowBlur=22;ctx.fillStyle='#e2fbff';ctx.fillText(s,540,y);ctx.shadowBlur=0;ctx.fillText(s,540,y);ctx.restore()};
+  {const fa=ease((t-t1+.05)/.45);dr(body,1-fa);dr(full,fa);}ctx.restore();
+  if(pa<1){ctx.save();ctx.fillStyle='#fff';ctx.shadowColor=CYN;ctx.shadowBlur=24;ctx.beginPath();ctx.arc(fx,y-30+Math.sin(t*30)*7,9,0,7);ctx.fill();ctx.restore()}}
+const typed=(s,t,a,b)=>s.slice(0,Math.round(s.length*ph(t,a,b)));
+// ---------------------------------------------------------------- frame
+window.frame=function(t){
+  const{pos,yaw,pit}=camAt(t),cam=mkCam(pos,yaw,pit);const camZ=pos[2];
+  const HORIZON=CYS-F*Math.tan(pit);
+  // sky
+  const sky=ctx.createLinearGradient(0,0,0,HORIZON+40);sky.addColorStop(0,'#02051a');sky.addColorStop(.75,'#081440');sky.addColorStop(1,'#0f2160');ctx.fillStyle=sky;ctx.fillRect(0,0,1080,1920);
+  { const gg=ctx.createLinearGradient(0,HORIZON-10,0,HORIZON+160);gg.addColorStop(0,'rgba(5,10,34,0)');gg.addColorStop(1,'rgba(5,10,34,1)');ctx.fillStyle=gg;ctx.fillRect(0,HORIZON-10,1080,1920) }
+  for(const[x,y,a,p]of STARS){if(y>HORIZON-10)continue;ctx.fillStyle=`rgba(190,240,255,${a*(.7+.3*Math.sin(t*1.7+p))})`;ctx.fillRect(x,y,2,2)}
+  drawMoon(cam,t);
+  // ---- hidden-line terrain, world-aligned grid, back to front; objects on the route are drawn in the same pass so ridges hide them
+  const STEP=2.2,NX=84,NZ=70;const zOff=Math.floor((camZ-5)/STEP)*STEP,xc=Math.round(pos[0]/STEP)*STEP;
+  const PT=[];for(let j=0;j<=NZ;j++){const row=[];const z=zOff+j*STEP;for(let i=0;i<=NX;i++){const x=xc+(i-NX/2)*STEP,y=height(x,z);row.push([...cam(x,y,z),y])}PT.push(row)}
+  const REV=14+190*inout(ph(t,.1,2.3)),building=t<2.3;const scanZ=building?camZ+REV:camZ+40+(((t-2.3)*26+60)%150);
+  const nPl=planted(t),litZ=nPl>0?mZ(nPl-1):-1;
+  const marks=[];for(let i=0;i<nPl;i++){const g=ph(t,mT(i),mT(i)+.55);marks.push({i,z:mZ(i),x:pathX(mZ(i)),g,spr:g>=1?1:1-Math.exp(-7*g)*Math.cos(11*g),k:ph(t,mT(i)+.05,mT(i)+.9)})}
+  marks.sort((a,b)=>b.z-a.z);let mp=0;while(mp<marks.length&&marks[mp].z>=zOff+(NZ)*STEP)mp++;
+  ctx.lineJoin='round';
+  for(let j=NZ-1;j>=0;j--){
+    const zw=zOff+j*STEP;if(zw-camZ>REV)continue;
+    const fog=smooth(34,150,zw-camZ);const fill=mix(NAVY,HAZE,fog);const fs=`rgb(${fill[0]|0},${fill[1]|0},${fill[2]|0})`;
+    const scan=Math.exp(-Math.pow((zw-scanZ)/(building?3.2:2.2),2))*(building?1:.7);
+    const lw=clamp(1.7-PT[j][0][2]/90,.5,1.7);
+    const order=[];for(let i=0;i<NX;i++)order.push(i);order.sort((a,b)=>Math.abs(xc+(b-NX/2+.5)*STEP-pos[0])-Math.abs(xc+(a-NX/2+.5)*STEP-pos[0]));
+    const pxz=pathX(zw+STEP/2);
+    for(const i of order){
+      const a=PT[j][i],b=PT[j][i+1],c=PT[j+1][i+1],d=PT[j+1][i];
+      if(a[2]<1||b[2]<1||c[2]<1||d[2]<1)continue;
+      if(Math.max(a[0],b[0],c[0],d[0])<-20||Math.min(a[0],b[0],c[0],d[0])>1100||Math.min(a[1],b[1],c[1],d[1])>1940)continue;
+      ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.closePath();
+      const wx=xc+(i-NX/2+.5)*STEP,lit=zw<=litZ&&Math.abs(wx-pxz)<2.4;
+      ctx.fillStyle=lit?`rgb(${Math.round(fill[0]+11)},${Math.round(fill[1]+8)},${Math.round(fill[2]-3)})`:fs;ctx.fill();
+      const hk=clamp((a[3]+2)/16);let col=mix([40,200,255],[210,250,255],hk*.8);if(lit)col=mix(col,AMBc,.6);col=mix(col,[255,255,255],scan);
+      ctx.strokeStyle=rgba(col,clamp((1-fog*.85)*(.55+hk*.45)+scan+(lit?.12:0)));ctx.lineWidth=lw+scan*1.2;ctx.stroke();
+    }
+    // the route itself, drawn as a glowing line draped on the surface, hidden by whatever stands in front
+    if(zw<=litZ){const seg=[];for(let q=0;q<=4;q++){const z=zw+q*STEP/4;const x=pathX(z);seg.push(cam(x,height(x,z)+.3,z))}
+      if(seg.every(p=>p[2]>1)){ctx.save();ctx.lineCap='round';ctx.shadowColor=AMB;ctx.shadowBlur=10;ctx.strokeStyle='rgba(255,211,107,.55)';ctx.lineWidth=5;ctx.beginPath();seg.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.shadowBlur=0;ctx.strokeStyle='#fff1c4';ctx.lineWidth=2;ctx.stroke();ctx.restore()}}
+    while(mp<marks.length&&marks[mp].z>=zw){const m=marks[mp];if(m.z<zw+STEP){const gy=height(m.x,m.z);ring(cam,m.x,gy,m.z,m.k);lantern(cam,m.x,gy,m.z,Math.max(.001,m.spr)*.8,.55+.45*ease(m.g)+.05*Math.sin(t*5+m.i),fs,t)}mp++}
+  }
+  // horizon haze + bloom (blurred copy added on top)
+  {const hz=ctx.createLinearGradient(0,HORIZON-70,0,HORIZON+34);hz.addColorStop(0,'rgba(40,120,255,0)');hz.addColorStop(.7,'rgba(40,140,255,.10)');hz.addColorStop(1,'rgba(40,120,255,0)');ctx.fillStyle=hz;ctx.fillRect(0,HORIZON-70,1080,104)}
+  {const h=HALF.getContext('2d');h.setTransform(1,0,0,1,0,0);h.clearRect(0,0,540,960);h.filter='blur(3.5px)';h.drawImage(cv,0,0,540,960);h.filter='none';ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.55;ctx.drawImage(HALF,0,0,1080,1920);ctx.restore()}
+  // ---- HUD
+  const hk=ease(ph(t,.55,1.1))*(1-ease(ph(t,3.0,3.5)));
+  hudBox(60,262,560,176,hk);
+  if(hk>.01){ctx.save();ctx.globalAlpha=hk;ctx.font=`600 38px ${MONO}`;ctx.fillStyle=CYN;ctx.textBaseline='middle';ctx.fillText(typed('ONE SMALL LIGHT,',t,.8,1.7),98,328);ctx.fillStyle=AMB;ctx.fillText(typed('THEN ANOTHER.',t,1.7,2.5),98,392);ctx.restore()}
+  // the day counter: it ticks once per small deed
+  hudTag(1020,300,'DAY '+String(nPl).padStart(2,'0'),ease(ph(t,1.0,1.4)),{font:`700 30px ${MONO}`,col:AMB,h:54,align:'right'});
+  // the verse panel
+  const vk=ease(ph(t,4.1,4.75));
+  hudBox(60,975,960,492,vk);
+  if(vk>.99){
+    arabicLine(AR1,B1,4.5,5.5,1090,t);arabicLine(AR2,B2,5.5,6.5,1196,t);
+    ctx.save();ctx.font=`500 38px ${MONO}`;ctx.textAlign='center';ctx.fillStyle='#c9f6ff';ctx.textBaseline='alphabetic';
+    const L=['the most beloved deed to Allah','is the most regular and constant','even if it were little.'];
+    L.forEach((s,i)=>{const a=ease((t-(6.4+i*.55))/.5);if(a<=.01)return;ctx.save();ctx.globalAlpha=a;ctx.shadowColor='rgba(80,230,255,.5)';ctx.shadowBlur=12;ctx.fillStyle=i===2?AMB:'#c9f6ff';ctx.fillText(s,540,1290+i*50+(1-a)*10);ctx.restore()});ctx.restore();
+    hudTag(540,1432,'SAHIH AL-BUKHARI 6464',ease(ph(t,8.0,8.5)),{font:`600 26px ${MONO}`,h:50});
+  }
+  ctx.save();ctx.globalAlpha=.7*ease(ph(t,8.4,8.9));ctx.font=`500 24px ${MONO}`;ctx.letterSpacing='6px';ctx.textAlign='center';ctx.fillStyle='#9fe8ff';ctx.fillText('@YOURPAGE',540,1490);ctx.restore();
+  // scanlines + vignette (vector-display finishing, as in the reference)
+  ctx.fillStyle=SCANP;ctx.fillRect(0,0,1080,1920);
+  {const g=ctx.createRadialGradient(540,960,Math.min(1080,1920)*.3,540,960,Math.hypot(1080,1920)*.6);g.addColorStop(0,'rgba(0,0,10,0)');g.addColorStop(1,'rgba(0,0,10,.45)');ctx.fillStyle=g;ctx.fillRect(0,0,1080,1920)}
+  return{};
+};
+document.fonts.load('86px ScheherazadeG').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>
