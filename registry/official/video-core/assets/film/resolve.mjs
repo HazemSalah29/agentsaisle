@@ -195,9 +195,13 @@ export function groupWords(words, phrases) {
   return out;
 }
 
+// Keep an apostrophe inside a word (I'll, it's, don't); strip quotes and
+// punctuation everywhere else.
 const shownWord = (w) =>
   String(w)
+    .replace(/(?<=\p{L})['‘’](?=\p{L})/gu, "\u0000")
     .replace(/["'“”‘’,;:()]/g, "")
+    .replace(/\u0000/g, "'")
     .trim();
 
 function kinetic(props, ctx) {

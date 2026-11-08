@@ -18,19 +18,19 @@ requires:
   - video-kinetic
   - video-publish
   - video-qa
-  - video-reel
-  - video-reel-build
-  - video-reel-carousel
-  - video-reel-parable
-  - video-reel-sfx-1
-  - video-reel-sfx-2
-  - video-reel-sfx-3
-  - video-reel-sfx-4
-  - video-reel-sounds
-  - video-reel-story
-  - video-reel-storyboard
-  - video-reel-style
-  - video-reel-topic
+  - animate-reel
+  - animate-reel-build
+  - animate-reel-carousel
+  - animate-reel-parable
+  - animate-reel-sfx-1
+  - animate-reel-sfx-2
+  - animate-reel-sfx-3
+  - animate-reel-sfx-4
+  - animate-reel-sounds
+  - animate-reel-story
+  - animate-reel-storyboard
+  - animate-reel-style
+  - animate-reel-topic
   - video-showcase
   - video-voice
   - video-write

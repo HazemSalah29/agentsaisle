@@ -27,12 +27,12 @@ docs/video/demos/**/*.json
 ARCH_VISUALIZE_V2_BRIEF.md
 VIDEO_SKILLS_LIBRARY_BRIEF.md
 # Reel kit ported as authored (page templates, recipes, scripts); only studio.mjs and its test are ours and stay formatted.
-registry/official/video-reel/assets
-registry/official/video-reel/references
-registry/official/video-reel/tests.md
-registry/official/video-reel/scripts/*.mjs
-!registry/official/video-reel/scripts/studio.mjs
-registry/official/video-reel-*/assets
-registry/official/video-reel-*/references
-registry/official/video-reel-*/scripts
-registry/official/video-reel-*/tests.md
+registry/official/animate-reel/assets
+registry/official/animate-reel/references
+registry/official/animate-reel/tests.md
+registry/official/animate-reel/scripts/*.mjs
+!registry/official/animate-reel/scripts/studio.mjs
+registry/official/animate-reel-*/assets
+registry/official/animate-reel-*/references
+registry/official/animate-reel-*/scripts
+registry/official/animate-reel-*/tests.md

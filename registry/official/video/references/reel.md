@@ -8,8 +8,8 @@ The user says reel, "animated lesson", carousel, "made-up story that teaches X",
 
 ## How
 
-1. Read `<video-reel>/SKILL.md` (a sibling skill) and follow it from its Steps. Pass along what the user said as the source or idea.
-2. `video-reel` runs its own checks (`scripts/studio.mjs doctor`), keeps its own studio folder (`00 - notes`, `03 - export`) and ends at the MP4 and caption. Do not run `pipeline.mjs` or `doctor.mjs` for a reel.
+1. Read `<animate-reel>/SKILL.md` (a sibling skill) and follow it from its Steps. Pass along what the user said as the source or idea.
+2. `animate-reel` runs its own checks (`scripts/studio.mjs doctor`), keeps its own studio folder (`00 - notes`, `03 - export`) and ends at the MP4 and caption. Do not run `pipeline.mjs` or `doctor.mjs` for a reel.
 3. Subcommands the user may type: `/video reel start`, `ideas`, `today`, `save`, `review`, `carousel`, `bulk <ids>`.
 
 ## Needs from the user

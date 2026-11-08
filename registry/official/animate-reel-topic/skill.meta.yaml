@@ -1,0 +1,14 @@
+version: 0.1.0
+category: [video]
+clients: [claude-code]
+niche: animate
+kind: quality
+tier: specialty
+runs_scripts: true
+permissions:
+  tools: [Read, Write, Glob, Grep, Bash]
+  writes_files: true
+  runs_scripts: true
+  network: true
+  needs_api_keys: []
+part_of: video
