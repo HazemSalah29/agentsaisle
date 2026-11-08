@@ -213,7 +213,7 @@ The installer copies only what the skill needs: `SKILL.md`, `references/`, `scri
 
 ## 9. The website demo
 
-The skill page (`/skills/arch-visualize`) shows the page the skill wrote for a real project, embedded and also as screenshots: Cal.com, one journey (connecting a calendar), 5 components, 5 connections, 2 flows, 2 possible risks and 49 functions and components inside. The model is `evals/demo/calcom.architecture.json`; the web build renders it with the skill's own `render.mjs` into `/demos/arch-visualize/calcom.html`, so the demo always uses the current viewer. The models for Supabase (self-hosted stack), Node.js and DevPath stay in `evals/demo/`, with their screenshots in `evals/*-preview/`; they are rendered too but not linked.
+The skill page (`/skills/arch-visualize`) shows the page the skill wrote for a real project, embedded and also as screenshots: Cal.com, one journey (connecting a calendar), 5 components, 5 connections, 2 flows, 2 possible risks and 49 functions and components inside. The model is `evals/demo/calcom.architecture.json`; the web build renders it with the skill's own `render.mjs` into `/demos/arch-visualize/calcom.html`, so the demo always uses the current viewer.
 
 ## 10. What the dogfood run found
 

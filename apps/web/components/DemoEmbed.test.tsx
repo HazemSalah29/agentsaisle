@@ -10,7 +10,7 @@ const steps = [
 describe("DemoEmbed", () => {
   const html = renderToStaticMarkup(
     <DemoEmbed
-      url="/demos/arch-visualize/devpath.html"
+      url="/demos/arch-visualize/calcom.html"
       title="Example"
       caption="A real project."
       steps={steps}
@@ -19,7 +19,7 @@ describe("DemoEmbed", () => {
 
   it("frames the page with scripts only, lazily, and without a referrer", () => {
     const frame = /<iframe[^>]*>/.exec(html)![0];
-    expect(frame).toContain('src="/demos/arch-visualize/devpath.html"');
+    expect(frame).toContain('src="/demos/arch-visualize/calcom.html"');
     expect(frame).toContain('sandbox="allow-scripts"');
     expect(frame).not.toMatch(/allow-same-origin|allow-top-navigation|allow-popups|allow-forms/);
     expect(frame).toContain('loading="lazy"');
@@ -29,7 +29,7 @@ describe("DemoEmbed", () => {
 
   it("offers a full-screen link that opens safely in a new tab", () => {
     const link = /<a[^>]*>Open full screen<\/a>/.exec(html)![0];
-    expect(link).toContain('href="/demos/arch-visualize/devpath.html"');
+    expect(link).toContain('href="/demos/arch-visualize/calcom.html"');
     expect(link).toContain('target="_blank"');
     expect(link).toContain('rel="noopener noreferrer"');
   });

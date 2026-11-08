@@ -331,11 +331,7 @@ describe("arch-visualize model v2", () => {
 
   it("upgrades v1 models in memory, without mutating them, and idempotently", async () => {
     check ??= await loadScript<Check>("arch-visualize", "scripts/model-check.mjs");
-    for (const f of [
-      "evals/fixture-model.json",
-      "evals/hostile-model.json",
-      "evals/demo/devpath.architecture.json",
-    ]) {
+    for (const f of ["evals/fixture-model.json", "evals/hostile-model.json"]) {
       const v1 = readJson(f);
       const copy = JSON.stringify(v1);
       const v2 = check.upgradeModel(v1);

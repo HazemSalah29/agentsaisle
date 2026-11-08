@@ -10,7 +10,7 @@ It shows how requests would travel **according to the code**. It is not live tra
 - `scripts/`: deterministic Node 18+ helpers, no dependencies, no network, nothing from the project is ever run. Seven commands: `discover` (find components and edge candidates), `model-check` (validate the model), `risk-check` (rules AV-R01 to AV-R18, also as SARIF), `code-map` (0.3.0: look inside a component, JavaScript and TypeScript, as text), `simulate` (what-if: which components fail if others are down), `diff` (compare two models), `render` (write the page). The other files in `scripts/` are modules those commands share.
 - `assets/`: the viewer (`viewer/`), the pure modules the page and the scripts share (`lib/`: layout, routing, search, simulation, diff, zoom and the inside-view builder), the technology catalog, the model schema, icons (`icons/NOTICE.md` explains the license and trademarks) and `vendor/babel-parser.mjs`, the parser `code-map` uses (MIT, bundled from `@babel/parser`; `vendor/NOTICE.md` has the licence). It only parses text.
 - `preview/`: screenshots of the 0.3.0 page on the Cal.com demo, shown on the skill page. Not installed.
-- `evals/`: a multi-service fixture app, its expected results, hostile and lens models, the demo models (Cal.com is the one on the skill page; Supabase, Node.js and DevPath are kept), the baseline and `RESULTS-0.2.0.md` (the only numbers to quote), `LATER.md`. Not installed.
+- `evals/`: a multi-service fixture app, its expected results, hostile and lens models, the demo model (Cal.com, the one on the skill page), the baseline and `RESULTS-0.2.0.md` (the only numbers to quote), `LATER.md`. Not installed.
 
 ## Decisions taken
 
