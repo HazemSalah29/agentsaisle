@@ -1,4 +1,4 @@
-version: 0.29.0
+version: 0.30.0
 category: [video]
 clients: [claude-code]
 runs_scripts: true
@@ -18,6 +18,19 @@ requires:
   - video-kinetic
   - video-publish
   - video-qa
+  - video-reel
+  - video-reel-build
+  - video-reel-carousel
+  - video-reel-parable
+  - video-reel-sfx-1
+  - video-reel-sfx-2
+  - video-reel-sfx-3
+  - video-reel-sfx-4
+  - video-reel-sounds
+  - video-reel-story
+  - video-reel-storyboard
+  - video-reel-style
+  - video-reel-topic
   - video-showcase
   - video-voice
   - video-write
@@ -27,6 +40,7 @@ can_do:
   - "Make a showcase of your own app: a scripted recording with a camera that follows the action"
   - "Write the hook and script to a short-form quality bar, then review each draft against a score card"
   - "Voice it locally for free (Kokoro), with burned captions, an original music bed and sound effects"
+  - "Make a motion-graphics Instagram reel or carousel for your page from a checked source (/video reel)"
   - "Check the result, then prepare it for YouTube Shorts, Reels, TikTok or LinkedIn (nothing is uploaded)"
 setup:
   - title: "Install the skill"
@@ -35,3 +49,7 @@ setup:
     text: "The first time, /video writes the engine's package.json to ~/.aisle-video/remotion and shows two commands to run there: npm install, then npx remotion@4.0.540 browser ensure (about 350 MB in all). Remotion is free for individuals and companies of up to 3 people; larger companies need a Remotion company licence."
   - title: "Add the free voice"
     text: "pip install kokoro-onnx soundfile, then put kokoro-v1.0.onnx and voices-v1.0.bin (from the kokoro-onnx GitHub releases) in ~/.aisle-video/kokoro. /video doctor shows what is ready. Your own recording works too, with no setup."
+  - title: "For /video reel, install its tools"
+    text: "ffmpeg, Google Chrome, Node 18+, Python 3 with numpy, scipy and pillow (pip install numpy scipy pillow), and Playwright (npm i -g playwright). /video reel checks for them and lists only what is missing; it installs nothing. The reel sound packs add about 85 MB to the install; they are bundled, so a reel downloads nothing."
+  - title: "Optional: a voiceover for reels"
+    text: "Make an ElevenLabs key and set ELEVENLABS_API_KEY in your own shell or system environment. The key never goes in the chat. Without it, reels use sound effects over a calm bed and no voice."
