@@ -19,15 +19,32 @@ test.describe("a library of skills", () => {
     );
   });
 
-  test("the library page says what it can do and tucks its parts away, each linking to its own page", async ({
+  test("the library page speaks plainly, and tucks its parts away, each linking to its own page", async ({
     page,
   }) => {
     await page.goto(`/skills/${library.name}`);
-    await expect(page.getByRole("heading", { name: "What it can do" })).toBeVisible();
-    await page.getByText(`Built from ${library.requires!.length} parts`).click();
+    await expect(page.getByRole("heading", { name: "What you can ask for" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add, update or remove" })).toBeVisible();
+    await page.getByRole("button", { name: /All the details/ }).click();
+    await expect(
+      page.getByRole("heading", { name: `Built from ${library.requires!.length} parts` }),
+    ).toBeVisible();
     await page.getByRole("link", { name: part.name, exact: true }).first().click();
     await expect(page).toHaveURL(new RegExp(`/skills/${part.name}$`));
     await expect(page.getByText("is a part of the")).toBeVisible();
     await expect(page.getByText(new RegExp(`add ${library.name}`)).first()).toBeVisible();
+  });
+
+  test("add, update and remove each show their own line, and the scope switch adds --global", async ({
+    page,
+  }) => {
+    await page.goto(`/skills/${library.name}`);
+    const line = page.locator("#manage-panel code");
+    await expect(line).toContainText(`add ${library.name}`);
+    await page.getByRole("tab", { name: "Update" }).click();
+    await expect(line).toContainText(`update ${library.name}`);
+    await page.getByRole("tab", { name: "Remove" }).click();
+    await page.getByLabel(/All my projects/).check();
+    await expect(line).toContainText(`remove ${library.name} --global`);
   });
 });
