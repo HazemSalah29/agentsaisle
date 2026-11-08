@@ -42,9 +42,9 @@ export const isSecretFile = (name) =>
 
 /**
  * List files under `root` whose base name `want(name)` accepts. Sorted, symlinks skipped, at most
- * MAX_FILES entries visited. Secret-named files are counted in `skippedSecret` and never returned.
+ * `maxFiles` (default MAX_FILES) entries visited. Secret-named files are counted in `skippedSecret` and never returned.
  */
-export function listFiles(root, want) {
+export function listFiles(root, want, maxFiles = MAX_FILES) {
   const found = [];
   const stats = { visited: 0, skippedSecret: 0, truncated: false };
   const visit = (dir) => {
@@ -53,7 +53,7 @@ export function listFiles(root, want) {
     );
     for (const e of entries) {
       if (e.isSymbolicLink()) continue;
-      if (stats.visited >= MAX_FILES) {
+      if (stats.visited >= maxFiles) {
         stats.truncated = true;
         return;
       }

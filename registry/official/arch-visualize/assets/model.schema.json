@@ -5,7 +5,7 @@
   "required": ["version", "project", "nodes", "edges", "flows", "risks"],
   "properties": {
     "version": {
-      "enum": [1, 2]
+      "enum": [1, 2, 3]
     },
     "project": {
       "type": "string",
@@ -180,9 +180,15 @@
         "camera": {
           "type": "object",
           "properties": {
-            "x": { "type": "number" },
-            "y": { "type": "number" },
-            "zoom": { "type": "number" }
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "zoom": {
+              "type": "number"
+            }
           }
         }
       }
@@ -263,7 +269,15 @@
           }
         },
         "replicas": {
-          "anyOf": [{ "type": "integer", "minimum": 1 }, { "$ref": "#/$defs/unknownOr" }]
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "$ref": "#/$defs/unknownOr"
+            }
+          ]
         },
         "ai": {
           "type": "object",
@@ -300,6 +314,9 @@
           "items": {
             "$ref": "#/$defs/evidence"
           }
+        },
+        "detail": {
+          "$ref": "#/$defs/detail"
         }
       }
     },
@@ -326,7 +343,14 @@
           "enum": ["none", "session", "jwt", "api-key", "mtls", "oauth", "unknown"]
         },
         "tls": {
-          "anyOf": [{ "type": "boolean" }, { "$ref": "#/$defs/unknownOr" }]
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/$defs/unknownOr"
+            }
+          ]
         },
         "timeoutMs": {
           "type": "integer",
@@ -349,6 +373,33 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/evidence"
+          }
+        },
+        "via": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "kind"],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "kind": {
+                "enum": ["call", "render", "fetch", "rpc"]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 60
+              }
+            }
           }
         }
       }
@@ -451,6 +502,310 @@
                 "maxLength": 240
               }
             }
+          }
+        }
+      }
+    },
+    "symbolRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "symbol": {
+      "type": "object",
+      "required": ["id", "name", "kind", "file", "line"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "kind": {
+          "enum": ["function", "component", "hook", "method", "route", "procedure"]
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "exported": {
+          "type": "boolean"
+        },
+        "async": {
+          "type": "boolean"
+        },
+        "doc": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "docBy": {
+          "enum": ["comment", "agent"]
+        },
+        "route": {
+          "type": "object",
+          "required": ["path", "method"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "method": {
+              "type": "string",
+              "maxLength": 10
+            }
+          }
+        },
+        "procedure": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["query", "mutation", "subscription"]
+            },
+            "path": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        },
+        "calls": {
+          "type": "array",
+          "maxItems": 60,
+          "items": {
+            "type": "object",
+            "required": ["to", "name", "line"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "in": {
+                "enum": ["loop", "branch", null]
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              }
+            }
+          }
+        },
+        "renders": {
+          "type": "array",
+          "maxItems": 60,
+          "items": {
+            "type": "object",
+            "required": ["name", "line"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "in": {
+                "enum": ["loop", "branch", null]
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "module": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          }
+        },
+        "external": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "in": {
+                "enum": ["loop", "branch", null]
+              },
+              "module": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "outside": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "fetches": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["url", "method", "line"],
+            "properties": {
+              "url": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "method": {
+                "type": "string",
+                "maxLength": 10
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "in": {
+                "enum": ["loop", "branch", null]
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              }
+            }
+          }
+        },
+        "rpc": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["path", "kind", "line"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "kind": {
+                "enum": ["query", "mutation"]
+              },
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "in": {
+                "enum": ["loop", "branch", null]
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "inferred": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "calledBy": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "loops": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "branches": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hiddenCalls": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "detail": {
+      "type": "object",
+      "required": ["scope", "symbols"],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "parsed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "symbolsFound": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "symbolsKept": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "focus": {
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "array",
+              "maxItems": 10,
+              "items": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "depth": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "reached": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "symbols": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/symbol"
           }
         }
       }
