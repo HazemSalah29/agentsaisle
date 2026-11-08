@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { openDetails } from "./helpers";
 
 const registry = JSON.parse(
   readFileSync(path.join(__dirname, "..", "public", "registry.json"), "utf8"),
@@ -12,11 +13,19 @@ test.describe("audit", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Check a skill");
     await expect(page.getByText("not a guarantee of safety").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Grades", level: 2 })).toBeVisible();
-    await expect(page.getByText("AA-X02").first()).toBeVisible();
+    // the rule families are closed until opened
+    await page
+      .locator("#rules")
+      .locator("xpath=ancestor::section")
+      .getByRole("button")
+      .first()
+      .click();
+    await expect(page.getByText(/AA-[A-Z]\d{2}/).first()).toBeVisible();
     await expect(page.getByText("aisle audit . --format sarif").first()).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Badge and GitHub Action", level: 2 }),
     ).toBeVisible();
+    await page.getByRole("button", { name: /Check your own repository/ }).click();
     await expect(page.getByText("HazemSalah29/aisle-audit-action@v1")).toBeVisible();
   });
 
@@ -26,6 +35,7 @@ test.describe("audit", () => {
     const skill = registry.skills.find((s) => s.audit);
     test.skip(!skill, "no audited skill in this registry build");
     await page.goto(`/skills/${skill!.name}`);
+    await openDetails(page);
     const block = page.locator("section[aria-labelledby=audit]");
     await expect(block.getByRole("heading", { name: "Audit", level: 2 })).toBeVisible();
     await expect(
@@ -75,6 +85,7 @@ test.describe("badges", () => {
       color: expect.any(String),
     });
     await page.goto("/skills/arabic-rtl");
+    await openDetails(page);
     await expect(page.getByText("Show this grade in a README")).toBeVisible();
     await expect(page.getByText(/img\.shields\.io\/endpoint\?url=/)).toBeVisible();
   });

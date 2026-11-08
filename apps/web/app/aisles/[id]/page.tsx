@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
 import { BundleCard } from "../../../components/BundleCard";
 import { ElsewhereCard } from "../../../components/ElsewhereCard";
+import { Section } from "../../../components/Section";
 import { SkillCard } from "../../../components/SkillCard";
+import { CardGrid, CardItem } from "../../../components/simple/Cards";
+import { PageIntro } from "../../../components/simple/PageIntro";
 import { groupAisle } from "../../../lib/aisles";
 import { getCatalog } from "../../../lib/catalog";
 import { getRegistry } from "../../../lib/registry";
@@ -27,31 +29,6 @@ export async function generateMetadata({
     : { title: "Aisle not found" };
 }
 
-function Shelf({
-  id,
-  title,
-  intro,
-  children,
-}: {
-  id: string;
-  title: string;
-  intro?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section aria-labelledby={id} className="border-t border-line-strong px-4 py-10 sm:px-8">
-      <h2 id={id} className="text-xl">
-        {title}
-      </h2>
-      {intro && <p className="mt-2 max-w-prose text-sm text-muted">{intro}</p>}
-      <div className="mt-6">{children}</div>
-    </section>
-  );
-}
-
-const grid = "grid pl-px pt-px sm:grid-cols-2 lg:grid-cols-3";
-const cell = "-ml-px -mt-px border border-line-strong";
-
 export default async function AislePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const index = getRegistry();
@@ -60,86 +37,95 @@ export default async function AislePage({ params }: { params: Promise<{ id: stri
   const group = groupAisle(aisle, index);
   const stars = new Map((await getCatalog()).map((s) => [s.name, s.stars]));
   const card = (s: (typeof group.official)[number]) => (
-    <li key={s.name} className={cell}>
+    <CardItem key={s.name}>
       <SkillCard skill={s} href={`/skills/${s.name}`} stars={stars.get(s.name)} />
-    </li>
+    </CardItem>
   );
+  let n = 0;
+  const num = () => String(++n).padStart(2, "0");
 
   return (
     <>
-      <div className="px-4 py-12 sm:px-8">
-        <p className="hud-label text-muted">
-          <a href="/aisles" className="text-accent-ink underline underline-offset-4">
-            Aisles
-          </a>{" "}
-          / {aisle.name}
-        </p>
-        <h1 className="mt-3 text-3xl">{aisle.name}</h1>
-        <p className="mt-3 max-w-prose text-muted">{aisle.description}</p>
-      </div>
+      <PageIntro
+        size="lg"
+        eyebrow={
+          <>
+            <a href="/aisles" className="underline underline-offset-4">
+              Aisles
+            </a>{" "}
+            / {aisle.name}
+          </>
+        }
+        lines={[aisle.name]}
+        intro={aisle.description}
+      />
 
       {group.comingSoon && (
-        <Shelf id="soon" title="Coming soon">
+        <Section id="soon" number={num()} title="Coming soon">
           <p className="max-w-prose border border-dashed border-line-strong bg-bg-raised p-5 text-sm">
             There are no skills in this aisle yet. A skill only goes on the shelf after it has been
             built and tested, so this one stays empty until then.
           </p>
-        </Shelf>
+        </Section>
       )}
 
       {group.kits.length > 0 && (
-        <Shelf
+        <Section
           id="kits"
+          number={num()}
           title="Kits"
-          intro="A kit installs the skills that work together, with one command."
+          intro="Skills that work together. One command installs them all."
         >
-          <ul className={grid}>
+          <CardGrid label="Kits">
             {group.kits.map((k) => (
-              <li key={k.id} className={cell}>
+              <CardItem key={k.id}>
                 <BundleCard profile={k} />
-              </li>
+              </CardItem>
             ))}
-          </ul>
-        </Shelf>
+          </CardGrid>
+        </Section>
       )}
 
       {group.official.length > 0 && (
-        <Shelf id="official" title="Official">
-          <ul className={grid}>{group.official.map(card)}</ul>
-        </Shelf>
+        <Section id="official" number={num()} title="Official" intro="Made and kept up by us.">
+          <CardGrid label="Official skills">{group.official.map(card)}</CardGrid>
+        </Section>
       )}
       {group.verified.length > 0 && (
-        <Shelf
+        <Section
           id="verified"
+          number={num()}
           title="Verified"
           intro="Community skills that a maintainer has read in full."
         >
-          <ul className={grid}>{group.verified.map(card)}</ul>
-        </Shelf>
+          <CardGrid label="Verified skills">{group.verified.map(card)}</CardGrid>
+        </Section>
       )}
       {group.community.length > 0 && (
-        <Shelf
+        <Section
           id="community"
+          number={num()}
           title="Community"
-          intro="Submitted by their authors. Nobody here has read these yet."
+          intro="Sent in by their authors. Nobody here has read these yet."
         >
-          <ul className={grid}>{group.community.map(card)}</ul>
-        </Shelf>
+          <CardGrid label="Community skills">{group.community.map(card)}</CardGrid>
+        </Section>
       )}
       {group.elsewhere.length > 0 && (
-        <Shelf
+        <Section
           id="elsewhere"
+          number={num()}
           title="Elsewhere"
           intro="Skills by other authors. We link to them and show their license. We do not host them and our CLI does not install them."
         >
-          <ul className={grid}>
+          <CardGrid label="Skills elsewhere">
             {group.elsewhere.map((e) => (
-              <li key={`${e.repo}/${e.path}`} className={cell}>
+              <CardItem key={`${e.repo}/${e.path}`}>
                 <ElsewhereCard entry={e} />
-              </li>
+              </CardItem>
             ))}
-          </ul>
-        </Shelf>
+          </CardGrid>
+        </Section>
       )}
     </>
   );

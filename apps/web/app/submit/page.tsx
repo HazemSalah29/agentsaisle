@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Section } from "../../components/Section";
+import { CardGrid, CardItem } from "../../components/simple/Cards";
+import { HowItWorks } from "../../components/simple/HowItWorks";
+import { PageIntro, PrimaryLink } from "../../components/simple/PageIntro";
 import { YamlGenerator } from "../../components/YamlGenerator";
 import { REPO_URL } from "../../lib/site";
 
@@ -31,7 +34,7 @@ const requirements = [
   <>The name isn&apos;t already taken by another skill.</>,
 ];
 
-const steps: Array<[string, string]> = [
+const stepList: Array<[string, string]> = [
   ["Pick a commit", "Choose the tag or branch you want to publish and note its full commit SHA."],
   ["Fill in the form", "It writes the YAML entry and checks it as you type."],
   [
@@ -44,36 +47,61 @@ const steps: Array<[string, string]> = [
   ],
 ];
 
+const review: React.ReactNode[] = [
+  <>
+    Your skill is labeled <strong>unverified</strong> until a maintainer has read it, and any
+    scripts, in full.
+  </>,
+  <>
+    Only maintainers set <code className="font-mono">verified</code>. The check rejects entries that
+    try to.
+  </>,
+  <>
+    Questions or problems? Open an issue on{" "}
+    <a href={REPO_URL} className="text-accent-ink underline underline-offset-4">
+      GitHub
+    </a>
+    .
+  </>,
+];
+
 export default function SubmitPage() {
   return (
     <>
-      <div className="px-4 py-12 sm:px-8">
-        <p className="hud-label text-accent-ink">Submit</p>
-        <h1 className="mt-3 text-3xl">List your skill</h1>
-        <p className="mt-3 text-muted">
-          Skills are added with a pull request that creates one YAML file in{" "}
-          <code className="font-mono">registry/community/</code>. Listing is free.
-        </p>
-      </div>
+      <PageIntro
+        size="lg"
+        eyebrow="Submit"
+        lines={["List your skill"]}
+        accent="in four steps."
+        intro={
+          <>
+            Skills are added with a pull request that creates one file in{" "}
+            <code className="font-mono">registry/community/</code>. Listing is free.
+          </>
+        }
+        actions={<PrimaryLink href="#generator">Write your entry</PrimaryLink>}
+      />
 
-      <Section id="requirements" number="01" title="Requirements">
-        <ul className="list-[square] space-y-3 pl-5 text-sm">
+      <Section
+        id="requirements"
+        number="01"
+        title="Before you start"
+        intro="Five things to have ready."
+      >
+        <CardGrid className="sm:grid-cols-2 xl:grid-cols-3" label="Requirements">
           {requirements.map((r, i) => (
-            <li key={i}>{r}</li>
+            <CardItem key={i} plain>
+              <div className="p-5">
+                <span className="hud-label text-accent-ink">{String(i + 1).padStart(2, "0")}</span>
+                <p className="mt-2 text-sm">{r}</p>
+              </div>
+            </CardItem>
           ))}
-        </ul>
+        </CardGrid>
       </Section>
 
       <Section id="how" number="02" title="How it works">
-        <ol className="grid pl-px pt-px md:grid-cols-2">
-          {steps.map(([title, body], i) => (
-            <li key={title} className="-ml-px -mt-px border border-line-strong bg-bg-raised p-5">
-              <p className="hud-label text-accent-ink">Step {i + 1}</p>
-              <h3 className="mt-2 text-lg">{title}</h3>
-              <p className="mt-2 text-sm text-muted">{body}</p>
-            </li>
-          ))}
-        </ol>
+        <HowItWorks steps={stepList.map(([title, text]) => ({ title, text }))} cols={4} />
       </Section>
 
       <Section
@@ -86,23 +114,13 @@ export default function SubmitPage() {
       </Section>
 
       <Section id="review" number="04" title="After you submit">
-        <ul className="list-[square] space-y-3 pl-5 text-sm">
-          <li>
-            Your skill is labeled <strong>unverified</strong> until a maintainer has read it, and
-            any scripts, in full.
-          </li>
-          <li>
-            Only maintainers set <code className="font-mono">verified</code>. The check rejects
-            entries that try to.
-          </li>
-          <li>
-            Questions or problems? Open an issue on{" "}
-            <a href={REPO_URL} className="text-accent-ink underline underline-offset-4">
-              GitHub
-            </a>
-            .
-          </li>
-        </ul>
+        <CardGrid className="md:grid-cols-3" label="After you submit">
+          {review.map((r, i) => (
+            <CardItem key={i} plain>
+              <p className="p-5 text-sm">{r}</p>
+            </CardItem>
+          ))}
+        </CardGrid>
       </Section>
     </>
   );

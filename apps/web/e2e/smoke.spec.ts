@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openDetails } from "./helpers";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -85,6 +86,7 @@ test.describe("skill page", () => {
     page,
   }) => {
     await page.goto("/skills/brand-guidelines");
+    await page.getByRole("button", { name: /Need an older version/ }).click();
     const install = page.getByRole("region", { name: "Install" });
     await expect(install.locator("code").first()).toContainText(
       "npx @agentsaisle/cli add brand-guidelines",
@@ -111,6 +113,7 @@ test.describe("skill page", () => {
   test("shows trust labels, rendered SKILL.md, version history and links", async ({ page }) => {
     await page.goto("/skills/brand-guidelines");
     await expect(page.getByText("Not reviewed by Agent Aisle")).toBeVisible();
+    await openDetails(page);
     await expect(page.getByRole("link", { name: "Report this skill" })).toHaveAttribute(
       "href",
       /report-skill\.yml.*skill=brand-guidelines/,
@@ -139,9 +142,9 @@ test.describe("skill page", () => {
 test.describe("docs", () => {
   test("renders and /docs#install scrolls to the install section", async ({ page }) => {
     await page.goto("/docs#install");
-    await expect(page.getByRole("heading", { name: "Install the CLI" })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "Get started" })).toBeInViewport();
     await expect(page.getByText("npx @agentsaisle/cli add explore").first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Commands" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Add, update or remove" })).toBeVisible();
   });
 });
 

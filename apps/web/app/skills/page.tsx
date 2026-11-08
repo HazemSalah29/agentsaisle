@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Catalog } from "../../components/Catalog";
+import { PageIntro } from "../../components/simple/PageIntro";
 import { getCatalog } from "../../lib/catalog";
 
 export const revalidate = 3600;
@@ -14,14 +15,13 @@ export default async function SkillsPage() {
   const skills = await getCatalog();
   return (
     <>
-      <div className="px-4 py-12 sm:px-8">
-        <p className="hud-label text-accent-ink">Catalog</p>
-        <h1 className="mt-3 text-3xl">Skills</h1>
-        <p className="mt-3 text-muted">
-          Search by name, description or aisle. Every skill pins an exact commit, and the install
-          command is one line.
-        </p>
-      </div>
+      <PageIntro
+        size="lg"
+        eyebrow="Catalog"
+        lines={["Find a skill"]}
+        accent="then add it in one line."
+        intro="Search by name or by what you want to do. Every skill is checked and gets a grade."
+      />
       <Catalog skills={skills} />
     </>
   );

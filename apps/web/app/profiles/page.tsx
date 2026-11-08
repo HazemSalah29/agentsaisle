@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { BundleCard } from "../../components/BundleCard";
 import { ProfilePicker } from "../../components/ProfilePicker";
 import { Section } from "../../components/Section";
+import { CardGrid, CardItem } from "../../components/simple/Cards";
+import { PageIntro } from "../../components/simple/PageIntro";
 import { getRegistry } from "../../lib/registry";
 
 export const revalidate = 3600;
@@ -16,19 +18,15 @@ export default function ProfilesPage() {
   const { skills, questions, profiles } = getRegistry();
   return (
     <>
-      <div className="px-4 py-12 sm:px-8">
-        <p className="hud-label text-accent-ink">Profiles</p>
-        <h1 className="mt-3 text-3xl">Pick your bundle</h1>
-        <p className="mt-3 text-muted">
-          Answer a few questions. Your bundle prints as a receipt, with one command that installs
-          everything on it.
-        </p>
-      </div>
+      <PageIntro
+        size="lg"
+        eyebrow="Profiles"
+        lines={["Pick your bundle"]}
+        accent="in a few clicks."
+        intro="Answer a few questions. You get one line that installs everything on your list."
+      />
 
-      <section
-        aria-label="Profile picker"
-        className="border-t border-line-strong px-4 py-10 sm:px-8"
-      >
+      <Section id="picker" number="01" title="Answer a few questions">
         {questions.length > 0 ? (
           <ProfilePicker
             questions={questions}
@@ -39,22 +37,22 @@ export default function ProfilesPage() {
             The picker has no questions yet. Browse the catalog to install skills one at a time.
           </p>
         )}
-      </section>
+      </Section>
 
       {profiles.length > 0 && (
         <Section
           id="starter"
           number="02"
           title="Starter bundles"
-          intro="Skip the questions. The CLI can install a whole profile with aisle init."
+          intro="Skip the questions. One command installs a whole bundle."
         >
-          <ul className="grid pl-px pt-px md:grid-cols-3">
+          <CardGrid className="md:grid-cols-3" label="Starter bundles">
             {profiles.map((p) => (
-              <li key={p.id} className="-ml-px -mt-px border border-line-strong">
+              <CardItem key={p.id}>
                 <BundleCard profile={p} />
-              </li>
+              </CardItem>
             ))}
-          </ul>
+          </CardGrid>
         </Section>
       )}
     </>

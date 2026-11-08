@@ -3,14 +3,8 @@ import { PLATE_COLS, PLATE_ROWS, aisleColor, plateCells } from "../lib/plate";
 import { Badge } from "./Badge";
 import { GradeBadge } from "./GradeBadge";
 
-const clientNames: Record<string, string> = {
-  "claude-code": "Claude Code",
-  codex: "Codex",
-  cursor: "Cursor",
-};
-
 /** Generated preview: a mirrored dot grid tinted with the skill's aisle color. */
-function Plate({ skill }: { skill: RegistrySkill }) {
+export function Plate({ skill }: { skill: RegistrySkill }) {
   const color = aisleColor(skill.category);
   const cells = plateCells(skill.name);
   const size = 10;
@@ -57,7 +51,7 @@ export function SkillCard({
 }) {
   const color = aisleColor(skill.category);
   return (
-    <article className="group relative flex h-full flex-col bg-bg-raised">
+    <article className="group relative flex h-full w-full flex-col">
       <div className="relative border-b border-line">
         <Plate skill={skill} />
         {index !== undefined && (
@@ -65,9 +59,6 @@ export function SkillCard({
             {String(index).padStart(2, "0")}
           </span>
         )}
-        <span className="hud-label absolute right-3 top-3 bg-bg-raised px-1.5 py-0.5 text-ink">
-          v{skill.latest}
-        </span>
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div className="flex items-center gap-3">
@@ -88,8 +79,8 @@ export function SkillCard({
             )}
           </Heading>
         </div>
-        <p className="line-clamp-3 text-sm text-muted">{skill.description}</p>
-        <div className="flex flex-wrap gap-1.5">
+        <p className="line-clamp-2 text-sm text-muted">{skill.description}</p>
+        <div className="mt-auto flex flex-wrap gap-1.5">
           <Badge
             kind={
               skill.source === "official" ? "official" : skill.verified ? "verified" : "unverified"
@@ -98,13 +89,6 @@ export function SkillCard({
           {skill.runsScripts ? <Badge kind="scripts" /> : null}
           {skill.audit ? <GradeBadge grade={skill.audit.grade} /> : null}
         </div>
-        <ul className="mt-auto flex flex-wrap gap-1.5" aria-label="Works with">
-          {skill.clients.map((c) => (
-            <li key={c} className="hud-label border border-line px-2 py-1 text-muted">
-              {clientNames[c] ?? c}
-            </li>
-          ))}
-        </ul>
         <p className="hud-label flex items-center justify-between border-t border-line pt-3 text-ink group-hover:text-accent-ink">
           <span>View skill</span>
           {stars !== undefined && stars > 0 && (
