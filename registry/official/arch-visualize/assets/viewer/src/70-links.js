@@ -15,6 +15,8 @@ function linkState() {
     lens: lens !== "system" ? lens : undefined,
     node: sel && sel.kind === "node" ? sel.id : undefined,
     edge: sel && sel.kind === "edge" ? sel.id : undefined,
+    in: dState.open || undefined,
+    sym: sel && sel.kind === "symbol" ? sel.id : undefined,
     down: failDown.length ? failDown.join(",") : undefined,
     flow: flows.length && st.index >= 0 ? flows[flowIx].id : undefined,
     step: flows.length && st.index >= 0 ? st.index + 1 : undefined,
@@ -37,6 +39,9 @@ function scheduleLink() {
 }
 function applyLink(want) {
   if (want.lens && want.lens !== lens) setLens(want.lens);
+  if (want.in && nodeById[want.in] && nodeById[want.in].detail) {
+    if (dState.open !== want.in) openDetail(want.in, want.sym, true);
+  } else if (dState.open) closeDetail(true);
   if (want.k !== undefined && want.x !== undefined && want.y !== undefined) {
     view = { x: want.x, y: want.y, k: want.k };
     applyView();
@@ -54,7 +59,9 @@ function applyLink(want) {
     }
   }
   if (want.down && lens === "failure") simulateDown(want.down.split(","));
-  if (want.node && nodeById[want.node]) select("node", want.node);
+  if (want.in && want.sym && dState.open === want.in && detailIdx.byId[want.sym])
+    select("symbol", want.sym);
+  else if (want.node && nodeById[want.node]) select("node", want.node);
   else if (want.edge && edgeById[want.edge]) select("edge", want.edge);
 }
 window.addEventListener("hashchange", function () {

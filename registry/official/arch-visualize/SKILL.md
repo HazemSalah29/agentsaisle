@@ -1,6 +1,6 @@
 ---
 name: arch-visualize
-description: Map a project's architecture from its code and config and generate one interactive, offline web page that shows each component with its technology icon, animated request flows between them, and possible risks such as a single database or missing rate limiting. Use when the user asks to visualize, map or explain a system's architecture or request flow. Don't use for UI mockups, live production monitoring or code-level call graphs.
+description: Map a project's architecture from its code and config and generate one interactive, offline web page that shows each component with its technology icon, animated request flows between them, and possible risks such as a single database or missing rate limiting. Use when the user asks to visualize, map or explain a system's architecture or request flow. Don't use for UI mockups, live production monitoring or a call graph of a whole codebase.
 disable-model-invocation: true
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
@@ -16,7 +16,7 @@ Reads a project's files as text, builds a model of its components and request fl
 
 ## Don't use when
 
-- The user wants a UI mockup, live production monitoring, a code-level call graph or a cloud-account scan. This shows how requests would travel from the code, not real traffic.
+- The user wants a UI mockup, live production monitoring, a call graph of a whole codebase or a cloud-account scan. This shows how requests would travel from the code, not real traffic. The inside view (step 7) covers one journey in JavaScript or TypeScript code, not everything.
 - The project is a single static page with no services. Say so instead of drawing one box.
 
 ## Steps
@@ -31,11 +31,12 @@ Reads a project's files as text, builds a model of its components and request fl
    - Add 1 to 5 `flows` (`references/flows.md`): page load, login, a write, a background job.
    - Anything without a file to point at goes in `inferred` and is drawn dashed.
 5. Run `node <skill>/scripts/model-check.mjs --model docs/architecture.json`. Fix every problem it lists (it fails while any candidate is left) and run it again until it passes.
-6. Run `node <skill>/scripts/risk-check.mjs --model docs/architecture.json --root .`. It adds rule-based possible risks. Add your own only with evidence (`references/risks.md`), then run model-check again.
-7. Run `node <skill>/scripts/simulate.mjs --model docs/architecture.json --down <id>` for the one or two components with the most serious risks. Report the result as a what-if from the model (`references/simulation.md`).
-8. Run `node <skill>/scripts/render.mjs --model docs/architecture.json --out docs/architecture.html`. Options: `--lang ar`, `--flow-dir rtl`, `--lens <name>`. If it refuses to overwrite a file, pick another `--out`; use `--force` only when the user says to replace it.
-9. If `docs/architecture.base.json` exists, offer the Changes view: `node <skill>/scripts/diff.mjs --base docs/architecture.base.json --head docs/architecture.json --out docs/architecture.diff.json`, then render again with `--diff docs/architecture.diff.json`. For pull requests see `references/ci.md`.
-10. Tell the user the file path and to open it in a browser (it works offline). See `references/lenses.md` for the views and `references/export.md` for exports.
+6. Run `node <skill>/scripts/risk-check.mjs --model docs/architecture.json --root .`. It adds rule-based possible risks. A rule risk with `nodes: []` is about code outside the model: remove it from `risks` and say in your reply how many you removed. Add your own only with evidence (`references/risks.md`), then run model-check again.
+7. Optional, for JavaScript and TypeScript code: let the page open a component into its functions, components, routes and the calls between them. Run `node <skill>/scripts/code-map.mjs --root . --model docs/architecture.json --attach <node>=<folder>[,<node>=<folder>] [--focus <file>[,<file>] --depth 4 --max-symbols 60]`, one folder per node. Use `--focus` on the one journey the user cares about (a page, a route, a function) so the result follows that journey instead of the most-called helpers. Then run model-check with `--root .`, which checks every file and line. For the few symbols that matter and have no comment, write one sentence from what the code shows (`"doc"`, `"docBy": "agent"`, at most 30 per node). See `references/inside.md`.
+8. Run `node <skill>/scripts/simulate.mjs --model docs/architecture.json --down <id>` for the one or two components with the most serious risks. Report the result as a what-if from the model (`references/simulation.md`).
+9. Run `node <skill>/scripts/render.mjs --model docs/architecture.json --out docs/architecture.html`. Options: `--lang ar`, `--flow-dir rtl`, `--lens <name>`. If it refuses to overwrite a file, pick another `--out`; use `--force` only when the user says to replace it.
+10. If `docs/architecture.base.json` exists, offer the Changes view: `node <skill>/scripts/diff.mjs --base docs/architecture.base.json --head docs/architecture.json --out docs/architecture.diff.json`, then render again with `--diff docs/architecture.diff.json`. For pull requests see `references/ci.md`.
+11. Tell the user the file path and to open it in a browser (it works offline). If the model has an inside view, say how to open it: double-click a component with a count, or press Z. See `references/lenses.md` for the views and `references/export.md` for exports.
 
 ## Budget
 
@@ -46,14 +47,16 @@ Reads a project's files as text, builds a model of its components and request fl
 
 - Let `discover.mjs` find components; do not read every file looking for them.
 - Read to connect components and write flows, not to review code quality.
-- Update an existing model instead of starting over: keep its labels, edges and flows, then re-run steps 5 to 8.
+- Update an existing model instead of starting over: keep its labels, edges and flows, then re-run steps 5 to 9.
 - Run `simulate.mjs` at most twice.
+- Inside a component: do not read the files `code-map.mjs` already listed; read at most 8 files, only to write the descriptions of step 7.
 
 ## Output
 
 - The path of `docs/architecture.html` and `docs/architecture.json`.
 - Counts: components, connections, flows, possible risks (rule-based and your own), and edge candidates (confirmed, dropped, inferred).
 - The views on the page (System, and Flows, Security, Failure, AI or Changes when the model has something for them), and the export options: SVG, PNG, JSON, print.
+- If you attached an inside view: per component, the symbols shown out of the symbols found, whether `--focus` was used, and how many descriptions you wrote. Say that links from a tRPC call or a fetch to its handler are matched by name or path.
 - The what-if result for the components you tried, worded as "what the model says would happen", not a prediction.
 - Which nodes or edges are inferred, and what the scripts could not see (for example Terraform, Python or Go code, anything not in a file).
 - One line: generated from code, not live traffic; every risk is something to check, not a verdict. If you used `--lang ar`, say the Arabic text is a machine draft that needs a native speaker's review.
@@ -62,5 +65,6 @@ Reads a project's files as text, builds a model of its components and request fl
 
 - `model-check.mjs` exits 0 on the final model (so no candidate is left), and `risk-check.mjs` ran after the last change to nodes or edges.
 - Every node and edge has evidence or is listed in `inferred`, every flow step points at a real edge, and no zone, auth, tls, data or AI fact is there without a file behind it.
+- If an inside view was attached, `model-check.mjs --root .` passes, so every file and line exists, and no component has more than 30 descriptions written by the agent.
 - No secret value appears in the model, the page or your reply. `.env` files were not opened.
 - `docs/architecture.html` was written and the user knows how to open it.

@@ -990,8 +990,16 @@ describe("arch-visualize flow engine", () => {
     expect(viewer).toMatch(/prefers-reduced-motion: reduce/);
     expect(viewer).toMatch(/"flow\.playMotion"/);
     expect(viewer).toMatch(/"flow\.playMotion": "Play \(uses motion\)"/);
-    // The only place a loop starts is a click handler through kick().
-    expect(viewer.match(/requestAnimationFrame\(/g)).toHaveLength(2);
+    // The only place a flow loop starts is a click handler through kick(). The zoom in 35-detail.js moves the
+    // camera only after a click, a key press or a link, and runs in one step when motion is reduced.
+    const detailSrc = readFileSync(
+      skillFile("arch-visualize", "assets/viewer/src/35-detail.js"),
+      "utf8",
+    );
+    const inDetail = detailSrc.match(/requestAnimationFrame\(/g)?.length ?? 0;
+    expect((viewer.match(/requestAnimationFrame\(/g)?.length ?? 0) - inDetail).toBe(2);
+    expect(detailSrc).toMatch(/prefers-reduced-motion: reduce/);
+    expect(detailSrc).toMatch(/if \(!ms \|\| reduceMotion\)/);
     expect(viewer).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pulse/);
   });
 });
@@ -1921,18 +1929,19 @@ describe("arch-visualize layout in a real browser", () => {
   }, 30_000);
 });
 
-describe("arch-visualize live demo (DevPath)", () => {
-  const demoFile = skillFile("arch-visualize", "evals/demo/devpath.architecture.json");
+describe("arch-visualize live demo (Cal.com)", () => {
+  const demoFile = skillFile("arch-visualize", "evals/demo/calcom.architecture.json");
   const meta = readFileSync(skillFile("arch-visualize", "skill.meta.yaml"), "utf8");
 
-  it("is a valid model with evidence for every item and no secrets", () => {
+  it("is a valid version 3 model with evidence for every item and no secrets", () => {
     const r = run("model-check.mjs", ["--model", demoFile]);
     expect(r.status, r.stdout).toBe(0);
     const text = readFileSync(demoFile, "utf8");
     const model = JSON.parse(text);
-    expect(model.project).toBe("DevPath");
-    expect(model.flows.length).toBeGreaterThanOrEqual(3);
-    // Only example env files may appear as evidence; real .env files are never cited.
+    expect(model.version).toBe(3);
+    expect(model.project).toBe("Cal.com (connect a calendar)");
+    expect(model.flows.length).toBeGreaterThanOrEqual(2);
+    // Real .env files are never cited.
     const files = new Set<string>();
     for (const g of [model.nodes, model.edges, model.risks])
       for (const i of g) for (const e of i.evidence ?? []) files.add(e.file);
@@ -1944,7 +1953,7 @@ describe("arch-visualize live demo (DevPath)", () => {
   });
 
   it("renders with the current viewer", () => {
-    const out = path.join(tmp(), "devpath.html");
+    const out = path.join(tmp(), "calcom.html");
     expect(renderCli(demoFile, out).status).toBe(0);
     const html = readFileSync(out, "utf8");
     expect(html).toContain("arch-visualize viewer v2");
@@ -1952,7 +1961,7 @@ describe("arch-visualize live demo (DevPath)", () => {
   });
 
   it("is linked from the skill page by a site path the web build creates", () => {
-    expect(meta).toMatch(/^ {2}url: \/demos\/arch-visualize\/devpath\.html$/m);
+    expect(meta).toMatch(/^ {2}url: \/demos\/arch-visualize\/calcom\.html$/m);
     expect(meta).toMatch(/^ {2}caption: ".*not live traffic/m);
     const copy = readFileSync(
       path.join(__dirname, "..", "..", "apps", "web", "scripts", "copy-registry.mts"),
@@ -1962,13 +1971,25 @@ describe("arch-visualize live demo (DevPath)", () => {
     expect(copy).toContain(".architecture.json");
     expect(copy).toContain("public/demos");
   });
+
+  it("is the same version as the skill's metadata", () => {
+    expect(meta).toMatch(/^version: 0\.3\.0$/m);
+  });
 });
 
 describe("arch-visualize demo text matches the demo model", () => {
   const meta = readFileSync(skillFile("arch-visualize", "skill.meta.yaml"), "utf8");
-  const model = readJson("evals/demo/devpath.architecture.json") as {
-    nodes: unknown[];
-    edges: unknown[];
+  type DemoNode = {
+    id: string;
+    detail?: {
+      symbolsFound: number;
+      symbols: { docBy?: string }[];
+      focus?: { entries: string[]; depth: number };
+    };
+  };
+  const model = readJson("evals/demo/calcom.architecture.json") as {
+    nodes: DemoNode[];
+    edges: { id: string; via?: unknown[] }[];
     flows: unknown[];
     inferred: string[];
     risks: { source: string }[];
@@ -1977,33 +1998,53 @@ describe("arch-visualize demo text matches the demo model", () => {
     title: m[1]!,
     text: m[2]!,
   }));
+  const all = steps.map((x) => x.text).join(" ");
 
-  it("is embedded, with six steps and a project paragraph", () => {
+  it("is embedded, with seven steps and a project paragraph", () => {
     expect(meta).toMatch(/^ {2}embed: true$/m);
-    expect(steps.map((s) => s.title.replace(/ \(.*\)/, ""))).toEqual([
+    expect(steps.map((x) => x.title.replace(/ \(.*\)/, ""))).toEqual([
       "Discover",
       "Read",
       "Write the flows",
       "Check",
+      "Go inside",
       "Render",
       "Ask what if",
     ]);
-    expect(meta).toMatch(/caption: "DevPath is a Next\.js learning platform/);
+    expect(meta).toMatch(/caption: "Cal\.com is one of the best-known/);
   });
 
   it("states numbers that are true of the committed model", () => {
-    const all = steps.map((s) => s.text).join(" ");
     const nodes = model.nodes.length;
     const edges = model.edges.length;
-    const ruleRisks = model.risks.filter((r) => r.source === "rule").length;
-    const agentRisks = model.risks.filter((r) => r.source === "agent").length;
-    expect(all).toContain(`found 11 of the ${nodes} components and 2 of the ${edges} connections`);
-    expect(all).toContain(`${edges - 2} more connections`);
+    const rule = model.risks.filter((r) => r.source === "rule").length;
+    const agent = model.risks.filter((r) => r.source === "agent").length;
+    expect(all).toContain(`wrote ${nodes} components and ${edges} connections`);
     expect(all).toContain(`marked ${model.inferred.length} connections as inferred`);
     expect(steps[2]!.text).toMatch(new RegExp(`^${model.flows.length} request flows`));
-    expect(all).toContain(`added ${ruleRisks} possible risks by rule`);
-    expect(all).toContain(`added ${agentRisks} from its own reading`);
-    expect(model.inferred.every((i) => i.startsWith("edge:"))).toBe(true);
+    expect(all).toContain(`It kept ${rule} by rule`);
+    expect(all).toContain(`added ${agent} from its own reading`);
+    expect(meta).toContain(
+      `${nodes} components and ${edges} connections, each with a file and line`,
+    );
+  });
+
+  it("states the inside numbers that are true of the committed model", () => {
+    const withDetail = model.nodes.filter((n) => n.detail);
+    const kept = withDetail.map((n) => n.detail!.symbols.length);
+    const found = withDetail.reduce((sum, n) => sum + n.detail!.symbolsFound, 0);
+    expect(kept.reduce((a, b) => a + b, 0)).toBe(49);
+    expect(found).toBe(4574);
+    expect(kept).toEqual([18, 11, 13, 7]);
+    expect(all).toContain("found 4,574 functions and components");
+    expect(all).toContain("kept the 49 that");
+    expect(all).toContain("18, 11, 13 and 7 on the four code components");
+    expect(model.edges.filter((e) => e.via?.length)).toHaveLength(3);
+    expect(all).toContain("3 of the 5 connections now list the calls");
+    // "The agent wrote no descriptions": none of the symbols is marked as written by the agent
+    for (const n of withDetail)
+      expect(n.detail!.symbols.filter((x) => x.docBy === "agent")).toEqual([]);
+    expect(withDetail[0]!.detail!.focus!.entries).toHaveLength(2);
   });
 
   it("the what-if step says what simulate.mjs really reports for the model", () => {
@@ -2012,9 +2053,9 @@ describe("arch-visualize demo text matches the demo model", () => {
       [
         skillFile("arch-visualize", "scripts/simulate.mjs"),
         "--model",
-        skillFile("arch-visualize", "evals/demo/devpath.architecture.json"),
+        skillFile("arch-visualize", "evals/demo/calcom.architecture.json"),
         "--down",
-        "redis",
+        "db",
         "--json",
       ],
       { encoding: "utf8" },
@@ -2023,22 +2064,31 @@ describe("arch-visualize demo text matches the demo model", () => {
       nodes: Record<string, { status: string }>;
       flows: { status: string; step: number }[];
     };
-    expect(sim.nodes["bullmq"]!.status).toBe("failed");
-    expect(sim.nodes["properlearn"]!.status).toBe("failed");
-    expect(sim.flows).toHaveLength(4);
+    const failed = Object.values(sim.nodes).filter((n) => n.status === "failed");
+    expect(failed).toHaveLength(4);
+    expect(Object.keys(sim.nodes)).toHaveLength(5);
+    expect(sim.nodes["lib"]!.status).toBe("unaffected");
+    expect(sim.flows).toHaveLength(2);
     expect(sim.flows.every((f) => f.status !== "ok" && f.step === 1)).toBe(true);
-    expect(steps[5]!.text).toContain("all 4 flows break at step 1");
-    expect(steps[5]!.text).toContain("what-if from the model");
+    expect(steps[6]!.text).toContain("4 of the 5 components fail");
+    expect(steps[6]!.text).toContain("both flows break at step 1");
+    expect(steps[6]!.text).toContain("what-if from the model");
   });
 
   it("describes the demo page size honestly", () => {
     const out = path.join(tmp(), "d.html");
-    renderCli(skillFile("arch-visualize", "evals/demo/devpath.architecture.json"), out);
+    renderCli(skillFile("arch-visualize", "evals/demo/calcom.architecture.json"), out);
     const kb = readFileSync(out).length / 1024;
-    // measured in M8 at 190 KB; the text says "about 190 KB", so keep the two together
-    expect(kb).toBeGreaterThan(170);
-    expect(kb).toBeLessThan(210);
-    expect(steps[4]!.text).toContain("about 190 KB");
+    // measured at 309 KB, about 110 KB of it the inside data; the text says "about 310 KB" and "about 110 KB"
+    expect(kb).toBeGreaterThan(295);
+    expect(kb).toBeLessThan(325);
+    const dataKb =
+      readFileSync(skillFile("arch-visualize", "evals/demo/calcom.architecture.json")).length /
+      1024;
+    expect(dataKb).toBeGreaterThan(95);
+    expect(dataKb).toBeLessThan(125);
+    expect(steps[5]!.text).toContain("about 310 KB");
+    expect(steps[5]!.text).toContain("about 110 KB of it the inside data");
   });
 });
 

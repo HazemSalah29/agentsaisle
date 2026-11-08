@@ -1,0 +1,554 @@
+{
+  "version": 2,
+  "project": "Node.js",
+  "nodes": [
+    {
+      "id": "app",
+      "label": "Your JS program",
+      "role": "client",
+      "tier": "clients",
+      "tech": "generic-client",
+      "evidence": [
+        {
+          "file": "src/node.cc",
+          "line": 404,
+          "note": "StartExecution runs internal/main/run_main_module"
+        }
+      ]
+    },
+    {
+      "id": "launcher",
+      "label": "node (startup)",
+      "role": "edge",
+      "tier": "edge",
+      "tech": "generic-edge",
+      "evidence": [
+        {
+          "file": "src/node_main.cc",
+          "line": 96,
+          "note": "main() calls node::Start"
+        },
+        {
+          "file": "src/node.cc",
+          "line": 1477,
+          "note": "V8::Initialize"
+        }
+      ]
+    },
+    {
+      "id": "loader",
+      "label": "Module loader",
+      "role": "frontend",
+      "tier": "frontend",
+      "tech": "generic-frontend",
+      "evidence": [
+        {
+          "file": "lib/internal/modules/cjs/loader.js",
+          "line": 1341,
+          "note": "Module._load"
+        }
+      ]
+    },
+    {
+      "id": "js-api",
+      "label": "Core JS modules",
+      "role": "frontend",
+      "tier": "frontend",
+      "tech": "generic-frontend",
+      "evidence": [
+        {
+          "file": "lib/fs.js",
+          "line": 63,
+          "note": "internalBinding('fs')"
+        },
+        {
+          "file": "lib/net.js",
+          "line": 81,
+          "note": "internalBinding('tcp_wrap')"
+        }
+      ]
+    },
+    {
+      "id": "bindings",
+      "label": "C++ bindings",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "src/node_file.cc",
+          "line": 2911,
+          "note": "uv_fs_open"
+        },
+        {
+          "file": "src/tcp_wrap.cc",
+          "line": 197,
+          "note": "uv_tcp_init"
+        }
+      ]
+    },
+    {
+      "id": "v8",
+      "label": "V8 engine",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "src/node.cc",
+          "line": 1477,
+          "note": "V8::Initialize"
+        },
+        {
+          "file": "src/api/environment.cc",
+          "line": 353,
+          "note": "Isolate::Allocate"
+        }
+      ]
+    },
+    {
+      "id": "libuv",
+      "label": "libuv loop",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "src/api/embed_helpers.cc",
+          "line": 42,
+          "note": "uv_run"
+        },
+        {
+          "file": "deps/uv/src/unix/linux.c",
+          "line": 1451,
+          "note": "epoll_pwait"
+        }
+      ]
+    },
+    {
+      "id": "threadpool",
+      "label": "Thread pool",
+      "role": "worker",
+      "tier": "async",
+      "tech": "generic-worker",
+      "evidence": [
+        {
+          "file": "deps/uv/src/threadpool.c",
+          "line": 276,
+          "note": "uv__work_submit"
+        },
+        {
+          "file": "deps/uv/src/threadpool.c",
+          "line": 207,
+          "note": "UV_THREADPOOL_SIZE"
+        }
+      ]
+    },
+    {
+      "id": "llhttp",
+      "label": "llhttp parser",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "src/node_http_parser.cc",
+          "line": 913,
+          "note": "llhttp_execute"
+        }
+      ]
+    },
+    {
+      "id": "openssl",
+      "label": "OpenSSL",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "src/crypto/crypto_tls.cc",
+          "line": 901,
+          "note": "SSL_read"
+        },
+        {
+          "file": "src/crypto/crypto_context.cc",
+          "line": 1783,
+          "note": "SSL_CTX_new"
+        }
+      ]
+    },
+    {
+      "id": "cares",
+      "label": "c-ares DNS",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "src/cares_wrap.cc",
+          "line": 1053,
+          "note": "ares_init_options"
+        }
+      ]
+    },
+    {
+      "id": "os",
+      "label": "Operating system",
+      "role": "external",
+      "tier": "external",
+      "tech": "generic-external",
+      "evidence": [
+        {
+          "file": "deps/uv/src/unix/fs.c",
+          "line": 362,
+          "note": "uv__fs_open"
+        },
+        {
+          "file": "deps/uv/src/unix/linux.c",
+          "line": 1451,
+          "note": "epoll_pwait"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "launcher-loader",
+      "from": "launcher",
+      "to": "loader",
+      "protocol": "function call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "src/node.cc",
+          "line": 404
+        }
+      ]
+    },
+    {
+      "id": "loader-v8",
+      "from": "loader",
+      "to": "v8",
+      "protocol": "function call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/internal/modules/cjs/loader.js",
+          "line": 1900,
+          "note": "compileFunctionForCJSLoader"
+        }
+      ]
+    },
+    {
+      "id": "app-js-api",
+      "from": "app",
+      "to": "js-api",
+      "protocol": "JS call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/fs.js",
+          "line": 422,
+          "note": "readFile"
+        },
+        {
+          "file": "lib/net.js",
+          "line": 243,
+          "note": "createServer"
+        }
+      ]
+    },
+    {
+      "id": "js-api-bindings",
+      "from": "js-api",
+      "to": "bindings",
+      "protocol": "internalBinding",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "lib/fs.js",
+          "line": 472,
+          "note": "binding.open"
+        },
+        {
+          "file": "lib/net.js",
+          "line": 81
+        }
+      ]
+    },
+    {
+      "id": "bindings-libuv",
+      "from": "bindings",
+      "to": "libuv",
+      "protocol": "C call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "src/node_file.cc",
+          "line": 2911,
+          "note": "uv_fs_open"
+        },
+        {
+          "file": "src/tcp_wrap.cc",
+          "line": 546,
+          "note": "uv_listen"
+        }
+      ]
+    },
+    {
+      "id": "libuv-threadpool",
+      "from": "libuv",
+      "to": "threadpool",
+      "protocol": "work queue",
+      "sync": false,
+      "evidence": [
+        {
+          "file": "deps/uv/src/threadpool.c",
+          "line": 276,
+          "note": "uv__work_submit"
+        }
+      ]
+    },
+    {
+      "id": "threadpool-os",
+      "from": "threadpool",
+      "to": "os",
+      "protocol": "syscall",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "deps/uv/src/unix/fs.c",
+          "line": 1716,
+          "note": "uv__fs_work runs uv__fs_open"
+        }
+      ]
+    },
+    {
+      "id": "libuv-os",
+      "from": "libuv",
+      "to": "os",
+      "protocol": "epoll",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "deps/uv/src/unix/linux.c",
+          "line": 1451,
+          "note": "epoll_pwait"
+        }
+      ]
+    },
+    {
+      "id": "bindings-llhttp",
+      "from": "bindings",
+      "to": "llhttp",
+      "protocol": "C call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "src/node_http_parser.cc",
+          "line": 913,
+          "note": "llhttp_execute"
+        }
+      ]
+    },
+    {
+      "id": "bindings-openssl",
+      "from": "bindings",
+      "to": "openssl",
+      "protocol": "C call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "src/crypto/crypto_tls.cc",
+          "line": 901,
+          "note": "SSL_read"
+        }
+      ]
+    },
+    {
+      "id": "bindings-cares",
+      "from": "bindings",
+      "to": "cares",
+      "protocol": "C call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "src/cares_wrap.cc",
+          "line": 1053,
+          "note": "ares_init_options"
+        }
+      ]
+    },
+    {
+      "id": "launcher-v8",
+      "from": "launcher",
+      "to": "v8",
+      "protocol": "C++ call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "src/node.cc",
+          "line": 1477,
+          "note": "V8::Initialize"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "start-script",
+      "name": "Start: node app.js",
+      "steps": [
+        {
+          "edge": "launcher-v8",
+          "label": "Start V8"
+        },
+        {
+          "edge": "launcher-loader",
+          "label": "Run main module"
+        },
+        {
+          "edge": "loader-v8",
+          "label": "Compile app.js"
+        },
+        {
+          "edge": "launcher-loader",
+          "label": "Script finished",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "read-file",
+      "name": "Read a file: fs.readFile()",
+      "steps": [
+        {
+          "edge": "app-js-api",
+          "label": "fs.readFile()"
+        },
+        {
+          "edge": "js-api-bindings",
+          "label": "binding.open"
+        },
+        {
+          "edge": "bindings-libuv",
+          "label": "uv_fs_open"
+        },
+        {
+          "edge": "libuv-threadpool",
+          "label": "Queue work"
+        },
+        {
+          "edge": "threadpool-os",
+          "label": "open() / read()"
+        },
+        {
+          "edge": "threadpool-os",
+          "label": "Bytes",
+          "reverse": true
+        },
+        {
+          "edge": "libuv-threadpool",
+          "label": "Work done",
+          "reverse": true
+        },
+        {
+          "edge": "bindings-libuv",
+          "label": "Callback",
+          "reverse": true
+        },
+        {
+          "edge": "js-api-bindings",
+          "label": "To JS",
+          "reverse": true
+        },
+        {
+          "edge": "app-js-api",
+          "label": "callback(data)",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "http-request",
+      "name": "Serve an HTTP request",
+      "steps": [
+        {
+          "edge": "app-js-api",
+          "label": "http.createServer()"
+        },
+        {
+          "edge": "js-api-bindings",
+          "label": "tcp_wrap"
+        },
+        {
+          "edge": "bindings-libuv",
+          "label": "uv_listen"
+        },
+        {
+          "edge": "libuv-os",
+          "label": "Wait on epoll"
+        },
+        {
+          "edge": "libuv-os",
+          "label": "Socket readable",
+          "reverse": true
+        },
+        {
+          "edge": "bindings-llhttp",
+          "label": "llhttp_execute"
+        },
+        {
+          "edge": "bindings-llhttp",
+          "label": "Parsed request",
+          "reverse": true
+        },
+        {
+          "edge": "js-api-bindings",
+          "label": "'request' event",
+          "reverse": true
+        },
+        {
+          "edge": "app-js-api",
+          "label": "Your handler",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "tls-read",
+      "name": "Read from an HTTPS socket",
+      "steps": [
+        {
+          "edge": "app-js-api",
+          "label": "tls / https"
+        },
+        {
+          "edge": "js-api-bindings",
+          "label": "tls_wrap"
+        },
+        {
+          "edge": "bindings-openssl",
+          "label": "SSL_read"
+        },
+        {
+          "edge": "bindings-openssl",
+          "label": "Plain bytes",
+          "reverse": true
+        },
+        {
+          "edge": "js-api-bindings",
+          "label": "'data' event",
+          "reverse": true
+        },
+        {
+          "edge": "app-js-api",
+          "label": "Your handler",
+          "reverse": true
+        }
+      ]
+    }
+  ],
+  "risks": [],
+  "inferred": []
+}

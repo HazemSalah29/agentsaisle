@@ -3,7 +3,7 @@
 (function (root) {
   "use strict";
 
-  var KIND_ORDER = { node: 0, edge: 1, risk: 2 };
+  var KIND_ORDER = { node: 0, edge: 1, risk: 2, symbol: 3 };
 
   function lower(v) {
     return String(v === undefined || v === null ? "" : v).toLowerCase();
@@ -25,6 +25,13 @@
       out.push(["role", item.role, 4]);
     } else if (kind === "edge") {
       out.push(["protocol", item.protocol, 6], ["id", item.id, 6]);
+    } else if (kind === "symbol") {
+      // functions, components and routes: found by name, by file, by what the comment says, by route or tRPC path
+      out.push(["name", item.name, 9], ["file", item.file, 5], ["doc", item.doc, 4]);
+      out.push(["kind", item.kind, 3]);
+      if (item.route) out.push(["route", item.route.path, 6]);
+      if (item.procedure && item.procedure.path) out.push(["procedure", item.procedure.path, 6]);
+      return out;
     } else {
       out.push(["id", item.id, 8], ["title", item.title, 5]);
     }
@@ -35,7 +42,7 @@
   }
 
   /**
-   * Search `model`. Returns [{ kind: "node" | "edge" | "risk", id, field, score, nodes }] best first,
+   * Search `model`. Returns [{ kind: "node" | "edge" | "risk" | "symbol", id, field, score, nodes }] best first,
    * at most `limit` (default 20). `nodes` lists the nodes to highlight for that result.
    */
   function search(model, query, limit) {
@@ -69,6 +76,7 @@
         }
       }
       results.push({ kind: kind, id: item.id, field: field, score: total, nodes: nodes });
+      if (kind === "symbol") results[results.length - 1].node = nodes[0];
     }
     (model.nodes || []).forEach(function (n) {
       consider("node", n, [n.id]);
@@ -78,6 +86,11 @@
     });
     (model.risks || []).forEach(function (r) {
       consider("risk", r, (r.nodes || []).slice());
+    });
+    (model.nodes || []).forEach(function (n) {
+      ((n.detail && n.detail.symbols) || []).forEach(function (x) {
+        consider("symbol", x, [n.id]);
+      });
     });
     results.sort(function (a, b) {
       return (

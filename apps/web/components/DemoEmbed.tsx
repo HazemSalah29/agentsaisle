@@ -21,8 +21,8 @@ export function DemoEmbed({ url, title, caption, steps }: Props) {
       </h2>
       {caption ? <p className="max-w-3xl text-sm text-muted">{caption}</p> : null}
       <p className="hud-label text-muted">
-        This is the live page the skill wrote. Click a component, pick a flow and press Play, or
-        open the Risks tab.
+        This is the live page the skill wrote. Click a component, pick a flow and press Play, open
+        the Risks tab, or double-click a component that shows a count to look inside it.
       </p>
       <div className="border border-line-strong bg-bg-raised">
         <iframe

@@ -18,7 +18,7 @@ function centerOnNodes(ids) {
     y1 = Math.max(y1, p.y + H);
   });
   var r = stage.getBoundingClientRect();
-  if (x0 === Infinity || !r.width) return;
+  if (x0 === Infinity || !r.width || dState.open) return;
   view.x = r.width / 2 - ((x0 + x1) / 2) * view.k;
   view.y = r.height / 2 - ((y0 + y1) / 2) * view.k;
   applyView();
@@ -42,6 +42,10 @@ function markMatches() {
 }
 function hitLabel(hit) {
   if (hit.kind === "node") return nodeById[hit.id].label;
+  if (hit.kind === "symbol") {
+    var x = detailIdx.byId[hit.id];
+    return x.name + " · " + shortFile(x.file) + " · " + nodeById[hit.node].label;
+  }
   if (hit.kind === "edge") {
     var e = edgeById[hit.id];
     return t("edge.title", {
@@ -100,8 +104,9 @@ function chooseHit(i) {
   var hit = hits[i];
   if (!hit) return;
   closeResults();
-  centerOnNodes(hit.nodes);
-  if (hit.kind === "node") select("node", hit.id, true);
+  if (hit.kind !== "symbol") centerOnNodes(hit.nodes);
+  if (hit.kind === "symbol") openDetail(hit.node, hit.id);
+  else if (hit.kind === "node") select("node", hit.id, true);
   else if (hit.kind === "edge") select("edge", hit.id, true);
   else if (hit.nodes[0]) select("node", hit.nodes[0], true);
   else {

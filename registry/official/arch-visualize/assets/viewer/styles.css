@@ -1203,3 +1203,537 @@ svg text {
 #body .diff-legend .k-removed {
   color: var(--diff-removed);
 }
+
+/* detail: the inside of a component */
+.crumbs {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline: 12px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font:
+    var(--fs-s) system-ui,
+    sans-serif;
+  color: var(--text);
+}
+.crumbs[hidden] {
+  display: none;
+}
+.crumbs button {
+  font:
+    600 var(--fs-s) system-ui,
+    sans-serif;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.crumbs button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+[dir="rtl"] .crumbs .arr {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+.crumbs .note-line,
+.crumbs .hint-line,
+.crumbs .sep {
+  color: var(--muted);
+}
+.crumbs .hint-line {
+  margin-inline-start: auto;
+}
+.node .inside-chip rect {
+  fill: var(--accent);
+}
+.node .inside-chip text {
+  fill: var(--accent-text);
+  font:
+    700 var(--fs-s) system-ui,
+    sans-serif;
+  text-anchor: middle;
+}
+.node.has-detail .box {
+  stroke-dasharray: none;
+}
+.detail-open #viewport > :not(#detail) {
+  pointer-events: none;
+}
+#detail .scene .band {
+  fill: var(--band);
+}
+.sym {
+  cursor: pointer;
+  --kc: var(--muted);
+}
+.sym:focus {
+  outline: none;
+}
+.sym.k-component {
+  --kc: var(--accent-system);
+}
+.sym.k-route,
+.sym.k-procedure {
+  --kc: var(--accent-flows);
+}
+.sym.k-hook {
+  --kc: var(--accent-ai);
+}
+.sym.k-method {
+  --kc: var(--accent-security);
+}
+.sym .box {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.sym .stripe {
+  fill: var(--kc);
+}
+.sym .ring {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 3;
+}
+.sym:focus-visible .ring {
+  stroke: var(--focus);
+}
+.sym:hover .box,
+.sym.selected .box {
+  stroke: var(--kc);
+  stroke-width: 2.5;
+}
+.sym .kind {
+  fill: var(--muted);
+  font:
+    700 var(--fs-s) system-ui,
+    sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sym .name {
+  fill: var(--text);
+  font:
+    600 var(--fs-m) ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+}
+.sym .sub,
+.sym .doc {
+  fill: var(--muted);
+  font:
+    var(--fs-s) ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+}
+.sym .doc {
+  font-family: system-ui, sans-serif;
+}
+.sym .tag {
+  font:
+    700 var(--fs-s) system-ui,
+    sans-serif;
+  fill: var(--muted);
+}
+.sym .tag-loop {
+  fill: var(--accent-flows);
+}
+.dedge .line {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1.6;
+}
+.dedge.k-render .line {
+  stroke-dasharray: 2 4;
+}
+.dedge.k-fetch .line,
+.dedge.k-rpc .line {
+  stroke: var(--accent-flows);
+}
+.dedge.inferred .line {
+  stroke-dasharray: 6 4;
+}
+.dedge.in-loop .line {
+  stroke: var(--accent-flows);
+  stroke-width: 2.2;
+}
+.dedge.in-loop .dlabel {
+  fill: var(--accent-flows);
+  font-weight: 700;
+}
+.has-sel .sym:not(.selected):not(.rel) {
+  opacity: 0.4;
+}
+.has-sel .dedge:not(.hot) {
+  opacity: 0.18;
+}
+.dedge.hot .line {
+  stroke: var(--accent);
+  stroke-width: 2.6;
+}
+[data-lod="far"] .sym .doc,
+[data-lod="mid"] .sym .doc,
+[data-lod="far"] .dlabel,
+[data-lod="far"] #detail .edge-label-bg {
+  display: none;
+}
+button.primary {
+  font:
+    600 var(--fs-m) system-ui,
+    sans-serif;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+button.primary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+details.inside {
+  margin-top: 12px;
+}
+details.inside h4 {
+  margin: 12px 0 4px;
+  font:
+    600 var(--fs-s) ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+  color: var(--muted);
+}
+@media print {
+  #detail,
+  #crumbs {
+    display: none;
+  }
+}
+#body .note,
+#body .meta,
+#body li {
+  overflow-wrap: anywhere;
+}
+#body code {
+  overflow-wrap: anywhere;
+}
+
+/* explorer: the searchable list inside an open component, and the trace of one function */
+.explorer {
+  position: absolute;
+  z-index: 2;
+  inset-block: var(--crumbs-h, 70px) 0;
+  inset-inline-start: 0;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 10px 0;
+  background: var(--surface);
+  border-inline-end: 1px solid var(--line);
+  font:
+    var(--fs-s) system-ui,
+    sans-serif;
+  color: var(--text);
+}
+.explorer[hidden],
+.explorer.collapsed {
+  display: none;
+}
+.explorer .ex-title {
+  font-size: var(--fs-m);
+}
+.explorer input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  font:
+    var(--fs-m) system-ui,
+    sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.explorer input:focus-visible,
+.explorer button:focus-visible,
+.trace button:focus-visible,
+.trace select:focus-visible,
+.trace tr:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.ex-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ex-tabs button {
+  font:
+    600 var(--fs-s) system-ui,
+    sans-serif;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.ex-tabs button[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.explorer .meta {
+  color: var(--muted);
+}
+.ex-list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  margin-inline: -10px;
+  padding-bottom: 12px;
+}
+.ex-list h4 {
+  margin: 10px 10px 4px;
+  font:
+    600 var(--fs-s) ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.ex-item {
+  --kc: var(--muted);
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: 6px 10px 6px 12px;
+  background: none;
+  border: 0;
+  border-inline-start: 4px solid var(--kc);
+  color: var(--text);
+  cursor: pointer;
+}
+.ex-item.k-component {
+  --kc: var(--accent-system);
+}
+.ex-item.k-route,
+.ex-item.k-procedure {
+  --kc: var(--accent-flows);
+}
+.ex-item.k-hook {
+  --kc: var(--accent-ai);
+}
+.ex-item.k-method {
+  --kc: var(--accent-security);
+}
+.ex-item:hover,
+.ex-item.selected {
+  background: var(--surface-2);
+}
+.ex-item.selected {
+  box-shadow: inset 0 0 0 1px var(--kc);
+}
+.ex-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.ex-item .row1 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ex-item .nm {
+  font:
+    600 var(--fs-s) ui-monospace,
+    Menlo,
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+.ex-item .kd {
+  color: var(--muted);
+  font-size: var(--fs-s);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ex-item .row2,
+.ex-item .row3 {
+  display: block;
+  color: var(--muted);
+  font-size: var(--fs-s);
+  overflow-wrap: anywhere;
+}
+.has-filter .sym:not(.match) {
+  opacity: 0.3;
+}
+.trace {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: var(--ex-w, 0px);
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  max-height: 42%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  font:
+    var(--fs-s) system-ui,
+    sans-serif;
+  color: var(--text);
+}
+.trace[hidden] {
+  display: none;
+}
+.tr-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 8px 12px 4px;
+}
+.tr-head button,
+.tr-head select {
+  font:
+    600 var(--fs-s) system-ui,
+    sans-serif;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.tr-head button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.tr-head .tr-x {
+  margin-inline-start: auto;
+}
+.tr-head .mono {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--muted);
+}
+.tr-caption {
+  margin: 0;
+  padding: 2px 12px 6px;
+  min-height: 1.5em;
+}
+.tr-scroll {
+  overflow: auto;
+  min-height: 0;
+  border-top: 1px solid var(--line);
+}
+#tr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+#tr-table th {
+  position: sticky;
+  top: 0;
+  text-align: start;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 600;
+  padding: 4px 8px;
+}
+#tr-table td {
+  padding: 4px 8px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+#tr-table td.no {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--muted);
+  white-space: nowrap;
+}
+#tr-table td.fr {
+  padding-inline-start: calc(8px + var(--depth, 0) * 12px);
+}
+#tr-table td.fr,
+#tr-table td.to,
+#tr-table td.wh {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+#tr-table tbody tr {
+  cursor: pointer;
+}
+#tr-table tbody tr:hover,
+#tr-table tr.current {
+  background: var(--surface-2);
+}
+#tr-table tr.current td {
+  box-shadow:
+    inset 0 2px 0 var(--accent-flows),
+    inset 0 -2px 0 var(--accent-flows);
+  font-weight: 600;
+}
+#tr-table tr.past td {
+  color: var(--muted);
+}
+#tr-table td.empty {
+  color: var(--muted);
+  padding: 10px 12px;
+}
+.sym.play-from .box,
+.sym.play-to .box {
+  stroke: var(--accent-flows);
+  stroke-width: 3;
+}
+.sym.play-to .stripe {
+  fill: var(--accent-flows);
+}
+.dedge.trail .line {
+  stroke: var(--accent-flows);
+  opacity: 0.55;
+}
+.dedge.playing .line {
+  stroke: var(--accent-flows);
+  stroke-width: 3.4;
+  stroke-dasharray: none;
+  opacity: 1;
+}
+html[data-detail] #minimap {
+  display: none;
+}
+html[data-detail] #zoom {
+  bottom: calc(var(--tr-h, 0px) + 12px);
+}
+.has-sel .dedge.playing,
+.has-sel .dedge.trail {
+  opacity: 1;
+}
+@media (max-width: 700px) {
+  .explorer,
+  .trace {
+    display: none;
+  }
+}
+@media print {
+  .explorer,
+  .trace {
+    display: none;
+  }
+}
+#tr-table td:nth-child(4) {
+  white-space: nowrap;
+}

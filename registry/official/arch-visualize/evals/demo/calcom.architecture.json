@@ -1,0 +1,3221 @@
+{
+  "version": 3,
+  "project": "Cal.com (connect a calendar)",
+  "nodes": [
+    {
+      "id": "web",
+      "label": "Web app",
+      "role": "frontend",
+      "tier": "frontend",
+      "tech": "nextjs",
+      "evidence": [
+        {
+          "file": "apps/web/components/apps/CalendarListContainer.tsx",
+          "line": 94,
+          "note": "CalendarListContainer, the calendar settings screen"
+        }
+      ],
+      "detail": {
+        "scope": "apps/web",
+        "files": 915,
+        "symbolsFound": 1540,
+        "symbolsKept": 18,
+        "truncated": true,
+        "focus": {
+          "entries": [
+            "apps/web/components/apps/CalendarListContainer.tsx",
+            "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx"
+          ],
+          "depth": 5,
+          "reached": 49
+        },
+        "symbols": [
+          {
+            "id": "apps/web/app/cache/path/settings/my-account/index.ts#revalidateSettingsCalendars",
+            "name": "revalidateSettingsCalendars",
+            "kind": "function",
+            "file": "apps/web/app/cache/path/settings/my-account/index.ts",
+            "line": 9,
+            "endLine": 11,
+            "exported": true,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "revalidatePath",
+                "module": "next/cache",
+                "line": 10,
+                "in": null,
+                "outside": false
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+            "name": "CalendarList",
+            "kind": "component",
+            "file": "apps/web/components/apps/CalendarListContainer.tsx",
+            "line": 37,
+            "endLine": 71,
+            "exported": false,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 38,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "to": "apps/web/lib/QueryCell.tsx#QueryCell",
+                "name": "QueryCell",
+                "line": 42,
+                "in": null
+              },
+              {
+                "name": "List",
+                "module": "@calcom/ui/components/list",
+                "line": 45,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper",
+                "name": "AppListCardWebWrapper",
+                "line": 47,
+                "in": "loop"
+              },
+              {
+                "name": "InstallAppButton",
+                "module": "@calcom/app-store/InstallAppButton",
+                "line": 55,
+                "in": "loop"
+              },
+              {
+                "name": "Button",
+                "module": "@calcom/ui/components/button",
+                "line": 58,
+                "in": "loop"
+              }
+            ],
+            "external": [
+              {
+                "name": "trpc.viewer.apps.integrations.useQuery",
+                "module": "packages/trpc/react/index.ts",
+                "line": 39,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "data.items.map",
+                "line": 46,
+                "in": null
+              },
+              {
+                "name": "t",
+                "line": 59,
+                "in": "loop"
+              },
+              {
+                "name": "props.onChanged",
+                "line": 62,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [
+              {
+                "path": "viewer.apps.integrations",
+                "kind": "query",
+                "line": 39,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/apps/_router.tsx#integrations",
+                "inferred": true
+              }
+            ],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer"
+            ],
+            "loops": 1,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/components/apps/CalendarListContainer.tsx#AddCalendarButton",
+            "name": "AddCalendarButton",
+            "kind": "component",
+            "file": "apps/web/components/apps/CalendarListContainer.tsx",
+            "line": 73,
+            "endLine": 80,
+            "exported": false,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 74,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "Button",
+                "module": "@calcom/ui/components/button",
+                "line": 76,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "t",
+                "line": 77,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainerSkeletonLoader"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainerSkeletonLoader",
+            "name": "CalendarListContainerSkeletonLoader",
+            "kind": "component",
+            "file": "apps/web/components/apps/CalendarListContainer.tsx",
+            "line": 82,
+            "endLine": 92,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 83,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "to": "packages/features/settings/appDir/SettingsHeader.tsx#Header",
+                "name": "SettingsHeader",
+                "line": 85,
+                "in": null
+              },
+              {
+                "to": "apps/web/components/apps/CalendarListContainer.tsx#AddCalendarButton",
+                "name": "AddCalendarButton",
+                "line": 88,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonLoader",
+                "name": "SkeletonLoader",
+                "line": 89,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "t",
+                "line": 86,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+            "name": "CalendarListContainer",
+            "kind": "component",
+            "file": "apps/web/components/apps/CalendarListContainer.tsx",
+            "line": 94,
+            "endLine": 191,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 100,
+                "in": null
+              },
+              {
+                "to": "apps/web/lib/hooks/useRouterQuery.ts#useRouterQuery",
+                "name": "useRouterQuery",
+                "line": 101,
+                "in": null
+              },
+              {
+                "to": "apps/web/app/cache/path/settings/my-account/index.ts#revalidateSettingsCalendars",
+                "name": "revalidateSettingsCalendars",
+                "line": 120,
+                "in": null
+              },
+              {
+                "to": "apps/web/app/cache/path/settings/my-account/index.ts#revalidateSettingsCalendars",
+                "name": "revalidateSettingsCalendars",
+                "line": 126,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "to": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+                "name": "DestinationCalendarSettingsWebWrapper",
+                "line": 136,
+                "in": "branch"
+              },
+              {
+                "name": "Suspense",
+                "module": "react",
+                "line": 137,
+                "in": "branch"
+              },
+              {
+                "to": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonLoader",
+                "name": "SkeletonLoader",
+                "line": 137,
+                "in": "branch"
+              },
+              {
+                "to": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsWebWrapper",
+                "name": "SelectedCalendarsSettingsWebWrapper",
+                "line": 138,
+                "in": "branch"
+              },
+              {
+                "name": "ShellSubHeading",
+                "module": "@calcom/ui/components/layout",
+                "line": 154,
+                "in": "branch"
+              },
+              {
+                "to": "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx#SubHeadingTitleWithConnections",
+                "name": "SubHeadingTitleWithConnections",
+                "line": 156,
+                "in": "branch"
+              },
+              {
+                "to": "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+                "name": "CalendarList",
+                "line": 159,
+                "in": "branch"
+              },
+              {
+                "name": "EmptyScreen",
+                "module": "@calcom/ui/components/empty-screen",
+                "line": 164,
+                "in": "branch"
+              },
+              {
+                "name": "Button",
+                "module": "@calcom/ui/components/button",
+                "line": 171,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/settings/appDir/SettingsHeader.tsx#Header",
+                "name": "SettingsHeader",
+                "line": 184,
+                "in": null
+              },
+              {
+                "to": "apps/web/components/apps/CalendarListContainer.tsx#AddCalendarButton",
+                "name": "AddCalendarButton",
+                "line": 187,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "useEffect",
+                "module": "react",
+                "line": 103,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "showToast",
+                "module": "@calcom/ui/components/toast",
+                "line": 105,
+                "in": "branch",
+                "outside": true
+              },
+              {
+                "name": "t",
+                "line": 105,
+                "in": "branch"
+              },
+              {
+                "name": "setError",
+                "line": 106,
+                "in": "branch"
+              },
+              {
+                "name": "trpc.useUtils",
+                "module": "packages/trpc/react/index.ts",
+                "line": 110,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "Promise.allSettled",
+                "line": 112,
+                "in": null
+              },
+              {
+                "name": "utils.viewer.apps.integrations.invalidate",
+                "line": 113,
+                "in": null
+              },
+              {
+                "name": "utils.viewer.calendars.connectedCalendars.invalidate",
+                "line": 119,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [
+              {
+                "path": "viewer.calendars.setDestinationCalendar",
+                "kind": "mutation",
+                "line": 123,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationCalendar",
+                "inferred": true
+              }
+            ],
+            "calledBy": [],
+            "loops": 0,
+            "branches": 2
+          },
+          {
+            "id": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+            "name": "DestinationCalendarSettingsWebWrapper",
+            "kind": "component",
+            "file": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx",
+            "line": 11,
+            "endLine": 75,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 16,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "AtomsWrapper",
+                "module": "../../../../packages/platform/atoms/src/components/atoms-wrapper",
+                "line": 61,
+                "in": null
+              },
+              {
+                "name": "DestinationCalendarSettings",
+                "module": "../../../../packages/platform/atoms/destination-calendar/DestinationCalendar",
+                "line": 62,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "trpc.viewer.calendars.connectedCalendars.useQuery",
+                "module": "packages/trpc/react/index.ts",
+                "line": 17,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "trpc.useUtils",
+                "module": "packages/trpc/react/index.ts",
+                "line": 20,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "trpc.viewer.calendars.setDestinationCalendar.useMutation",
+                "module": "packages/trpc/react/index.ts",
+                "line": 21,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "utils.viewer.calendars.connectedCalendars.invalidate",
+                "line": 23,
+                "in": null
+              },
+              {
+                "name": "trpc.viewer.calendars.setDestinationReminder.useMutation",
+                "module": "packages/trpc/react/index.ts",
+                "line": 27,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "showToast",
+                "module": "@calcom/ui/components/toast",
+                "line": 29,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "t",
+                "line": 29,
+                "in": null
+              },
+              {
+                "name": "reminderMutation.mutate",
+                "line": 44,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [
+              {
+                "path": "viewer.calendars.connectedCalendars",
+                "kind": "query",
+                "line": 17,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#connectedCalendars",
+                "inferred": true
+              },
+              {
+                "path": "viewer.calendars.setDestinationCalendar",
+                "kind": "mutation",
+                "line": 21,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationCalendar",
+                "inferred": true
+              },
+              {
+                "path": "viewer.calendars.setDestinationReminder",
+                "kind": "mutation",
+                "line": 27,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationReminder",
+                "inferred": true
+              }
+            ],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer"
+            ],
+            "loops": 0,
+            "branches": 3
+          },
+          {
+            "id": "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx#pluralize",
+            "name": "pluralize",
+            "kind": "function",
+            "file": "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx",
+            "line": 5,
+            "endLine": 10,
+            "exported": false,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx#SubHeadingTitleWithConnections"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx#SubHeadingTitleWithConnections",
+            "name": "SubHeadingTitleWithConnections",
+            "kind": "component",
+            "file": "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx",
+            "line": 12,
+            "endLine": 29,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "apps/web/components/integrations/SubHeadingTitleWithConnections.tsx#pluralize",
+                "name": "pluralize",
+                "line": 20,
+                "in": "branch"
+              }
+            ],
+            "renders": [
+              {
+                "name": "Badge",
+                "module": "@calcom/ui/components/badge",
+                "line": 18,
+                "in": "branch"
+              }
+            ],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "apps/web/lib/QueryCell.tsx#QueryCell",
+            "name": "QueryCell",
+            "kind": "component",
+            "file": "apps/web/lib/QueryCell.tsx",
+            "line": 49,
+            "endLine": 81,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 53,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "Loader",
+                "module": "@calcom/ui/components/skeleton",
+                "line": 54,
+                "in": "branch"
+              },
+              {
+                "name": "Alert",
+                "module": "@calcom/ui/components/alert",
+                "line": 74,
+                "in": "branch"
+              }
+            ],
+            "external": [
+              {
+                "name": "opts.loading",
+                "line": 57,
+                "in": "branch"
+              },
+              {
+                "name": "Array.isArray",
+                "line": 64,
+                "in": "branch"
+              },
+              {
+                "name": "opts.empty",
+                "line": 65,
+                "in": "branch"
+              },
+              {
+                "name": "opts.success",
+                "line": 68,
+                "in": "branch"
+              },
+              {
+                "name": "opts.error",
+                "line": 73,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["apps/web/components/apps/CalendarListContainer.tsx#CalendarList"],
+            "loops": 0,
+            "branches": 4
+          },
+          {
+            "id": "apps/web/lib/hooks/useRouterQuery.ts#useRouterQuery",
+            "name": "useRouterQuery",
+            "kind": "hook",
+            "file": "apps/web/lib/hooks/useRouterQuery.ts",
+            "line": 6,
+            "endLine": 28,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useCompatSearchParams.ts#useCompatSearchParams",
+                "name": "useCompatSearchParams",
+                "line": 7,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "usePathname",
+                "module": "next/navigation",
+                "line": 8,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "useRouter",
+                "module": "next/navigation",
+                "line": 9,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "useCallback",
+                "module": "react",
+                "line": 11,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "URLSearchParams",
+                "line": 13,
+                "in": null
+              },
+              {
+                "name": "_searchParams.delete",
+                "line": 16,
+                "in": "branch"
+              },
+              {
+                "name": "_searchParams.set",
+                "line": 18,
+                "in": "branch"
+              },
+              {
+                "name": "router.replace",
+                "line": 20,
+                "in": null
+              },
+              {
+                "name": "_searchParams.toString",
+                "line": 20,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper",
+            "name": "AppListCardWebWrapper",
+            "kind": "component",
+            "file": "apps/web/modules/apps/components/AppListCardWebWrapper.tsx",
+            "line": 14,
+            "endLine": 48,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useTypedQuery.ts#useTypedQuery",
+                "name": "useTypedQuery",
+                "line": 18,
+                "in": null
+              },
+              {
+                "to": "packages/lib/hooks/useCompatSearchParams.ts#useCompatSearchParams",
+                "name": "useCompatSearchParams",
+                "line": 22,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "AppListCard",
+                "module": "@calcom/ui/components/app-list-card",
+                "line": 47,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "useRouter",
+                "module": "next/navigation",
+                "line": 19,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "useState",
+                "module": "react",
+                "line": 20,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "useRef",
+                "module": "react",
+                "line": 21,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "usePathname",
+                "module": "next/navigation",
+                "line": 23,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "useEffect",
+                "module": "react",
+                "line": 25,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "setTimeout",
+                "line": 27,
+                "in": "branch"
+              },
+              {
+                "name": "URLSearchParams",
+                "line": 28,
+                "in": "branch"
+              },
+              {
+                "name": "searchParams.toString",
+                "line": 28,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#ConnectedCalendarList"
+            ],
+            "loops": 0,
+            "branches": 2
+          },
+          {
+            "id": "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown",
+            "name": "CredentialActionsDropdown",
+            "kind": "component",
+            "file": "apps/web/modules/apps/components/CredentialActionsDropdown.tsx",
+            "line": 26,
+            "endLine": 95,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 32,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "Dropdown",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 59,
+                "in": null
+              },
+              {
+                "name": "DropdownMenuTrigger",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 60,
+                "in": null
+              },
+              {
+                "name": "Button",
+                "module": "@calcom/ui/components/button",
+                "line": 61,
+                "in": null
+              },
+              {
+                "name": "DropdownMenuContent",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 63,
+                "in": null
+              },
+              {
+                "name": "DropdownMenuItem",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 65,
+                "in": "branch"
+              },
+              {
+                "name": "DropdownItem",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 66,
+                "in": "branch"
+              },
+              {
+                "name": "Dialog",
+                "module": "@calcom/ui/components/dialog",
+                "line": 81,
+                "in": null
+              },
+              {
+                "name": "ConfirmationDialogContent",
+                "module": "@calcom/ui/components/dialog",
+                "line": 82,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "useState",
+                "module": "react",
+                "line": 33,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "trpc.useUtils",
+                "module": "packages/trpc/react/index.ts",
+                "line": 36,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "trpc.viewer.credentials.delete.useMutation",
+                "module": "packages/trpc/react/index.ts",
+                "line": 37,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "showToast",
+                "module": "@calcom/ui/components/toast",
+                "line": 39,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "t",
+                "line": 39,
+                "in": null
+              },
+              {
+                "name": "onSuccess",
+                "line": 40,
+                "in": null
+              },
+              {
+                "name": "utils.viewer.calendars.connectedCalendars.invalidate",
+                "line": 46,
+                "in": null
+              },
+              {
+                "name": "utils.viewer.apps.integrations.invalidate",
+                "line": 47,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [
+              {
+                "path": "viewer.credentials.delete",
+                "kind": "mutation",
+                "line": 37,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/credentials/_router.tsx#delete",
+                "inferred": true
+              }
+            ],
+            "calledBy": [
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#ConnectedCalendarList"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonLoader",
+            "name": "SkeletonLoader",
+            "kind": "component",
+            "file": "apps/web/modules/apps/components/SkeletonLoader.tsx",
+            "line": 4,
+            "endLine": 15,
+            "exported": true,
+            "async": false,
+            "calls": [],
+            "renders": [
+              {
+                "name": "ShellSubHeading",
+                "module": "@calcom/ui/components/layout",
+                "line": 7,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonItem",
+                "name": "SkeletonItem",
+                "line": 9,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonItem",
+                "name": "SkeletonItem",
+                "line": 10,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonItem",
+                "name": "SkeletonItem",
+                "line": 11,
+                "in": null
+              }
+            ],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainerSkeletonLoader"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonItem",
+            "name": "SkeletonItem",
+            "kind": "component",
+            "file": "apps/web/modules/apps/components/SkeletonLoader.tsx",
+            "line": 17,
+            "endLine": 40,
+            "exported": false,
+            "async": false,
+            "calls": [],
+            "renders": [
+              {
+                "name": "SkeletonText",
+                "module": "@calcom/ui/components/skeleton",
+                "line": 22,
+                "in": null
+              },
+              {
+                "name": "SkeletonText",
+                "module": "@calcom/ui/components/skeleton",
+                "line": 25,
+                "in": null
+              },
+              {
+                "name": "SkeletonText",
+                "module": "@calcom/ui/components/skeleton",
+                "line": 28,
+                "in": null
+              },
+              {
+                "name": "SkeletonText",
+                "module": "@calcom/ui/components/skeleton",
+                "line": 35,
+                "in": null
+              }
+            ],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["apps/web/modules/apps/components/SkeletonLoader.tsx#SkeletonLoader"],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx#AdditionalCalendarSelector",
+            "name": "AdditionalCalendarSelector",
+            "kind": "component",
+            "file": "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx",
+            "line": 19,
+            "endLine": 71,
+            "exported": false,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 20,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "Dropdown",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 37,
+                "in": null
+              },
+              {
+                "name": "DropdownMenuTrigger",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 38,
+                "in": null
+              },
+              {
+                "name": "Button",
+                "module": "@calcom/ui/components/button",
+                "line": 39,
+                "in": null
+              },
+              {
+                "name": "DropdownMenuContent",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 43,
+                "in": null
+              },
+              {
+                "name": "DropdownMenuItem",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 45,
+                "in": "loop"
+              },
+              {
+                "name": "DropdownItem",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 47,
+                "in": "loop"
+              },
+              {
+                "name": "InstallAppButton",
+                "module": "@calcom/app-store/InstallAppButton",
+                "line": 51,
+                "in": "loop"
+              },
+              {
+                "name": "DropdownItem",
+                "module": "@calcom/ui/components/dropdown",
+                "line": 56,
+                "in": "loop"
+              }
+            ],
+            "external": [
+              {
+                "name": "trpc.viewer.apps.integrations.useSuspenseQuery",
+                "module": "packages/trpc/react/index.ts",
+                "line": 21,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "data.items.map",
+                "line": 23,
+                "in": null
+              },
+              {
+                "name": "options.push",
+                "line": 29,
+                "in": null
+              },
+              {
+                "name": "t",
+                "line": 40,
+                "in": null
+              },
+              {
+                "name": "options.map",
+                "line": 44,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [
+              {
+                "path": "viewer.apps.integrations",
+                "kind": "query",
+                "line": 21,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/apps/_router.tsx#integrations",
+                "inferred": true
+              }
+            ],
+            "calledBy": [
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsHeading"
+            ],
+            "loops": 2,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#ConnectedCalendarList",
+            "name": "ConnectedCalendarList",
+            "kind": "component",
+            "file": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx",
+            "line": 34,
+            "endLine": 139,
+            "exported": false,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 53,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "List",
+                "module": "@calcom/ui/components/list",
+                "line": 56,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper",
+                "name": "AppListCardWebWrapper",
+                "line": 60,
+                "in": "loop"
+              },
+              {
+                "to": "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown",
+                "name": "CredentialActionsDropdown",
+                "line": 70,
+                "in": "loop"
+              },
+              {
+                "name": "CalendarSwitch",
+                "module": "apps/web/modules/calendars/components/CalendarSwitch.tsx",
+                "line": 84,
+                "in": "loop"
+              },
+              {
+                "name": "Alert",
+                "module": "@calcom/ui/components/alert",
+                "line": 111,
+                "in": "loop"
+              },
+              {
+                "name": "Link",
+                "module": "next/link",
+                "line": 117,
+                "in": "loop"
+              },
+              {
+                "to": "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown",
+                "name": "CredentialActionsDropdown",
+                "line": 126,
+                "in": "loop"
+              }
+            ],
+            "external": [
+              {
+                "name": "items.map",
+                "line": 57,
+                "in": null
+              },
+              {
+                "name": "t",
+                "line": 81,
+                "in": "loop"
+              },
+              {
+                "name": "connectedCalendar.calendars.map",
+                "line": 83,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsWebWrapper"
+            ],
+            "loops": 1,
+            "branches": 0
+          },
+          {
+            "id": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsWebWrapper",
+            "name": "SelectedCalendarsSettingsWebWrapper",
+            "kind": "component",
+            "file": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx",
+            "line": 141,
+            "endLine": 202,
+            "exported": true,
+            "async": false,
+            "calls": [],
+            "renders": [
+              {
+                "name": "SelectedCalendarsSettings",
+                "module": "@calcom/atoms/selected-calendars/SelectedCalendarsSettings",
+                "line": 179,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsHeading",
+                "name": "SelectedCalendarsSettingsHeading",
+                "line": 180,
+                "in": null
+              },
+              {
+                "to": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#ConnectedCalendarList",
+                "name": "ConnectedCalendarList",
+                "line": 189,
+                "in": "branch"
+              }
+            ],
+            "external": [
+              {
+                "name": "trpc.viewer.calendars.connectedCalendars.useQuery",
+                "module": "packages/trpc/react/index.ts",
+                "line": 162,
+                "in": null,
+                "outside": false
+              }
+            ],
+            "fetches": [],
+            "rpc": [
+              {
+                "path": "viewer.calendars.connectedCalendars",
+                "kind": "query",
+                "line": 162,
+                "in": null,
+                "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#connectedCalendars",
+                "inferred": true
+              }
+            ],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer"
+            ],
+            "loops": 0,
+            "branches": 3
+          },
+          {
+            "id": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsHeading",
+            "name": "SelectedCalendarsSettingsHeading",
+            "kind": "component",
+            "file": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx",
+            "line": 242,
+            "endLine": 290,
+            "exported": false,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 250,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "to": "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx#AdditionalCalendarSelector",
+                "name": "AdditionalCalendarSelector",
+                "line": 268,
+                "in": "branch"
+              },
+              {
+                "name": "Select",
+                "module": "@calcom/ui/components/form",
+                "line": 277,
+                "in": "branch"
+              }
+            ],
+            "external": [
+              {
+                "name": "optionsToSwitchScope.find",
+                "line": 255,
+                "in": null
+              },
+              {
+                "name": "t",
+                "line": 260,
+                "in": null
+              },
+              {
+                "name": "props.setScope",
+                "line": 280,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsWebWrapper"
+            ],
+            "loops": 1,
+            "branches": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "api",
+      "label": "tRPC API",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "packages/trpc/server/routers/viewer/calendars/_router.tsx",
+          "line": 8,
+          "note": "connectedCalendars procedure"
+        }
+      ],
+      "detail": {
+        "scope": "packages/trpc",
+        "files": 398,
+        "symbolsFound": 504,
+        "symbolsKept": 11,
+        "truncated": true,
+        "focus": {
+          "entries": [
+            "apps/web/components/apps/CalendarListContainer.tsx",
+            "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx"
+          ],
+          "depth": 5,
+          "reached": 49
+        },
+        "symbols": [
+          {
+            "id": "packages/trpc/server/routers/viewer/apps/_router.tsx#integrations",
+            "name": "integrations",
+            "kind": "procedure",
+            "file": "packages/trpc/server/routers/viewer/apps/_router.tsx",
+            "line": 51,
+            "endLine": 54,
+            "exported": true,
+            "async": true,
+            "procedure": {
+              "kind": "query",
+              "path": "viewer.apps.integrations"
+            },
+            "calls": [
+              {
+                "to": "packages/trpc/server/routers/viewer/apps/integrations.handler.ts#integrationsHandler",
+                "name": "integrationsHandler",
+                "line": 53,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+              "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx#AdditionalCalendarSelector"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/apps/integrations.handler.ts#integrationsHandler",
+            "name": "integrationsHandler",
+            "kind": "function",
+            "file": "packages/trpc/server/routers/viewer/apps/integrations.handler.ts",
+            "line": 14,
+            "endLine": 17,
+            "exported": true,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "getConnectedApps",
+                "module": "@calcom/app-store/_utils/getConnectedApps",
+                "line": 16,
+                "in": null,
+                "outside": true
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["packages/trpc/server/routers/viewer/apps/_router.tsx#integrations"],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/_router.tsx#connectedCalendars",
+            "name": "connectedCalendars",
+            "kind": "procedure",
+            "file": "packages/trpc/server/routers/viewer/calendars/_router.tsx",
+            "line": 8,
+            "endLine": 12,
+            "exported": true,
+            "async": true,
+            "procedure": {
+              "kind": "query",
+              "path": "viewer.calendars.connectedCalendars"
+            },
+            "calls": [
+              {
+                "to": "packages/trpc/server/routers/viewer/calendars/connectedCalendars.handler.ts#connectedCalendarsHandler",
+                "name": "connectedCalendarsHandler",
+                "line": 11,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsWebWrapper"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationCalendar",
+            "name": "setDestinationCalendar",
+            "kind": "procedure",
+            "file": "packages/trpc/server/routers/viewer/calendars/_router.tsx",
+            "line": 14,
+            "endLine": 20,
+            "exported": true,
+            "async": true,
+            "procedure": {
+              "kind": "mutation",
+              "path": "viewer.calendars.setDestinationCalendar"
+            },
+            "calls": [
+              {
+                "to": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler",
+                "name": "setDestinationCalendarHandler",
+                "line": 19,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+              "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationReminder",
+            "name": "setDestinationReminder",
+            "kind": "procedure",
+            "file": "packages/trpc/server/routers/viewer/calendars/_router.tsx",
+            "line": 22,
+            "endLine": 28,
+            "exported": true,
+            "async": true,
+            "procedure": {
+              "kind": "mutation",
+              "path": "viewer.calendars.setDestinationReminder"
+            },
+            "calls": [
+              {
+                "to": "packages/trpc/server/routers/viewer/calendars/setDestinationReminder.handler.ts#setDestinationReminderHandler",
+                "name": "setDestinationReminderHandler",
+                "line": 27,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/connectedCalendars.handler.ts#connectedCalendarsHandler",
+            "name": "connectedCalendarsHandler",
+            "kind": "function",
+            "file": "packages/trpc/server/routers/viewer/calendars/connectedCalendars.handler.ts",
+            "line": 25,
+            "endLine": 49,
+            "exported": true,
+            "async": true,
+            "calls": [
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+                "name": "getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+                "line": 32,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "connectedCalendars.map",
+                "line": 40,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/trpc/server/routers/viewer/calendars/_router.tsx#connectedCalendars"
+            ],
+            "loops": 1,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#getFirstConnectedCalendar",
+            "name": "getFirstConnectedCalendar",
+            "kind": "function",
+            "file": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+            "line": 30,
+            "endLine": 47,
+            "exported": true,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "connectedCalendars.flatMap",
+                "line": 37,
+                "in": null
+              },
+              {
+                "name": "calendars.filter",
+                "line": 38,
+                "in": null
+              },
+              {
+                "name": "matchingCalendars.find",
+                "line": 39,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler"
+            ],
+            "loops": 2,
+            "branches": 1
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler",
+            "name": "setDestinationCalendarHandler",
+            "kind": "function",
+            "file": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+            "line": 57,
+            "endLine": 127,
+            "exported": true,
+            "async": true,
+            "doc": "It identifies the destination calendar by externalId, integration and eventTypeId and doesn't consider the `credentialId` or destinationCalendar.id Also, Des...",
+            "calls": [
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#getCalendarCredentials",
+                "name": "getCalendarCredentials",
+                "line": 61,
+                "in": null
+              },
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#getConnectedCalendars",
+                "name": "getConnectedCalendars",
+                "line": 62,
+                "in": null
+              },
+              {
+                "to": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#getFirstConnectedCalendar",
+                "name": "getFirstConnectedCalendar",
+                "line": 69,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "getUsersCredentialsIncludeServiceAccountKey",
+                "module": "@calcom/app-store/delegationCredential",
+                "line": 60,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "connectedCalendars.map.flat",
+                "line": 67,
+                "in": null
+              },
+              {
+                "name": "connectedCalendars.map",
+                "line": 67,
+                "in": null
+              },
+              {
+                "name": "TRPCError",
+                "module": "@trpc/server",
+                "line": 80,
+                "in": "branch",
+                "outside": false
+              },
+              {
+                "name": "allCals.find",
+                "line": 84,
+                "in": null
+              },
+              {
+                "name": "prisma.eventType.findFirst",
+                "module": "@calcom/prisma",
+                "line": 93,
+                "in": "branch",
+                "outside": true
+              },
+              {
+                "name": "DestinationCalendarRepository.upsert",
+                "module": "packages/features/calendars/repositories/DestinationCalendarRepository.ts",
+                "line": 109,
+                "in": null,
+                "outside": false
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationCalendar"
+            ],
+            "loops": 2,
+            "branches": 2
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/calendars/setDestinationReminder.handler.ts#setDestinationReminderHandler",
+            "name": "setDestinationReminderHandler",
+            "kind": "function",
+            "file": "packages/trpc/server/routers/viewer/calendars/setDestinationReminder.handler.ts",
+            "line": 13,
+            "endLine": 28,
+            "exported": true,
+            "async": true,
+            "calls": [
+              {
+                "to": "packages/features/di/containers/DestinationCalendar.ts#getDestinationCalendarRepository",
+                "name": "getDestinationCalendarRepository",
+                "line": 17,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "destinationCalendarRepository.updateCustomReminder",
+                "line": 20,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationReminder"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/credentials/_router.tsx#delete",
+            "name": "delete",
+            "kind": "procedure",
+            "file": "packages/trpc/server/routers/viewer/credentials/_router.tsx",
+            "line": 10,
+            "endLine": 14,
+            "exported": true,
+            "async": true,
+            "procedure": {
+              "kind": "mutation",
+              "path": "viewer.credentials.delete"
+            },
+            "calls": [
+              {
+                "to": "packages/trpc/server/routers/viewer/credentials/deleteCredential.handler.ts#deleteCredentialHandler",
+                "name": "deleteCredentialHandler",
+                "line": 13,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/trpc/server/routers/viewer/credentials/deleteCredential.handler.ts#deleteCredentialHandler",
+            "name": "deleteCredentialHandler",
+            "kind": "function",
+            "file": "packages/trpc/server/routers/viewer/credentials/deleteCredential.handler.ts",
+            "line": 13,
+            "endLine": 18,
+            "exported": true,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["packages/trpc/server/routers/viewer/credentials/_router.tsx#delete"],
+            "loops": 0,
+            "branches": 0,
+            "hiddenCalls": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "features",
+      "label": "Calendar features",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "packages/features/calendars/lib/CalendarManager.ts",
+          "line": 112,
+          "note": "getConnectedCalendars"
+        }
+      ],
+      "detail": {
+        "scope": "packages/features",
+        "files": 767,
+        "symbolsFound": 1981,
+        "symbolsKept": 13,
+        "truncated": true,
+        "focus": {
+          "entries": [
+            "apps/web/components/apps/CalendarListContainer.tsx",
+            "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx"
+          ],
+          "depth": 5,
+          "reached": 49
+        },
+        "symbols": [
+          {
+            "id": "packages/features/calendars/lib/CalendarManager.ts#cleanIntegrationKeys",
+            "name": "cleanIntegrationKeys",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/CalendarManager.ts",
+            "line": 79,
+            "endLine": 83,
+            "exported": true,
+            "async": false,
+            "doc": "Important function to prevent leaking credentials to the client",
+            "calls": [],
+            "renders": [],
+            "external": [],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/CalendarManager.ts#getConnectedCalendars",
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/features/calendars/lib/CalendarManager.ts#getCalendarCredentials",
+            "name": "getCalendarCredentials",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/CalendarManager.ts",
+            "line": 85,
+            "endLine": 98,
+            "exported": true,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "getApps.filter.flatMap",
+                "module": "@calcom/app-store/utils",
+                "line": 86,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "getApps.filter",
+                "module": "@calcom/app-store/utils",
+                "line": 86,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "getApps",
+                "module": "@calcom/app-store/utils",
+                "line": 86,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "app.type.endsWith",
+                "line": 87,
+                "in": "loop"
+              },
+              {
+                "name": "app.credentials.flatMap",
+                "line": 89,
+                "in": "loop"
+              },
+              {
+                "name": "getCalendar",
+                "module": "@calcom/app-store/_utils/getCalendar",
+                "line": 90,
+                "in": "loop",
+                "outside": true
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+              "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler"
+            ],
+            "loops": 2,
+            "branches": 0
+          },
+          {
+            "id": "packages/features/calendars/lib/CalendarManager.ts#getConnectedCalendars",
+            "name": "getConnectedCalendars",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/CalendarManager.ts",
+            "line": 112,
+            "endLine": 238,
+            "exported": true,
+            "async": true,
+            "calls": [
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#cleanIntegrationKeys",
+                "name": "cleanIntegrationKeys",
+                "line": 133,
+                "in": "loop"
+              },
+              {
+                "to": "packages/lib/safeStringify.ts#safeStringify",
+                "name": "safeStringify",
+                "line": 202,
+                "in": "loop"
+              },
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#cleanIntegrationKeys",
+                "name": "cleanIntegrationKeys",
+                "line": 205,
+                "in": "loop"
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "Promise.all",
+                "line": 129,
+                "in": null
+              },
+              {
+                "name": "calendarCredentials.map",
+                "line": 130,
+                "in": null
+              },
+              {
+                "name": "calendar",
+                "line": 145,
+                "in": "loop"
+              },
+              {
+                "name": "calendarInstance.listCalendars",
+                "line": 156,
+                "in": "loop"
+              },
+              {
+                "name": "sortBy",
+                "module": "lodash",
+                "line": 157,
+                "in": "loop",
+                "outside": false
+              },
+              {
+                "name": "cals.map",
+                "line": 158,
+                "in": "loop"
+              },
+              {
+                "name": "selectedCalendars.some",
+                "line": 163,
+                "in": "loop"
+              },
+              {
+                "name": "calendars.find",
+                "line": 170,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+              "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler"
+            ],
+            "loops": 2,
+            "branches": 1
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#_ensureNoConflictingNonDelegatedConnectedCalendar",
+            "name": "_ensureNoConflictingNonDelegatedConnectedCalendar",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 28,
+            "endLine": 67,
+            "exported": false,
+            "async": false,
+            "doc": "Ensures that when DelegationCredential is enabled and there is already a calendar connected for the corresponding domain, we only allow the DelegationCredent...",
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "connectedCalendars.filter",
+                "line": 41,
+                "in": null
+              },
+              {
+                "name": "array.filter",
+                "line": 42,
+                "in": "loop"
+              },
+              {
+                "name": "allCalendarsWithSameAppSlug.filter",
+                "line": 49,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 1,
+            "branches": 0
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#handleNoConnectedCalendars",
+            "name": "handleNoConnectedCalendars",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 69,
+            "endLine": 81,
+            "exported": false,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "log.debug",
+                "line": 70,
+                "in": null
+              },
+              {
+                "name": "prisma.destinationCalendar.delete",
+                "module": "@calcom/prisma",
+                "line": 73,
+                "in": null,
+                "outside": true
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#handleNoDestinationCalendar",
+            "name": "handleNoDestinationCalendar",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 88,
+            "endLine": 151,
+            "exported": false,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "Error",
+                "line": 98,
+                "in": "branch"
+              },
+              {
+                "name": "log.debug",
+                "line": 104,
+                "in": null
+              },
+              {
+                "name": ".findIndex",
+                "line": 120,
+                "in": "branch"
+              },
+              {
+                "name": "DestinationCalendarRepository.createIfNotExistsForUser",
+                "module": "packages/features/calendars/repositories/DestinationCalendarRepository.ts",
+                "line": 132,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "isDelegationCredential",
+                "module": "packages/lib/delegationCredential.ts",
+                "line": 137,
+                "in": null,
+                "outside": false
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 0,
+            "branches": 3
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#handleDestinationCalendarNotInConnectedCalendars",
+            "name": "handleDestinationCalendarNotInConnectedCalendars",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 153,
+            "endLine": 195,
+            "exported": false,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "log.debug",
+                "line": 163,
+                "in": null
+              },
+              {
+                "name": ".findIndex",
+                "line": 169,
+                "in": "branch"
+              },
+              {
+                "name": "prisma.destinationCalendar.update",
+                "module": "@calcom/prisma",
+                "line": 181,
+                "in": null,
+                "outside": true
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#findMatchingCalendar",
+            "name": "findMatchingCalendar",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 197,
+            "endLine": 211,
+            "exported": false,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "connectedCalendars.flatMap",
+                "line": 205,
+                "in": null
+              },
+              {
+                "name": "allCals.find",
+                "line": 206,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 2,
+            "branches": 1
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#ensureSelectedCalendarIsInDb",
+            "name": "ensureSelectedCalendarIsInDb",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 213,
+            "endLine": 237,
+            "exported": false,
+            "async": true,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "console.log",
+                "line": 225,
+                "in": null
+              },
+              {
+                "name": "JSON.stringify",
+                "line": 226,
+                "in": null
+              },
+              {
+                "name": "SelectedCalendarRepository.createIfNotExists",
+                "module": "packages/features/selectedCalendar/repositories/SelectedCalendarRepository.ts",
+                "line": 231,
+                "in": null,
+                "outside": false
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getSelectedCalendars",
+            "name": "getSelectedCalendars",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 239,
+            "endLine": 253,
+            "exported": false,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "user.allSelectedCalendars.filter",
+                "line": 250,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+            ],
+            "loops": 1,
+            "branches": 1
+          },
+          {
+            "id": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+            "name": "getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+            "kind": "function",
+            "file": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts",
+            "line": 275,
+            "endLine": 438,
+            "exported": true,
+            "async": true,
+            "doc": "Fetches the calendars for the authenticated user or the event-type if provided It also takes care of updating the destination calendar in some edge cases",
+            "calls": [
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getSelectedCalendars",
+                "name": "getSelectedCalendars",
+                "line": 309,
+                "in": null
+              },
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#getCalendarCredentials",
+                "name": "getCalendarCredentials",
+                "line": 317,
+                "in": null
+              },
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#getConnectedCalendars",
+                "name": "getConnectedCalendars",
+                "line": 321,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#handleNoConnectedCalendars",
+                "name": "handleNoConnectedCalendars",
+                "line": 333,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#handleNoDestinationCalendar",
+                "name": "handleNoDestinationCalendar",
+                "line": 336,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#findMatchingCalendar",
+                "name": "findMatchingCalendar",
+                "line": 347,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#handleDestinationCalendarNotInConnectedCalendars",
+                "name": "handleDestinationCalendarNotInConnectedCalendars",
+                "line": 350,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#ensureSelectedCalendarIsInDb",
+                "name": "ensureSelectedCalendarIsInDb",
+                "line": 383,
+                "in": "branch"
+              },
+              {
+                "to": "packages/features/calendars/lib/CalendarManager.ts#cleanIntegrationKeys",
+                "name": "cleanIntegrationKeys",
+                "line": 399,
+                "in": "loop"
+              },
+              {
+                "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#_ensureNoConflictingNonDelegatedConnectedCalendar",
+                "name": "_ensureNoConflictingNonDelegatedConnectedCalendar",
+                "line": 420,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "prisma.credential.findMany",
+                "module": "@calcom/prisma",
+                "line": 291,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "enrichUserWithDelegationCredentialsIncludeServiceAccountKey",
+                "module": "@calcom/app-store/delegationCredential",
+                "line": 313,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "log.debug",
+                "line": 343,
+                "in": "branch"
+              },
+              {
+                "name": "connectedCalendars.every",
+                "line": 361,
+                "in": "branch"
+              },
+              {
+                "name": ".findIndex",
+                "line": 362,
+                "in": "loop"
+              },
+              {
+                "name": "calendarCredentials.map",
+                "line": 393,
+                "in": "branch"
+              },
+              {
+                "name": "connectedCalendars.push",
+                "line": 400,
+                "in": "loop"
+              },
+              {
+                "name": "selectedCalendars.filter.map",
+                "line": 404,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/trpc/server/routers/viewer/calendars/connectedCalendars.handler.ts#connectedCalendarsHandler"
+            ],
+            "loops": 2,
+            "branches": 3
+          },
+          {
+            "id": "packages/features/di/containers/DestinationCalendar.ts#getDestinationCalendarRepository",
+            "name": "getDestinationCalendarRepository",
+            "kind": "function",
+            "file": "packages/features/di/containers/DestinationCalendar.ts",
+            "line": 8,
+            "endLine": 11,
+            "exported": true,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "destinationCalendarRepositoryModuleLoader.loadModule",
+                "module": "packages/features/di/modules/DestinationCalendar.ts",
+                "line": 9,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "container.get",
+                "line": 10,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/trpc/server/routers/viewer/calendars/setDestinationReminder.handler.ts#setDestinationReminderHandler"
+            ],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/features/settings/appDir/SettingsHeader.tsx#Header",
+            "name": "Header",
+            "kind": "component",
+            "file": "packages/features/settings/appDir/SettingsHeader.tsx",
+            "line": 31,
+            "endLine": 85,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useLocale",
+                "name": "useLocale",
+                "line": 41,
+                "in": null
+              }
+            ],
+            "renders": [
+              {
+                "name": "Button",
+                "module": "@calcom/ui/components/button",
+                "line": 54,
+                "in": "branch"
+              },
+              {
+                "name": "Suspense",
+                "module": "react",
+                "line": 82,
+                "in": null
+              },
+              {
+                "name": "LoaderIcon",
+                "module": "@coss/ui/icons",
+                "line": 82,
+                "in": null
+              }
+            ],
+            "external": [
+              {
+                "name": "classNames",
+                "module": "@calcom/ui/classNames",
+                "line": 46,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "t",
+                "line": 61,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainerSkeletonLoader"
+            ],
+            "loops": 0,
+            "branches": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "lib",
+      "label": "Shared library",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "packages/lib/hooks/useLocale.ts",
+          "line": 34,
+          "note": "hooks and helpers"
+        }
+      ],
+      "detail": {
+        "scope": "packages/lib",
+        "files": 236,
+        "symbolsFound": 549,
+        "symbolsKept": 7,
+        "truncated": true,
+        "focus": {
+          "entries": [
+            "apps/web/components/apps/CalendarListContainer.tsx",
+            "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx"
+          ],
+          "depth": 5,
+          "reached": 49
+        },
+        "symbols": [
+          {
+            "id": "packages/lib/hooks/useCompatSearchParams.ts#useCompatSearchParams",
+            "name": "useCompatSearchParams",
+            "kind": "hook",
+            "file": "packages/lib/hooks/useCompatSearchParams.ts",
+            "line": 5,
+            "endLine": 24,
+            "exported": true,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "useSearchParams",
+                "module": "next/navigation",
+                "line": 6,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "URLSearchParams",
+                "line": 6,
+                "in": "branch"
+              },
+              {
+                "name": "useParams",
+                "module": "next/navigation",
+                "line": 7,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "_searchParams.toString",
+                "line": 9,
+                "in": null
+              },
+              {
+                "name": "Object.getOwnPropertyNames.forEach",
+                "line": 10,
+                "in": null
+              },
+              {
+                "name": "Object.getOwnPropertyNames",
+                "line": 10,
+                "in": null
+              },
+              {
+                "name": "searchParams.delete",
+                "line": 11,
+                "in": "loop"
+              },
+              {
+                "name": "param.split",
+                "line": 16,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/lib/hooks/useRouterQuery.ts#useRouterQuery",
+              "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper",
+              "packages/lib/hooks/useRouterQuery.ts#useRouterQuery"
+            ],
+            "loops": 1,
+            "branches": 0
+          },
+          {
+            "id": "packages/lib/hooks/useLocale.ts#useClientLocale",
+            "name": "useClientLocale",
+            "kind": "hook",
+            "file": "packages/lib/hooks/useLocale.ts",
+            "line": 17,
+            "endLine": 29,
+            "exported": false,
+            "async": false,
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "useAtomsContext",
+                "module": "@calcom/atoms/hooks/useAtomsContext",
+                "line": 18,
+                "in": null,
+                "outside": true
+              },
+              {
+                "name": "useTranslation",
+                "module": "react-i18next",
+                "line": 19,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "Object.keys",
+                "line": 20,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["packages/lib/hooks/useLocale.ts#useLocale"],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "packages/lib/hooks/useLocale.ts#useLocale",
+            "name": "useLocale",
+            "kind": "hook",
+            "file": "packages/lib/hooks/useLocale.ts",
+            "line": 34,
+            "endLine": 73,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useLocale.ts#useClientLocale",
+                "name": "useClientLocale",
+                "line": 37,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "useContext",
+                "module": "react",
+                "line": 35,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "serverI18nInstances.has",
+                "line": 44,
+                "in": "branch"
+              },
+              {
+                "name": "createInstance",
+                "module": "i18next",
+                "line": 45,
+                "in": "branch",
+                "outside": false
+              },
+              {
+                "name": "i18n.init",
+                "line": 46,
+                "in": "branch"
+              },
+              {
+                "name": "serverI18nInstances.set",
+                "line": 55,
+                "in": "branch"
+              },
+              {
+                "name": "i18n.getFixedT",
+                "line": 56,
+                "in": "branch"
+              },
+              {
+                "name": "serverI18nInstances.get",
+                "line": 62,
+                "in": "branch"
+              },
+              {
+                "name": "console.warn",
+                "line": 65,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/components/apps/CalendarListContainer.tsx#AddCalendarButton",
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+              "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainerSkeletonLoader",
+              "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+              "apps/web/lib/QueryCell.tsx#QueryCell",
+              "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown",
+              "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx#AdditionalCalendarSelector",
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#ConnectedCalendarList",
+              "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsHeading",
+              "packages/features/settings/appDir/SettingsHeader.tsx#Header"
+            ],
+            "loops": 0,
+            "branches": 1
+          },
+          {
+            "id": "packages/lib/hooks/useRouterQuery.ts#fromEntriesWithDuplicateKeys",
+            "name": "fromEntriesWithDuplicateKeys",
+            "kind": "function",
+            "file": "packages/lib/hooks/useRouterQuery.ts",
+            "line": 7,
+            "endLine": 29,
+            "exported": false,
+            "async": false,
+            "doc": "An alternative to Object.fromEntries that allows duplicate keys.",
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "result.hasOwnProperty",
+                "line": 17,
+                "in": "loop"
+              },
+              {
+                "name": "Array.isArray",
+                "line": 19,
+                "in": "loop"
+              },
+              {
+                "name": "currentValue.push",
+                "line": 22,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["packages/lib/hooks/useRouterQuery.ts#useRouterQuery"],
+            "loops": 1,
+            "branches": 1
+          },
+          {
+            "id": "packages/lib/hooks/useRouterQuery.ts#useRouterQuery",
+            "name": "useRouterQuery",
+            "kind": "hook",
+            "file": "packages/lib/hooks/useRouterQuery.ts",
+            "line": 37,
+            "endLine": 41,
+            "exported": true,
+            "async": false,
+            "doc": "This hook returns the query object from the router.",
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useCompatSearchParams.ts#useCompatSearchParams",
+                "name": "useCompatSearchParams",
+                "line": 38,
+                "in": null
+              },
+              {
+                "to": "packages/lib/hooks/useRouterQuery.ts#fromEntriesWithDuplicateKeys",
+                "name": "fromEntriesWithDuplicateKeys",
+                "line": 39,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "searchParams.entries",
+                "line": 39,
+                "in": null
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": ["packages/lib/hooks/useTypedQuery.ts#useTypedQuery"],
+            "loops": 0,
+            "branches": 0
+          },
+          {
+            "id": "packages/lib/hooks/useTypedQuery.ts#useTypedQuery",
+            "name": "useTypedQuery",
+            "kind": "hook",
+            "file": "packages/lib/hooks/useTypedQuery.ts",
+            "line": 35,
+            "endLine": 124,
+            "exported": true,
+            "async": false,
+            "calls": [
+              {
+                "to": "packages/lib/hooks/useRouterQuery.ts#useRouterQuery",
+                "name": "useRouterQuery",
+                "line": 43,
+                "in": null
+              }
+            ],
+            "renders": [],
+            "external": [
+              {
+                "name": "useRouter",
+                "module": "next/navigation",
+                "line": 42,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "usePathname",
+                "module": "next/navigation",
+                "line": 44,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "schema.safeParse",
+                "line": 45,
+                "in": null
+              },
+              {
+                "name": "useMemo",
+                "module": "react",
+                "line": 46,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "useEffect",
+                "module": "react",
+                "line": 50,
+                "in": null,
+                "outside": false
+              },
+              {
+                "name": "Object.entries.forEach",
+                "line": 52,
+                "in": "branch"
+              },
+              {
+                "name": "Object.entries",
+                "line": 52,
+                "in": "branch"
+              },
+              {
+                "name": "URLSearchParams",
+                "line": 54,
+                "in": "loop"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper"
+            ],
+            "loops": 2,
+            "branches": 5
+          },
+          {
+            "id": "packages/lib/safeStringify.ts#safeStringify",
+            "name": "safeStringify",
+            "kind": "function",
+            "file": "packages/lib/safeStringify.ts",
+            "line": 4,
+            "endLine": 16,
+            "exported": true,
+            "async": false,
+            "doc": "It stringifies the object which is necessary to ensure that in a logging system(like Axiom) we see the object in context in a single log event",
+            "calls": [],
+            "renders": [],
+            "external": [
+              {
+                "name": "JSON.stringify",
+                "line": 9,
+                "in": "branch"
+              }
+            ],
+            "fetches": [],
+            "rpc": [],
+            "calledBy": [
+              "packages/features/calendars/lib/CalendarManager.ts#getConnectedCalendars"
+            ],
+            "loops": 0,
+            "branches": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "db",
+      "label": "Postgres (Prisma)",
+      "role": "database",
+      "tier": "data",
+      "tech": "postgresql",
+      "evidence": [
+        {
+          "file": "packages/prisma/schema.prisma",
+          "line": 5,
+          "note": "provider = \"postgresql\""
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "web-api",
+      "from": "web",
+      "to": "api",
+      "protocol": "tRPC over HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "apps/web/components/apps/CalendarListContainer.tsx",
+          "line": 123,
+          "note": "trpc.viewer.calendars.setDestinationCalendar.useMutation"
+        }
+      ],
+      "via": [
+        {
+          "from": "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+          "to": "packages/trpc/server/routers/viewer/apps/_router.tsx#integrations",
+          "kind": "rpc",
+          "label": "viewer.apps.integrations"
+        },
+        {
+          "from": "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+          "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationCalendar",
+          "kind": "rpc",
+          "label": "viewer.calendars.setDestinationCalendar"
+        },
+        {
+          "from": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+          "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#connectedCalendars",
+          "kind": "rpc",
+          "label": "viewer.calendars.connectedCalendars"
+        },
+        {
+          "from": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+          "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationCalendar",
+          "kind": "rpc",
+          "label": "viewer.calendars.setDestinationCalendar"
+        },
+        {
+          "from": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+          "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#setDestinationReminder",
+          "kind": "rpc",
+          "label": "viewer.calendars.setDestinationReminder"
+        },
+        {
+          "from": "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown",
+          "to": "packages/trpc/server/routers/viewer/credentials/_router.tsx#delete",
+          "kind": "rpc",
+          "label": "viewer.credentials.delete"
+        },
+        {
+          "from": "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx#AdditionalCalendarSelector",
+          "to": "packages/trpc/server/routers/viewer/apps/_router.tsx#integrations",
+          "kind": "rpc",
+          "label": "viewer.apps.integrations"
+        },
+        {
+          "from": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsWebWrapper",
+          "to": "packages/trpc/server/routers/viewer/calendars/_router.tsx#connectedCalendars",
+          "kind": "rpc",
+          "label": "viewer.calendars.connectedCalendars"
+        }
+      ]
+    },
+    {
+      "id": "api-features",
+      "from": "api",
+      "to": "features",
+      "protocol": "function call",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+          "line": 62,
+          "note": "getConnectedCalendars"
+        },
+        {
+          "file": "packages/trpc/server/routers/viewer/calendars/connectedCalendars.handler.ts",
+          "line": 1,
+          "note": "imports getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+        }
+      ],
+      "via": [
+        {
+          "from": "packages/trpc/server/routers/viewer/calendars/connectedCalendars.handler.ts#connectedCalendarsHandler",
+          "to": "packages/features/calendars/lib/getConnectedDestinationCalendars.ts#getConnectedDestinationCalendarsAndEnsureDefaultsInDb",
+          "kind": "call",
+          "label": "getConnectedDestinationCalendarsAndEnsureDefaultsInDb"
+        },
+        {
+          "from": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler",
+          "to": "packages/features/calendars/lib/CalendarManager.ts#getCalendarCredentials",
+          "kind": "call",
+          "label": "getCalendarCredentials"
+        },
+        {
+          "from": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts#setDestinationCalendarHandler",
+          "to": "packages/features/calendars/lib/CalendarManager.ts#getConnectedCalendars",
+          "kind": "call",
+          "label": "getConnectedCalendars"
+        },
+        {
+          "from": "packages/trpc/server/routers/viewer/calendars/setDestinationReminder.handler.ts#setDestinationReminderHandler",
+          "to": "packages/features/di/containers/DestinationCalendar.ts#getDestinationCalendarRepository",
+          "kind": "call",
+          "label": "getDestinationCalendarRepository"
+        }
+      ]
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "protocol": "SQL (Prisma)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "packages/trpc/server/routers/viewer/calendars/setDestinationCalendar.handler.ts",
+          "line": 93,
+          "note": "prisma.eventType.findFirst"
+        }
+      ]
+    },
+    {
+      "id": "features-db",
+      "from": "features",
+      "to": "db",
+      "protocol": "SQL (Prisma)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "packages/features/calendars/repositories/DestinationCalendarRepository.ts",
+          "line": 13,
+          "note": "prismaClient ?? prisma"
+        }
+      ]
+    },
+    {
+      "id": "web-lib",
+      "from": "web",
+      "to": "lib",
+      "protocol": "import",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "apps/web/components/apps/CalendarListContainer.tsx",
+          "line": 100,
+          "note": "useLocale()"
+        }
+      ],
+      "via": [
+        {
+          "from": "apps/web/components/apps/CalendarListContainer.tsx#CalendarList",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/components/apps/CalendarListContainer.tsx#AddCalendarButton",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainerSkeletonLoader",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/components/apps/CalendarListContainer.tsx#CalendarListContainer",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/components/apps/DestinationCalendarSettingsWebWrapper.tsx#DestinationCalendarSettingsWebWrapper",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/lib/QueryCell.tsx#QueryCell",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/lib/hooks/useRouterQuery.ts#useRouterQuery",
+          "to": "packages/lib/hooks/useCompatSearchParams.ts#useCompatSearchParams",
+          "kind": "call",
+          "label": "useCompatSearchParams"
+        },
+        {
+          "from": "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper",
+          "to": "packages/lib/hooks/useTypedQuery.ts#useTypedQuery",
+          "kind": "call",
+          "label": "useTypedQuery"
+        },
+        {
+          "from": "apps/web/modules/apps/components/AppListCardWebWrapper.tsx#AppListCardWebWrapper",
+          "to": "packages/lib/hooks/useCompatSearchParams.ts#useCompatSearchParams",
+          "kind": "call",
+          "label": "useCompatSearchParams"
+        },
+        {
+          "from": "apps/web/modules/apps/components/CredentialActionsDropdown.tsx#CredentialActionsDropdown",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/modules/calendars/components/AdditionalCalendarSelector.tsx#AdditionalCalendarSelector",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#ConnectedCalendarList",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        },
+        {
+          "from": "apps/web/modules/calendars/components/SelectedCalendarsSettingsWebWrapper.tsx#SelectedCalendarsSettingsHeading",
+          "to": "packages/lib/hooks/useLocale.ts#useLocale",
+          "kind": "call",
+          "label": "useLocale"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "open-settings",
+      "name": "Open the calendar settings",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "calendars.connectedCalendars"
+        },
+        {
+          "edge": "api-features",
+          "label": "connected calendars"
+        },
+        {
+          "edge": "features-db",
+          "label": "destination calendars"
+        },
+        {
+          "edge": "features-db",
+          "reverse": true,
+          "label": "rows"
+        },
+        {
+          "edge": "api-features",
+          "reverse": true,
+          "label": "calendar list"
+        },
+        {
+          "edge": "web-api",
+          "reverse": true,
+          "label": "JSON"
+        }
+      ]
+    },
+    {
+      "id": "choose-destination",
+      "name": "Choose where new bookings go",
+      "steps": [
+        {
+          "edge": "web-api",
+          "label": "calendars.setDestinationCalendar"
+        },
+        {
+          "edge": "api-features",
+          "label": "getConnectedCalendars"
+        },
+        {
+          "edge": "api-db",
+          "label": "check event types"
+        },
+        {
+          "edge": "api-features",
+          "label": "save destination"
+        },
+        {
+          "edge": "features-db",
+          "label": "upsert"
+        },
+        {
+          "edge": "web-api",
+          "reverse": true,
+          "label": "done"
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "AV-R01",
+      "title": "Single database with no replica or backup configuration",
+      "severity": "warn",
+      "nodes": ["db"],
+      "evidence": [
+        {
+          "file": "packages/prisma/schema.prisma",
+          "line": 5,
+          "note": "provider = \"postgresql\""
+        }
+      ],
+      "why": "The model has one database and none of the files read mention a replica, a standby, a backup tool or a managed database service.",
+      "check": "Confirm where backups are taken and that a restore has been tried. Decide whether a replica or a managed service is worth its cost for this project.",
+      "fixes": [
+        {
+          "text": "Take scheduled backups and rehearse a restore.",
+          "tradeoff": "Costs storage and an hour of practice; it protects against loss, not against downtime."
+        },
+        {
+          "text": "Use a managed database that handles backups and failover.",
+          "tradeoff": "Less control and a monthly bill; fewer things to run yourself."
+        },
+        {
+          "text": "Add a read replica or standby.",
+          "tradeoff": "Costs money and adds replication lag; a replica is not a backup."
+        }
+      ],
+      "source": "rule"
+    },
+    {
+      "id": "AV-R07",
+      "title": "Secret-looking variable exposed to the browser",
+      "severity": "warn",
+      "nodes": ["web"],
+      "evidence": [
+        {
+          "file": ".env.example",
+          "line": 88,
+          "note": "env name NEXT_PUBLIC_POSTHOG_KEY (value not read)"
+        },
+        {
+          "file": ".env.example",
+          "line": 104,
+          "note": "env name NEXT_PUBLIC_ZENDESK_KEY (value not read)"
+        },
+        {
+          "file": ".env.example",
+          "line": 107,
+          "note": "env name NEXT_PUBLIC_HELPSCOUT_KEY (value not read)"
+        },
+        {
+          "file": ".env.example",
+          "line": 110,
+          "note": "env name NEXT_PUBLIC_FRESHCHAT_TOKEN (value not read)"
+        },
+        {
+          "file": ".env.example",
+          "line": 251,
+          "note": "env name NEXT_PUBLIC_CLOUDFLARE_SITEKEY (value not read)"
+        }
+      ],
+      "why": "A variable with a browser-exposed prefix (NEXT_PUBLIC_, VITE_ and similar) has a name containing SECRET, PRIVATE, KEY, TOKEN or PASSWORD. Such variables are copied into the public JavaScript bundle. Only the name was read, never the value.",
+      "check": "Check whether the value is really meant to be public. If it is a secret, move it to the server and rotate it, because it may already be in a deployed bundle.",
+      "fixes": [
+        {
+          "text": "Move the value to the server and call it from there.",
+          "tradeoff": "One more request hop for the browser."
+        },
+        {
+          "text": "If it was a secret, rotate it, because it may already be in a deployed bundle.",
+          "tradeoff": "Anything using the old value must be updated."
+        }
+      ],
+      "source": "rule"
+    }
+  ],
+  "inferred": []
+}

@@ -25,6 +25,7 @@ function setLens(name) {
 }
 LENS_ORDER.forEach(function (l) {
   $("lens-" + l).addEventListener("click", function () {
+    if (dState.open) closeDetail(true);
     setLens(l);
   });
   $("lens-" + l).addEventListener("keydown", function (ev) {
@@ -33,6 +34,7 @@ LENS_ORDER.forEach(function (l) {
     if (RTL) dir = -dir;
     ev.preventDefault();
     var next = LENS_ORDER[(LENS_ORDER.indexOf(l) + dir + LENS_ORDER.length) % LENS_ORDER.length];
+    if (dState.open) closeDetail(true);
     setLens(next);
     $("lens-" + next).focus();
   });

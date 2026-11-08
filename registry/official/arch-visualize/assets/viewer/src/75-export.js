@@ -60,6 +60,7 @@ function buildSvgText(print) {
     muted = "#55524b";
   if (print) root.setAttribute("data-theme", "light");
   canvas.setAttribute("data-lod", "near");
+  var undoSystemView = systemViewForExport();
   try {
     var ser = new XMLSerializer();
     var parts = [];
@@ -75,6 +76,7 @@ function buildSvgText(print) {
     bg = cs.getPropertyValue("--bg").trim() || bg;
     muted = cs.getPropertyValue("--muted").trim() || muted;
   } finally {
+    undoSystemView();
     if (prevTheme === null) root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", prevTheme);
     if (prevLod === null) canvas.removeAttribute("data-lod");

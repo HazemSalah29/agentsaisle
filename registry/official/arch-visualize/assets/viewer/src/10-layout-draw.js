@@ -209,6 +209,7 @@ model.nodes.forEach(function (n) {
       (isInferred("node", n.id) ? " inferred" : "") +
       (n.zone ? " z-" + n.zone : "") +
       (n.data && n.data.length ? " has-data" : "") +
+      (n.detail ? " has-detail" : "") +
       (n.ai ? " is-ai" : ""),
     "data-node": n.id,
     transform: "translate(" + p.x + " " + p.y + ")",
@@ -240,6 +241,19 @@ model.nodes.forEach(function (n) {
         s("text", { y: 4.5 }, n.ai.auditGrade || "–"),
       ),
     );
+  if (n.detail && n.detail.symbols.length)
+    g.append(
+      s(
+        "g",
+        {
+          class: "inside-chip",
+          transform: "translate(" + (RTL ? 8 : W - 44) + " " + (H - 22) + ")",
+        },
+        s("title", {}, t("detail.chip.title", { n: n.detail.symbols.length })),
+        s("rect", { width: 36, height: 16, rx: 8 }),
+        s("text", { x: 18, y: 12 }, String(n.detail.symbols.length)),
+      ),
+    );
   if (risks.length)
     g.append(
       s(
@@ -258,7 +272,15 @@ model.nodes.forEach(function (n) {
       ev.preventDefault();
       ev.stopPropagation();
       select("node", n.id, true);
+    } else if ((ev.key === "z" || ev.key === "Z") && n.detail) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openDetail(n.id);
     }
+  });
+  g.addEventListener("dblclick", function (ev) {
+    ev.stopPropagation();
+    if (n.detail) openDetail(n.id);
   });
   nodeEls[n.id] = g;
   gNodes.append(g);

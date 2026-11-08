@@ -5,7 +5,8 @@
 
   var LENSES = ["system", "flows", "security", "failure", "ai", "diff"];
   var ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
-  var ORDER = ["lens", "node", "edge", "down", "flow", "step", "x", "y", "k"];
+  var SYM = /^[^\s#<>"'`\\]{1,260}#[^\s<>"'`\\]{1,100}$/;
+  var ORDER = ["lens", "node", "edge", "in", "sym", "down", "flow", "step", "x", "y", "k"];
 
   function clamp(v, lo, hi) {
     return Math.min(hi, Math.max(lo, v));
@@ -43,7 +44,9 @@
             })
           )
             out.down = raw;
-        } else if (key === "node" || key === "edge" || key === "flow") {
+        } else if (key === "sym") {
+          if (SYM.test(raw)) out.sym = raw;
+        } else if (key === "node" || key === "edge" || key === "flow" || key === "in") {
           if (ID.test(raw)) out[key] = raw;
         } else if (/^-?\d+(\.\d+)?$/.test(raw)) {
           var v = parseFloat(raw);
@@ -63,7 +66,9 @@
       var v = state && state[key];
       if (v === undefined || v === null || v === "") return;
       if (key === "lens" && LENSES.indexOf(v) < 0) return;
-      if ((key === "node" || key === "edge" || key === "flow") && !ID.test(v)) return;
+      if ((key === "node" || key === "edge" || key === "flow" || key === "in") && !ID.test(v))
+        return;
+      if (key === "sym" && !SYM.test(v)) return;
       if (key === "down" && !/^[a-z0-9][a-z0-9-]{0,63}(,[a-z0-9][a-z0-9-]{0,63}){0,9}$/.test(v))
         return;
       if (typeof v === "number" && !isFinite(v)) return;

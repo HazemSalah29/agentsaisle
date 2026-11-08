@@ -138,6 +138,71 @@
         <div id="caption" class="caption" aria-live="polite" hidden></div>
         <section id="stage" tabindex="0" aria-label="{{stage.aria}}">
           <svg id="canvas" role="group" aria-label="{{canvas.aria}}"></svg>
+          <div id="crumbs" class="crumbs" hidden>
+            <button type="button" id="crumb-back">
+              <span class="arr" aria-hidden="true">←</span> {{detail.back}}
+            </button>
+            <span id="crumb-path" class="path"></span>
+            <span id="crumb-note" class="note-line"></span>
+            <button type="button" id="crumb-list" aria-pressed="true" hidden>
+              {{explorer.hide}}
+            </button>
+            <span class="hint-line">{{detail.hint}}</span>
+          </div>
+          <aside id="explorer" class="explorer" hidden aria-label="{{explorer.aria}}">
+            <strong id="ex-title" class="ex-title"></strong>
+            <input
+              id="ex-q"
+              type="search"
+              autocomplete="off"
+              placeholder="{{explorer.filter.placeholder}}"
+              aria-label="{{explorer.filter.label}}"
+            />
+            <div
+              id="ex-tabs"
+              class="ex-tabs"
+              role="tablist"
+              aria-label="{{explorer.tabs.aria}}"
+            ></div>
+            <div id="ex-status" class="meta" aria-live="polite"></div>
+            <div id="ex-list" class="ex-list"></div>
+          </aside>
+          <section id="calltrace" class="trace" hidden aria-label="{{steps.aria}}">
+            <div class="tr-head">
+              <strong id="tr-title"></strong>
+              <span id="tr-counter" class="mono" dir="ltr" aria-live="polite"></span>
+              <button type="button" id="tr-back">{{flow.back}}</button>
+              <button type="button" id="tr-play" aria-pressed="false">{{flow.play}}</button>
+              <button type="button" id="tr-step">{{flow.step}}</button>
+              <button type="button" id="tr-reset">{{flow.restart}}</button>
+              <label
+                >{{flow.speed}}
+                <select id="tr-speed">
+                  <option value="0.5">0.5x</option>
+                  <option value="1" selected>1x</option>
+                  <option value="2">2x</option>
+                </select>
+              </label>
+              <span id="tr-limit" class="meta"></span>
+              <button type="button" id="tr-close" class="tr-x">{{steps.close}}</button>
+            </div>
+            <p id="tr-caption" class="tr-caption" aria-live="polite"></p>
+            <div class="tr-scroll">
+              <table id="tr-table" aria-label="{{steps.table.aria}}">
+                <thead>
+                  <tr>
+                    <th scope="col">{{steps.col.no}}</th>
+                    <th scope="col">{{steps.col.from}}</th>
+                    <th scope="col">{{steps.col.to}}</th>
+                    <th scope="col">{{steps.col.how}}</th>
+                    <th scope="col">{{steps.col.where}}</th>
+                    <th scope="col">{{steps.col.note}}</th>
+                  </tr>
+                </thead>
+                <tbody id="tr-body"></tbody>
+              </table>
+            </div>
+          </section>
           <div id="minimap" tabindex="0" role="group" aria-label="{{map.aria}}">
             <svg id="mini" aria-hidden="true"></svg>
           </div>

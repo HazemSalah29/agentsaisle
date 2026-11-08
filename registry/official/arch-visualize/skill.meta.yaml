@@ -1,4 +1,4 @@
-version: 0.2.0
+version: 0.3.0
 category: [architecture, web]
 clients: [claude-code, codex, cursor]
 runs_scripts: true
@@ -12,29 +12,30 @@ permissions:
   network: false
   needs_api_keys: []
 demo:
-  url: /demos/arch-visualize/devpath.html
+  url: /demos/arch-visualize/calcom.html
   embed: true
-  caption: "DevPath is a Next.js learning platform with MongoDB, Redis and a job queue, three AI providers (Anthropic, OpenAI and Gemini), a code-execution sandbox and Docker-based practice labs. The page below is the model /arch-visualize wrote for it, drawn again with the current viewer (the project itself is not in this repository, so it was not discovered again). It is not a mock-up. It shows how requests would travel according to the code, not live traffic, and every risk is something to check, not a verdict."
+  caption: "Cal.com is one of the best-known open-source scheduling apps, a large TypeScript monorepo (Next.js, tRPC, Prisma, Postgres). The page below is the model /arch-visualize wrote for one journey in it, connecting a calendar and choosing where new bookings go (commit 2eb48ec of calcom/cal.com): 5 components and 5 connections, each with a file and line. Double-click a component with a count, or press Z, to zoom into its functions and follow their calls step by step. It is a slice, not the whole product: the platform API v2 is not in it. It is not a mock-up. It shows how requests would travel according to the code, not live traffic, and every risk is something to check, not a verdict."
   steps:
     - title: Discover (a script)
-      text: "In the first run (0.1.1), discover.mjs read 4 files (package.json, docker-compose.yml, the Dockerfile and the .env.example variable names) and found 11 of the 12 components and 2 of the 13 connections. It counted .env.local as skipped and never opened it."
+      text: "Run on the repository root, discover.mjs read 1,332 files, stopped at its 2,000-file limit and found 12 components and 0 links: the platform API v2 with its Redis, BullMQ, Stripe and Sentry, the docs site and six agent-skill folders. The Next.js web app was not among them, and its 6 edge candidates were all inside the v2 API."
     - title: Read (the agent)
-      text: "The agent searched for where each service is created and read only those lines. It added the WebSocket server the scripts cannot see, 11 more connections each with a file and line, and marked 2 connections as inferred (dashed) because no file shows them."
+      text: "So the agent chose one journey and followed it by hand: connecting a calendar in the web app. It read the settings screen, the tRPC router and its handlers, and the calendar code they call, and wrote 5 components and 5 connections, each with a file and line. It marked 0 connections as inferred. The v2 API was left out on purpose, and the page says so."
     - title: Write the flows (the agent)
-      text: "4 request flows, each following the real code: run code in a lesson, ask the AI mentor, sign in with GitHub, and start an infra lab in the background. Press Play on each to watch it."
+      text: "2 request flows, each following the real code: open the calendar settings, and choose where new bookings go. Press Play on each to watch it."
     - title: Check (scripts)
-      text: "model-check confirmed that every item has evidence or is marked inferred and that nothing looks like a secret. risk-check then added 3 possible risks by rule (a single database, no health check, data ports published to the host). The agent added 1 from its own reading: the Docker socket mounted into the app, with its file and line."
+      text: "model-check confirmed, against the real files, that every item has evidence and that nothing looks like a secret. risk-check returned 6 possible risks. 4 were about code outside this journey (the v2 API's Redis and video calls, a query inside a loop, a docker-compose service), so they were removed and counted. It kept 2 by rule: a single Postgres, and public analytics keys that look like secrets by name (only names were read; they are probably meant to be public). The agent added 0 from its own reading."
+    - title: Go inside (a script)
+      text: "code-map.mjs read 2,316 files in four folders (apps/web, packages/trpc, packages/features, packages/lib), found 4,574 functions and components, and kept the 49 that the two settings screens reach: 18, 11, 13 and 7 on the four code components. 3 of the 5 connections now list the calls that implement them. A link from a tRPC call to its handler is matched by path and marked as matched by name, not proved. The agent wrote no descriptions: the page shows only comments that were in the code."
     - title: Render (a script)
-      text: "render.mjs writes one offline HTML file of about 190 KB with the current viewer. It makes no network requests, which is why it can sit inside this page. The page has System, Flows, Failure and AI views; Security shows nothing here because no file in this model records zones, authentication or data labels."
+      text: "render.mjs writes one offline HTML file of about 310 KB with the current viewer, about 110 KB of it the inside data. It makes no network requests, which is why it can sit inside this page. The page has System, Flows and Failure views; Security and AI show nothing here because no file in this model records zones, authentication or AI components."
     - title: Ask what if (a script)
-      text: "simulate.mjs --down redis reads only the model: the lab queue and the web app fail because the model records no fallback for Redis, and all 4 flows break at step 1. This is a what-if from the model, not a prediction about production."
+      text: "simulate.mjs --down db reads only the model: 4 of the 5 components fail because the model records no fallback for Postgres (the shared library is the only one left), and both flows break at step 1. This is a what-if from the model, not a prediction about Cal.com."
   screenshots:
-    - 01-system-light.jpg
-    - 02-system-dark.jpg
-    - 03-flows.jpg
-    - 04-security.jpg
-    - 05-failure-what-if.jpg
-    - 06-ai.jpg
-    - 07-changes.jpg
+    - 01-system.jpg
+    - 02-inside-web.jpg
+    - 03-inside-api.jpg
+    - 04-trace-step.jpg
+    - 05-filter.jpg
+    - 06-flows.jpg
+    - 07-light.jpg
     - 08-arabic.jpg
-    - 09-phone-list.jpg

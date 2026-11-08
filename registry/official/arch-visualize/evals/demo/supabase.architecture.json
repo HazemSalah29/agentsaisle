@@ -1,0 +1,759 @@
+{
+  "version": 2,
+  "project": "Supabase (self-hosted)",
+  "nodes": [
+    {
+      "id": "client",
+      "label": "Your app",
+      "role": "client",
+      "tier": "clients",
+      "tech": "generic-client",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 91,
+          "note": "gateway publishes port 8000 to clients"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "label": "API gateway",
+      "role": "edge",
+      "tier": "edge",
+      "tech": "generic-edge",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 72,
+          "note": "image envoyproxy/envoy"
+        },
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 17,
+          "note": "ingress_http listener"
+        }
+      ]
+    },
+    {
+      "id": "studio",
+      "label": "Studio",
+      "role": "frontend",
+      "tier": "frontend",
+      "tech": "generic-frontend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 17,
+          "note": "image supabase/studio"
+        },
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 683,
+          "note": "route / goes to studio"
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "label": "Auth (GoTrue)",
+      "role": "auth",
+      "tier": "backend",
+      "tech": "generic-auth",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 111,
+          "note": "image supabase/gotrue"
+        }
+      ]
+    },
+    {
+      "id": "rest",
+      "label": "PostgREST API",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 251,
+          "note": "image postgrest/postgrest"
+        }
+      ]
+    },
+    {
+      "id": "realtime",
+      "label": "Realtime",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 287,
+          "note": "image supabase/realtime"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "label": "Storage API",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 333,
+          "note": "image supabase/storage-api"
+        }
+      ]
+    },
+    {
+      "id": "imgproxy",
+      "label": "Image resizer",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 396,
+          "note": "image darthsim/imgproxy"
+        }
+      ]
+    },
+    {
+      "id": "functions",
+      "label": "Edge Functions",
+      "role": "worker",
+      "tier": "async",
+      "tech": "generic-worker",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 436,
+          "note": "image supabase/edge-runtime"
+        }
+      ]
+    },
+    {
+      "id": "meta",
+      "label": "Postgres meta",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 419,
+          "note": "image supabase/postgres-meta"
+        }
+      ]
+    },
+    {
+      "id": "pooler",
+      "label": "Supavisor pool",
+      "role": "backend",
+      "tier": "backend",
+      "tech": "generic-backend",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 535,
+          "note": "image supabase/supavisor"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 538,
+          "note": "publishes Postgres ports"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "label": "Postgres",
+      "role": "database",
+      "tier": "data",
+      "tech": "postgresql",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 481,
+          "note": "image supabase/postgres"
+        }
+      ]
+    },
+    {
+      "id": "smtp",
+      "label": "Email (SMTP)",
+      "role": "external",
+      "tier": "external",
+      "tech": "smtp",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 166,
+          "note": "GOTRUE_SMTP_HOST"
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "role": "external",
+      "tier": "external",
+      "tech": "openai",
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 49,
+          "note": "OPENAI_API_KEY passed to studio"
+        }
+      ],
+      "ai": {
+        "kind": "llm-provider"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "client-gateway",
+      "from": "client",
+      "to": "gateway",
+      "protocol": "HTTPS / WebSocket",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 91
+        }
+      ]
+    },
+    {
+      "id": "client-pooler",
+      "from": "client",
+      "to": "pooler",
+      "protocol": "TCP (Postgres)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 538,
+          "note": "5432"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 539,
+          "note": "6543"
+        }
+      ]
+    },
+    {
+      "id": "gateway-studio",
+      "from": "gateway",
+      "to": "studio",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 683,
+          "note": "prefix /"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 88,
+          "note": "depends_on studio"
+        }
+      ]
+    },
+    {
+      "id": "gateway-auth",
+      "from": "gateway",
+      "to": "auth",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 390,
+          "note": "prefix /auth/v1/"
+        }
+      ]
+    },
+    {
+      "id": "gateway-rest",
+      "from": "gateway",
+      "to": "rest",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 443,
+          "note": "prefix /rest/v1/"
+        }
+      ]
+    },
+    {
+      "id": "gateway-realtime",
+      "from": "gateway",
+      "to": "realtime",
+      "protocol": "HTTP / WebSocket",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 560,
+          "note": "prefix /realtime/v1/"
+        }
+      ]
+    },
+    {
+      "id": "gateway-storage",
+      "from": "gateway",
+      "to": "storage",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 360,
+          "note": "prefix /storage/v1/"
+        }
+      ]
+    },
+    {
+      "id": "gateway-functions",
+      "from": "gateway",
+      "to": "functions",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 322,
+          "note": "prefix /functions/v1/"
+        }
+      ]
+    },
+    {
+      "id": "gateway-meta",
+      "from": "gateway",
+      "to": "meta",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/volumes/api/envoy/lds.template.yaml",
+          "line": 579,
+          "note": "prefix /pg/"
+        }
+      ]
+    },
+    {
+      "id": "studio-meta",
+      "from": "studio",
+      "to": "meta",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 33,
+          "note": "STUDIO_PG_META_URL"
+        }
+      ]
+    },
+    {
+      "id": "auth-db",
+      "from": "auth",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 127,
+          "note": "depends_on db"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 136,
+          "note": "GOTRUE_DB_DATABASE_URL"
+        }
+      ]
+    },
+    {
+      "id": "rest-db",
+      "from": "rest",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 254,
+          "note": "depends_on db"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 263,
+          "note": "PGRST_DB_URI"
+        }
+      ]
+    },
+    {
+      "id": "realtime-db",
+      "from": "realtime",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 290,
+          "note": "depends_on db"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 305,
+          "note": "DB_HOST"
+        }
+      ]
+    },
+    {
+      "id": "storage-db",
+      "from": "storage",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 336,
+          "note": "depends_on db"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 369,
+          "note": "DATABASE_URL"
+        }
+      ]
+    },
+    {
+      "id": "storage-rest",
+      "from": "storage",
+      "to": "rest",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 339,
+          "note": "depends_on rest"
+        }
+      ]
+    },
+    {
+      "id": "storage-imgproxy",
+      "from": "storage",
+      "to": "imgproxy",
+      "protocol": "HTTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 341,
+          "note": "depends_on imgproxy"
+        }
+      ]
+    },
+    {
+      "id": "meta-db",
+      "from": "meta",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 422,
+          "note": "depends_on db"
+        },
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 427,
+          "note": "PG_META_DB_HOST"
+        }
+      ]
+    },
+    {
+      "id": "pooler-db",
+      "from": "pooler",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 558,
+          "note": "depends_on db"
+        }
+      ]
+    },
+    {
+      "id": "functions-db",
+      "from": "functions",
+      "to": "db",
+      "protocol": "TCP (SQL)",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 465,
+          "note": "SUPABASE_DB_URL"
+        }
+      ]
+    },
+    {
+      "id": "auth-smtp",
+      "from": "auth",
+      "to": "smtp",
+      "protocol": "SMTP",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 166,
+          "note": "GOTRUE_SMTP_HOST"
+        }
+      ]
+    },
+    {
+      "id": "studio-openai",
+      "from": "studio",
+      "to": "openai",
+      "protocol": "HTTPS",
+      "sync": true,
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 49,
+          "note": "OPENAI_API_KEY"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "sign-in",
+      "name": "Sign in with a password",
+      "steps": [
+        {
+          "edge": "client-gateway",
+          "label": "POST /auth/v1/token"
+        },
+        {
+          "edge": "gateway-auth",
+          "label": "Route to Auth"
+        },
+        {
+          "edge": "auth-db",
+          "label": "Check the user"
+        },
+        {
+          "edge": "auth-db",
+          "label": "User row",
+          "reverse": true
+        },
+        {
+          "edge": "gateway-auth",
+          "label": "JWT",
+          "reverse": true
+        },
+        {
+          "edge": "client-gateway",
+          "label": "Session",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "query-table",
+      "name": "Read a table",
+      "steps": [
+        {
+          "edge": "client-gateway",
+          "label": "GET /rest/v1/todos"
+        },
+        {
+          "edge": "gateway-rest",
+          "label": "Route to PostgREST"
+        },
+        {
+          "edge": "rest-db",
+          "label": "SELECT as the user's role"
+        },
+        {
+          "edge": "rest-db",
+          "label": "Rows",
+          "reverse": true
+        },
+        {
+          "edge": "gateway-rest",
+          "label": "JSON",
+          "reverse": true
+        },
+        {
+          "edge": "client-gateway",
+          "label": "200 OK",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "upload-file",
+      "name": "Upload a file",
+      "steps": [
+        {
+          "edge": "client-gateway",
+          "label": "POST /storage/v1/object"
+        },
+        {
+          "edge": "gateway-storage",
+          "label": "Route to Storage"
+        },
+        {
+          "edge": "storage-db",
+          "label": "Check access rules"
+        },
+        {
+          "edge": "storage-db",
+          "label": "Allowed",
+          "reverse": true
+        },
+        {
+          "edge": "gateway-storage",
+          "label": "201",
+          "reverse": true
+        },
+        {
+          "edge": "client-gateway",
+          "label": "Done",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "realtime",
+      "name": "Listen for live changes",
+      "steps": [
+        {
+          "edge": "client-gateway",
+          "label": "WebSocket /realtime/v1"
+        },
+        {
+          "edge": "gateway-realtime",
+          "label": "Route to Realtime"
+        },
+        {
+          "edge": "realtime-db",
+          "label": "Listen for row changes"
+        },
+        {
+          "edge": "realtime-db",
+          "label": "Row change",
+          "reverse": true
+        },
+        {
+          "edge": "gateway-realtime",
+          "label": "Push message",
+          "reverse": true
+        },
+        {
+          "edge": "client-gateway",
+          "label": "Event",
+          "reverse": true
+        }
+      ]
+    },
+    {
+      "id": "open-studio",
+      "name": "Open the Studio dashboard",
+      "steps": [
+        {
+          "edge": "client-gateway",
+          "label": "GET /"
+        },
+        {
+          "edge": "gateway-studio",
+          "label": "Route to Studio"
+        },
+        {
+          "edge": "studio-meta",
+          "label": "List tables"
+        },
+        {
+          "edge": "meta-db",
+          "label": "Query catalog"
+        },
+        {
+          "edge": "meta-db",
+          "label": "Table list",
+          "reverse": true
+        },
+        {
+          "edge": "studio-meta",
+          "label": "Tables",
+          "reverse": true
+        },
+        {
+          "edge": "gateway-studio",
+          "label": "Page",
+          "reverse": true
+        },
+        {
+          "edge": "client-gateway",
+          "label": "Dashboard",
+          "reverse": true
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "id": "AV-R01",
+      "title": "Single database with no replica or backup configuration",
+      "severity": "warn",
+      "nodes": ["db"],
+      "evidence": [
+        {
+          "file": "docker/docker-compose.yml",
+          "line": 481,
+          "note": "image supabase/postgres"
+        }
+      ],
+      "why": "The model has one database and none of the files read mention a replica, a standby, a backup tool or a managed database service.",
+      "check": "Confirm where backups are taken and that a restore has been tried. Decide whether a replica or a managed service is worth its cost for this project.",
+      "fixes": [
+        {
+          "text": "Take scheduled backups and rehearse a restore.",
+          "tradeoff": "Costs storage and an hour of practice; it protects against loss, not against downtime."
+        },
+        {
+          "text": "Use a managed database that handles backups and failover.",
+          "tradeoff": "Less control and a monthly bill; fewer things to run yourself."
+        },
+        {
+          "text": "Add a read replica or standby.",
+          "tradeoff": "Costs money and adds replication lag; a replica is not a backup."
+        }
+      ],
+      "source": "rule"
+    }
+  ],
+  "inferred": ["edge:studio-openai"]
+}
