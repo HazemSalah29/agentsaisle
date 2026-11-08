@@ -53,3 +53,7 @@ Limits: it is regular expressions over text. Calls through a wrapper, dependency
 - Two nodes for one thing: keep the one with better evidence and rewrite edges that used the other.
 - A framework detected in a tooling folder (docs site, scripts): delete the node.
 - Nothing found: say so; ask the user which parts exist rather than inventing a diagram.
+
+## Large repositories and monorepos
+
+`discover.mjs` stops at 2,000 files. In a monorepo the budget can run out inside one big folder (`apps/`) before it reaches the files that define the services (a `docker/` folder, a compose file). When the summary says "stopped at 2,000 files" and the components look thin, run it again with `--root` pointing at the folder that holds the services, or at one app. Model one journey or one slice instead of the whole repository, and say so on the page.

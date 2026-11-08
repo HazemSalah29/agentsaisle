@@ -71,6 +71,7 @@ function select(kind, id, moveFocus) {
     edgeEls[k].classList.toggle("selected", !!(sel && sel.kind === "edge" && sel.id === k));
   });
   panel.classList.toggle("open", !!sel);
+  markDetailSel();
   renderPanel();
   scheduleLink();
   if (sel && moveFocus) {
@@ -189,6 +190,7 @@ function renderPanel() {
     );
     return;
   }
+  if (sel.kind === "symbol") return renderSymbolPanel();
   if (sel.kind === "node") {
     var n = nodeById[sel.id];
     body.append(
@@ -200,6 +202,10 @@ function renderPanel() {
       ),
     );
     if (isInferred("node", n.id)) body.append(h("p", { class: "note" }, t("node.inferred.note")));
+    if (n.detail && n.detail.symbols.length)
+      detailNodeBlock(n).forEach(function (x) {
+        body.append(x);
+      });
     lensNodeExtras(n).forEach(function (x) {
       body.append(x);
     });

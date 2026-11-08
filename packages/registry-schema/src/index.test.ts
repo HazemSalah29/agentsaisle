@@ -198,7 +198,7 @@ describe("house standard meta fields", () => {
     ).toBe(true);
   });
   it("accepts a demo path on this site and an optional caption", () => {
-    const demo = { url: "/demos/arch-visualize/devpath.html", caption: "What the preview shows." };
+    const demo = { url: "/demos/arch-visualize/calcom.html", caption: "What the preview shows." };
     expect(OfficialMeta.parse({ ...base, demo }).demo).toEqual({ ...demo, screenshots: [] });
     expect(OfficialMeta.safeParse({ ...base, demo: { caption: "" } }).success).toBe(false);
   });

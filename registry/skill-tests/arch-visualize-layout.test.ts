@@ -46,7 +46,7 @@ const readJson = (rel: string) =>
 const MODELS: Record<string, Model> = {
   fixture: readJson("evals/fixture-model.json"),
   "fixture v2": readJson("evals/fixture-model-v2.json"),
-  devpath: readJson("evals/demo/devpath.architecture.json"),
+  calcom: readJson("evals/demo/calcom.architecture.json"),
   hostile: readJson("evals/hostile-model.json"),
 };
 
@@ -268,7 +268,7 @@ describe("arch-visualize layout", () => {
   it("keeps a pinned layout for the fixture", () => {
     expect(layoutHash(layout(MODELS.fixture!))).toBe("ba08529d");
     expect(layoutHash(layout(MODELS["fixture v2"]!))).toBe("a9ba4d2f");
-    expect(layoutHash(layout(MODELS.devpath!))).toBe("a07378d6");
+    expect(layoutHash(layout(MODELS.calcom!))).toBe("0e4a93ae");
   });
 
   it("lays out 150 nodes and 300 edges quickly", () => {
@@ -285,9 +285,9 @@ describe("arch-visualize layout", () => {
     expect(best).toBeLessThan(1500);
   });
 
-  it("crosses less than the 0.1.1 layout did (9 on the fixture, 26 on DevPath)", () => {
+  it("crosses less than the 0.1.1 layout did (9 on the fixture), and none on the demo", () => {
     expect(layout(MODELS.fixture!).stats.crossings).toBeLessThanOrEqual(9);
-    expect(layout(MODELS.devpath!).stats.crossings).toBeLessThanOrEqual(26);
+    expect(layout(MODELS.calcom!).stats.crossings).toBe(0);
   });
 
   it("copes with odd input", () => {

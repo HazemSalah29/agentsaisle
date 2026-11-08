@@ -51,3 +51,7 @@ The header says "Generated from code; not live traffic." The page shows how requ
 Then `node scripts/render.mjs --model docs/architecture.json --diff docs/architecture.diff.json` opens on the Changes view (`--lens` picks another start). A diff file that is not exactly what `diff.mjs` writes is refused.
 
 Limits: a rename is only recognised by the rule above, so a component renamed and moved to another file shows as one removed and one added. A removed component is placed by the same layout as the rest, so the diagram of a page built with a diff can differ slightly from the plain page. See `ci.md` for running this in a pull request.
+
+## The inside view (0.3.0)
+
+When a node has `detail`, the page shows a count on it and opens it on double-click, `Z` or the panel's **Zoom in**: a smooth camera move into the component, then a list (filter by name, file or description; tabs for components, functions, routes, hooks), the inner diagram, and a trace table of the selected function's calls with Step, Play and Back. Keys: `[` `]` step, `P` plays, `L` hides the list, `Esc` goes back one level. `#in=<node>&sym=<file>#<name>` in the address opens a view directly. Under reduced motion the zoom happens in one step and nothing plays until asked. On a phone the diagram is hidden, so the panel's grouped list is the way in. See `inside.md`.

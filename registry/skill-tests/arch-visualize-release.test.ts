@@ -12,11 +12,11 @@ const node = (script: string, args: string[]) =>
 const tmp = () => mkdtempSync(path.join(os.tmpdir(), "av-rel-"));
 const CANARY = "CANARY-SECRET-DO-NOT-READ";
 
-describe("arch-visualize 0.2.0 release: SKILL.md", () => {
+describe("arch-visualize release: SKILL.md", () => {
   const md = read("SKILL.md");
   it("stays within 150 lines and names the version in its metadata", () => {
     expect(md.split("\n").length).toBeLessThanOrEqual(150);
-    expect(read("skill.meta.yaml")).toMatch(/^version: 0\.2\.0$/m);
+    expect(read("skill.meta.yaml")).toMatch(/^version: 0\.3\.0$/m);
   });
   it("only names scripts and references that exist", () => {
     for (const m of md.matchAll(/scripts\/([\w-]+\.mjs)/g))
@@ -32,6 +32,30 @@ describe("arch-visualize 0.2.0 release: SKILL.md", () => {
     expect(md).toMatch(/--diff docs\/architecture\.diff\.json/);
     expect(md).toMatch(/machine draft/);
   });
+  it("tells the agent how to go inside a component, within limits, and to drop risks outside the model", () => {
+    expect(md).toMatch(/code-map\.mjs --root \. --model docs\/architecture\.json --attach/);
+    expect(md).toMatch(/--focus/);
+    expect(md).toMatch(/model-check with `--root \.`/);
+    expect(md).toMatch(/"docBy": "agent"/);
+    expect(md).toMatch(/at most 30 per node/);
+    expect(md).toMatch(/references\/inside\.md/);
+    expect(md).toMatch(/`nodes: \[\]` is about code outside the model/);
+    // the steps stay numbered one to eleven, in order
+    const nums = [...md.matchAll(/^(\d+)\. /gm)].map((m) => Number(m[1]));
+    expect(nums).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  });
+  it("describes only what the inside view really does, in the installed reference", () => {
+    const ref = read("references/inside.md");
+    for (const flag of ["--attach", "--dir", "--focus", "--depth", "--max-symbols", "--out"])
+      expect(ref, flag).toContain(flag);
+    expect(ref).toMatch(/never runs or imports project code/);
+    expect(ref).toMatch(/at most 30 per component/i);
+    expect(ref).toMatch(/Python, Go, Elixir, Haskell/);
+    // every flag the reference names is one the script accepts
+    const src = read("scripts/code-map.mjs");
+    for (const m of ref.matchAll(/`(--[a-z-]+)/g))
+      expect(src, m[1]).toContain(`"${m[1]!.slice(2)}"`);
+  });
   it("makes no comparison with other tools in any installed file", () => {
     const installed = [
       "SKILL.md",
@@ -41,7 +65,7 @@ describe("arch-visualize 0.2.0 release: SKILL.md", () => {
   });
 });
 
-describe("arch-visualize 0.2.0 release: pages", () => {
+describe("arch-visualize release: pages", () => {
   const model = skill("evals/fixture-model-v2.json");
   const dir = tmp();
   const diffFile = path.join(dir, "d.json");

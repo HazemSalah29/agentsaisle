@@ -1,6 +1,6 @@
 # arch-visualize: how it works
 
-A plain-language guide to the `arch-visualize` skill (version 0.1.1): what it does, how each part works, what it will and will not do, and how to test it yourself.
+A plain-language guide to the `arch-visualize` skill (version 0.3.0): what it does, how each part works, what it will and will not do, and how to test it yourself.
 
 The skill's own files are in `registry/official/arch-visualize/`. This document explains them; it is not installed with the skill.
 
@@ -161,13 +161,23 @@ Severity is only `info` or `warn`. After the script runs, the agent may add risk
 
 ## 6. The page
 
-One HTML file, about 50 to 75 KB, with inline styles and script. It makes **no network requests at all** (no CDN, web fonts, remote icons or analytics) and works from `file://`.
+One HTML file with inline styles and script: the viewer itself is about 200 KB, and the model adds to that (the Cal.com demo, with its 49 inside symbols, is about 310 KB; the whole model is at most about 1 MB). It makes **no network requests at all** (no CDN, web fonts, remote icons or analytics) and works from `file://`.
 
 - **Diagram:** one column per tier, components stacked in the column, connections drawn as curves. A connection that skips a column is routed through the gaps, so a line never passes behind a box and looks connected to it. Dashed means inferred. An orange number on a box is the count of possible risks that name it.
 - **Side panel:** click a component or connection to see its role, technology, evidence (`file:line`), connections and risks. A **Risks** tab lists every risk; a **Flow** tab lists the steps of the selected flow.
 - **Request animation:** pick a flow, then Play, Pause, Step, Back, Restart and a speed menu (0.5x, 1x, 2x). A filled dot is a request, a hollow ring is a response travelling back, a caption names each step, events flash their component, and components outside the flow fade. The animation logic is a small pure block of code that is tested separately.
 - **Reduced motion:** if the system asks for it, nothing moves by itself. Step jumps instantly. Play is labelled "Play (uses motion)" and is your explicit choice.
 - **Also:** pan and zoom (mouse, buttons, keyboard), light and dark themes (system default plus a button), keyboard focus on components, and on a phone the diagram becomes a list of components.
+
+### The inside view (0.3.0)
+
+A component on the page can open into the functions, React components, hooks, Next.js routes and tRPC procedures inside it. `code-map.mjs` makes that data: it reads JavaScript and TypeScript files as text with a bundled parser (`assets/vendor/babel-parser.mjs`), never runs them, and never uses the network.
+
+- **Attach and focus.** `--attach web=apps/web,api=packages/trpc` puts the symbols found in each folder on that node and writes them into the model (version 3). `--focus <file>` keeps only what that file reaches, so the result follows one journey instead of the most-called helpers.
+- **On the page.** A component with an inside shows a count. Double-click it (or press Z) and the camera moves in while the system diagram fades out. Inside: a list on the left (filter by name, file or description; tabs for components, functions, routes, hooks), the diagram in the middle (columns follow call depth, files are boxes, loops and ifs are labelled), the panel on the right, and a table at the bottom that numbers the calls a function makes in the order the code makes them, with Step, Play and Back. Esc goes back one level.
+- **Honesty.** A link from a tRPC call or a `fetch` to its handler is matched by path and is marked "matched by name, not proved". A description is the comment above the symbol; a symbol with no comment has none. Other languages get no inside view.
+- **Checks.** `model-check --root .` opens each cited file and checks the line. The model may hold at most 200 symbols per component and 600 in all, and at most 30 descriptions written by the agent per component.
+- **Demo.** The skill page shows Cal.com: one journey (connecting a calendar), 5 components, 49 functions and components found by following two screens through the web app, the tRPC API, the calendar features and the shared library.
 
 ## 7. Safety guarantees and how they are tested
 
@@ -203,16 +213,16 @@ The installer copies only what the skill needs: `SKILL.md`, `references/`, `scri
 
 ## 9. The website demo
 
-The skill page (`/skills/arch-visualize`) has screenshots of the page the skill writes for a small fixture app and an **Open the live demo** link. That link opens the page generated for a real project, DevPath (about 12 components, 4 flows, 4 possible risks). The model for it is `evals/demo/devpath.architecture.json`; the web build renders it with the skill's own `render.mjs` into `/demos/arch-visualize/devpath.html`, so the demo always uses the current viewer.
+The skill page (`/skills/arch-visualize`) shows the page the skill wrote for a real project, embedded and also as screenshots: Cal.com, one journey (connecting a calendar), 5 components, 5 connections, 2 flows, 2 possible risks and 49 functions and components inside. The model is `evals/demo/calcom.architecture.json`; the web build renders it with the skill's own `render.mjs` into `/demos/arch-visualize/calcom.html`, so the demo always uses the current viewer.
 
 ## 10. What the dogfood run found
 
 The skill was followed by hand on a real project (read-only, no `.env` opened). It first showed about half the components. Fixes, each with a test: missing catalog entries (AI providers, GitHub, ~25 more services, env-name detection), unknown compose images now kept as generic components, in-process auth library folded into its app, AV-R03 and AV-R08 judged per app that owns the routes and aware of a project's own rate-limit helper, and connections routed around boxes. Still found only by reading: a separate WebSocket server and a compose file that mounts the Docker socket into the app (added as an agent-written risk in the demo).
 
-## 11. Limits (0.1.x)
+## 11. Limits (0.3.x)
 
 - Shows how requests would travel **according to the code**, not real traffic. Real traces are a planned later version.
-- Code rules read JavaScript and TypeScript only. Python and Go projects get components and the compose rules but not the code rules.
+- Code rules, and the inside view, read JavaScript and TypeScript only. Python and Go projects get components and the compose rules but not the code rules, and no inside view.
 - Not covered yet: Kubernetes, Terraform, cloud accounts.
 - Rules are heuristics: they can miss risks and can flag things that are fine (for example limits set at a gateway the files do not show).
 - Because env **values** are never read, a pooled database host that only appears in a value is invisible to AV-R09.

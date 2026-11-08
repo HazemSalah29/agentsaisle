@@ -17,6 +17,7 @@ registry/official/arch-visualize/evals/fixture-app
 registry/official/arch-visualize/evals/expected.json
 registry/official/arch-visualize/evals/hostile-model.json
 registry/official/video-core/assets/vendor
+registry/official/arch-visualize/assets/vendor
 docs/video/demos/rate-limit
 docs/video/demos/request-flow
 docs/video/demos/kids

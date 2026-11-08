@@ -14,6 +14,7 @@ function panBy(dx, dy) {
   applyView();
 }
 function fit() {
+  if (dState && dState.open) return fitDetail();
   var r = stage.getBoundingClientRect();
   if (!r.width || !r.height) return;
   var k = Math.min(r.width / contentW, r.height / contentH, 1.25);

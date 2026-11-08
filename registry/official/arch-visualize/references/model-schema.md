@@ -101,3 +101,17 @@ A field that states a fact (`timeoutMs`, `retries`, `tls`, `auth` other than `un
 - `risks[].fixes`: one to three `{ text, tradeoff }` options. `risk-check.mjs` writes them for every rule.
 - `views[].lens`: `system`, `flows`, `security`, `failure`, `ai` or `diff`.
 - `candidates`: only in a draft. Connections discovery suspects, each with `confidence`, `evidence` and optional `timeoutMs`, `retries`, `optional`, `confirms`. The final model must not have any: confirm each as an edge or delete it.
+
+## Added in 0.3.0 (version 3): the inside view
+
+Written by `code-map.mjs --attach`; see `inside.md`. A model with these fields is `"version": 3`.
+
+| Field                       | Rule                                                                                                                                                                                                                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nodes[].detail`            | `{ scope, files?, symbolsFound?, symbolsKept?, truncated?, focus?, symbols[] }`. At most 200 symbols per node and 600 in the model.                                                                                                                                                             |
+| `detail.symbols[]`          | `{ id, name, kind, file, line, endLine?, exported?, async?, doc?, docBy?, route?, procedure?, calls[], renders[], external[], fetches[], rpc[], calledBy[], loops, branches, hiddenCalls? }`. `id` is `<file>#<name>`. `kind`: `function`, `component`, `hook`, `method`, `route`, `procedure`. |
+| `calls[]`, `renders[]`, ... | `to` must be a symbol id somewhere in the model. `in` is `loop` or `branch` when the call sits in a loop or an `if`. `rpc[].inferred: true` marks a tRPC call matched to a procedure by path.                                                                                                   |
+| `doc`, `docBy`              | At most 160 characters. `docBy: "agent"` for a sentence you wrote; at most 30 per node. A description copied from a comment has no `docBy`.                                                                                                                                                     |
+| `edges[].via[]`             | `{ from, to, kind, label? }`: the calls that implement a connection. `from` is a symbol of the connection's start node, `to` a symbol of its end node. At most 20.                                                                                                                              |
+
+`model-check.mjs --root .` also checks that every `file` exists and every `line` is inside it.

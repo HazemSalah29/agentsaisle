@@ -21,6 +21,7 @@
     "registry:audit-pr": "tsx registry/audit-pr.ts"
   },
   "devDependencies": {
+    "@babel/parser": "8.1.0",
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
     "esbuild": "0.28.2",

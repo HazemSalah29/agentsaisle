@@ -104,9 +104,17 @@ describe("arch-visualize text (i18n)", () => {
     const plain = Object.entries(strings.ar).filter(
       ([k, v]) =>
         // technical names that stay in Latin letters on purpose
-        !["auth.jwt", "auth.oauth", "tls.yes"].includes(k) &&
+        ![
+          "auth.jwt",
+          "auth.oauth",
+          "tls.yes",
+          "sym.kind.procedure",
+          "sym.edge.fetch",
+          "sym.edge.rpc",
+          "sym.link.rpc",
+        ].includes(k) &&
         !arabic.test(v) &&
-        v.replace(/\{\w+\}|[\s.,:;()·←→«»-]/g, "") !== "",
+        v.replace(/\{\w+\}|[\s.,:;()·←→«»/-]/g, "") !== "",
     );
     expect(plain.map(([k]) => k)).toEqual([]);
   });

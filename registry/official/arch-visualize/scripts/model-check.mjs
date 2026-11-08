@@ -174,10 +174,112 @@ function checkV2(model, nodeIds, root, problems) {
   });
 }
 
+const MAX_DETAIL_SYMBOLS = 600; // across the whole model, so the page stays one small offline file
+const MAX_AGENT_NOTES = 30; // descriptions written by the agent instead of copied from a comment, per node
+
+/**
+ * Problems with the version 3 fields: `nodes[].detail` (functions, components, routes) and `edges[].via`.
+ * Every symbol points at a file and line; every reference points at a symbol that exists. With `verifyFiles`
+ * the file must exist under `root` and the line must be inside it.
+ */
+function checkDetail(model, root, verifyFiles, problems) {
+  const hasDetail = model.nodes.some((n) => n.detail) || model.edges.some((e) => e.via);
+  if (!hasDetail) return;
+  if (model.version !== 3) problems.push("detail and via need model version 3");
+  const ids = new Map(); // symbol id -> node id
+  let total = 0;
+  const lineCounts = new Map();
+  const linesOf = (rel) => {
+    if (!lineCounts.has(rel)) {
+      let n = null;
+      try {
+        const file = path.join(root, rel);
+        if (statSync(file).size < 2 * 1024 * 1024)
+          n = readFileSync(file, "utf8").split(/\r?\n/).length;
+      } catch {
+        n = null;
+      }
+      lineCounts.set(rel, n);
+    }
+    return lineCounts.get(rel);
+  };
+  model.nodes.forEach((n, i) => {
+    if (!n.detail) return;
+    let agent = 0;
+    n.detail.symbols.forEach((x, j) => {
+      const at = `nodes[${i}] ${n.id} detail.symbols[${j}]`;
+      total++;
+      if (ids.has(x.id)) problems.push(`${at}: duplicate symbol id "${x.id.slice(0, 80)}"`);
+      ids.set(x.id, n.id);
+      if (!relativeOk(x.file)) problems.push(`${at}: file must be relative to the project`);
+      if (!x.id.startsWith(`${x.file}#`))
+        problems.push(`${at}: id must start with its file and "#"`);
+      if (x.endLine !== undefined && x.endLine < x.line)
+        problems.push(`${at}: endLine is before line`);
+      if (x.docBy === "agent") agent++;
+      if (x.docBy && !x.doc) problems.push(`${at}: docBy needs a doc`);
+      if (verifyFiles && relativeOk(x.file)) {
+        const count = linesOf(x.file);
+        if (count === null)
+          problems.push(`${at}: file "${x.file.slice(0, 80)}" not found under the project root`);
+        else if (x.line > count || (x.endLine ?? 0) > count)
+          problems.push(
+            `${at}: line ${x.endLine ?? x.line} is past the end of ${x.file.slice(0, 80)}`,
+          );
+      }
+    });
+    if (agent > MAX_AGENT_NOTES)
+      problems.push(
+        `nodes[${i}] ${n.id}: ${agent} descriptions written by the agent (at most ${MAX_AGENT_NOTES})`,
+      );
+  });
+  if (total > MAX_DETAIL_SYMBOLS)
+    problems.push(
+      `detail: ${total} symbols in the model (at most ${MAX_DETAIL_SYMBOLS}); focus on fewer`,
+    );
+  model.nodes.forEach((n, i) => {
+    n.detail?.symbols.forEach((x, j) => {
+      const at = `nodes[${i}] ${n.id} detail.symbols[${j}]`;
+      const must = (to, what) => {
+        if (to !== undefined && !ids.has(to))
+          problems.push(`${at}: ${what} "${String(to).slice(0, 80)}" is not a symbol in the model`);
+      };
+      x.calls.forEach((c) => must(c.to, "call target"));
+      x.renders.forEach((r) => must(r.to, "render target"));
+      x.fetches.forEach((f) => must(f.to, "fetch target"));
+      x.rpc.forEach((r) => must(r.to, "rpc target"));
+      x.calledBy.forEach((c) => must(c, "calledBy"));
+    });
+  });
+  model.edges.forEach((e, i) => {
+    e.via?.forEach((v, j) => {
+      const at = `edges[${i}] ${e.id} via[${j}]`;
+      for (const [end, nodeId] of [
+        ["from", e.from],
+        ["to", e.to],
+      ]) {
+        const owner = ids.get(v[end]);
+        if (owner === undefined)
+          problems.push(`${at}: ${end} "${v[end].slice(0, 80)}" is not a symbol in the model`);
+        else if (owner !== nodeId)
+          problems.push(
+            `${at}: ${end} symbol belongs to node ${owner}, but the connection ${end === "from" ? "starts" : "ends"} at ${nodeId}`,
+          );
+      }
+    });
+  });
+}
+
 /** All problems with `model`. `draft` allows a model with no flows yet. */
 export function checkModel(
   model,
-  { draft = false, root = null, schema = loadSchema(), catalog = loadCatalog() } = {},
+  {
+    draft = false,
+    root = null,
+    schema = loadSchema(),
+    catalog = loadCatalog(),
+    verifyFiles = false,
+  } = {},
 ) {
   model = upgradeModel(model);
   const problems = validate(schema, model);
@@ -243,6 +345,7 @@ export function checkModel(
       if (!nodeIds.has(id)) problems.push(`risks[${i}] ${r.id}: node "${id}" does not exist`);
   });
   checkV2(model, nodeIds, root, problems);
+  checkDetail(model, root ?? process.cwd(), verifyFiles, problems);
   for (const group of [
     model.nodes,
     model.edges,
@@ -276,7 +379,12 @@ function run(argv) {
     return 2;
   }
   const root = flags.root ? path.resolve(flags.root) : process.cwd();
-  const problems = checkModel(model, { draft: Boolean(flags.draft), root });
+  // symbol files are only looked up on disk when --root is given, because the default root is just the current folder
+  const problems = checkModel(model, {
+    draft: Boolean(flags.draft),
+    root,
+    verifyFiles: Boolean(flags.root),
+  });
   if (problems.length === 0) {
     const m = model;
     if (flags["write-upgrade"] && model.version === 1) {
