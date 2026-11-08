@@ -129,6 +129,27 @@ export const OfficialMeta = z
       )
       .max(6)
       .optional(),
+    /** Plain-language copy for the simple skill page: a headline, an intro and things to ask for. */
+    friendly: z
+      .object({
+        headline: z.string().min(1).max(60),
+        intro: z.string().min(1).max(260),
+        ideas: z
+          .array(
+            z
+              .object({
+                title: z.string().min(1).max(40),
+                text: z.string().min(1).max(140),
+                say: z.string().min(1).max(120),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(6),
+        firstTime: z.string().min(1).max(260).optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type OfficialMeta = z.infer<typeof OfficialMeta>;
@@ -258,6 +279,14 @@ export const RegistrySkill = z.object({
   requires: z.array(SkillName).optional(),
   canDo: z.array(z.string()).optional(),
   setup: z.array(z.object({ title: z.string(), text: z.string() })).optional(),
+  friendly: z
+    .object({
+      headline: z.string(),
+      intro: z.string(),
+      ideas: z.array(z.object({ title: z.string(), text: z.string(), say: z.string() })),
+      firstTime: z.string().optional(),
+    })
+    .optional(),
 });
 export type RegistrySkill = z.infer<typeof RegistrySkill>;
 

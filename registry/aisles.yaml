@@ -32,7 +32,7 @@ aisles:
   - id: video
     name: Video
     description: Short explainer, kinetic-type and app showcase videos, rendered with Remotion on your own computer.
-    niches: [video]
+    niches: [video, animate]
   - id: media
     name: Media
     description: Images. Coming later.

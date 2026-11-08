@@ -18,19 +18,19 @@ requires:
   - video-kinetic
   - video-publish
   - video-qa
-  - video-reel
-  - video-reel-build
-  - video-reel-carousel
-  - video-reel-parable
-  - video-reel-sfx-1
-  - video-reel-sfx-2
-  - video-reel-sfx-3
-  - video-reel-sfx-4
-  - video-reel-sounds
-  - video-reel-story
-  - video-reel-storyboard
-  - video-reel-style
-  - video-reel-topic
+  - animate-reel
+  - animate-reel-build
+  - animate-reel-carousel
+  - animate-reel-parable
+  - animate-reel-sfx-1
+  - animate-reel-sfx-2
+  - animate-reel-sfx-3
+  - animate-reel-sfx-4
+  - animate-reel-sounds
+  - animate-reel-story
+  - animate-reel-storyboard
+  - animate-reel-style
+  - animate-reel-topic
   - video-showcase
   - video-voice
   - video-write
@@ -53,3 +53,20 @@ setup:
     text: "ffmpeg, Google Chrome, Node 18+, Python 3 with numpy, scipy and pillow (pip install numpy scipy pillow), and Playwright (npm i -g playwright). /video reel checks for them and lists only what is missing; it installs nothing. The reel sound packs add about 85 MB to the install; they are bundled, so a reel downloads nothing."
   - title: "Optional: a voiceover for reels"
     text: "Make an ElevenLabs key and set ELEVENLABS_API_KEY in your own shell or system environment. The key never goes in the chat. Without it, reels use sound effects over a calm bed and no voice."
+friendly:
+  headline: "Say what video you want. Get it made."
+  intro: "Describe your idea in plain words. Claude writes it, adds the voice, the pictures and the sound, and hands you a finished video on your own computer."
+  ideas:
+    - title: "Explain something"
+      text: "A short video that makes one idea easy to get, with animated pictures and a voice."
+      say: "Make a short video explaining how email works"
+    - title: "Words that hit"
+      text: "Big bold words that pop on screen in time with the voice."
+      say: "Make a punchy video: three reasons to start before you are ready"
+    - title: "Show off your app"
+      text: "A recorded walk-through of your own app or website, with a moving camera."
+      say: "Make a demo video of my website"
+    - title: "Reels for your page"
+      text: "Animated Instagram reels and carousels, with a story and sound."
+      say: "Make an Instagram reel about patience"
+  firstTime: "The first time, Claude checks your computer and tells you if anything is missing, with the exact line to copy. There is nothing to prepare."

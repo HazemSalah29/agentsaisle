@@ -15,3 +15,10 @@ export function bundleCommand(names: string[]): string {
 export function initCommand(profileId: string): string {
   return `npx ${CLI_PACKAGE} init --profile ${profileId}`;
 }
+
+export type ManageAction = "add" | "update" | "remove";
+
+/** The command to add, update or remove one skill. `everywhere` installs for every project (`--global`). */
+export function manageCommand(action: ManageAction, name: string, everywhere = false): string {
+  return `npx ${CLI_PACKAGE} ${action} ${name}${everywhere ? " --global" : ""}`;
+}

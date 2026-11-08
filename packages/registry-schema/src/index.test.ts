@@ -135,6 +135,29 @@ describe("house standard meta fields", () => {
     demo: { url: "https://demo.example.dev", screenshots: ["preview/home-1440.png"] },
   };
 
+  it("accepts plain-language page copy and refuses more than 6 ideas or unknown keys", () => {
+    const idea = {
+      title: "A short video",
+      text: "Say what it is about.",
+      say: "Explain how email works",
+    };
+    const friendly = {
+      headline: "Describe a video. Get it made.",
+      intro: "Ask in plain words.",
+      ideas: [idea],
+    };
+    expect(OfficialMeta.safeParse({ ...base, friendly }).success).toBe(true);
+    expect(
+      OfficialMeta.safeParse({ ...base, friendly: { ...friendly, ideas: Array(7).fill(idea) } })
+        .success,
+    ).toBe(false);
+    expect(OfficialMeta.safeParse({ ...base, friendly: { ...friendly, ideas: [] } }).success).toBe(
+      false,
+    );
+    expect(OfficialMeta.safeParse({ ...base, friendly: { ...friendly, x: 1 } }).success).toBe(
+      false,
+    );
+  });
   it("accepts up to 6 setup steps and refuses more or unknown keys", () => {
     const step = { title: "Add the connector", text: "Settings, then Connectors." };
     expect(OfficialMeta.safeParse({ ...base, setup: [step] }).success).toBe(true);
