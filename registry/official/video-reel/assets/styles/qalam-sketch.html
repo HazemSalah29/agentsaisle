@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeP;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#161b14}
+#paper{position:absolute;inset:0}
+svg{position:absolute;inset:0}
+.cap{position:absolute;left:90px;width:900px;text-align:center;color:#efe3c8;font-family:Baskerville,Georgia,serif;font-size:54px;line-height:1.25;opacity:0}
+.cap em{font-style:italic;color:#e3b766}
+.cite{font-family:Menlo,monospace;font-size:20px;letter-spacing:.24em;color:rgba(239,227,200,.55)}
+#hd{position:absolute;bottom:250px;left:0;right:0;text-align:center;font-family:Menlo,monospace;font-size:20px;letter-spacing:.2em;color:rgba(239,227,200,.45)}
+</style></head>
+<body>
+<canvas id="paper" width="1080" height="1920"></canvas>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="cap" id="c1" style="top:330px">When the days feel <em>dry and cracked,</em></div>
+<div class="cap" id="c2" style="top:300px">Allah tells you this.</div>
+<div class="cap" id="c3" style="top:640px;font-size:50px">For indeed, with hardship <em>will be ease.</em><div class="cite" style="margin-top:22px">QURAN 94:5</div></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan});
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const INK='#efe3c8',SAND='#c8734a',SAGE='#8fae7e',SKY='#7fb4c9',GOLD='#e3b766',BARK='#a07a55';
+
+// Static paper: tooth drawn once from a seeded PRNG, so it never changes per frame (cheap to encode).
+(()=>{const c=$('paper').getContext('2d');c.fillStyle='#161b14';c.fillRect(0,0,1080,1920);
+ for(let i=0;i<26000;i++){c.fillStyle=`rgba(239,227,200,${.015+rnd()*.03})`;c.fillRect(rnd()*1080,rnd()*1920,1+rnd()*2,1)}})();
+
+// Every stroke: path, colour, width, draw window [a,b]. The qalam rides the stroke being drawn.
+const ST=[
+ {d:'M60 1180 C 300 1150, 600 1212, 1020 1168',c:INK,w:5,a:.6,b:1.8},
+ {d:'M300 1290 l40 30 l-22 42 l52 32',c:INK,w:4,a:2.0,b:2.4},
+ {d:'M650 1270 l-30 42 l42 30 l-22 54',c:INK,w:4,a:2.4,b:2.8},
+ {d:'M840 1340 l30 32 l-42 40',c:INK,w:4,a:2.8,b:3.1},
+ {d:'M560 1182 C 552 1060, 578 960, 560 830',c:BARK,w:9,a:3.1,b:3.8},
+ {d:'M562 970 C 620 930, 660 905, 704 862',c:BARK,w:6,a:3.8,b:4.1},
+ {d:'M560 905 C 512 868, 482 846, 440 806',c:BARK,w:6,a:4.1,b:4.4},
+ // ease: a stream down the crack, leaves on the branch tips, one flower
+ {d:'M560 1190 C 520 1300, 650 1400, 562 1520 C 512 1600, 600 1700, 650 1830',c:SKY,w:16,a:6.0,b:7.2,ease:1},
+ {d:'M548 1330 q 20 -8 40 0 M572 1560 q 18 -8 36 0 M600 1730 q 20 -8 40 0',c:INK,w:3,a:7.0,b:7.4,ease:1},
+];
+const LEAF=[[704,862,-30],[680,885,20],[440,806,200],[470,832,150],[560,830,-90],[548,860,-140],[575,858,-40]];
+const ARA='فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا',BODY=ARA.replace(/[ً-ٰٟۖ-ۭ]/g,'');
+const AY=560,AT0=4.6,AT1=5.9,X0=150,X1=930,SL=50;
+
+// Hatch for the dry ground, seeded once.
+let hatch='';for(let y=1200;y<1880;y+=24)for(let x=40;x<1060;x+=30){const j=rnd()*8;hatch+=`M${x+j} ${y+j} l-16 22 `}
+
+const svg=$('s');
+svg.innerHTML=`<defs><clipPath id="gnd"><path d="M60 1180 C 300 1150, 600 1212, 1020 1168 L1080 1920 L0 1920 Z"/></clipPath><clipPath id="hc"><rect id="hcr" x="0" y="1100" width="0" height="900"/></clipPath>
+<mask id="am"><polygon id="amp" fill="#fff" points=""/></mask></defs>
+<g clip-path="url(#gnd)"><g clip-path="url(#hc)"><path d="${hatch}" stroke="${SAND}" stroke-width="3" stroke-linecap="round" opacity=".38" fill="none"/></g></g>
+${ST.map((s,i)=>`<g id="g${i}">${[0,1,2].map(k=>`<path class="p${i}" d="${s.d}" fill="none" stroke="${s.c}" stroke-linecap="round" stroke-linejoin="round" stroke-width="${k?s.w*.35:s.w}" opacity="${k?.35:.9}" transform="translate(${k?(k==1?2:-2):0} ${k?(k==1?-1.5:1.5):0})"/>`).join('')}</g>`).join('')}
+<g id="leaves"></g>
+<g id="abody" mask="url(#am)"><text x="540" y="${AY}" text-anchor="middle" direction="rtl" font-family="ScheherazadeP" font-size="118" fill="${INK}">${BODY}</text></g>
+<text id="afull" x="540" y="${AY}" text-anchor="middle" direction="rtl" font-family="ScheherazadeP" font-size="118" fill="${INK}" opacity="0">${ARA}</text>
+<g id="pen"><path d="M0 0 L-9 -34 L9 -34 Z" fill="${GOLD}"/><path d="M-9 -34 L-12 -250 L12 -250 L9 -34 Z" fill="#8a6a42"/><path d="M-12 -250 L12 -250 L10 -262 L-10 -262 Z" fill="#6e5234"/><circle r="4" fill="${INK}"/></g>`;
+const paths=ST.map((s,i)=>[...svg.querySelectorAll('.p'+i)]),LEN=paths.map(p=>p[0].getTotalLength());
+
+// Sound: soft taps as each stroke starts, plinks on the Arabic, a bell when ease arrives.
+ST.forEach(s=>add(s.a,'tap',.14));
+for(let t=AT0;t<AT1;t+=.22)add(t,'key',.1);add(AT1+.1,'plink',.22);
+add(6.0,'bell',.28);LEAF.forEach((l,k)=>add(7.3+k*.12,'plink',.12,(l[0]-540)/540*.7));
+
+window.frame=function(t){
+  let pen=null;
+  ST.forEach((s,i)=>{const p=(s.ease?inout:ease)((t-s.a)/(s.b-s.a)),L=LEN[i];
+    paths[i].forEach(el=>{el.style.strokeDasharray=L;el.style.strokeDashoffset=L*(1-p)});
+    if(t>=s.a&&p<1){const q=paths[i][0].getPointAtLength(L*p);pen=[q.x,q.y]}});
+  $('hcr').setAttribute('width',1080*ease((t-1.0)/1.8));
+  // Arabic: one pass, full-height band, marks fade in after on their own layer
+  const pa=ease((t-AT0)/(AT1-AT0)),front=X1+SL-(X1-X0+SL*2)*pa;
+  $('amp').setAttribute('points',t<AT0?'':`${front},${AY-170} ${X1+60},${AY-170} ${X1+60},${AY+110} ${front-SL},${AY+110}`);
+  const pf=ease((t-AT1-.2)/.4);$('afull').setAttribute('opacity',pf);$('abody').setAttribute('opacity',1-pf); // crossfade: the stripped body shapes a little differently, so it must leave as the full text lands
+  if(t>=AT0&&pa<1)pen=[front-SL*.4,AY-20];
+  // leaves and flower sketch in after the stream
+  $('leaves').innerHTML=LEAF.map(([x,y,r],k)=>{const p=ease((t-7.2-k*.12)/.35),sw=Math.sin(t*1.6+k)*4;
+    return p<=0?'':`<g transform="translate(${x} ${y}) rotate(${r+sw}) scale(${p*1.5})"><path d="M0 0 q 22 -16 44 0 q -22 16 -44 0" fill="${SAGE}" fill-opacity=".55" stroke="${SAGE}" stroke-width="3"/></g>`}).join('')+
+    (()=>{const p=ease((t-8.1)/.5);return p<=0?'':`<g transform="translate(704 846) scale(${p})">${[0,72,144,216,288].map(a=>`<ellipse cx="0" cy="-12" rx="8" ry="13" fill="${SAND}" transform="rotate(${a})"/>`).join('')}<circle r="6" fill="${GOLD}"/></g>`})();
+  const pe=$('pen');if(pen){pe.style.display='';pe.setAttribute('transform',`translate(${pen[0]} ${pen[1]}) rotate(28)`)}else pe.style.display='none';
+  const up=(id,a,b)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;$(id).style.opacity=Math.min(p,q);$(id).style.transform=`translateY(${(1-p)*12}px)`};
+  up('c1',.3,3.6);up('c2',4.0);up('c3',6.2);
+  return {};
+};
+document.fonts.load('118px ScheherazadeP').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

@@ -1,0 +1,19 @@
+{
+  "file-explorer": true,
+  "global-search": true,
+  "switcher": true,
+  "backlink": true,
+  "outgoing-link": true,
+  "tag-pane": true,
+  "properties": true,
+  "page-preview": true,
+  "templates": true,
+  "command-palette": true,
+  "bookmarks": true,
+  "outline": true,
+  "bases": true,
+  "graph": false,
+  "canvas": false,
+  "daily-notes": false,
+  "random-note": false
+}

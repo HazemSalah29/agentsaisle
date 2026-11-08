@@ -1,0 +1,190 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#03040b}
+canvas{position:absolute;inset:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+// ---- core: seeded random, noise, easing, grain, vignette, pen-written Arabic (pure functions of t)
+const TAU=Math.PI*2,W=1080,HH=1920;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,t)=>a+(b-a)*t;
+const ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+function rng(seed){let a=(seed>>>0)||1;const r=()=>{a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(lo,hi)=>lo+r()*(hi-lo);r.pick=a=>a[Math.floor(r()*a.length)];r.chance=p=>r()<p;return r}
+function makeNoise(seed){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];
+  for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}
+  for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lp=(a,b,t)=>a+(b-a)*t;
+  const g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);
+    const u=fade(x),v=fade(y),w=fade(z),A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return lp(lp(lp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),
+      lp(lp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  const n2=(x,y)=>n3(x,y,.5);
+  const fbm3=(x,y,z,o=4)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,z*f);n+=a;a*=.5;f*=2}return s/n};
+  return{n2,n3,fbm3,fbm2:(x,y,o=4)=>fbm3(x,y,.5,o)}}
+const hexa=h=>{h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const rgba=(c,a=1)=>{const[r,g,b]=Array.isArray(c)?c:hexa(c);return`rgba(${r|0},${g|0},${b|0},${a})`};
+const mixc=(a,b,t)=>{const A=Array.isArray(a)?a:hexa(a),B=Array.isArray(b)?b:hexa(b);return[0,1,2].map(i=>A[i]+(B[i]-A[i])*t)};
+const layer=(w=W,h=HH)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+// grain: six pre-built noise tiles (seeded), one picked per 1/12 s and laid on with 'overlay'
+const GT=[];
+function grainTiles(){if(GT.length)return;for(let k=0;k<6;k++){const c=layer(540,960),x=c.getContext('2d'),im=x.createImageData(540,960),d=im.data,r=rng(900+k);
+  for(let i=0;i<d.length;i+=4){const n=r()*255;d[i]=d[i+1]=d[i+2]=n;d[i+3]=255}x.putImageData(im,0,0);GT.push(c)}}
+function grain(ctx,amount,t,mono=true){grainTiles();const k=Math.floor(t*12)%6;ctx.save();ctx.globalCompositeOperation='overlay';ctx.globalAlpha=Math.min(1,amount*2.2);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(GT[k],0,0,W,HH);ctx.restore()}
+function vignette(ctx,strength=.5,col='0,0,0'){const g=ctx.createRadialGradient(W/2,HH/2,W*.35,W/2,HH/2,Math.hypot(W,HH)*.6);
+  g.addColorStop(0,`rgba(${col},0)`);g.addColorStop(1,`rgba(${col},${strength})`);ctx.save();ctx.fillStyle=g;ctx.fillRect(0,0,W,HH);ctx.restore()}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+// Arabic written with the pen: lines are written one after another, a slanted edge sweeps right to left,
+// the body (no vowel marks) goes first and the tashkeel comes in last, on its own pass.
+const MARKS=/[ً-ْٰٓ-ٕ]/g;
+function penArabic(c,lines,cx,y0,lh,size,fill,p,o={}){
+  const n=lines.length;c.save();c.direction='rtl';c.textAlign='center';c.textBaseline='alphabetic';c.font=`${size}px ScheherazadeG`;
+  const marks=ease(clamp((p-.86)/.14)),res=[];
+  lines.forEach((s,i)=>{const lp=clamp(p/.86*n-i,0,1),w=c.measureText(s).width,y=y0+i*lh,R=cx+w/2+30,L=cx-w/2-30,fx=R-(R-L)*inout(lp);
+    if(lp<=0)return;res.push({fx,y,w});
+    const clipp=()=>{c.beginPath();c.moveTo(fx,y-size*1.25);c.lineTo(R+60,y-size*1.25);c.lineTo(R+60,y+size*.85);c.lineTo(fx-46,y+size*.85);c.closePath()};
+    const draw=(str,a)=>{if(o.under)o.under(str,cx,y,a);c.fillStyle=typeof fill==='function'?fill(y):fill;c.globalAlpha=a;c.fillText(str,cx,y)};
+    c.save();clipp();c.clip();draw(s.replace(MARKS,''),1-marks);c.restore();
+    if(marks>0){c.save();clipp();c.clip();draw(s,marks);c.restore()}});
+  c.restore();return res}
+const fontsReady=specs=>Promise.all(specs.map(f=>document.fonts.load(f,'Aa'+(window.FONT_SAMPLE||'')))).then(()=>document.fonts.ready);
+
+// ---- style: cosmic star chart. Deep nebula sky, twinkling stars, a gold line-work chart (degree ring, dotted orbits, leader lines, labels).
+// Stars are round dots or 4/8-point spikes only: never six-pointed, no constellation figures.
+const GOLD=[230,198,128],GOLDB=[255,226,168],CYAN=[160,226,236],CREAM=[248,240,224],WHITE=[255,255,255];
+const SERIF='Baskerville,"Baskerville Old Face",Georgia,serif';
+const wrap=(v,m)=>((v%m)+m)%m;
+const CC={x:540,y:600,R:340};
+// sounds: soft shimmer, glass pings, taps
+add(.25,'glass',.12);[.5,.8,1.1].forEach((t,i)=>add(t,'plink',.1));
+add(1.15,'glass',.16);add(2.3,'bell',.22);
+for(let t=3.05;t<4.8;t+=.22)add(t,'key',.08);
+add(4.95,'tap',.2);add(5.9,'tap',.2);add(6.4,'glass',.16);add(6.95,'bell',.2);add(7.3,'tap',.2);add(7.7,'plink',.14);
+const C={};
+function glow(c){const key='g'+c.join(',');if(C[key])return C[key];const cv=layer(128,128),x=cv.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);
+  g.addColorStop(0,rgba(c,1));g.addColorStop(.07,rgba(c,.85));g.addColorStop(.2,rgba(c,.28));g.addColorStop(.45,rgba(c,.07));g.addColorStop(1,rgba(c,0));x.fillStyle=g;x.fillRect(0,0,128,128);return C[key]=cv}
+// nebula, cached: layered fbm in a winding river across the upper sky
+function nebula(){if(C.neb)return C.neb;const w=432,h=768,cv=layer(w,h),x=cv.getContext('2d'),img=x.createImageData(w,h),d=img.data,nz=makeNoise(7713);
+  const P={teal:[20,150,165],violet:[98,50,178],rose:[222,70,124],gold:[242,182,96]};
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const bx=i/w,by=j/h,u=bx*2.2,v=by*3.2;
+    const qx=nz.fbm3(u,v,.1,3),qy=nz.fbm3(u+5.2,v+1.3,.1,3),n=nz.fbm3(u+1.5*qx,v+1.5*qy,1.7,5)*.5+.5,n2=nz.fbm3(u*1.25+3+1.3*qy,v*1.25-2+1.3*qx,4.4,5)*.5+.5;
+    const dist=by-(.46-.3*bx)-.06*Math.sin(bx*6.5+1),band=Math.exp(-(dist*dist)/(2*.15*.15)),m=.1+.9*band;
+    const A=smooth(.44,.8,n)*m,Bq=smooth(.47,.82,n2)*m*(.4+.6*smooth(.2,.7,bx+.2*qx)),hueA=clamp(nz.fbm3(u*.5+9,v*.5,3.3,3)*1.2+.5+(bx-.45)*.8);
+    const r=P.violet[0]+(P.rose[0]-P.violet[0])*hueA,g=P.violet[1]+(P.rose[1]-P.violet[1])*hueA,b=P.violet[2]+(P.rose[2]-P.violet[2])*hueA,inner=.55+.75*smooth(.5,.9,n);
+    let R_=r*A*inner,G_=g*A*inner,B_=b*A*inner;R_+=P.teal[0]*Bq*.95;G_+=P.teal[1]*Bq*.95;B_+=P.teal[2]*Bq*.95;
+    const go=smooth(.62,.88,n)*smooth(.35,.75,hueA)*band;R_+=P.gold[0]*go*.9;G_+=P.gold[1]*go*.9;B_+=P.gold[2]*go*.9;R_*=1.3;G_*=1.3;B_*=1.3;
+    R_+=40*band*.35;G_+=22*band*.35;B_+=70*band*.35;
+    const dl=nz.fbm3(u*2.1+4+qx,v*2.1+qy,5.1,5)*.5+.5,dust=smooth(.53,.7,dl)*(.25+.75*band)*.85;R_*=1-dust;G_*=1-dust;B_*=1-dust;
+    const k=(j*w+i)*4,br=3+6*by,bg=4+4*by,bb=11+14*(1-Math.abs(by-.5));d[k]=Math.min(255,br+R_);d[k+1]=Math.min(255,bg+G_);d[k+2]=Math.min(255,bb+B_);d[k+3]=255}
+  x.putImageData(img,0,0);return C.neb=cv}
+function starData(){if(C.stars)return C.stars;const r=rng(4401),tints=[[255,246,232],[212,228,255],[255,226,186],[200,240,246],[255,212,222]],mid=[],near=[];
+  for(let i=0;i<520;i++)mid.push({x:r()*1200,y:r()*2000,m:Math.pow(r(),3),c:r.pick(tints),ph:r()*TAU,w:.8+r()*3});
+  for(let i=0;i<46;i++)near.push({x:r()*1200,y:r()*2000,m:.25+.75*Math.pow(r(),2),c:r.pick(tints),ph:r()*TAU,w:.6+r()*2});
+  const far=layer(1200,2000),fx=far.getContext('2d');
+  for(let i=0;i<9000;i++){const x=r()*1200,y=r()*2000,bx=x/1200,by=y/2000,dist=by-(.46-.3*bx);if(r()>.25+.75*Math.exp(-(dist*dist)/.03))continue;
+    const m=Math.pow(r(),2.5),c=r.pick(tints);fx.fillStyle=rgba(c,.15+m*.7);const s=.6+m*1.3;fx.fillRect(x,y,s,s)}
+  return C.stars={mid,near,far}}
+function sky(c,t){c.fillStyle='#03040b';c.fillRect(0,0,W,HH);const neb=nebula(),S=starData(),cam=t*6;
+  c.save();c.translate(-cam*.12,0);c.imageSmoothingQuality='high';c.drawImage(neb,-20,0,1120,1920);c.restore();
+  c.drawImage(S.far,-60-cam*.05,-40);
+  c.save();c.globalCompositeOperation='lighter';
+  for(const s of S.mid){const px=wrap(s.x-cam*.3,1200)-60,py=wrap(s.y-cam*.05,2000)-40;if(px<-4||px>W+4||py<-4||py>HH+4)continue;
+    const tw=.62+.38*Math.sin(t*s.w+s.ph),a=(.22+.78*s.m)*tw,sz=.9+s.m*2;c.fillStyle=rgba(s.c,a);c.beginPath();c.arc(px,py,sz/2+.3,0,TAU);c.fill()}
+  for(const s of S.near){const px=wrap(s.x-cam*.6,1200)-60,py=wrap(s.y-cam*.1,2000)-40;if(px<-40||px>W+40||py<-40||py>HH+40)continue;
+    const tw=.7+.3*Math.sin(t*s.w*1.7+s.ph),a=s.m*tw,sz=8+s.m*26;c.globalAlpha=a;c.drawImage(glow(s.c),px-sz/2,py-sz/2,sz,sz);c.globalAlpha=1;c.fillStyle=rgba(WHITE,Math.min(1,a*1.2));c.beginPath();c.arc(px,py,1.2,0,TAU);c.fill()}
+  c.restore()}
+// bright round star with diffraction spikes: four long, four short (an 8-point glint)
+function spikeStar(c,x,y,s,a,tint=[255,236,206],rot=0){if(a<=.003)return;c.save();c.globalCompositeOperation='lighter';c.translate(x,y);
+  c.globalAlpha=a*.55;c.drawImage(glow(tint),-s*4,-s*4,s*8,s*8);c.globalAlpha=a*.5;c.drawImage(glow([150,200,255]),-s*1.8,-s*1.8,s*3.6,s*3.6);c.globalAlpha=a;c.drawImage(glow(WHITE),-s,-s,s*2,s*2);
+  c.globalAlpha=1;c.rotate(rot);
+  for(let k=0;k<8;k++){const main=k%2===0,len=s*(main?9:3.4),wd=s*(main?.1:.06);c.save();c.rotate(k*TAU/8);const gr=c.createLinearGradient(0,0,len,0);
+    gr.addColorStop(0,rgba(WHITE,a*(main?.95:.55)));gr.addColorStop(.2,rgba(tint,a*(main?.45:.22)));gr.addColorStop(.6,rgba([170,200,255],a*(main?.12:.05)));gr.addColorStop(1,rgba(tint,0));
+    c.fillStyle=gr;c.beginPath();c.moveTo(0,-wd);c.lineTo(len,0);c.lineTo(0,wd);c.closePath();c.fill();c.restore()}
+  c.restore()}
+// ---- chart line-work (ported)
+const ellPt=(cx,cy,rx,ry,rot,a)=>{const c=Math.cos(rot),s=Math.sin(rot),x=rx*Math.cos(a),y=ry*Math.sin(a);return[cx+x*c-y*s,cy+x*s+y*c]};
+function chevron(c,x,y,ang,sz,col,a,lw=1.4){c.save();c.strokeStyle=rgba(col,a);c.lineWidth=lw;c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(x+Math.cos(ang+2.6)*sz,y+Math.sin(ang+2.6)*sz);c.lineTo(x,y);c.lineTo(x+Math.cos(ang-2.6)*sz,y+Math.sin(ang-2.6)*sz);c.stroke();c.restore()}
+function orbit(c,o){const{cx,cy,rx,ry,rot=0,a0=0,sweep=TAU,prog=1,col=GOLD,a=.8,gap=8,r=1.5,arrows=3,dir=1,crawl=0}=o;if(prog<=0||a<=0)return;
+  const per=Math.PI*(rx+ry)*sweep/TAU,n=Math.max(40,Math.ceil(per/2));c.save();c.fillStyle=rgba(col,a);let acc=wrap(crawl,gap),last=null;
+  for(let k=0;k<=n*prog;k++){const th=a0+dir*sweep*k/n,p=ellPt(cx,cy,rx,ry,rot,th);if(last)acc+=Math.hypot(p[0]-last[0],p[1]-last[1]);last=p;if(acc>=gap){acc-=gap;c.beginPath();c.arc(p[0],p[1],r,0,TAU);c.fill()}}
+  for(let m=0;m<arrows;m++){const f=(m+.5)/arrows;if(f>prog)continue;const th=a0+dir*sweep*f,p=ellPt(cx,cy,rx,ry,rot,th),q=ellPt(cx,cy,rx,ry,rot,th+dir*.01);chevron(c,p[0],p[1],Math.atan2(q[1]-p[1],q[0]-p[0]),9,col,a)}
+  c.restore()}
+function chartLine(c,x0,y0,x1,y1,o={}){const{prog=1,col=GOLD,a=.9,lw=1.5,arrow=true,dotted=false}=o;if(prog<=0||a<=0)return;
+  const P=u=>[x0+(x1-x0)*u,y0+(y1-y0)*u];c.save();c.lineCap='round';c.strokeStyle=rgba(col,a);c.lineWidth=lw;if(dotted)c.setLineDash([1.5,8]);
+  const e=P(prog);c.beginPath();c.moveTo(x0,y0);c.lineTo(e[0],e[1]);c.stroke();c.setLineDash([]);
+  if(arrow){const p0=P(Math.max(0,prog-.02));chevron(c,e[0],e[1],Math.atan2(e[1]-p0[1],e[0]-p0[0]),11,col,a,lw+.3)}c.restore()}
+function degreeRing(c,cx,cy,r,prog,col,a,from=0){if(prog<=0||a<=0)return;c.save();c.strokeStyle=rgba(col,a);c.lineWidth=1.3;
+  c.beginPath();c.arc(cx,cy,r,from,from+TAU*prog);c.stroke();const ga=c.globalAlpha;c.beginPath();c.arc(cx,cy,r+6,from,from+TAU*prog);c.globalAlpha=ga*.5;c.stroke();c.globalAlpha=ga;
+  c.beginPath();for(let dg=0;dg<360*prog;dg+=2){const an=from+dg*Math.PI/180,l=dg%30===0?15:dg%10===0?9:4.5;c.moveTo(cx+Math.cos(an)*r,cy+Math.sin(an)*r);c.lineTo(cx+Math.cos(an)*(r-l),cy+Math.sin(an)*(r-l))}c.stroke();
+  c.fillStyle=rgba(col,a*.9);c.font=`600 22px ${SERIF}`;c.textAlign='center';c.textBaseline='middle';for(let dg=0;dg<360*prog;dg+=30){const an=from+dg*Math.PI/180;c.fillText(dg+'°',cx+Math.cos(an)*(r+25),cy+Math.sin(an)*(r+25))}
+  c.restore()}
+function marker(c,x,y,r,col,a){if(a<=0)return;c.save();c.strokeStyle=rgba(col,a);c.fillStyle=rgba(col,a);c.lineWidth=1.5;c.beginPath();c.arc(x,y,r,0,TAU);c.stroke();c.beginPath();c.arc(x,y,2,0,TAU);c.fill();
+  c.beginPath();for(let k=0;k<4;k++){const an=k*Math.PI/2;c.moveTo(x+Math.cos(an)*(r+3),y+Math.sin(an)*(r+3));c.lineTo(x+Math.cos(an)*(r+10),y+Math.sin(an)*(r+10))}c.stroke();c.restore()}
+function label(c,txt,x,y,o={}){const size=o.size||30;if((o.a??1)<=0)return;c.save();c.font=`italic ${size}px ${SERIF}`;c.textAlign=o.align||'left';c.textBaseline='alphabetic';c.globalAlpha*=o.a??1;
+  c.shadowColor='rgba(2,3,14,0.95)';c.shadowBlur=16;c.lineJoin='round';c.strokeStyle='rgba(2,3,14,0.6)';c.lineWidth=Math.max(3,size*.16);c.strokeText(txt,x,y);c.fillStyle=rgba(o.col||GOLD,1);c.fillText(txt,x,y);c.shadowBlur=0;c.fillText(txt,x,y);c.restore()}
+function soul(c,x,y,m,col,a){if(a<=0)return;c.save();c.globalCompositeOperation='lighter';c.globalAlpha=a;const s=40+m*70;c.drawImage(glow(col),x-s/2,y-s/2,s,s);c.fillStyle=rgba(WHITE,a);c.beginPath();c.arc(x,y,1.6+m*2.2,0,TAU);c.fill();c.restore()}
+// ---- the souls: pairs that were familiar drift together, two that were not drift apart
+const SOULS=[
+  {id:'A1',s:[300,500],e:[488,584],m:.9,col:GOLDB,T:[1.2,2.9]},{id:'A2',s:[790,690],e:[596,630],m:.9,col:GOLDB,T:[1.2,2.9]},
+  {id:'B1',s:[252,430],e:[322,452],m:.7,col:GOLDB,T:[5.9,7.3]},{id:'B2',s:[440,320],e:[398,404],m:.7,col:GOLDB,T:[5.9,7.3]},
+  {id:'C1',s:[826,404],e:[764,486],m:.7,col:GOLDB,T:[6.0,7.4]},{id:'C2',s:[884,596],e:[814,540],m:.7,col:GOLDB,T:[6.0,7.4]},
+  {id:'D1',s:[552,812],e:[400,872],m:.7,col:CYAN,T:[7.4,9.0]},{id:'D2',s:[648,782],e:[800,860],m:.7,col:CYAN,T:[7.4,9.0]}];
+const AMB=(()=>{const r=rng(77),o=[];for(let i=0;i<9;i++){const a=r()*TAU,d=90+r()*250;o.push({x:540+Math.cos(a)*d,y:600+Math.sin(a)*d*.95,m:.2+r()*.3,ph:r()*TAU})}return o})();
+function pos(S,t){const u=ease((t-S.T[0])/(S.T[1]-S.T[0]));return[lerp(S.s[0],S.e[0],u)+Math.sin(t*.7+S.m*9)*5*(1-u*.7),lerp(S.s[1],S.e[1],u)+Math.cos(t*.6+S.m*7)*5*(1-u*.7)]}
+const AR=['الأَرْوَاحُ جُنُودٌ مُجَنَّدَةٌ','فَمَا تَعَارَفَ مِنْهَا ائْتَلَفَ','وَمَا تَنَاكَرَ مِنْهَا اخْتَلَفَ'];
+const fade=(t,a,b)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;return Math.min(p,q)};
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+window.frame=function(t){
+  const c=ctx;c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.filter='none';c.shadowBlur=0;
+  sky(c,t);
+  const skyA=ease(t/.8);
+  // the light source: a bright star with spikes
+  spikeStar(c,900,330,15*(.6+.4*ease((t-.3)/1.2)),ease((t-.3)/1.2),[255,232,196],.12);
+  // chart: degree ring and two dotted orbits
+  degreeRing(c,CC.x,CC.y,CC.R,ease((t-.4)/1.6),GOLD,.62,-Math.PI*.95);
+  orbit(c,{cx:CC.x,cy:CC.y,rx:300,ry:104,rot:.32,prog:ease((t-1.6)/1.4),col:GOLD,a:.62,arrows:4,crawl:t*9});
+  orbit(c,{cx:CC.x,cy:CC.y,rx:210,ry:150,rot:-.62,prog:ease((t-1.9)/1.4),col:CYAN,a:.55,arrows:3,dir:-1,crawl:-t*7});
+  // ambient souls
+  AMB.forEach(s=>soul(c,s.x,s.y,s.m,[220,226,255],.5*skyA*(.6+.4*Math.sin(t*1.6+s.ph))));
+  const P={};SOULS.forEach(S=>P[S.id]=pos(S,t));
+  // lines: pairs connect as they meet, strays leave on arrows
+  [['A1','A2',2.0,2.9],['B1','B2',6.5,7.3],['C1','C2',6.6,7.4]].forEach(([a,b,t0,t1])=>{const pr=ease((t-t0)/(t1-t0));chartLine(c,P[a][0],P[a][1],P[b][0],P[b][1],{prog:pr,col:GOLD,a:.8,lw:1.6,arrow:false,dotted:true})});
+  [['D1',7.6],['D2',7.6]].forEach(([id,t0])=>{const S=SOULS.find(q=>q.id===id),pr=ease((t-t0)/1.2);const p=P[id];chartLine(c,S.s[0],S.s[1],p[0],p[1],{prog:Math.min(1,pr),col:CYAN,a:.7,lw:1.5,arrow:pr>.3,dotted:true})});
+  // souls
+  SOULS.forEach(S=>soul(c,P[S.id][0],P[S.id][1],S.m,S.col,skyA*(.85+.15*Math.sin(t*2.2+S.m*8))));
+  // the pair that notices each other: markers, then a pulse when they meet
+  const mk=ease((t-1.0)/.5)*(1-ease((t-3.8)/.6));marker(c,P.A1[0],P.A1[1],22,GOLD,.8*mk);marker(c,P.A2[0],P.A2[1],22,GOLD,.8*mk);
+  const pu=(t-2.8)/1.2;if(pu>0&&pu<1){const mx=(P.A1[0]+P.A2[0])/2,my=(P.A1[1]+P.A2[1])/2;c.save();c.strokeStyle=rgba(GOLDB,.55*(1-pu));c.lineWidth=2;c.beginPath();c.arc(mx,my,30+pu*90,0,TAU);c.stroke();c.restore()}
+  // labels with leader lines
+  const la=ease((t-6.6)/.6),lb=ease((t-7.9)/.6);
+  if(la>0){chartLine(c,356,436,240,356,{prog:la,col:GOLD,a:.8,lw:1.4,arrow:false});marker(c,356,436,6,GOLD,la);label(c,'drawn together',80,350,{size:30,a:ease((t-6.8)/.6)})}
+  if(lb>0){chartLine(c,780,846,806,786,{prog:lb,col:CYAN,a:.8,lw:1.4,arrow:false});marker(c,780,846,6,CYAN,lb);label(c,'drift apart',700,772,{size:30,col:CYAN,a:ease((t-8.1)/.6)})}
+  label(c,'CHART OF SOULS',72,260,{size:24,a:ease((t-.4)/.6)*.9});
+  // dark backing under the words, then the words
+  const g=c.createLinearGradient(0,1010,0,1720);g.addColorStop(0,'rgba(2,3,14,0)');g.addColorStop(.3,'rgba(2,3,14,.82)');g.addColorStop(.78,'rgba(2,3,14,.82)');g.addColorStop(1,'rgba(2,3,14,0)');c.fillStyle=g;c.fillRect(0,1010,W,710);
+  c.save();c.textAlign='center';c.textBaseline='alphabetic';c.direction='ltr';
+  const h=fade(t,.5,2.9);if(h>0){c.globalAlpha=h;c.font=`italic 54px ${SERIF}`;c.fillStyle=rgba(CREAM);c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=10;c.fillText('Have you ever felt you',540,1130+(1-h)*12);c.fillText('already knew someone?',540,1200+(1-h)*12);c.shadowBlur=0}
+  c.restore();
+  if(t>=2.95){c.save();c.shadowColor='rgba(255,210,120,.55)';c.shadowBlur=18;penArabic(c,AR,540,1122,80,66,rgba(GOLDB),clamp((t-3.0)/1.85));c.restore()}
+  c.save();c.textAlign='center';c.direction='ltr';c.font=`40px ${SERIF}`;c.fillStyle=rgba(CREAM);c.shadowColor='rgba(0,0,0,.7)';c.shadowBlur=8;
+  const e1=fade(t,4.95),e2=fade(t,5.9),e3=fade(t,7.3);
+  c.globalAlpha=e1;c.fillText('Souls are troops gathered together.',540,1384+(1-e1)*10);
+  c.globalAlpha=e2;c.fillText('Those that knew each other are drawn together,',540,1432+(1-e2)*10);
+  c.globalAlpha=e3;c.fillText('and those that did not, drift apart.',540,1480+(1-e3)*10);
+  c.shadowBlur=0;c.restore();
+  const ca=fade(t,7.0);if(ca>0){c.save();c.globalAlpha=ca*.95;c.textAlign='center';c.font='23px Menlo,monospace';c.letterSpacing='9px';c.fillStyle=rgba(GOLD);c.fillText('SAHIH MUSLIM 2638',544,1330+0);c.restore()}
+  c.save();c.globalAlpha=.65*fade(t,1.2);c.textAlign='center';c.font='24px Menlo,monospace';c.letterSpacing='6px';c.fillStyle='#c9c4d6';c.fillText('@YOURPAGE',543,1690);c.restore();
+  vignette(c,.6,'1,2,8');grain(c,.03,t);
+  return{};
+};
+fontsReady(['66px ScheherazadeG','italic 54px Baskerville','40px Baskerville','600 22px Baskerville','23px Menlo']).then(()=>{nebula();starData();frame(0);window.ready=true});
+</script></body></html>

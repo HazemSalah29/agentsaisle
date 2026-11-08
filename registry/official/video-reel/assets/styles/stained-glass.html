@@ -1,0 +1,112 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0d0b1a}
+svg{position:absolute;inset:0}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const NIGHT='#0d0b1a',LEAD='#15110e',LIGHT='#fff1c9',GOLD='#e8a33a';
+const PAL=['#b3263a','#e8a33a','#1e4fa3','#1f7a56'];
+const SERIF='Baskerville,"Baskerville Old Face",Georgia,serif';
+const h=n=>{n=Math.imul(n^61,0x9e3779b1);n^=n>>>15;n=Math.imul(n,0x85ebca6b);n^=n>>>13;return((n>>>0)%10000)/10000};
+const rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+const mix=(a,b,k)=>{const A=rgb(a),B=rgb(b);return'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')+')'};
+// ---- panes (built once, they never move: the lead is fixed, only the light moves)
+const panes=[];
+for(let j=-1;j<=15;j++)for(let i=-1;i<=7;i++){
+  const cx=90+i*150+(((j%2)+2)%2)*75,cy=260+j*90;
+  panes.push({p:[[cx,cy-90],[cx+75,cy],[cx,cy+90],[cx-75,cy]],c:PAL[(i*2+j*3+(h(i*7+j+50)>.72?1:0)+8)%4],cx,cy});
+}
+const RC={x:540,y:600};
+const pol=(r,a)=>[RC.x+r*Math.cos(a*Math.PI/180),RC.y+r*Math.sin(a*Math.PI/180)];
+const rose=[];
+for(let k=0;k<12;k++){
+  const a=k*30;
+  rose.push({p:[pol(62,a-15),pol(150,a-15),pol(150,a+15),pol(62,a+15)],c:PAL[(k%2)?0:2]});
+  rose.push({p:[pol(150,a-15),pol(150,a+15),pol(245,a)],c:PAL[(k%3===0)?1:3]});
+  rose.push({p:[pol(245,a),pol(245,a+30),pol(150,a+15)],c:PAL[(k%2)?1:0]});
+}
+rose.push({p:Array.from({length:12},(_,k)=>pol(62,k*30)),c:PAL[1]});
+rose.forEach(q=>{q.cx=q.p.reduce((s,v)=>s+v[0],0)/q.p.length;q.cy=q.p.reduce((s,v)=>s+v[1],0)/q.p.length});
+const ALL=panes.concat(rose);
+// sun climbs from lower left to upper right
+const U=q=>q.cx*.6+(1500-q.cy)*.8;
+const FRONT=t=>-260+clamp((t-.5)/3.9)*2100;
+// sounds
+add(.3,'tap',.2);
+[1.2,1.6,2.0,2.4,2.8,3.2,3.6].forEach((t,i)=>add(t,'plink',.16+i*.01));
+add(4.4,'rise',.22);add(4.5,'boom',.5);
+for(let t=4.7;t<5.9;t+=.2)add(t,'key',.12);
+add(6.0,'plink',.25);add(6.9,'tap',.22);add(7.7,'tap',.2);add(8.6,'bell',.28);
+const ARCH='M90 1500V760C90 500 380 330 540 260C700 330 990 500 990 760V1500Z';
+const poly=p=>p.map(v=>v[0].toFixed(1)+','+v[1].toFixed(1)).join(' ');
+const AR='فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا';
+function up(t,a,b){const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;return Math.min(p,q)}
+window.frame=function(t){
+  const front=FRONT(t),sweep=((t*150)%2300)-250;
+  let g='',bloom='';
+  for(const q of ALL){
+    const lit=ease((front-U(q))/260);
+    const band=Math.exp(-Math.pow((U(q)-sweep)/220,2))*.5*(t>4.4?1:0);
+    const flare=lit*(1-lit)*4*.35;
+    const dim=mix(q.c,NIGHT,.84);
+    let col=mix(rgb2hex(dim),q.c,lit);
+    col=lit>0.02?mix(rgb2hex(col),LIGHT,clamp(band+flare)):dim;
+    g+=`<polygon points="${poly(q.p)}" fill="${col}"/>`;
+    if(lit>.25)bloom+=`<polygon points="${poly(q.p)}" fill="${q.c}" opacity="${(lit*.55).toFixed(2)}"/>`;
+  }
+  // dust in the light
+  let dust='';
+  for(let k=0;k<26;k++){
+    const x=140+h(k+3)*800+Math.sin(t*.6+k)*24,y=1500-((t*(24+h(k+9)*30)+h(k+20)*1300)%1300);
+    const a=clamp((front-(x*.6+(1500-y)*.8))/200)*.55;
+    if(a>0)dust+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(1.5+h(k+40)*2.6).toFixed(1)}" fill="${LIGHT}" opacity="${(a*(.5+.5*Math.sin(t*2+k))).toFixed(2)}"/>`;
+  }
+  const glow=ease((t-3.8)/.8);
+  // cartouche
+  const ca=ease((t-.2)/.5);
+  let s=`<defs><clipPath id="arch"><path d="${ARCH}"/></clipPath>
+  <filter id="bl" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="26"/></filter>
+  <filter id="tg" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="mot" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".012 .05" numOctaves="3" seed="4"/><feColorMatrix values="0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .1  0 0 0 -1.4 1"/></filter></defs>
+  <rect width="1080" height="1920" fill="${NIGHT}"/>
+  <path d="${ARCH}" fill="#2a2630" stroke="#3a3540" stroke-width="40" stroke-linejoin="round" transform="translate(0 0)"/>
+  <g clip-path="url(#arch)">
+    <rect x="60" y="240" width="960" height="1280" fill="${LEAD}"/>
+    <g style="mix-blend-mode:screen" filter="url(#bl)">${bloom}</g>
+    <g stroke="${LEAD}" stroke-width="9" stroke-linejoin="round">${g}</g>
+    <circle cx="${RC.x}" cy="${RC.y}" r="247" fill="none" stroke="${LEAD}" stroke-width="16"/>
+    <rect x="60" y="240" width="960" height="1280" filter="url(#mot)" opacity=".28"/>
+    ${dust}
+  </g>
+  <path d="${ARCH}" fill="none" stroke="${LEAD}" stroke-width="12"/>`;
+  // cartouche: dark glass panel the verse is lit on
+  s+=`<g opacity="${ca}"><rect x="150" y="930" width="780" height="440" rx="26" fill="${NIGHT}" fill-opacity=".92" stroke="${LEAD}" stroke-width="12"/><rect x="150" y="930" width="780" height="440" rx="26" fill="none" stroke="${GOLD}" stroke-opacity="${(.25+.4*glow).toFixed(2)}" stroke-width="2"/></g>`;
+  // hook line
+  const p1=up(t,.6,3.7);
+  s+=`<g opacity="${p1}" transform="translate(0 ${(1-ease((t-.6)/.6))*18})" font-family='${SERIF}' font-size="62" fill="#c9c4d6" text-anchor="middle"><text x="540" y="1110">Some days the glass</text><text x="540" y="1186">is dark.</text></g>`;
+  // Arabic, written with the pen (mask edge right to left, light-coloured ink)
+  const pa=ease((t-4.7)/1.4),fx=960-(880)*pa;
+  if(t>=4.6){
+    const tx=c=>`<text x="540" y="1085" text-anchor="middle" direction="rtl" font-family="ScheherazadeG" font-size="100" fill="${c}">${AR}</text>`;
+    s+=`<mask id="pm"><polygon fill="#fff" points="${fx},900 1000,900 1000,1200 ${fx-70},1200"/></mask>`;
+    s+=`<g mask="url(#pm)"><g filter="url(#tg)" opacity=".8">${tx(GOLD)}</g>${tx(LIGHT)}</g>`;
+    if(pa<1)s+=`<circle cx="${fx}" cy="1050" r="34" fill="${LIGHT}" opacity=".35" filter="url(#tg)"/>`;
+  }
+  const e1=up(t,6.3),e2=up(t,6.9),c3=up(t,7.7);
+  s+=`<g font-family='${SERIF}' font-size="56" fill="#f4ead2" text-anchor="middle"><text opacity="${e1}" x="540" y="${1215+(1-e1)*14}">For indeed, with hardship</text><text opacity="${e2}" x="540" y="${1280+(1-e2)*14}">[will be] ease.</text></g>`;
+  s+=`<text opacity="${c3}" x="540" y="1346" text-anchor="middle" font-family="Menlo,monospace" font-size="26" letter-spacing="9" fill="${GOLD}">QURAN 94:5</text>`;
+  s+=`<text opacity=".75" x="540" y="1660" text-anchor="middle" font-family="Menlo,monospace" font-size="24" letter-spacing="6" fill="#c9c4d6">@YOURPAGE</text>`;
+  $('s').innerHTML=s;
+  return {};
+};
+function rgb2hex(c){if(c[0]==='#')return c;const m=c.match(/\d+/g).map(Number);return'#'+m.map(v=>v.toString(16).padStart(2,'0')).join('')}
+document.fonts.load('124px ScheherazadeG').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

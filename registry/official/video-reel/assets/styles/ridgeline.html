@@ -1,0 +1,131 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#050505}
+canvas{position:absolute;left:0;top:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const W=1080,HH=1920,TAU=Math.PI*2;
+const ctx=document.getElementById('c').getContext('2d');
+// ---------- helper library (seeded randomness, noise, colour), after the reference H kit ----------
+const H={};
+H.rng=function(seed=1){let a=typeof seed==='string'?hs(seed):(seed>>>0)||1;
+  const r=function(){a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};
+  r.range=(lo,hi)=>lo+r()*(hi-lo);r.pick=a=>a[Math.floor(r()*a.length)];
+  r.gauss=()=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};return r};
+function hs(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+H.makeNoise=function(seed=1){const r=H.rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];
+  for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}
+  for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lerp=(a,b,t)=>a+(b-a)*t;
+  const g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);
+    const u=fade(x),v=fade(y),w=fade(z);const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return lerp(lerp(lerp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lerp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),
+      lerp(lerp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lerp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  const fbm3=(x,y,z,oct=4)=>{let s=0,a=.5,f=1,norm=0;for(let i=0;i<oct;i++){s+=a*n3(x*f,y*f,z*f);norm+=a;a*=.5;f*=2}return s/norm};
+  return{n2:(x,y)=>n3(x,y,.5),n3,fbm2:(x,y,o=4)=>fbm3(x,y,.5,o),fbm3}};
+H.lerp=(a,b,t)=>a+(b-a)*t;H.clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,v));
+H.smooth=(e0,e1,x)=>{const t=H.clamp((x-e0)/(e1-e0));return t*t*(3-2*t)};
+H.ease={inOut:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,out:t=>1-Math.pow(1-t,3)};
+H.hex=h=>{h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+H.rgba=(c,a=1)=>{const[r,g,b]=Array.isArray(c)?c:H.hex(c);return`rgba(${r|0},${g|0},${b|0},${a})`};
+H.mix=(c1,c2,t)=>{const a=Array.isArray(c1)?c1:H.hex(c1),b=Array.isArray(c2)?c2:H.hex(c2);return[0,1,2].map(i=>a[i]+(b[i]-a[i])*t)};
+H.layer=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+H.vignette=function(ctx,w,h,s=.5,color='0,0,0'){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.3,w/2,h/2,Math.hypot(w,h)*.6);
+  g.addColorStop(0,`rgba(${color},0)`);g.addColorStop(1,`rgba(${color},${s})`);ctx.save();ctx.fillStyle=g;ctx.fillRect(0,0,w,h);ctx.restore()};
+const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),sm=(a,b,x)=>H.smooth(a,b,x),E=H.ease,lerp=H.lerp;
+const WH=[255,255,255];
+const C={cream:[242,240,234]};
+const SERIF='Baskerville,"Baskerville Old Face",Georgia,serif';
+const hash=n=>{const s=Math.sin(n*127.1+311.7)*43758.5453;return s-Math.floor(s)};
+
+// ---------- print finish: cream ink on rough black stock (ink mottle, warm stock fibres, ink spread, grain) ----------
+const RL={};
+function rlTex(pw,ph){if(RL.ready)return RL;RL.half=H.layer(pw>>1,ph>>1);RL.quarter=H.layer(pw>>2,ph>>2);
+  const mw=180,mh=320,m=H.layer(mw,mh),mx=m.getContext('2d'),mi=mx.createImageData(mw,mh),nz=H.makeNoise(4242);
+  for(let y=0;y<mh;y++)for(let x=0;x<mw;x++){const v=.5+.5*nz.fbm2(x*.045,y*.045,4),f=.5+.5*nz.n2(x*.6,y*.6),d=1-.13*v-.06*f,i=(y*mw+x)*4;
+    mi.data[i]=255*d;mi.data[i+1]=255*(d-.01);mi.data[i+2]=255*(d-.03);mi.data[i+3]=255}
+  mx.putImageData(mi,0,0);const ink=H.layer(pw,ph),ig=ink.getContext('2d');ig.imageSmoothingQuality='high';ig.drawImage(m,0,0,pw,ph);
+  const sw=144,sh=256,s=H.layer(sw,sh),sx=s.getContext('2d'),si=sx.createImageData(sw,sh),nz2=H.makeNoise(515);
+  for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){const v=.5+.5*nz2.fbm2(x*.03,y*.03,4),i=(y*sw+x)*4;si.data[i]=5+6*v;si.data[i+1]=4+5*v;si.data[i+2]=2+3*v;si.data[i+3]=255}
+  sx.putImageData(si,0,0);const stock=H.layer(pw,ph),g=stock.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,pw,ph);g.imageSmoothingQuality='high';g.drawImage(s,0,0,pw,ph);
+  const r=H.rng(77),k=pw/1280;g.lineCap='round';
+  for(let i=0;i<1700;i++){const x=r()*pw,y=r()*ph,a=r()*Math.PI*2,l=r.range(3,14)*k,c=r.range(8,20)|0;
+    g.strokeStyle=`rgb(${c},${c-2},${c-5})`;g.lineWidth=r.range(.4,1)*k;g.beginPath();g.moveTo(x,y);
+    g.quadraticCurveTo(x+Math.cos(a+.6)*l*.5,y+Math.sin(a+.6)*l*.5,x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+  RL.inkD=ig.getImageData(0,0,pw,ph).data;RL.stockD=g.getImageData(0,0,pw,ph).data;RL.ready=true;return RL}
+function printFinish(ctx,grain,seed){
+  const cv=ctx.canvas,pw=cv.width,ph=cv.height,T=rlTex(pw,ph);
+  const hx=T.half.getContext('2d'),qx=T.quarter.getContext('2d');hx.imageSmoothingQuality='medium';hx.drawImage(cv,0,0,T.half.width,T.half.height);
+  qx.imageSmoothingQuality='medium';qx.drawImage(T.half,0,0,T.quarter.width,T.quarter.height);
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=true;ctx.globalCompositeOperation='lighter';
+  ctx.globalAlpha=.22;ctx.drawImage(T.half,0,0,pw,ph);ctx.globalAlpha=.07;ctx.drawImage(T.quarter,0,0,pw,ph);ctx.restore();
+  const img=ctx.getImageData(0,0,pw,ph),d=img.data,ink=T.inkD,st=T.stockD,r=H.rng(seed),ka=grain*255,inv=1/255;
+  for(let i=0;i<d.length;i+=4){const n=(r()-.5)*ka;d[i]=d[i]*ink[i]*inv+st[i]+n;d[i+1]=d[i+1]*ink[i+1]*inv+st[i+1]+n;d[i+2]=d[i+2]*ink[i+2]*inv+st[i+2]+n}
+  ctx.putImageData(img,0,0)}
+// ---------- Arabic, pen-written, two lines ----------
+const AR1='أَلَا بِذِكْرِ ٱللَّهِ',AR2='تَطْمَئِنُّ ٱلْقُلُوبُ',STRIP=s=>s.replace(/[ٌ-ِ]/g,'');
+// only fatha, damma, kasra and tanween are stripped from the body layer: sukun, shadda and fathatan change advance widths and the layers drift apart
+const CREAM='#F2F0EA';
+function penLine(ctx,str,y,size,pa,marks,t){
+  if(pa<=0)return;ctx.save();ctx.direction='rtl';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.font=size+'px ScheherazadeG';ctx.fillStyle=CREAM;
+  const fx=980-900*pa;ctx.save();ctx.beginPath();ctx.moveTo(fx,y-size*1.35);ctx.lineTo(1040,y-size*1.35);ctx.lineTo(1040,y+size*.9);ctx.lineTo(fx-70,y+size*.9);ctx.closePath();ctx.clip();
+  ctx.globalAlpha=1-marks;ctx.fillText(STRIP(str),540,y);ctx.restore();
+  if(marks>0){ctx.globalAlpha=marks;ctx.fillText(str,540,y)}ctx.restore();
+  if(pa<1){const g=ctx.createRadialGradient(fx,y-size*.3,0,fx,y-size*.3,22);g.addColorStop(0,'rgba(255,255,255,.7)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(fx,y-size*.3,22,0,7);ctx.fill()}}
+// ---------- the heartbeat clock: racing at 2.6 Hz, settling to 1.1 Hz between 3.0 and 4.8 ----------
+const F0=2.6,F1=1.1,TA=3.0,TB=4.8;
+const phase=t=>t<TA?F0*t:t<TB?F0*TA+F0*(t-TA)+(F1-F0)*(t-TA)*(t-TA)/(2*(TB-TA)):F0*TA+(F0+F1)/2*(TB-TA)+F1*(t-TB);
+const beat=p=>{const f=((p%1)+1)%1;return Math.exp(-Math.pow((f-.12)/.09,2))+.5*Math.exp(-Math.pow((f-.36)/.08,2))};
+{let last=Math.floor(phase(.3));for(let t=.3;t<9.6;t+=.004){const k=Math.floor(phase(t));if(k!==last){last=k;add(t,'tap',t<TB?.09:.06)}}}
+const S=(t,a,b)=>H.clamp((t-a)/(b-a));
+const L1='Some hearts race all day.',L2='And slowly, it steadies.';
+for(let t=4.8;t<6.4;t+=.2)add(t,'key',.11);
+add(.2,'slide',.12);add(3.0,'plink',.14);add(4.7,'plink',.2);add(6.45,'plink',.2);add(6.95,'tap',.2);add(7.4,'tap',.2);add(8.0,'bell',.28);
+const N=60,BW=760,gap=10,x0=540-BW/2,x1=540+BW/2,yTop=380,STEP=1.5,cxw=540-12;
+const nz=H.makeNoise(1919),nz2=H.makeNoise(67);
+const PK=[];for(let i=0;i<N;i++){const r=H.rng(1000+i),np=4+Math.floor(r()*4),a=[];
+  for(let k=0;k<np;k++)a.push({off:r.gauss(),s:r.range(8,30),h:(6+52*Math.pow(r(),1.7))*1.6,ph:r()*6});
+  const side=r()<.45?{mu:r.range(110,190)*(r()<.5?1:-1),s:r.range(8,16),h:r.range(8,30)}:null;PK.push({a,side})}
+window.frame=function(t){
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,W,HH);
+  const order=E.inOut(S(t,TA,TB)),ph=phase(t),amp=.16+.3*order;
+  ctx.lineJoin='round';ctx.lineCap='round';
+  for(let i=0;i<N;i++){
+    const sweep=H.clamp((t-(.15+i*.036))/.24);if(sweep<=0)continue;
+    const base=yTop+i*gap,P=PK[i],bm=1+amp*beat(ph-i*.018),pts=[];
+    for(let x=x0;x<=x1+.01;x+=STEP){const u=(x-x0)/BW,env=Math.pow(Math.sin(Math.PI*H.clamp((u-.2)/.6)),1.6);let a=0;
+      P.a.forEach((p,k)=>{const mu0=cxw+p.off*80+Math.sin(t*.9+i*.37+p.ph)*5,mu=k===0?H.lerp(mu0,cxw,order):H.lerp(mu0,cxw+p.off*20,order),
+        s=k===0?H.lerp(p.s,15,order):p.s,h=k===0?H.lerp(p.h,82-i*.2,order):p.h*(1-order*.95),d=(x-mu)/s;a+=h*(.75+.25*Math.sin(t*1.3+i*.5+k*2))*Math.exp(-.5*d*d)});
+      if(P.side){const d=(x-(cxw+P.side.mu))/P.side.s;a+=P.side.h*(1-order*.9)*Math.exp(-.5*d*d)}
+      a*=env*bm;const fine=nz.n3(x*.16,i*.9,t*.8)*(.9+env*3.2)*(1-order*.5)+nz2.n3(x*.03,i*.45,t*.3)*env*9*(1-order*.7);
+      pts.push([x,base-Math.max(-2,a+fine)])}
+    const nd=Math.max(2,Math.ceil(pts.length*E.inOut(sweep))),vis=pts.slice(0,nd),xe=vis[vis.length-1][0];
+    ctx.beginPath();ctx.moveTo(vis[0][0],vis[0][1]);for(const p of vis)ctx.lineTo(p[0],p[1]);ctx.lineTo(xe,base+gap*3);ctx.lineTo(x0,base+gap*3);ctx.closePath();ctx.fillStyle='#050505';ctx.fill();
+    ctx.beginPath();ctx.moveTo(vis[0][0],vis[0][1]);for(const p of vis)ctx.lineTo(p[0],p[1]);ctx.strokeStyle=CREAM;ctx.lineWidth=2;ctx.stroke();
+    if(sweep<1){const[hx,hy]=vis[vis.length-1],g=ctx.createRadialGradient(hx,hy,0,hx,hy,9);g.addColorStop(0,'rgba(255,255,255,.65)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(hx,hy,9,0,7);ctx.fill()}}
+  // hook
+  const hk=1-S(t,4.5,5.0),mk=S(t,6.4,6.8);
+  ctx.save();ctx.textAlign='center';ctx.font='italic 600 62px '+SERIF;ctx.fillStyle=CREAM;
+  ctx.globalAlpha=E.out(S(t,.5,1.1))*hk;ctx.fillText(L1,540,1140+(1-E.out(S(t,.5,1.1)))*16);
+  ctx.globalAlpha=E.out(S(t,3.0,3.6))*hk;ctx.fillText(L2,540,1225+(1-E.out(S(t,3.0,3.6)))*16);ctx.restore();
+  penLine(ctx,AR1,1140,104,E.inOut(S(t,4.8,5.6)),mk,t);
+  penLine(ctx,AR2,1265,104,E.inOut(S(t,5.6,6.4)),mk,t);
+  const up=a=>E.out(S(t,a,a+.6)),e1=up(6.9),e2=up(7.4),c3=up(8.0),hd=up(8.6);
+  ctx.save();ctx.textAlign='center';ctx.font='50px '+SERIF;ctx.fillStyle=CREAM;
+  ctx.globalAlpha=e1;ctx.fillText('Unquestionably, by the remembrance',540,1355+(1-e1)*12);
+  ctx.globalAlpha=e2;ctx.fillText('of Allah hearts are assured.',540,1415+(1-e2)*12);
+  if(c3>.01){ctx.globalAlpha=c3*.85;ctx.font='700 24px Menlo,monospace';ctx.letterSpacing='9px';ctx.fillText('QURAN 13:28',544.5,1468)}
+  if(hd>.01){ctx.globalAlpha=.6*hd;ctx.font='22px Menlo,monospace';ctx.letterSpacing='6px';ctx.fillText('@YOURPAGE',543,1497)}ctx.restore();
+  printFinish(ctx,.06,8+Math.floor(t*12));return{};
+};
+document.fonts.load('104px ScheherazadeG',AR1+AR2).then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

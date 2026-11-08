@@ -1,0 +1,470 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#c8bfe6}
+canvas{position:absolute;inset:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Low-poly birds: the engine from The Wing (QURAN 17:24), shown here as a 10 s cut of
+// four moments (storm wing, seasons and catch, flight, winter wing). Reuse: rng/noise, makeCam, blob/limb/quad builders,
+// birdTris (posable bird: spread, flap, curl, lift), the tree and nest in buildWorld, env() palette keys, RAIN/SNOW/PET
+// particles, draw3D (painter sort, fog, blurred background pass), pen() for the Arabic. The full 49 s reel is the source.
+// The Wing: Low-poly faceted world in a "Sorbet dusk" pastel palette: a parent bird spreads its wing
+// over a chick in a storm, the seasons turn, the chick grows and flies, and in winter it lowers its own wing over
+// the old bird. A small software 3D pipeline: look-at camera, flat Lambert facets, painter's sort, depth fog,
+// a background pass that can be blurred for shallow focus, and screen and world particles (rain, petals, snow).
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const W=1080,HH=1920,cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const bgc=document.createElement('canvas');bgc.width=W;bgc.height=HH;const bx=bgc.getContext('2d');
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+const E={out:t=>1-Math.pow(1-clamp(t),3),inOut:t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2},back:t=>{t=clamp(t);const c=1.70158;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)}};
+const hexA=h=>{h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const mix=(a,b,t)=>{a=Array.isArray(a)?a:hexA(a);b=Array.isArray(b)?b:hexA(b);return[0,1,2].map(i=>a[i]+(b[i]-a[i])*t)};
+const css=(c,a)=>a===undefined?`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`:`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+function rng(seed){let a=seed>>>0||1;const r=()=>{a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(l,h)=>l+r()*(h-l);r.pick=a=>a[Math.floor(r()*a.length)];return r}
+function makeNoise(seed){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lp=(a,b,t)=>a+(b-a)*t,g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);const u=fade(x),v=fade(y),w=fade(z);
+    const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return lp(lp(lp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),lp(lp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  return{fbm2:(x,y,o=4)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,.5);n+=a;a*=.5;f*=2}return s/n}}}
+
+// ---------------- sound: soft and sparse, one at a time (add(t,type,v,pan))
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan:pan||0});
+// normal levels and a few more soft moments
+add(1.95,'kit:whoosh-medium-soft',.8,0);   // the wing unfolds
+add(2.3,'drop',.8,-.05);                   // the raindrop meets the wing
+add(5.0,'drop',.5,.25);                    // a second drop taps the feathers
+add(7.4,'kit:whoosh-slow-soft',.7,-.1);    // the push under the feathers
+add(9.6,'drop',.45,-.2);                   // rain tapping the wing above the chick
+add(12.6,'kit:shimmer-medium-soft',.6,0);  // the storm clears, the seasons begin
+add(14.2,'kit:impact-light-soft',.7,-.1);  // the parent settles on the nest
+add(15.0,'plink',.75,.1);                  // food lands in the beak
+add(17.2,'kit:faller-1s-soft',.6,.1);      // the chick tumbles
+add(18.2,'kit:swish-soft',.8,.1);          // the wing sweeps in and catches
+add(19.8,'kit:whoosh-slow-soft',.8,.2);    // the flight
+add(21.4,'kit:whoosh-medium-soft',.55,-.1);// the dive
+add(23.6,'kit:whoosh-slow-soft',.7,-.2);   // the turn back
+add(24.6,'kit:shimmer-long-soft',.6,0);    // the whiteout into winter
+add(27.4,'kit:impact-light-soft',.6,0);    // the grown bird lands in the snow
+add(29.5,'kit:whoosh-slow-soft',.8,0);     // the wing lowers
+add(31.6,'bell',.8,0);                     // the dua starts
+add(35.0,'plink',.65,0);                   // the English
+add(35.7,'glass',.6,0);                    // the citation
+add(42.2,'kit:shimmer-medium-soft',.55,0); // first light
+add(45.2,'bell2',.75,0);                   // the end card
+
+// ---------------- vectors, camera
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],add3=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],scl=(a,k)=>[a[0]*k,a[1]*k,a[2]*k],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l]};
+const lerp3=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+const CX=540,CY=960;let F=1100;
+function makeCam(pos,tgt,roll,f){const fw=norm(sub(tgt,pos));let r=norm(cross([0,1,0],fw));let u=cross(fw,r);
+  if(roll){const c=Math.cos(roll),s=Math.sin(roll),r2=add3(scl(r,c),scl(u,s)),u2=add3(scl(u,c),scl(r,-s));r=r2;u=u2}
+  return{pos,fw,r,u,roll:roll||0,proj(p){const d=sub(p,pos),z=dot(d,fw);return[CX+f*dot(d,r)/z,CY-f*dot(d,u)/z,z]}}}
+
+// ---------------- palette: Sorbet dusk
+const PAL={
+  storm:{top:'#4d4a8c',mid:'#7d70b4',low:'#b296c8',hz:'#d9b3cc',fog:[150,136,190],amb:[170,158,214],sun:[200,186,240],sd:[-.4,.7,-.3],season:0,rain:1,snow:0,cloud:[150,138,196]},
+  spring:{top:'#9dc0ef',mid:'#c9daf6',low:'#f7d4e0',hz:'#ffe5d8',fog:[240,218,228],amb:[226,214,236],sun:[255,236,222],sd:[-.5,.75,-.45],season:1,rain:0,snow:0,cloud:[255,244,246]},
+  summer:{top:'#8fbcee',mid:'#c6dcf4',low:'#ffdcc4',hz:'#ffd5ae',fog:[246,222,206],amb:[228,216,232],sun:[255,232,206],sd:[-.3,.85,-.4],season:2,rain:0,snow:0,cloud:[255,246,236]},
+  autumn:{top:'#b2acea',mid:'#e8c3d8',low:'#ffc6a6',hz:'#ffd09e',fog:[244,204,190],amb:[226,204,222],sun:[255,214,180],sd:[-.6,.55,-.5],season:3,rain:0,snow:0,cloud:[255,226,214]},
+  flight:{top:'#9cbcf0',mid:'#ecc8dc',low:'#ffc4a4',hz:'#ffe0bd',fog:[246,212,206],amb:[226,208,230],sun:[255,220,186],sd:[-.35,.5,.75],season:3,rain:0,snow:0,cloud:[255,232,224]},
+  winter:{top:'#a3b9ea',mid:'#c6d2f2',low:'#e4dcf2',hz:'#f6e6ef',fog:[226,226,244],amb:[226,226,246],sun:[246,240,255],sd:[-.4,.7,-.5],season:4,rain:0,snow:1,cloud:[244,242,252]},
+  dawn:{top:'#bdb2ea',mid:'#f4c3d2',low:'#ffc59e',hz:'#ffe0b4',fog:[248,210,198],amb:[232,210,226],sun:[255,214,170],sd:[-.75,.32,.55],season:4.7,rain:0,snow:.15,cloud:[255,222,206]}};
+// env keys (time, palette); blended with smoothstep between neighbours
+const EK=[[0,'storm'],[12.0,'storm'],[12.5,'spring'],[13.9,'spring'],[14.3,'summer'],[15.8,'summer'],[16.2,'autumn'],[19,'autumn'],[20.2,'flight'],[24.95,'flight'],[25,'winter'],[41.8,'winter'],[42.6,'dawn'],[49,'dawn']];
+function env(t){let i=0;while(i<EK.length-2&&t>EK[i+1][0])i++;const[a0,na]=EK[i],[a1,nb]=EK[i+1],k=smooth(a0,a1,t),A=PAL[na],B=PAL[nb],o={};
+  for(const key in A){const va=A[key],vb=B[key];o[key]=typeof va==='string'?mix(va,vb,k):Array.isArray(va)?mix(va,vb,k):lerp(va,vb,k)}o.sd=norm(o.sd);return o}
+
+// ---------------- world (built once)
+const nz=makeNoise(17);
+const N=[7,9.1,0.2];                                 // nest centre
+const smax=(a,b,k)=>(a+b+Math.sqrt((a-b)*(a-b)+k))/2;
+function height(x,z){const r=Math.hypot(x,z);
+  const hill=1.2-Math.pow(r/20,2)*13+nz.fbm2(x*.08,z*.08,3)*1.2;
+  const val=-42+Math.pow(Math.abs(x)/150,2)*70+nz.fbm2(x*.02,z*.02,4)*9+smooth(330,520,z)*95+smooth(-40,-140,z)*40;
+  return smax(hill,val,30)}
+const tris=[];
+function T(a,b,c,col,o){tris.push(Object.assign({p:[a,b,c],col},o||{}))}
+function quad(a,b,c,d,col,o){T(a,b,c,col,o);T(a,c,d,col,o)}
+const ICO=(()=>{const p=(1+Math.sqrt(5))/2,v=[[-1,p,0],[1,p,0],[-1,-p,0],[1,-p,0],[0,-1,p],[0,1,p],[0,-1,-p],[0,1,-p],[p,0,-1],[p,0,1],[-p,0,-1],[-p,0,1]].map(norm);
+  const f=[[0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],[1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],[3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],[4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1]];return{v,f}})();
+function blob(c,r,sq,col,o,seed){const jr=rng(seed||1);const vs=ICO.v.map(v=>{const k=1+(jr()-.5)*.28;return[c[0]+v[0]*r*k,c[1]+v[1]*r*k*sq,c[2]+v[2]*r*k]});
+  for(const[a,b,cc]of ICO.f)T(vs[a],vs[b],vs[cc],col,Object.assign({center:c},o||{}))}
+// a tapered n-sided limb between two points
+function limb(p0,p1,r0,r1,n,col,o){const ax=norm(sub(p1,p0)),ref=Math.abs(ax[1])>.9?[1,0,0]:[0,1,0],u=norm(cross(ax,ref)),v=cross(ax,u),ctr=scl(add3(p0,p1),.5);
+  const ring=(p,r)=>Array.from({length:n},(_,i)=>{const a=i/n*Math.PI*2;return add3(p,add3(scl(u,Math.cos(a)*r),scl(v,Math.sin(a)*r)))});
+  const A=ring(p0,r0),B=ring(p1,r1);for(let i=0;i<n;i++){const j=(i+1)%n;quad(A[i],A[j],B[j],B[i],col,Object.assign({center:ctr,axis:[p0,p1]},o||{}))}
+  T(B[0],B[1],B[2],col,Object.assign({center:ctr},o||{}));}
+const BARK=[178,136,150],TWIG=[206,160,150],ROCK=[188,172,216];
+const GROUND=[[170,200,184],[198,226,196],[214,230,180],[240,204,162],[238,242,252],[214,228,206]];
+const LEAF=[[168,206,190],[250,186,206],[178,222,184],[252,184,134],[240,244,252],[250,196,214]];
+const seasonCol=(arr,s)=>{s=clamp(s,0,arr.length-1);const i=Math.min(arr.length-2,Math.floor(s));return mix(arr[i],arr[i+1],s-i)};
+let BUILT=false;
+function buildWorld(){
+  // terrain
+  const CELL=9,X0=-270,X1=270,Z0=-170,Z1=560,nx=Math.round((X1-X0)/CELL),nzc=Math.round((Z1-Z0)/CELL),jr=rng(5),Vt=[];
+  for(let j=0;j<=nzc;j++){const row=[];for(let i=0;i<=nx;i++){const x=X0+i*CELL+(i>0&&i<nx?jr.range(-.36,.36)*CELL:0),z=Z0+j*CELL+(j>0&&j<nzc?jr.range(-.36,.36)*CELL:0);row.push([x,height(x,z),z])}Vt.push(row)}
+  const jc=rng(77);
+  for(let j=0;j<nzc;j++)for(let i=0;i<nx;i++){const a=Vt[j][i],b=Vt[j][i+1],c=Vt[j+1][i],d=Vt[j+1][i+1],flip=((i*7+j*13)%3===0),pairs=flip?[[a,b,d],[a,d,c]]:[[a,b,c],[b,d,c]];
+    for(const pp of pairs){const n=norm(cross(sub(pp[1],pp[0]),sub(pp[2],pp[0])));const slope=1-Math.abs(n[1]);T(pp[0],pp[1],pp[2],null,{ground:true,rock:slope>.42,jit:1+(jc()-.5)*.1})}}
+  // a finer patch under the tree so the hilltop reads close up
+  // the river down the valley floor
+  for(let z=30;z<500;z+=8){const x=Math.sin(z*.018)*22,y0=height(x,z)+.4,y1=height(x,z+8)+.4,x1=Math.sin((z+8)*.018)*22,w=lerp(3,9,z/500);
+    quad([x-w,y0,z],[x+w,y0,z],[x1+w,y1,z+8],[x1-w,y1,z+8],[170,200,236],{water:true,bias:-.5})}
+  // valley trees: round crowns and pines, all take the season colour
+  const tr=rng(41);for(let k=0;k<150;k++){const z=tr.range(20,430),x=tr.range(-170,170);if(Math.abs(x-Math.sin(z*.018)*22)<12)continue;const y=height(x,z);if(y>-8&&Math.hypot(x,z)<40)continue;
+    const h=tr.range(5,10);if(tr()<.55){limb([x,y-1,z],[x,y+h*.5,z],.6,.4,4,BARK);blob([x,y+h*.75,z],h*.38,1,null,{leaf:true},k)}else{limb([x,y-1,z],[x,y+h,z],.5,.15,4,BARK);
+      const r=h*.32;for(let q=0;q<2;q++){const yy=y+h*.35+q*h*.28,rr=r*(1-q*.3),n=6,top=[x,yy+h*.45,z];for(let i=0;i<n;i++){const a0=i/n*Math.PI*2,a1=(i+1)/n*Math.PI*2;T([x+Math.cos(a0)*rr,yy,z+Math.sin(a0)*rr],[x+Math.cos(a1)*rr,yy,z+Math.sin(a1)*rr],top,null,{leaf:true,center:[x,yy+h*.15,z]})}}}}
+  // the tree on the hilltop
+  limb([0,-2,0],[0,7,0],1.0,.7,7,BARK);limb([0,7,0],[.3,12.5,0],.7,.38,7,BARK);
+  limb([.1,7.4,0],[4,8.4,.1],.42,.28,6,BARK);limb([4,8.4,.1],[N[0]+.6,N[1]-.3,N[2]],.28,.17,6,BARK);   // the nest branch
+  limb([N[0]+.4,N[1]-.3,N[2]],[N[0]+2.4,N[1]+.6,N[2]-.4],.15,.06,5,BARK);
+  limb([0,9,0],[-5,12.5,1.2],.45,.2,6,BARK);limb([.2,10.3,0],[4,13.4,-1.5],.4,.18,6,BARK);limb([.3,12,0],[-1,15.2,.6],.35,.15,6,BARK);limb([0,8.2,0],[-3.6,10,-2.4],.3,.14,5,BARK);
+  const crowns=[[[-5,13.2,1.2],3],[[4.2,14.2,-1.5],3.2],[[-1,16.4,.6],3.4],[[1.6,12.6,2.6],2.5],[[-3.4,15.4,-2],2.6],[[-3.8,10.6,-2.6],1.9]];
+  // each crown is a cluster of small leaf lumps, so it reads as leaves and not one flat block
+  crowns.forEach(([c,r],k)=>{const cr2=rng(k+90);blob(c,r*.5,.8,null,{leaf:true,crown:true,ccen:c},k+90);
+    for(let q=0;q<7;q++){const a=cr2()*Math.PI*2,e=cr2.range(-.5,.9),d=r*.62,pc=[c[0]+Math.cos(a)*d*(1-Math.abs(e)*.4),c[1]+e*d*.8,c[2]+Math.sin(a)*d*(1-Math.abs(e)*.4)];
+      blob(pc,r*cr2.range(.36,.5),.8,null,{leaf:true,crown:true,ccen:c},k*10+q+120)}});
+  // snow caps along the tree's limbs (winter only)
+  for(const[a,b]of[[[0,7,0],[.3,12.5,0]],[[.1,7.4,0],[4,8.4,.1]],[[4,8.4,.1],[N[0]+.6,N[1]-.3,N[2]]],[[0,9,0],[-5,12.5,1.2]],[[.2,10.3,0],[4,13.4,-1.5]]]){
+    const segs=4;for(let s=0;s<segs;s++){const p0=lerp3(a,b,s/segs),p1=lerp3(a,b,(s+1)/segs),w=.32;quad([p0[0],p0[1]+.32,p0[2]-w],[p1[0],p1[1]+.3,p1[2]-w],[p1[0],p1[1]+.3,p1[2]+w],[p0[0],p0[1]+.32,p0[2]+w],[246,248,255],{snow:true,flatUp:true})}}
+  // the nest: a woven bowl
+  {const n=12,ro=1.3,ri=.9,rb=.62,yr=N[1]+.42,yb=N[1]-.42,cc=[N[0],N[1],N[2]];const jt=rng(9);
+    const ring=(r,y,j)=>Array.from({length:n},(_,i)=>{const a=i/n*Math.PI*2+.13,k=1+(j?(jt()-.5)*.12:0);return[N[0]+Math.cos(a)*r*k,y+(j?(jt()-.5)*.12:0),N[2]+Math.sin(a)*r*k]});
+    const O=ring(ro,yr,1),I=ring(ri,yr-.04,1),B=ring(rb,yb,1),IB=ring(ri*.6,N[1]-.12,0);
+    for(let i=0;i<n;i++){const j=(i+1)%n,c1=mix(TWIG,[176,130,132],(i%3)/3);
+      quad(B[i],B[j],O[j],O[i],c1,{center:cc,nest:true});quad(O[i],O[j],I[j],I[i],mix(c1,[232,196,180],.4),{nest:true,flatUp:true});
+      quad(I[i],I[j],IB[j],IB[i],[150,112,126],{nest:true,inward:cc});}
+    for(let i=1;i<n-1;i++)T(IB[0],IB[i],IB[i+1],[138,104,120],{nest:true,flatUp:true});
+    for(let k=0;k<9;k++){const a=jt()*Math.PI*2,a2=a+jt()*.8,p0=[N[0]+Math.cos(a)*1.1,N[1]+.1+jt()*.25,N[2]+Math.sin(a)*1.1],p1=[N[0]+Math.cos(a2)*1.9,N[1]+.2+jt()*.4,N[2]+Math.sin(a2)*1.9];limb(p0,p1,.05,.03,3,[190,146,140],{nest:true})}}
+  // clouds far away, all around (so the turn-back shot has sky too)
+  const cr=rng(23);for(let k=0;k<26;k++){const a=cr.range(-1.4,1.4)+(k%3===0?Math.PI:0),d=cr.range(520,700),c=[Math.sin(a)*d,cr.range(110,230),Math.cos(a)*d];
+    for(let q=0;q<3;q++)blob(add3(c,[cr.range(-40,40),cr.range(-6,10),cr.range(-20,20)]),cr.range(26,48),.45,null,{cloud:true},k*7+q)}
+  for(const t of tris){const[a,b,c]=t.p;let n=norm(cross(sub(b,a),sub(c,a)));const ce=scl(add3(add3(a,b),c),1/3);
+    if(t.ground||t.water||t.flatUp){if(n[1]<0)n=scl(n,-1)}else if(t.inward){if(dot(n,sub(t.inward,ce))<0)n=scl(n,-1)}else if(t.center){if(dot(n,sub(ce,t.center))<0)n=scl(n,-1)}
+    t.n=n;t.cen=ce;t.jt=Math.abs((Math.sin(ce[0]*12.9898+ce[2]*78.233)*43758.5453)%1)}
+  BUILT=true}
+
+// ---------------- birds
+const BC={P:{body:[246,180,156],belly:[255,236,222],wA:[196,170,232],wB:[150,148,218],tail:[158,148,214],beak:[255,204,124],eye:[74,44,92]},
+          C:{body:[255,226,168],belly:[255,242,216],wA:[255,212,176],wB:[250,190,160],tail:[250,196,166],beak:[255,192,112],eye:[74,44,92]},
+          G:{body:[168,200,240],belly:[246,242,254],wA:[242,178,198],wB:[214,146,186],tail:[212,148,190],beak:[255,204,124],eye:[74,44,92]}};
+const PROF_A=[[-.72,0],[-.5,.17],[-.2,.29],[.15,.3],[.42,.22],[.6,0]],PROF_C=[[-.42,0],[-.34,.22],[-.08,.36],[.2,.34],[.38,.2],[.47,0]];
+function rotX(v,a){const c=Math.cos(a),s=Math.sin(a);return[v[0],v[1]*c-v[2]*s,v[1]*s+v[2]*c]}
+function rotY(v,a){const c=Math.cos(a),s=Math.sin(a);return[v[0]*c+v[2]*s,v[1],-v[0]*s+v[2]*c]}
+function rotZ(v,a){const c=Math.cos(a),s=Math.sin(a);return[v[0]*c-v[1]*s,v[0]*s+v[1]*c,v[2]]}
+// b: {pos,yaw,pitch,roll,s,g(0 chick..1 adult),cols,old,wR:{spread,lift,curl},wL,eyes(1 open,0 shut),mouth}
+const roofY=(x,z)=>1.12-.62*Math.pow((.15-z)/2.2,2)-.14*x*x;
+function birdTris(b,out,fg){
+  const g=b.g===undefined?1:b.g,s=b.s,cols=b.cols,old=b.old||0;
+  const tint=c=>old?mix(c,[232,228,244],old*.38):c;
+  const X=v=>{let w=scl(v,s);w=rotZ(w,b.pitch||0);w=rotX(w,b.roll||0);w=rotY(w,b.yaw||0);return add3(w,b.pos)};
+  const push=(a,c,d,col,o)=>out.push(Object.assign({p:[X(a),X(c),X(d)],col:tint(col),fg},o));
+  // body: a faceted lathe around the x axis
+  const prof=PROF_A.map((p,i)=>[lerp(PROF_C[i][0],p[0],g),lerp(PROF_C[i][1],p[1],g)]),seg=7,zr=.86,bc=X([0,.02,0]);
+  const ring=([x,r])=>Array.from({length:seg},(_,i)=>{const a=i/seg*Math.PI*2+Math.PI/2;return[x,Math.sin(a)*r,Math.cos(a)*r*zr]});
+  const R=prof.map(ring);
+  for(let k=0;k<R.length-1;k++)for(let i=0;i<seg;i++){const j=(i+1)%seg,a=R[k][i],c=R[k][j],d=R[k+1][j],e=R[k+1][i];
+    const my=(a[1]+c[1]+d[1]+e[1])/4,col=my<-.08?cols.belly:cols.body;push(a,c,d,col,{center:bc});push(a,d,e,col,{center:bc})}
+  // head
+  const hc=[lerp(.3,.5,g),lerp(.36,.3,g),0],hr=lerp(.27,.21,g),hw=X(hc);
+  const jr=rng(3);for(const[a,c,d]of ICO.f){const v=i=>add3(hc,scl(ICO.v[i],hr));push(v(a),v(c),v(d),cols.body,{center:hw})}
+  // eyes: tiny plum diamonds on both sides (shut = a thin line)
+  for(const sd of[-1,1]){const e=add3(hc,[hr*.42,hr*.32,sd*hr*.86]),sz=hr*.2,sy=sz*(b.eyes===0?.18:1),o=[0,0,sd*.02];
+    push(add3(e,[sz,0,0]),add3(e,[0,sy,0]),add3(e,[-sz,0,0]),cols.eye,{two:true,bias:-.02});push(add3(e,[sz,0,0]),add3(e,[-sz,0,0]),add3(e,[0,-sy,0]),cols.eye,{two:true,bias:-.02})}
+  // beak: upper and lower, the lower one drops when the mouth opens
+  const bl=lerp(.15,.27,g),bb=add3(hc,[hr*.86,-.02,0]),m=b.mouth||0,bw=hr*.3;
+  const up=[add3(bb,[0,bw*.7,-bw]),add3(bb,[0,bw*.7,bw]),add3(bb,[0,-bw*.1,0])],tipU=add3(bb,[bl,-bw*.15+m*.08,0]);
+  b._tip=X(tipU);const bcen=X(add3(bb,[bl*.3,0,0]));push(up[0],up[1],tipU,cols.beak,{center:bcen});push(up[1],up[2],tipU,cols.beak,{center:bcen});push(up[2],up[0],tipU,cols.beak,{center:bcen});
+  const lo=[add3(bb,[0,-bw*.1,-bw*.8]),add3(bb,[0,-bw*.1,bw*.8]),add3(bb,[0,-bw*.75,0])],tipL=add3(bb,[bl*.82,-bw*.35-m*.2,0]);
+  push(lo[0],lo[1],tipL,mix(cols.beak,[240,160,110],.25),{two:true});push(lo[1],lo[2],tipL,mix(cols.beak,[240,160,110],.35),{two:true});
+  // tail fan
+  const tl=lerp(.3,1,g),t0=[prof[0][0]+.08,.04,0];
+  push(t0,[t0[0]-.48*tl,.1,-.22*tl],[t0[0]-.55*tl,.13,0],cols.tail,{two:true});push(t0,[t0[0]-.55*tl,.13,0],[t0[0]-.48*tl,.1,.22*tl],mix(cols.tail,cols.wB,.4),{two:true});
+  // the storm canopy: a broad roof of long feathers spread over the chick (world space, relative to the nest)
+  if(b.canopy>0){const o=b.canopy,n=8,seg=4;
+    for(let i=0;i<n;i++){const xc=lerp(.8,-.9,i/(n-1)),L=(1.7+.45*Math.sin(i*1.9+.6))*o,hw=.17,c0=i%2?mix(cols.wB,[200,176,236],.2):mix(cols.wA,[255,236,250],.35);
+      for(let j=0;j<seg;j++){const z0=.15-L*j/seg,z1=.15-L*(j+1)/seg,P=(x,z)=>add3(N,[x,roofY(x,z),z]),cl=mix(c0,cols.wB,.15+j*.12);
+        const A=P(xc-hw,z0),B2=P(xc+hw,z0),C=P(xc+hw,z1),D=P(xc-hw,z1),wm=[255,214,184];
+        out.push({p:[A,B2,C],col:tint(mix(cl,wm,.34)),fg,two:true,wing:true,roof:true});out.push({p:[A,C,D],col:tint(mix(cl,[255,255,255],i%2?.2:.04)),fg,two:true,wing:true})}
+      const zt=.15-L,zb=.15-L*(1-1/seg);out.push({p:[add3(N,[xc-hw,roofY(xc-hw,zb),zb]),add3(N,[xc+hw,roofY(xc+hw,zb),zb]),add3(N,[xc,roofY(xc,zt-.35*o)-.04,zt-.35*o])],col:tint(mix(c0,[255,255,255],.12)),fg,two:true,wing:true})}}
+  // wings: span along +z in the open frame, then curl (outer part), lift, fold, mirror for the left side
+  const span=lerp(.42,1,g),ws=b.ws||1;
+  for(const sd of[1,-1]){const w=sd>0?b.wR:b.wL;if(!w)continue;
+    const L=(w.lift||0)+(w.flapA||0)*Math.sin(w.flapP||0),cu=w.curl||0,fold=(1-clamp(w.spread))*1.42,ze=.62*span*ws;
+    const P=v=>{let[x,y,z]=[v[0]*ws,v[1],v[2]*span*ws];if(z>ze){const d=z-ze;y=-d*Math.sin(cu)+y;z=ze+d*Math.cos(cu)}
+      let q=[x,y,z];q=rotX(q,-L);// tip up when lift>0 (z->y)
+      q=[q[0]*Math.cos(fold)-q[2]*Math.sin(fold),q[1]-(1-clamp(w.spread))*.04,q[0]*Math.sin(fold)+q[2]*Math.cos(fold)];
+      return add3([q[0],q[1],q[2]*sd],[.04,lerp(.2,.16,g),sd*lerp(.24,.2,g)])};
+    const r0=P([.26,0,0]),r1=P([-.32,0,0]),e0=P([.12,0,.62]),e1=P([-.42,0,.6]),p0=P([0,0,1.15]),tp=P([-.3,0,1.38]),f1=P([-.58,0,1.08]),f2=P([-.64,0,.84]);
+    push(r0,r1,e1,cols.wA,{two:true,wing:true});push(r0,e1,e0,mix(cols.wA,cols.body,.15),{two:true,wing:true});
+    push(e0,e1,p0,cols.wB,{two:true,wing:true});push(p0,e1,f2,mix(cols.wB,cols.wA,.3),{two:true,wing:true});push(p0,f2,f1,cols.wB,{two:true,wing:true});push(p0,f1,tp,mix(cols.wB,[255,255,255],.12),{two:true,wing:true});
+    if(w.feath){const ed=[e1,f2,f1,tp],pts=[];for(let i=0;i<ed.length-1;i++)for(let k=0;k<3;k++)pts.push(lerp3(ed[i],ed[i+1],k/3));pts.push(tp);
+      for(let i=0;i<pts.length-1;i++){const q0=pts[i],q1=pts[i+1],dr=scl(sub(q0,r0),.0),ln=.55*w.feath*(1-.35*i/pts.length);
+        push(q0,q1,add3(lerp3(q0,q1,.5),[-ln,-.06,0]),i%2?mix(cols.wA,cols.wB,.5):cols.wB,{two:true,wing:true})}}}
+}
+
+// ---------------- timeline of birds and camera
+const NS=(dx,dy,dz)=>[N[0]+dx,N[1]+dy,N[2]+dz];
+const PARENT_SPOT=NS(.25,.62,.4),CHILD_SPOT=NS(-.2,.42,-.42);
+const FOLDED={spread:0,lift:0,curl:0};
+function birdsAt(t){const B=[];
+  if(t<12.2){ // storm and under the wing
+    const k=E.inOut((t-1.55)/.85);
+    B.push({pos:PARENT_SPOT,yaw:Math.PI*.92,s:1,cols:BC.P,eyes:1,canopy:k,wR:null,wL:FOLDED,pitch:-.05*k});
+    B.push({pos:add3(CHILD_SPOT,[0,-.06,0]),yaw:Math.PI*.95,s:.62,g:0,cols:BC.C,eyes:t>7.4?0:1,pitch:lerp(.12,-.08,smooth(6.5,8,t)),wL:{spread:.2,lift:0,curl:0},wR:{spread:.2,lift:0,curl:0},shiver:t<2.4})}
+  else if(t<16.5){ // the seasons on one branch; the chick grows; food in summer
+    const g=lerp(.05,.42,smooth(12.2,16.4,t)),feed=smooth(14.3,14.9,t)*(1-smooth(15.5,15.9,t)),u=smooth(12.2,13.3,t);
+    B.push({pos:add3(PARENT_SPOT,[lerp(.35,-.05,feed)*u,lerp(.15,.1,feed)*u,lerp(.3,.05,feed)*u]),yaw:Math.PI*.92-feed*.25,pitch:-feed*.42-.05*(1-u),s:1,cols:BC.P,eyes:1,canopy:1-u,wR:FOLDED,wL:FOLDED});
+    B.push({pos:add3(CHILD_SPOT,[0,lerp(-.04,.06,g),0]),yaw:lerp(Math.PI*.95,Math.PI*1.03,u)-feed*.2,pitch:lerp(-.08,feed*.55,u),s:lerp(.62,.82,g),g,cols:{...BC.C,wA:mix(BC.C.wA,BC.G.wA,g*.6),body:mix(BC.C.body,BC.G.body,g*.5)},eyes:t<12.8?0:1,mouth:feed,wR:{spread:lerp(.2,0,u),lift:0,curl:0},wL:{spread:lerp(.2,0,u),lift:0,curl:0}})}
+  else if(t<19.2){ // the fall and the catch
+    const g=.48,cols={...BC.C,wA:mix(BC.C.wA,BC.G.wA,.35),body:mix(BC.C.body,BC.G.body,.3)};
+    const ft=clamp((t-16.5)/1.75),cp=add3(CHILD_SPOT,[lerp(0,.9,ft),-6.4*ft*ft,lerp(0,-.6,ft)]);
+    const back=smooth(18.25,19.2,t),cpos=lerp3(cp,add3(CHILD_SPOT,[0,.05,0]),back);
+    B.push({pos:cpos,yaw:Math.PI*.85+ft*1.2*(1-back),roll:ft*1.1*(1-back),pitch:-ft*.9*(1-back),s:.85,g,cols,eyes:1,wR:{spread:.8*(1-back),lift:Math.sin(t*19)*.5,curl:.2},wL:{spread:.8*(1-back),lift:Math.sin(t*19+1)*.5,curl:.2}});
+    const dive=smooth(16.7,18.15,t),pp=lerp3(PARENT_SPOT,add3(cp,[-.25,-1.05,0]),dive),ppos=lerp3(pp,PARENT_SPOT,back);
+    B.push({pos:t<18.2?pp:ppos,yaw:Math.PI*.95,pitch:lerp(-.6,.25,smooth(17.2,18.1,t))*(1-back),s:1,cols:BC.P,eyes:1,
+      wR:{spread:lerp(.1,1,dive)*(1-back*.9),lift:lerp(.6,.35,smooth(17.6,18.2,t)),curl:lerp(-.2,.9,smooth(17.8,18.3,t)),flapA:.5*(1-smooth(17.7,18.1,t)),flapP:t*14},
+      wL:{spread:lerp(.1,1,dive)*(1-back*.9),lift:lerp(.6,.35,smooth(17.6,18.2,t)),curl:lerp(-.2,.9,smooth(17.8,18.3,t)),flapA:.5*(1-smooth(17.7,18.1,t)),flapP:t*14+.3}})}
+  else if(t<25){ // the flight; the old bird stays in the nest
+    const p=flight(t),fl=Math.sin(t*7.5)*.55*(1-smooth(22.5,23.4,t))+Math.sin(t*3)*.15;
+    B.push({pos:p.pos,yaw:p.yaw,pitch:p.pitch,roll:p.roll,s:1.12,g:1,cols:BC.G,eyes:1,wR:{spread:1,lift:.12,curl:.1,flapA:.55,flapP:t*7.5},wL:{spread:1,lift:.12,curl:.1,flapA:.55,flapP:t*7.5}});
+    B.push({pos:add3(PARENT_SPOT,[0,-.05,0]),yaw:Math.PI*1.75,s:.95,cols:BC.P,old:.4,eyes:1,wR:FOLDED,wL:FOLDED,pitch:-.12})}
+  else { // winter, then dawn
+    const land=smooth(25,28.8,t),low=E.inOut((t-28.9)/1.2);
+    const gp=lerp3(add3(PARENT_SPOT,[.3,7.2,.2]),PARENT_SPOT,E.out(land));
+    const flap=1-smooth(27.6,28.8,t);
+    const dawn=smooth(42,43,t);
+    B.push({pos:add3(CHILD_SPOT,[lerp(0,.1,dawn),-.02,lerp(0,.15,dawn)]),yaw:Math.PI*.95,s:.86,cols:BC.P,old:1,eyes:t>33&&t<42?0:1,pitch:-.14,wR:FOLDED,wL:FOLDED});
+    B.push({pos:lerp3(gp,add3(PARENT_SPOT,[.05,0,.05]),dawn),yaw:Math.PI*.92,pitch:-.05*low,s:1.12,g:1,cols:BC.G,eyes:1,
+      wR:{spread:(1-dawn),lift:lerp(.35,.42,low)*(1-dawn),curl:lerp(.1,1.15,low)*(1-dawn),flapA:.6*flap,flapP:t*6},
+      wL:{spread:(1-low)*(1-dawn),lift:.35,curl:.1,flapA:.6*flap,flapP:t*6+.4}})}
+  return B}
+// the young bird's flight path (position, heading) for 19 to 25 s
+const FP=[[19.2,NS(.25,.7,.4)],[20.4,[12,6,20]],[21.6,[16,-6,48]],[22.8,[18,-4,70]],[25,[19,-1.5,78]]];
+function catmull(t){let i=0;while(i<FP.length-2&&t>FP[i+1][0])i++;const p0=FP[Math.max(0,i-1)][1],p1=FP[i][1],p2=FP[i+1][1],p3=FP[Math.min(FP.length-1,i+2)][1],u=clamp((t-FP[i][0])/(FP[i+1][0]-FP[i][0]));
+  return[0,1,2].map(k=>.5*((2*p1[k])+(-p0[k]+p2[k])*u+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*u*u+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*u*u*u))}
+function flight(t){const tt=clamp(t,19.2,24.6),pos=catmull(tt),a=catmull(tt+.05),d=norm(sub(a,pos)),turn=smooth(23,24.4,t);
+  let yaw=Math.atan2(-d[2],d[0]);yaw=lerp(yaw,yaw+Math.PI*.92,turn);
+  return{pos,yaw,pitch:Math.asin(clamp(d[1],-1,1))*(1-turn),roll:-.25*Math.sin((t-19)*1.3)*(1-turn)}}
+// camera key shots
+function camAt(t,B){
+  const NN=N;
+  if(t<2.3){ // falling with one raindrop
+    const D=drop(t);return{pos:add3(D,[.55,1.0,-3.1]),tgt:add3(D,[-.1,-1.9,1.2]),roll:.04,f:1180,blur:smooth(.2,1.2,t)*7}}
+  if(t<6.2){const k=E.out((t-2.3)/1.9);
+    const D=drop(2.3);return{pos:lerp3(add3(D,[.55,1.0,-3.1]),NS(-1.9,1.35,-5.0),k),tgt:lerp3(add3(D,[-.1,-1.9,1.2]),NS(-.45,.5,0),k),roll:lerp(.04,0,k),f:lerp(1180,1080,k),blur:lerp(7,0,k)}}
+  if(t<12.2){const u=underCam(t);return{pos:u.pos,tgt:u.tgt,roll:0,f:u.f,blur:u.blur,fgOnly:u.fgOnly}}
+  if(t<16.45){ // locked-off time-lapse that eases out of the wing, then pushes in on the feeding
+    const lk=LK(t),u=smooth(12.2,13.5,t),e=UNDER_END();
+    return{pos:lerp3(e.pos,lk.pos,u),tgt:lerp3(e.tgt,lk.tgt,u),roll:0,f:lerp(e.f,1080,u),blur:lerp(9,0,smooth(12.2,12.55,t)),fgOnly:t<12.55}}
+  if(t<19.2){ // the whip pan down with the falling chick, then rise back
+    const k=E.inOut((t-16.45)/.55),back=smooth(18.4,19.2,t),cp=B[0].pos,s0=LK(16.45);
+    const tgt=lerp3(s0.tgt,add3(cp,[-.05,-.35,0]),k),pos=lerp3(s0.pos,add3(cp,[-1.0,.3,-2.5]),k);
+    return{pos:lerp3(pos,NS(-2.3,1.3,-5.6),back),tgt:lerp3(tgt,NS(-.5,.35,0),back),roll:Math.sin(k*Math.PI)*.22+(1-back)*k*.08,f:1080,blur:0,whip:Math.sin(k*Math.PI)}}
+  if(t<25){ // chase, then the turn back
+    const p=flight(t),fwd=[Math.cos(p.yaw),0,-Math.sin(p.yaw)],turn=smooth(23,24.4,t);
+    const chase={pos:add3(p.pos,add3(scl(fwd,-3.6),[0,1.2,0])),tgt:add3(p.pos,add3(scl(fwd,7),[0,-1.2,0]))};
+    const back={pos:add3(p.pos,[.9,1.1,2.2]),tgt:add3(NN,[-1,2,0])};
+    const lift=smooth(19,20.3,t),start={pos:NS(-2.3,1.3,-5.6),tgt:NS(-.5,.35,0)};
+    let pos=lerp3(start.pos,chase.pos,lift),tgt=lerp3(start.tgt,chase.tgt,lift);
+    pos=add3(pos,[0,15*smooth(21.2,23.0,t)*(1-turn),0]);tgt=add3(tgt,[0,-2*smooth(21.2,23.0,t)*(1-turn),0]);   // the crane rise
+    pos=lerp3(pos,back.pos,turn);tgt=lerp3(tgt,back.tgt,turn);
+    return{pos,tgt,roll:p.roll*.4*(1-turn),f:1050,blur:0}}
+  if(t<28.5){const o=OH(smooth(25,28.5,t));return{pos:o.pos,tgt:o.tgt,roll:lerp(.15,.05,smooth(25,28.5,t)),f:1080,blur:0}}
+  if(t<31){const k=E.inOut((t-28.5)/2.1),o=OH(1);return{pos:lerp3(o.pos,NS(-1.5,1.0,-4.4),k),tgt:lerp3(o.tgt,NS(-.1,.6,-.2),k),roll:lerp(.05,0,k),f:1080,blur:0}}
+  if(t<42){const d=duaCam(t);return{pos:d.pos,tgt:d.tgt,roll:0,f:d.f,blur:d.blur,fgOnly:d.fgOnly}}
+  if(t<45){ // pull up at first light: rack focus from the two birds to the tree and the valley
+    const k=E.inOut((t-42)/3),d=duaCam(42),off=1-smooth(42,43.8,t),bl=lerp(8,0,smooth(42,43.6,t));
+    return{pos:add3(lerp3(NS(-1.6,1.4,-5.4),NS(-9,7,-26),k),scl(sub(d.pos,NS(-1.6,1.4,-5.4)),off)),tgt:add3(lerp3(NS(0,.7,0),NS(-3.5,3.2,2),k),scl(sub(d.tgt,NS(0,.7,0)),off)),roll:0,f:lerp(d.f,1080,smooth(42,43.8,t)),blur:bl,fgOnly:bl>1.2}}
+  {const k=E.inOut((t-45)/3);return{pos:lerp3(NS(-9,7,-26),NS(-10,9,-28),k),tgt:lerp3(NS(-3.5,3.2,2),NS(-6,70,60),k),roll:0,f:1080,blur:0}}}
+const LK=t=>{const k=smooth(13.4,15.0,t);return{pos:lerp3(NS(-2.3,1.3,-5.6),NS(-.7,.7,-2.3),k),tgt:lerp3(NS(-.5,.35,0),NS(-.05,.5,0),k)}};
+const OH=k=>({pos:NS(lerp(1.6,.9,k),lerp(10.5,5.2,k),lerp(-3.4,-4.2,k)),tgt:NS(0,lerp(2.8,.3,k),lerp(.2,.25,k))});
+const duaCam=t=>{const k=E.inOut((t-31)/2.4),c=CHILD_SPOT,slow=Math.max(0,t-33.4),drift=slow*.012;
+  return{pos:lerp3(NS(-1.5,1.0,-4.4),add3(c,[-.5+drift,-.25,-2.0+slow*.03]),k),tgt:lerp3(NS(-.1,.6,-.2),add3(c,[.12,-.3,.15]),k),f:lerp(1080,1120,k)+slow*3,blur:lerp(0,8,k),fgOnly:k>.5}};
+const underCam=t=>{const k=E.inOut((t-6.2)/2.3),d=Math.max(0,t-8.5);   // the push through the feather tips, then a slow drift
+  return{pos:add3(lerp3(NS(-1.9,1.35,-5.0),NS(-1.2,.5,-1.2),k),[d*.04,d*.004,d*.02]),tgt:add3(lerp3(NS(-.45,.5,0),NS(0,.9,-.3),k),[d*.02,0,d*.01]),f:lerp(1080,1100,k),blur:lerp(0,8,k),fgOnly:k>.5}};
+const UNDER_END=()=>underCam(12.2);
+// the one raindrop of the opening shot
+function drop(t){const k=clamp(t/2.3);return NS(-.55,lerp(8.5,1.05,k*k*.35+k*.65),-.75)}
+
+// ---------------- particles
+const RAIN=(()=>{const r=rng(31),o=[];for(let i=0;i<340;i++)o.push([r()*1300-110,r()*2200,r.range(.6,1.4),r.range(40,110),r()]);return o})();
+const SNOW=(()=>{const r=rng(61),o=[];for(let i=0;i<420;i++)o.push([r.range(-14,14),r.range(-4,22),r.range(-10,14),r.range(.5,1.2),r()]);return o})();
+const PET=(()=>{const r=rng(71),o=[];for(let i=0;i<120;i++)o.push([r.range(-9,12),r.range(-6,18),r.range(-6,5),r.range(.4,1),r()*6.28]);return o})();
+const MOTE=(()=>{const r=rng(81),o=[];for(let i=0;i<70;i++)o.push([r.range(-1.6,1.6),r.range(-.4,1.8),r.range(-2.4,.6),r()]);return o})();
+
+// ---------------- Arabic pen
+const STRIP=s=>s.replace(/[ً-ٰٟۖ-ۭ]/g,'');
+function pen(str,y,size,col,t,a,b,glow){
+  if(t<a)return;const p=E.out((t-a)/(b-a)),X0=70,X1=1010,SL=60,fx=X1+SL-(X1-X0+SL*2)*p;
+  ctx.save();ctx.font=size+'px ScheherazadeG';ctx.direction='rtl';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.beginPath();ctx.moveTo(fx,y-size*1.25);ctx.lineTo(X1+60,y-size*1.25);ctx.lineTo(X1+60,y+size*.75);ctx.lineTo(fx-SL,y+size*.75);ctx.closePath();ctx.clip();
+  const marks=E.out((t-b)/.5);
+  if(glow){ctx.save();ctx.globalAlpha=.6;ctx.filter='blur(14px)';ctx.fillStyle=glow;ctx.fillText(str,540,y);ctx.restore()}
+  ctx.fillStyle=col;ctx.globalAlpha=marks<.7?1:1-(marks-.7)/.3;ctx.fillText(STRIP(str),540,y);ctx.globalAlpha=marks;ctx.fillText(str,540,y);ctx.restore()}
+
+// ---------------- captions
+const SANS='"Avenir Next","Avenir","Helvetica Neue",Arial,sans-serif';
+const PLUM='#4b2c5e',CREAM='#fff4ec',CORAL='#e7787a';
+function wrap(text,maxW,font){ctx.font=font;const words=text.split(' '),lines=[];let cur='';for(const w of words){const tt=cur?cur+' '+w:w;if(ctx.measureText(tt).width>maxW&&cur){lines.push(cur);cur=w}else cur=tt}if(cur)lines.push(cur);return lines}
+// one caption block: fades up, soft backing glow so it sits on a calm patch
+function caption(text,y,t,a,b,o){o=o||{};const inn=E.out((t-a)/.6),outk=b===undefined?1:1-E.out((t-b)/.45),al=inn*outk;if(al<=.01)return y;
+  const size=o.size||68,font=`${o.weight||700} ${size}px ${SANS}`,lines=wrap(text,o.w||900,font),lh=size*1.2,dark=o.dark;
+  ctx.save();ctx.globalAlpha=al;const h=lines.length*lh,cy=y+h/2-size*.8+(1-inn)*16;
+  const g=ctx.createRadialGradient(540,cy,40,540,cy,Math.max(460,h*1.3));const gc=dark?[60,36,90]:[255,246,242];g.addColorStop(0,css(gc,dark?.42:.62));g.addColorStop(1,css(gc,0));
+  ctx.fillStyle=g;ctx.save();ctx.translate(540,cy);ctx.scale(1,Math.max(.35,h/900+.22));ctx.translate(-540,-cy);ctx.fillRect(0,cy-900,W,1800);ctx.restore();
+  ctx.font=font;ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  lines.forEach((ln,i)=>{const yy=y+i*lh+(1-inn)*16;if(dark){ctx.save();ctx.shadowColor='rgba(40,20,70,.55)';ctx.shadowBlur=18;ctx.fillStyle=CREAM;ctx.fillText(ln,540,yy);ctx.restore()}
+    else{ctx.fillStyle=o.col||PLUM;ctx.fillText(ln,540,yy)}});
+  ctx.restore();return y+lines.length*lh}
+
+// ---------------- render
+function draw3D(cam,ev,t,B,blur,fgOnly,whip){
+  const L=ev.sd,AMB=ev.amb,SUN=ev.sun,season=ev.season,snowy=smooth(3.6,4.2,season)*(season<4.8?1:1-smooth(4.8,5,season));
+  const leafCol=seasonCol(LEAF,season),grCol=seasonCol(GROUND,season);
+  const crownK=season<4.5?1-smooth(3.55,3.95,season):0; // bare in winter and at dawn
+  const dyn=[];B.forEach((b,i)=>birdTris(b,dyn,true));
+  const all=tris.concat(dyn),out=[],cpos=cam.pos,near=.05;
+  for(const tri of all){
+    let n=tri.n,cen=tri.cen;
+    if(!n){const[a,b,c]=tri.p;n=norm(cross(sub(b,a),sub(c,a)));cen=scl(add3(add3(a,b),c),1/3);if(tri.center&&!tri.two&&dot(n,sub(cen,tri.center))<0)n=scl(n,-1)}
+    if(tri.snow&&snowy<.05)continue;if(tri.crown&&crownK<.02)continue;
+    const toCam=sub(cpos,cen);
+    if(tri.two){if(dot(n,toCam)<0)n=scl(n,-1)}else if(!tri.ground&&!tri.water&&dot(n,toCam)<=0)continue;
+    let pa=cam.proj(tri.p[0]),pb=cam.proj(tri.p[1]),pc=cam.proj(tri.p[2]);
+    if(pa[2]<near||pb[2]<near||pc[2]<near)continue;
+    if(tri.ground&&dot(n,toCam)<=0)continue;
+    const mnx=Math.min(pa[0],pb[0],pc[0]),mxx=Math.max(pa[0],pb[0],pc[0]),mny=Math.min(pa[1],pb[1],pc[1]),mxy=Math.max(pa[1],pb[1],pc[1]);
+    if(mxx<-40||mnx>W+40||mxy<-40||mny>HH+40)continue;
+    if(tri.crown&&crownK<1){const cc=cam.proj(tri.ccen||tri.center),sq=p=>[cc[0]+(p[0]-cc[0])*crownK,cc[1]+(p[1]-cc[1])*crownK,p[2]];pa=sq(pa);pb=sq(pb);pc=sq(pc)}
+    let base=tri.col;
+    if(tri.ground){base=tri.rock?mix(ROCK,grCol,.25*snowy+.1):grCol;if(snowy>0&&tri.rock)base=mix(base,[238,240,252],snowy*.6);base=base.map(v=>v*tri.jit)}
+    else if(tri.leaf)base=tri.crown?mix(leafCol,[255,255,250],.2+(tri.jt-.5)*.36):mix(leafCol,[255,255,255],(tri.jt-.5)*.12);
+    else if(tri.cloud)base=ev.cloud;
+    else if(tri.water)base=mix(hexA('#b9d2f4'),ev.low,.35);
+    if(snowy>0&&(tri.nest||tri.flatUp&&!tri.snow)&&n[1]>.6)base=mix(base,[244,246,255],snowy*.7);
+    const lam=Math.max(0,dot(n,L)),hemi=.78+.22*Math.max(0,n[1]);
+    let col=tri.cloud?mix(base,[255,255,255],.1+.25*lam):[0,1,2].map(i=>base[i]*(AMB[i]/255*.86*hemi+SUN[i]/255*lam*.36));
+    if(tri.roof)col=mix(col,[238,212,240],.3);
+    const depth=(pa[2]+pb[2]+pc[2])/3+(tri.bias||0);
+    const fk=tri.cloud?.35:clamp(Math.pow(smooth(18,420,depth),1.05)*.9);
+    col=mix(col,ev.fog,fk);
+    out.push({pa,pb,pc,depth,col,fg:tri.fg||tri.nest});
+  }
+  out.sort((p,q)=>q.depth-p.depth);
+  const paint=(c,list)=>{for(const o of list){const fs=css(o.col);c.fillStyle=fs;c.strokeStyle=fs;c.lineWidth=1;c.beginPath();c.moveTo(o.pa[0],o.pa[1]);c.lineTo(o.pb[0],o.pb[1]);c.lineTo(o.pc[0],o.pc[1]);c.closePath();c.fill();c.stroke()}};
+  // sky into the background canvas
+  bx.setTransform(1,0,0,1,0,0);bx.filter='none';bx.globalAlpha=1;
+  const hz=cam.proj(add3(cpos,[cam.fw[0]*4000,0,cam.fw[2]*4000]))[1];
+  bx.save();bx.translate(CX,CY);bx.rotate(-cam.roll);bx.translate(-CX,-CY);
+  const sky=bx.createLinearGradient(0,hz-2300,0,hz+40);sky.addColorStop(0,css(ev.top));sky.addColorStop(.55,css(ev.mid));sky.addColorStop(.85,css(ev.low));sky.addColorStop(1,css(ev.hz));
+  bx.fillStyle=sky;bx.fillRect(-600,-600,W+1200,HH+1200);bx.fillStyle=css(ev.fog);bx.fillRect(-600,hz+40,W+1200,HH+1200);bx.restore();
+  // faceted sun in the sky (not in the storm)
+  const sunA=1-smooth(0,.6,ev.rain);if(sunA>.02){const sp=cam.proj(add3(cpos,scl(norm([L[0]*-1,Math.max(.12,L[1]*.45),-L[2]]),3000)));if(sp[2]>0){
+    const R=95,g=bx.createRadialGradient(sp[0],sp[1],R*.3,sp[0],sp[1],R*6);g.addColorStop(0,css(ev.sun,.5*sunA));g.addColorStop(1,css(ev.sun,0));bx.fillStyle=g;bx.fillRect(0,0,W,HH);
+    for(let i=0;i<14;i++){const a0=i/14*Math.PI*2,a1=(i+1)/14*Math.PI*2;bx.fillStyle=css(mix([255,226,190],[255,248,232],.5+.5*Math.cos(a0-2.3)),sunA);bx.beginPath();bx.moveTo(sp[0],sp[1]);bx.lineTo(sp[0]+Math.cos(a0)*R,sp[1]+Math.sin(a0)*R);bx.lineTo(sp[0]+Math.cos(a1)*R,sp[1]+Math.sin(a1)*R);bx.closePath();bx.fill()}}}
+  const fgList=[],bgList=[];for(const o of out)(fgOnly&&o.fg?fgList:bgList).push(o);
+  paint(bx,bgList);
+  // storm flashes, soft lilac (no hard white)
+  const fl=Math.max(0,1-Math.abs(t-3.7)/.12)*.5+Math.max(0,1-Math.abs(t-9.6)/.15)*.35;if(fl>0&&ev.rain>.5){bx.fillStyle=`rgba(236,226,255,${fl*.45})`;bx.fillRect(0,0,W,HH)}
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  ctx.filter=blur>.3?`blur(${blur.toFixed(1)}px)`:'none';ctx.drawImage(bgc,0,0);ctx.filter='none';
+  if(whip>.05){ctx.save();for(let k=1;k<=5;k++){ctx.globalAlpha=.16*whip;ctx.drawImage(bgc,0,-k*28*whip)}ctx.restore()}
+  paint(ctx,fgList);
+  return out}
+function roofTaps(cam,t){ // rain drumming on the feathers above: little splashes on the canopy
+  const al=smooth(2.6,3.4,t)*(1-smooth(11.6,12.2,t));if(al<=0)return;ctx.save();
+  for(let i=0;i<26;i++){const cyc=t*2.1+i*.37,id=Math.floor(cyc),fr=cyc-id,r=rng(id*131+i*7+5);if(fr>.4)continue;
+    const x=r.range(-.9,.8),z=r.range(.05,-1.7),p=add3(N,[x,roofY(x,z)-.02,z]),q=cam.proj(p);if(q[2]<.2)continue;const k=fr/.4,rad=.03*F/q[2]*(.5+k*1.4);
+    ctx.globalAlpha=al*(1-k)*.7;ctx.strokeStyle='rgba(250,244,255,1)';ctx.lineWidth=1.5+2*(1-k);ctx.beginPath();ctx.ellipse(q[0],q[1],rad*1.6,rad*.55,0,0,7);ctx.stroke();
+    ctx.fillStyle='rgba(255,250,255,1)';ctx.beginPath();ctx.arc(q[0],q[1]-rad*k*1.6,Math.max(1.5,rad*.1),0,7);ctx.fill()}
+  ctx.restore()}
+// the story moments that must read at phone size: the food drop, the catch, the dawn light, the snow squall between seasons
+function moments(cam,B,t){
+  if(t>14.2&&t<15.6&&B[0]._tip&&B[1]._tip){const P=B[0]._tip,C=B[1]._tip,k=E.inOut(clamp((t-14.5)/.5)),p=lerp3(P,C,k);p[1]+=.12*Math.sin(k*Math.PI);
+    const vis=smooth(14.2,14.4,t)*(1-smooth(15.0,15.1,t)),q=cam.proj(p);
+    if(vis>.02&&q[2]>.2){const r=.1*F/q[2];ctx.save();ctx.globalAlpha=vis;
+      const g=ctx.createRadialGradient(q[0],q[1],r*.3,q[0],q[1],r*3.4);g.addColorStop(0,'rgba(255,236,200,.75)');g.addColorStop(1,'rgba(255,236,200,0)');ctx.fillStyle=g;ctx.fillRect(q[0]-r*4,q[1]-r*4,r*8,r*8);
+      ctx.fillStyle='rgb(244,104,120)';ctx.beginPath();for(let i=0;i<7;i++){const a=i/7*Math.PI*2;ctx.lineTo(q[0]+Math.cos(a)*r,q[1]+Math.sin(a)*r)}ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(255,226,226,.9)';ctx.beginPath();ctx.moveTo(q[0]-r*.5,q[1]-r*.2);ctx.lineTo(q[0]-r*.1,q[1]-r*.6);ctx.lineTo(q[0]+r*.1,q[1]-r*.1);ctx.closePath();ctx.fill();ctx.restore()}
+    const s0=(t-15.0)/.55;if(s0>0&&s0<1){const c=cam.proj(C);ctx.save();for(let i=0;i<8;i++){const a=i/8*Math.PI*2,d=(.2+s0*.7)*F/c[2]*.5;ctx.globalAlpha=(1-s0)*.9;ctx.fillStyle='#fff1d6';
+        const x=c[0]+Math.cos(a)*d,y=c[1]+Math.sin(a)*d*.8,rr=7*(1-s0)+2;ctx.beginPath();ctx.moveTo(x,y-rr);ctx.lineTo(x+rr*.6,y);ctx.lineTo(x,y+rr);ctx.lineTo(x-rr*.6,y);ctx.closePath();ctx.fill()}ctx.restore()}}
+  if(t>17.9&&t<19.0){const s0=(t-18.1)/.8,q=cam.proj(add3(B[0].pos,[0,-.45,0]));
+    if(q[2]>.2){const a=Math.sin(clamp((t-17.9)/1.1)*Math.PI),R=(.7+Math.max(0,s0)*2.2)*F/q[2];ctx.save();ctx.globalCompositeOperation='lighter';
+      const g=ctx.createRadialGradient(q[0],q[1],R*.1,q[0],q[1],R);g.addColorStop(0,`rgba(255,226,186,${.2*a})`);g.addColorStop(1,'rgba(255,226,186,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,HH);ctx.restore();
+      if(s0>0&&s0<1){ctx.save();ctx.strokeStyle='rgba(255,246,230,1)';ctx.globalAlpha=(1-s0)*.85;ctx.lineWidth=6*(1-s0)+1;ctx.beginPath();ctx.ellipse(q[0],q[1],R*.8,R*.55,0,0,7);ctx.stroke();ctx.restore()}}}
+  if(t>42){const al=smooth(42,43.2,t);ctx.save();ctx.fillStyle='#fff0d0';
+    for(let i=0;i<46;i++){const r=rng(i*17+3),x0=r()*W,sp=r.range(30,90),ph=r()*6.28,y=HH+40-((t*sp+r()*2000)%2100),x=x0+Math.sin(t*.7+ph)*34,rr=r.range(2.5,6.5);
+      ctx.globalAlpha=al*r.range(.25,.6)*(.6+.4*Math.sin(t*2+ph));ctx.beginPath();ctx.arc(x,y,rr,0,7);ctx.fill()}ctx.restore()}
+  const wo=smooth(24.35,24.97,t)*(1-smooth(25,25.8,t));if(wo>.01){ctx.save();ctx.fillStyle=`rgba(244,242,255,${wo})`;ctx.fillRect(0,0,W,HH);ctx.restore()}}
+function particles(cam,ev,t){
+  // rain: slanted streaks, two depths
+  if(ev.rain>.02){ctx.save();ctx.lineCap='round';for(const[x0,y0,sp,len,d]of RAIN){const y=(y0+t*1900*sp)%2200-140,x=x0-((y0+t*1900*sp)%2200)*.18;
+      ctx.strokeStyle=`rgba(240,234,255,${(.18+.4*d)*ev.rain})`;ctx.lineWidth=1+d*2.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-len*.18*sp,y-len*sp);ctx.stroke()}ctx.restore()}
+  // petals and leaves while the seasons turn
+  const pk=smooth(12.2,12.6,t)*(1-smooth(19,19.6,t));if(pk>0){const s=env(t).season,c=s<1.5?[255,196,214]:s<2.5?[255,238,200]:[255,176,128];
+    for(const[x0,y0,z0,sz,ph]of PET){const tt=t*.9+ph,p=NS(x0+Math.sin(tt)*1.2,((y0-t*1.6)%24+24)%24-6,z0+Math.cos(tt*.7));const q=cam.proj(p);if(q[2]<.3)continue;const r=sz*.16*F/q[2];if(r<1)continue;
+      ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(tt*2);ctx.globalAlpha=pk*.9;ctx.fillStyle=css(c);ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(0,-r*.55);ctx.lineTo(r,0);ctx.lineTo(0,r*.55);ctx.closePath();ctx.fill();ctx.restore()}}
+  // snow near the camera; turns into warm motes under the wing
+  if(ev.snow>.02){const warm=smooth(31.5,34,t)*(1-smooth(41.5,42.5,t));const ce=cam.pos;
+    for(const[x0,y0,z0,sz,ph]of SNOW){const y=((y0-t*(1.1-warm*.8))%26+26)%26-4,p=add3(add3(ce,scl(cam.fw,8)),[x0+Math.sin(t*.8+ph*6)*.6,y-8,z0]);const q=cam.proj(p);if(q[2]<.4)continue;const r=sz*.07*F/q[2];if(r<.8)continue;
+      if(t>31.2&&t<42.2&&q[1]>1010&&q[1]<1520)continue;const c=mix([255,255,255],[255,214,170],warm);ctx.fillStyle=css(c,(.55+.35*ph)*ev.snow);ctx.beginPath();ctx.arc(q[0],q[1],r,0,7);ctx.fill()}}
+}
+const AR1='رَّبِّ ٱرْحَمْهُمَا',AR2='كَمَا رَبَّيَانِى صَغِيرًا';
+const frameFull=function(t){
+  if(!BUILT)buildWorld();
+  const ev=env(t),B=birdsAt(t),c=camAt(t,B);F=c.f;
+  const cam=makeCam(c.pos,c.tgt,c.roll,c.f);
+  draw3D(cam,ev,t,B,c.blur||0,c.fgOnly,c.whip||0);
+  // warm light under the wing
+  const ug=smooth(7,8.5,t)*(1-smooth(11.8,12.3,t))+smooth(32,34,t)*(1-smooth(41.6,42.2,t));
+  if(ug>0){const cs=cam.proj(add3(CHILD_SPOT,[0,.3,0]));if(cs[2]>0){const g=ctx.createRadialGradient(cs[0],cs[1],10,cs[0],cs[1],560);g.addColorStop(0,`rgba(255,206,160,${.35*ug})`);g.addColorStop(1,'rgba(255,206,160,0)');ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;ctx.fillRect(0,0,W,HH);ctx.restore()}}
+  roofTaps(cam,t);particles(cam,ev,t);moments(cam,B,t);
+  // the raindrop of the opening, and its splash on the wing
+  if(t<2.75){const D=drop(Math.min(t,2.3)),q=cam.proj(D);if(q[2]>.1){const r=.2*F/q[2];
+    if(t<2.3){ctx.save();ctx.translate(q[0],q[1]);const g=ctx.createLinearGradient(0,-r*2.2,0,r);g.addColorStop(0,'rgba(236,230,255,.15)');g.addColorStop(1,'rgba(246,242,255,.92)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(0,-r*2.4);ctx.bezierCurveTo(r*.7,-r*.6,r,0,r,r*.2);ctx.arc(0,r*.2,r,0,Math.PI);ctx.bezierCurveTo(-r,0,-r*.7,-r*.6,0,-r*2.4);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.95)';ctx.beginPath();ctx.ellipse(-r*.35,-r*.05,r*.18,r*.32,-.4,0,7);ctx.fill();
+      ctx.strokeStyle='rgba(180,160,230,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,r*.2,r*.92,.2,Math.PI-.2);ctx.stroke();ctx.restore()}
+    else{const k=(t-2.3)/.45;ctx.save();for(let i=0;i<9;i++){const a=-Math.PI*(.1+.8*i/8),d=r*(1+k*3.2);ctx.fillStyle=`rgba(246,240,255,${.85*(1-k)})`;ctx.beginPath();ctx.arc(q[0]+Math.cos(a)*d,q[1]+Math.sin(a)*d*.6-k*r*1.2*Math.sin(Math.PI*k),r*.22*(1-k*.6),0,7);ctx.fill()}ctx.restore()}}}
+  // soft vignette in the palette
+  const vg=ctx.createRadialGradient(540,960,600,540,960,1250);vg.addColorStop(0,'rgba(90,60,130,0)');vg.addColorStop(1,`rgba(90,60,130,${ev.rain>.5?.32:.16})`);ctx.fillStyle=vg;ctx.fillRect(0,0,W,HH);
+  // grain
+  ctx.save();ctx.globalAlpha=.06;const gr=rng(Math.floor(t*12)+1);for(let i=0;i<1400;i++){ctx.fillStyle=gr()<.5?'#fff':'#5a3c7a';ctx.fillRect(gr()*W,gr()*HH,2,2)}ctx.restore();
+  // ---- words
+  caption('The first storm of your life, you never even felt.',360,t,.4,5.7,{dark:true,size:76});
+  caption('Someone spread a wing over you and took the rain themselves.',1330,t,6.5,11.8,{dark:true});
+  let y=caption('They fed you first.',330,t,12.6,18.9);
+  caption('They taught you to fly, and they caught you every time you fell.',y+10,t,15.4,18.9);
+  caption('Then one day you were the strong one, and they were the small one in the nest.',350,t,19.8,24.8);
+  caption('Allah used this same picture: lower to them the wing of humility, out of mercy.',340,t,25.6,30.8);
+  // the dua under the wing
+  if(t>31.2&&t<42.2){const al=1-smooth(41.6,42.1,t);ctx.save();ctx.globalAlpha=al;
+    const bg=ctx.createRadialGradient(540,1250,60,540,1250,700);bg.addColorStop(0,'rgba(70,40,96,.55)');bg.addColorStop(1,'rgba(70,40,96,0)');ctx.fillStyle=bg;ctx.save();ctx.translate(540,1250);ctx.scale(1,.78);ctx.translate(-540,-1250);ctx.fillRect(0,300,W,1900);ctx.restore();
+    pen(AR1,1050,104,'#fff6ee',t,31.6,32.9,'#c79ad8');pen(AR2,1170,104,'#fff6ee',t,32.9,34.4,'#c79ad8');
+    const e=E.out((t-35)/.6);ctx.globalAlpha=al*e;ctx.textAlign='center';ctx.fillStyle=CREAM;ctx.shadowColor='rgba(40,20,70,.6)';ctx.shadowBlur=14;
+    ctx.font=`italic 600 62px ${SANS}`;const el=wrap('\u201cMy Lord, have mercy upon them, as they brought me up when I was small.\u201d',900,ctx.font);el.forEach((ln,i)=>ctx.fillText(ln,540,1290+i*72+(1-e)*12));
+    const c3=E.out((t-35.7)/.5);ctx.globalAlpha=al*c3;ctx.shadowBlur=0;ctx.font=`700 36px ${SANS}`;if('letterSpacing' in ctx)ctx.letterSpacing='10px';ctx.fillStyle='#ffe2cc';ctx.shadowColor='rgba(40,20,70,.7)';ctx.shadowBlur=10;ctx.fillText('QURAN 17:24',545,1290+el.length*72+34);ctx.restore()}
+  caption('Wherever they are tonight, say it for them.',360,t,42.4,44.9);
+  // end card: the same sky, words in the palette
+  if(t>45){const e=E.out((t-45.2)/.7);ctx.save();ctx.globalAlpha=e;ctx.fillStyle='rgba(255,240,236,.5)';ctx.fillRect(0,0,W,HH);ctx.restore();
+    caption('Save this, and say it for them every night.',880,t,45.3,undefined,{size:72});
+    ctx.save();ctx.globalAlpha=E.out((t-45.9)/.6);ctx.textAlign='center';ctx.fillStyle=PLUM;ctx.font=`700 58px ${SANS}`;ctx.fillText('@yourpage',540,1420);
+    ctx.font=`600 28px ${SANS}`;if('letterSpacing' in ctx)ctx.letterSpacing='9px';ctx.fillStyle='#8a5a8e';ctx.fillText('FOLLOW FOR MORE',545,1480);ctx.restore()}
+  return{};
+};
+// ---------------- 10 s demo: four cuts from the full reel, each opened with a short fade from the palette
+const CUTS=[[1.2,2.5],[15.6,2.5],[21.4,2.5],[26.9,2.5]];
+const cutAt=t=>{let a=0;for(const[s,l]of CUTS){if(t<a+l)return[s+(t-a),t-a];a+=l}const[s,l]=CUTS[CUTS.length-1];return[s+l,l]};
+{const keep=[];let a=0;for(const[s,l]of CUTS){for(const e of SFX)if(e.t>=s&&e.t<s+l)keep.push(Object.assign({},e,{t:a+e.t-s}));a+=l}SFX.length=0;keep.forEach(e=>SFX.push(e))}
+window.frame=function(t){const[ft,k]=cutAt(t);frameFull(ft);const f=1-smooth(0,.25,k);if(f>0&&t>.1){ctx.fillStyle=`rgba(246,226,236,${f})`;ctx.fillRect(0,0,W,HH)}return{}};
+document.fonts.load('104px ScheherazadeG').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

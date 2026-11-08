@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+.cap{position:absolute;left:120px;right:120px;text-align:center;color:#fff;font-family:"Avenir Next",sans-serif;font-weight:400;font-size:38px;letter-spacing:.01em;text-transform:lowercase;opacity:0}
+svg{position:absolute;inset:0}
+</style></head>
+<body>
+<svg viewBox="0 0 1080 1920" width="1080" height="1920">
+  <defs><filter id="g" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="16"/></filter></defs>
+  <circle id="big" cx="540" cy="960" r="250" fill="none" stroke="#fff" stroke-width="3"/>
+  <circle id="bigfill" cx="540" cy="960" r="250" fill="#fff" opacity="0"/>
+  <path id="trail" d="M 180 1080 L 900 1080" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <g id="ticks"></g>
+  <circle id="ballg" r="22" fill="#fff" opacity="0" filter="url(#g)"/>
+  <circle id="ball" r="13" fill="#fff" opacity="0"/>
+  <g id="hand" opacity="0"><path d="M0 0 v-46 a8 8 0 0 1 16 0 v30 v-40 a8 8 0 0 1 16 0 v40 v-32 a8 8 0 0 1 16 0 v34 v-24 a8 8 0 0 1 16 0 v44 c0 30 -18 48 -42 48 h-6 c-18 0 -28 -10 -38 -26 l-22 -36 a9 9 0 0 1 15 -10 z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></g>
+</svg>
+<div class="cap" id="c1" style="top:600px">the prophet ﷺ named the deed allah loves most.</div>
+<div class="cap" id="c2" style="top:1290px">it is not the biggest one.</div>
+<div class="cap" id="c3" style="top:600px">a big deed, done once.</div>
+<div class="cap" id="c4" style="top:600px">a small one, every day.</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const show=(id,t,a,b)=>{$(id).style.opacity=Math.min(ease((t-a)/.5),b?1-ease((t-b)/.4):1)};
+const BIGL=2*Math.PI*250,TR=[180,1080],TL=720;
+const T0=6.4,STEP=.42; // small deed: one step per day
+add(.3,'tap',.25);add(2.6,'tap',.25);add(4.7,'tap',.25);add(5.6,'thud');add(6.1,'tap',.25);add(6.35,'plink');
+for(let k=1;T0+k*STEP<10;k++)add(T0+k*STEP,'plink',.22);
+window.frame=function(t){
+  show('c1',t,.3,4.4);show('c2',t,2.6,4.4);show('c3',t,4.7,6.0);show('c4',t,6.1);
+  // big circle draws, fills (the big deed), then breaks into a dotted ghost and fades: it stopped
+  const big=$('big'),draw=ease((t-.2)/1.4);
+  big.style.strokeDasharray=t<5.6?`${BIGL*draw} ${BIGL}`:'6 22';
+  big.style.opacity=t<5.6?1:Math.max(.0,1-ease((t-5.6)/1.0))*.6;
+  const r=t<4.6?250:250-inout((t-4.6)/.7)*30;big.setAttribute('r',r);$('bigfill').setAttribute('r',r);
+  $('bigfill').setAttribute('opacity',t<5.6?ease((t-4.8)/.5)*.92:Math.max(0,.92-ease((t-5.6)/.6)));
+  // small deed: ball rolls along a line, one step a day, leaving a tick per day; it never stops
+  const on=Math.max(.4,ease((t-6.2)/.3)),days=Math.max(0,(t-T0)/STEP),stepP=days%1,k=Math.floor(days);
+  const x=TR[0]+Math.min(TL,(k+ease(stepP/.5))*24);
+  $('trail').style.strokeDasharray=`${x-TR[0]} ${TL}`;$('trail').style.opacity=on;
+  let tk='';for(let i=1;i<=k;i++){const xi=TR[0]+i*24;tk+=`<line x1="${xi}" y1="1068" x2="${xi}" y2="1092" stroke="#fff" stroke-width="2" opacity=".55"/>`}$('ticks').innerHTML=t>T0?tk:'';
+  for(const id of ['ball','ballg']){$(id).setAttribute('cx',t<6.2?540+(x-540)*ease((t-5.9)/.3):x);$(id).setAttribute('cy',t<6.2?960+120*ease((t-5.9)/.3):1080-Math.sin(Math.PI*clamp(stepP/.5))*14)}
+  $('ball').setAttribute('opacity',t<3.0?0:t<4.4?ease((t-3)/.4):t<5.9?1-ease((t-4.4)/.3)*.6:on);$('ballg').setAttribute('opacity',+$('ball').getAttribute('opacity')*.7);
+  // hand flicks the ball off at the start of the small deed
+  const h=$('hand'),hp=clamp((t-5.9)/.9);h.setAttribute('opacity',Math.sin(hp*Math.PI));h.setAttribute('transform',`translate(${150-hp*40} ${1150-Math.sin(hp*Math.PI)*20}) rotate(-20)`);
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

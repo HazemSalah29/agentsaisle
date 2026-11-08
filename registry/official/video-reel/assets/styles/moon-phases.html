@@ -1,0 +1,111 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url('../ScheherazadeNew-Regular.ttf')}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#050a18}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.t{position:absolute;left:120px;right:120px;text-align:center;color:#f1ead2;font-family:Baskerville,"Baskerville Old Face",Georgia,serif;opacity:0;text-wrap:balance}
+.hook{font-size:66px;line-height:1.25}
+#ar{position:absolute;left:90px;right:90px;top:930px;text-align:center;direction:rtl;font-family:Scheherazade,serif;font-size:100px;line-height:1.85;color:#f1ead2;text-shadow:0 0 24px rgba(159,176,216,.55);opacity:0}
+#en{font-size:50px;font-style:italic;top:1175px}
+#cit{font-family:Menlo,monospace;font-size:26px;letter-spacing:.34em;color:#d6a84f;top:1335px}
+#hd{font-family:Menlo,monospace;font-size:22px;letter-spacing:.3em;color:rgba(241,234,210,.5);top:1450px}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="t hook" id="h1" style="top:970px">The month begins in the dark.</div>
+<div class="t hook" id="h2" style="top:1130px;color:#9fb0d8">And the dark is where the moon starts to grow.</div>
+<div id="ar">فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</div>
+<div class="t" id="en">For indeed, with hardship [will be] ease.</div>
+<div class="t" id="cit">QURAN 94:5</div>
+<div class="t" id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const H=(n)=>{let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const cv=$('c'),g=cv.getContext('2d');
+const MX=540,MY=640,MR=215; // main moon
+// phase p in [0,1): 0 new, .25 first quarter, .5 full, .75 last quarter. Waxing is lit on the right.
+function litPath(cx,cy,r,p){
+  const c=Math.cos(2*Math.PI*p),P=new Path2D();
+  if(p<.5){ // right side lit
+    P.moveTo(cx,cy-r);P.arc(cx,cy,r,-Math.PI/2,Math.PI/2,false);
+    P.ellipse(cx,cy,Math.max(.01,Math.abs(c)*r),r,0,Math.PI/2,-Math.PI/2,c>0);P.closePath();
+  }else{ // left side lit
+    P.moveTo(cx,cy-r);P.arc(cx,cy,r,-Math.PI/2,Math.PI/2,true);
+    P.ellipse(cx,cy,Math.max(.01,Math.abs(c)*r),r,0,Math.PI/2,-Math.PI/2,c<0);P.closePath();
+  }
+  return P;
+}
+// maria: seeded dark blotches in disc-relative units
+const MARIA=[];for(let i=0;i<9;i++)MARIA.push({x:(H(i+1)-.5)*1.1,y:(H(i+20)-.5)*1.1,r:.12+H(i+40)*.2,a:.08+H(i+60)*.1});
+function disc(cx,cy,r,p,halo){
+  const hf=Math.sin(Math.PI*clamp(p*2,0,1)*.5+.0)*0+Math.min(1,Math.abs(Math.sin(Math.PI*p))*1.1);
+  if(halo){ // soft halo grows with the lit part
+    g.save();g.globalCompositeOperation='lighter';
+    const R=g.createRadialGradient(cx,cy,r*.9,cx,cy,r*3.2);R.addColorStop(0,`rgba(159,176,216,${.32*hf})`);R.addColorStop(.4,`rgba(100,125,190,${.1*hf})`);R.addColorStop(1,'rgba(80,100,170,0)');
+    g.fillStyle=R;g.beginPath();g.arc(cx,cy,r*3.2,0,7);g.fill();g.restore();
+  }
+  // unlit part: faint earthshine
+  g.fillStyle='#141c38';g.beginPath();g.arc(cx,cy,r,0,7);g.fill();
+  g.strokeStyle='rgba(159,176,216,.18)';g.lineWidth=1.5;g.stroke();
+  if(p<=.003||p>=.997)return;
+  g.save();const path=litPath(cx,cy,r,p);g.clip(path);
+  const gr=g.createRadialGradient(cx+(p<.5?r*.3:-r*.3),cy-r*.15,r*.1,cx,cy,r*1.05);gr.addColorStop(0,'#fbf5e0');gr.addColorStop(.7,'#f1ead2');gr.addColorStop(1,'#d9d0b2');
+  g.fillStyle=gr;g.fillRect(cx-r,cy-r,r*2,r*2);
+  if(r>60){g.fillStyle='#8b8670';for(const m of MARIA){g.globalAlpha=m.a;g.beginPath();g.arc(cx+m.x*r,cy+m.y*r,m.r*r,0,7);g.fill()}g.globalAlpha=1}
+  g.restore();
+}
+// stars
+const ST=[];for(let i=0;i<150;i++)ST.push({x:H(i+1)*1080,y:H(i+300)*1550,r:.6+H(i+600)*1.4,ph:H(i+900)*6.28,sp:.6+H(i+1200)*1.6});
+// horizon
+function horizon(){
+  const hg=g.createLinearGradient(0,1560,0,1700);hg.addColorStop(0,'rgba(159,176,216,0)');hg.addColorStop(1,'rgba(159,176,216,.1)');g.fillStyle=hg;g.fillRect(0,1560,1080,140);
+  g.fillStyle='#02050d';g.beginPath();g.moveTo(0,1920);g.lineTo(0,1650);
+  for(let x=0;x<=1080;x+=20)g.lineTo(x,1650-Math.abs(Math.sin(x*.004+.7))*70-Math.sin(x*.017)*14);
+  g.lineTo(1080,1920);g.closePath();g.fill();
+}
+function draw(t){
+  const bg=g.createLinearGradient(0,0,0,1920);bg.addColorStop(0,'#050a18');bg.addColorStop(.6,'#0a1430');bg.addColorStop(1,'#0e1a3a');
+  g.fillStyle=bg;g.fillRect(0,0,1080,1920);
+  const sa=ease(t/1.2);
+  for(const s of ST){const a=sa*(.35+.65*(.5+.5*Math.sin(t*s.sp+s.ph)));g.fillStyle=`rgba(223,230,255,${a*.85})`;g.beginPath();g.arc(s.x,s.y,s.r,0,7);g.fill()}
+  // main moon: waxing from new to full between 0.8 s and 5.0 s
+  const p=.5*inout((t-.8)/4.2);
+  const pulse=t>5?1+.012*Math.sin((t-5)*1.6):1;
+  disc(MX,MY,MR*pulse,p,true);
+  // gold hairline path around the moon, drawn as the phase advances, with a bead
+  const prog=p/.5,a0=-Math.PI/2,a1=a0+prog*2*Math.PI*.5;
+  g.strokeStyle='rgba(214,168,79,.45)';g.lineWidth=2;g.beginPath();g.arc(MX,MY,270,a0,a1);g.stroke();
+  g.strokeStyle='rgba(214,168,79,.14)';g.beginPath();g.arc(MX,MY,270,0,7);g.stroke();
+  if(prog>0){const bx=MX+Math.cos(a1)*270,by=MY+Math.sin(a1)*270;
+    g.save();g.globalCompositeOperation='lighter';const bg2=g.createRadialGradient(bx,by,0,bx,by,20);bg2.addColorStop(0,'rgba(240,207,135,.9)');bg2.addColorStop(1,'rgba(214,168,79,0)');g.fillStyle=bg2;g.beginPath();g.arc(bx,by,20,0,7);g.fill();g.restore()}
+  // row of eight phases at the top
+  const cur=p*8;
+  for(let i=0;i<8;i++){
+    const x=250+i*83,y=310,pi=i/8,on=clamp((cur-i+.5)*1.5);
+    g.save();g.globalAlpha=.35+.65*on;disc(x,y,22,pi,false);g.restore();
+    if(Math.abs(cur-i)<.5&&t>.8){g.strokeStyle='#d6a84f';g.lineWidth=2;g.beginPath();g.arc(x,y,31,0,7);g.stroke()}
+  }
+  horizon();
+}
+function up(el,t,t0,out){
+  const a=ease((t-t0)/.8)*(out?1-clamp((t-out)/.6):1);
+  el.style.opacity=a;el.style.transform=`translateY(${(1-ease((t-t0)/.9))*20}px)`;
+}
+window.frame=function(t){
+  draw(t);
+  up($('h1'),t,1.6,5.4);up($('h2'),t,3.3,5.4);
+  const p=clamp((t-5.6)/1.6),ar=$('ar'),a=p*118-18;
+  ar.style.opacity=t>5.6?1:0;
+  ar.style.webkitMaskImage=p>=1?'none':`linear-gradient(to left,#000 ${a}%,transparent ${a+18}%)`;
+  up($('en'),t,7.5);up($('cit'),t,8.2);up($('hd'),t,9.1);
+  return {};
+};
+// sound: first light, a tick as each phase passes, a rise into the full moon, a boom when it fills, soft lines after
+add(.8,'plink',.25);[1.6,2.3,3.0,3.7,4.4].forEach(x=>add(x,'tick',.2));add(3.9,'rise',.35);add(5.0,'boom',.4);
+add(5.6,'slide',.3);add(7.5,'bell',.3);add(8.3,'plink',.2);
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

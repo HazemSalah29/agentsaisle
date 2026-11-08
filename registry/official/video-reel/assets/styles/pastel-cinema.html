@@ -1,0 +1,106 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Manrope:wght@600;700&display=swap">
+<style>
+@font-face{font-family:Sch;src:url(../ScheherazadeNew-Regular.ttf)}
+html,body{margin:0;background:#DAE6E8}canvas{display:block}
+</style>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Pastel cinema: soft pastel dawn palette, but lit like film: one warm key light through a window,
+// atmospheric haze in layers, light shafts with dust, shallow depth of field in the foreground, grain and vignette.
+const P={sky:'#DAE6E8',lav:'#DDD9E4',blush:'#F0DDDD',cream:'#F3E9DA',sand:'#ECDFC3',sandD:'#E0D1B6',
+  wall:'#E7D9C2',wallS:'#CDBB9C',sage:'#D9E1CC',sageD:'#B9C7AC',sea:'#C1D4D4',gold:'#C5A870',goldD:'#9C7F45',ink:'#5A4A2C',navy:'#1E2A44'};
+const c=document.getElementById('c'),x=c.getContext('2d'),W=1080,H=1920;
+function rng(s){return()=>{s=(s*16807)%2147483647;return s/2147483647}}
+const ease=t=>1-Math.pow(1-Math.min(1,Math.max(0,t)),3);
+function grad(y0,y1,stops){const g=x.createLinearGradient(0,y0,0,y1);stops.forEach(([o,cl])=>g.addColorStop(o,cl));return g}
+function glow(cx,cy,r,col,a){const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,col.replace('A',a));g.addColorStop(1,col.replace('A',0));x.fillStyle=g;x.fillRect(cx-r,cy-r,r*2,r*2)}
+// window opening: pointed arch
+const WX=540,WY=1380,WW=500,WT=1080;
+function archPath(px=0,keep=false){if(!keep)x.beginPath();const l=WX-WW/2-px,r=WX+WW/2+px,b=WY+px,s=WT-60;
+  x.moveTo(l,b);x.lineTo(l,s);x.quadraticCurveTo(l,s-170-px,WX,s-300-px);x.quadraticCurveTo(r,s-170-px,r,s);x.lineTo(r,b);x.closePath()}
+function hills(y,amp,col,seed,blur){const R=rng(seed);x.save();if(blur)x.filter=`blur(${blur}px)`;x.fillStyle=col;x.beginPath();x.moveTo(0,H);x.lineTo(0,y);
+  for(let i=0;i<=12;i++){x.lineTo(i*W/12,y-amp*(0.4+R()*0.6)*Math.sin(i*0.9+seed))}x.lineTo(W,H);x.fill();x.restore()}
+function palm(px,py,s,col){x.save();x.translate(px,py);x.scale(s,s);x.strokeStyle=col;x.fillStyle=col;x.lineWidth=7;x.lineCap='round';
+  x.beginPath();x.moveTo(0,0);x.quadraticCurveTo(10,-60,4,-120);x.stroke();
+  for(let i=0;i<6;i++){const a=-Math.PI/2+(i-2.5)*0.55;x.beginPath();x.moveTo(4,-120);x.quadraticCurveTo(4+Math.cos(a)*40,-120+Math.sin(a)*30-10,4+Math.cos(a)*70,-120+Math.sin(a)*45+18);x.lineWidth=5;x.stroke()}x.restore()}
+function outside(t){
+  x.fillStyle=grad(700,1400,[[0,P.lav],[.45,P.blush],[.8,P.cream],[1,'#F7EBD6']]);x.fillRect(0,0,W,H);
+  const sy=1230-ease(t/10)*30; glow(560,sy,420,'rgba(255,236,196,A)',.85); glow(560,sy,120,'rgba(255,250,235,A)',1);
+  x.fillStyle='#FFF7E6';x.beginPath();x.arc(560,sy,46,0,7);x.fill();
+  hills(1300,40,'#DCCFC9',3,6); hills(1330,55,'#CFD7CC',7,3);
+  for(const [px,s] of [[380,.7],[420,.55],[690,.8]]) palm(px,1352,s,'#B8B9A6');
+  hills(1362,30,P.sageD,11,1);
+  // haze band over the horizon
+  x.fillStyle=grad(1240,1380,[[0,'rgba(247,235,214,0)'],[.6,'rgba(247,235,214,.55)'],[1,'rgba(247,235,214,0)']]);x.fillRect(0,1240,W,140);
+}
+function room(t){
+  // wall with the window cut out
+  x.save();x.beginPath();x.rect(0,0,W,H);archPath(0,true);x.fillStyle=grad(0,H,[[0,'#C9C7D2'],[.35,'#DCD3CB'],[.65,P.wall],[1,'#CDBA98']]);x.fill('evenodd');
+  // plaster texture
+  const R=rng(42);x.globalAlpha=.05;for(let i=0;i<2600;i++){x.fillStyle=R()<.5?'#fff':'#8a7350';x.fillRect(R()*W,R()*H,2,2)}x.globalAlpha=1;
+  // warm bounce on the wall around the window
+  x.globalCompositeOperation='soft-light';glow(540,1180,700,'rgba(255,206,140,A)',.95);x.globalCompositeOperation='source-over';x.restore();
+  // window reveal depth (thickness of the wall)
+  x.save();archPath(26);archPath(0,true);x.fillStyle=P.wallS;x.fill('evenodd');x.restore();
+  x.save();archPath(26);x.strokeStyle='rgba(120,98,60,.35)';x.lineWidth=3;x.stroke();x.restore();
+  // sill
+  x.fillStyle=grad(WY,WY+46,[[0,'#F2E6D0'],[1,'#C9B591']]);x.fillRect(WX-WW/2-46,WY,WW+92,46);
+  // floor
+  x.fillStyle=grad(1600,H,[[0,'#E4D3B4'],[1,'#CDB892']]);x.beginPath();x.moveTo(0,1600);x.lineTo(W,1600);x.lineTo(W,H);x.lineTo(0,H);x.fill();
+  x.fillStyle='rgba(120,98,60,.18)';x.fillRect(0,1598,W,4);
+}
+function shafts(t){
+  x.save();x.globalCompositeOperation='screen';
+  const sway=Math.sin(t*0.4)*12;
+  for(const [dx,w,a] of [[-150,150,.34],[-20,220,.42],[130,120,.28]]){
+    const g=x.createLinearGradient(WX,WY-200,WX+dx-120,1900);g.addColorStop(0,`rgba(255,232,190,${a})`);g.addColorStop(1,'rgba(255,232,190,0)');
+    x.fillStyle=g;x.beginPath();x.moveTo(WX+dx-w/2,WY-260);x.lineTo(WX+dx+w/2,WY-260);x.lineTo(WX+dx+w*1.4-260+sway,1920);x.lineTo(WX+dx-w*1.1-420+sway,1920);x.closePath();x.filter='blur(18px)';x.fill()}
+  // pool of light on the floor
+  x.filter='blur(30px)';x.fillStyle='rgba(255,236,200,.45)';x.beginPath();x.ellipse(330,1760,300,70,-0.12,0,7);x.fill();
+  x.filter='none';
+  // dust motes inside the shaft
+  const R=rng(7);for(let i=0;i<70;i++){const bx=R()*700+80,by=R()*600+1150,ph=R()*6;const mx=bx+Math.sin(t*.5+ph)*14-((t*8+i*13)%60),my=by-((t*14+ph*40)%120);
+    const r=1+R()*2.6;x.fillStyle=`rgba(255,246,225,${.35+R()*.5})`;x.beginPath();x.arc(mx,my,r,0,7);x.fill()}
+  x.restore();
+}
+function lamp(cx,cy,s,blur,t=0){const fl=1+Math.sin(t*9)*.04+Math.sin(t*23)*.03;x.save();if(blur)x.filter=`blur(${blur}px)`;x.translate(cx,cy);x.scale(s,s);
+  glow(0,-70,160,'rgba(255,200,120,A)',.55);
+  x.fillStyle=P.goldD;x.beginPath();x.ellipse(0,0,90,26,0,0,7);x.fill();
+  x.fillStyle=P.gold;x.beginPath();x.moveTo(-90,-6);x.quadraticCurveTo(-60,-70,40,-40);x.quadraticCurveTo(100,-30,130,-52);x.quadraticCurveTo(110,-10,80,-2);x.quadraticCurveTo(0,20,-90,-6);x.fill();
+  x.fillStyle='#E9D3A0';x.beginPath();x.ellipse(-20,-46,34,10,0,0,7);x.fill();
+  x.save();x.translate(132,-54);x.scale(1,fl);x.translate(-132,54);x.fillStyle='#FFE3A6';x.beginPath();x.moveTo(128,-54);x.quadraticCurveTo(116,-96,132,-128);x.quadraticCurveTo(150,-94,136,-54);x.fill();
+  x.fillStyle='#FFF6DE';x.beginPath();x.ellipse(132,-70,5,12,0,0,7);x.fill();x.restore();x.restore()}
+function fruit(cx,cy,s,blur){x.save();if(blur)x.filter=`blur(${blur}px)`;x.translate(cx,cy);x.scale(s,s);
+  x.fillStyle='#BDA57A';x.beginPath();x.ellipse(0,10,150,40,0,0,7);x.fill();
+  const items=[[-70,-30,48,'#D98C7E'],[-10,-52,54,'#C9746A'],[60,-30,46,'#E1A27A'],[20,-14,40,'#D5B46A'],[-48,-6,38,'#B6C49A']];
+  for(const [fx,fy,r,col] of items){x.fillStyle=col;x.beginPath();x.arc(fx,fy,r,0,7);x.fill();x.fillStyle='rgba(255,255,255,.28)';x.beginPath();x.arc(fx-r*.35,fy-r*.35,r*.3,0,7);x.fill()}
+  x.fillStyle=grad(-10,50,[[0,'#C9B48C'],[1,'#9E8760']]);x.beginPath();x.moveTo(-160,0);x.lineTo(160,0);x.quadraticCurveTo(140,60,0,62);x.quadraticCurveTo(-140,60,-160,0);x.fill();x.restore()}
+function grainVignette(t){
+  const R=rng(1+Math.floor(t*24));x.save();x.globalAlpha=.07;
+  for(let i=0;i<9000;i++){x.fillStyle=R()<.5?'#ffffff':'#3a2e1a';x.fillRect(R()*W|0,R()*H|0,2,2)}x.restore();
+  const g=x.createRadialGradient(540,1000,500,540,1000,1250);g.addColorStop(0,'rgba(90,70,40,0)');g.addColorStop(1,'rgba(90,70,40,.32)');x.fillStyle=g;x.fillRect(0,0,W,H);
+}
+function text(t){
+  const a=ease((t-0.4)/1.2),a2=ease((t-2.2)/1.2),a3=ease((t-3.4)/1);x.save();x.globalAlpha=a;x.textAlign='center';
+  // soft backing light so text sits on the wall, not on a card
+  glow(540,420,480,'rgba(250,242,228,A)',.55);
+  x.fillStyle=P.ink;x.font='88px Sch';x.direction='rtl';x.fillText('هُوَ مِنْ عِندِ ٱللَّهِ',540,330);x.direction='ltr';
+  x.fillStyle=P.gold;x.fillRect(510,378,60,2);x.beginPath();x.arc(540,379,5,0,7);x.fill();
+  x.globalAlpha=a2;x.fillStyle='#3F3424';x.font='italic 500 52px "Cormorant Garamond"';x.fillText('"It is from Allah. Surely Allah provides',540,458);x.fillText('for whoever He wills without limit."',540,520);
+  x.globalAlpha=a3;x.fillStyle=P.goldD;x.font='700 24px Manrope';x.letterSpacing='6px';x.fillText('QURAN 3:37',540,582);
+  x.restore();
+}
+window.DURATION=10;window.SFX=[{t:.4,type:'bong',v:.3},{t:2.3,type:'drop',v:.2},{t:3.5,type:'drop',v:.16}];
+window.frame=t=>{x.clearRect(0,0,W,H);x.filter='none';
+  // gentle push-in: the whole room scales up slowly
+  const z=1+ease(t/10)*0.04;x.save();x.translate(540,1300);x.scale(z,z);x.translate(-540,-1300);
+  x.save();archPath();x.clip();outside(t);x.restore();
+  room(t);shafts(t);
+  fruit(270,1700,1.05,0);lamp(800,1730,.95,0,t);
+  fruit(1000,1930,2.2,12);
+  x.restore();
+  x.save();x.globalCompositeOperation='multiply';const cg=x.createRadialGradient(540,1250,350,540,1250,1300);cg.addColorStop(0,'rgba(255,255,255,0)');cg.addColorStop(1,'rgba(176,184,206,.55)');x.fillStyle=cg;x.fillRect(0,0,W,H);x.restore();
+  grainVignette(t);text(t);};
+document.fonts.load('88px Sch').then(()=>document.fonts.ready).then(()=>{frame(3);window.ready=true});
+</script>

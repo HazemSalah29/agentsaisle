@@ -1,0 +1,127 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadePQ;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#14102b}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px;image-rendering:pixelated;image-rendering:crisp-edges}
+</style></head>
+<body>
+<canvas id="c" width="135" height="240"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+// palette: 5 colours
+const BG='#14102b',PN='#2e2560',GR='#5be37d',GD='#ffd34e',WH='#f4f1ff';
+const cv=document.getElementById('c'),g=cv.getContext('2d');g.imageSmoothingEnabled=false;
+// bitmap font 5x7
+const F={};
+const def=(ch,s)=>{F[ch]=s.split('/')};
+def('A','01110/10001/10001/11111/10001/10001/10001');def('B','11110/10001/10001/11110/10001/10001/11110');
+def('C','01110/10001/10000/10000/10000/10001/01110');def('D','11110/10001/10001/10001/10001/10001/11110');
+def('E','11111/10000/10000/11110/10000/10000/11111');def('F','11111/10000/10000/11110/10000/10000/10000');
+def('G','01110/10001/10000/10111/10001/10001/01111');def('H','10001/10001/10001/11111/10001/10001/10001');
+def('I','01110/00100/00100/00100/00100/00100/01110');def('J','00111/00010/00010/00010/00010/10010/01100');
+def('K','10001/10010/10100/11000/10100/10010/10001');def('L','10000/10000/10000/10000/10000/10000/11111');
+def('M','10001/11011/10101/10101/10001/10001/10001');def('N','10001/11001/10101/10011/10001/10001/10001');
+def('O','01110/10001/10001/10001/10001/10001/01110');def('P','11110/10001/10001/11110/10000/10000/10000');
+def('Q','01110/10001/10001/10001/10101/10010/01101');def('R','11110/10001/10001/11110/10100/10010/10001');
+def('S','01111/10000/10000/01110/00001/00001/11110');def('T','11111/00100/00100/00100/00100/00100/00100');
+def('U','10001/10001/10001/10001/10001/10001/01110');def('V','10001/10001/10001/10001/10001/01010/00100');
+def('W','10001/10001/10001/10101/10101/11011/10001');def('X','10001/10001/01010/00100/01010/10001/10001');
+def('Y','10001/10001/01010/00100/00100/00100/00100');def('Z','11111/00001/00010/00100/01000/10000/11111');
+def('0','01110/10011/10101/10101/11001/10001/01110');def('1','00100/01100/00100/00100/00100/00100/01110');
+def('2','01110/10001/00001/00110/01000/10000/11111');def('3','11110/00001/00001/01110/00001/00001/11110');
+def('4','00010/00110/01010/10010/11111/00010/00010');def('5','11111/10000/11110/00001/00001/10001/01110');
+def('6','00110/01000/10000/11110/10001/10001/01110');def('7','11111/00001/00010/00100/01000/01000/01000');
+def('8','01110/10001/10001/01110/10001/10001/01110');def('9','01110/10001/10001/01111/00001/00010/01100');
+def('.','00000/00000/00000/00000/00000/01100/01100');def(',','00000/00000/00000/00000/01100/00100/01000');
+def(':','00000/01100/01100/00000/01100/01100/00000');def(' ','00000/00000/00000/00000/00000/00000/00000');
+def('@','01110/10001/10111/10101/10111/10000/01110');def('!','00100/00100/00100/00100/00100/00000/00100');
+// salawat sign: Scheherazade glyph thresholded to 1 bit, 13x9
+let SAL=null;
+function buildSal(){const o=document.createElement('canvas');o.width=13;o.height=9;const q=o.getContext('2d');q.fillStyle='#000';q.font='13px ScheherazadePQ';q.textBaseline='alphabetic';q.fillText('ﷺ',0,10);const d=q.getImageData(0,0,13,9).data;SAL=[];for(let y=0;y<9;y++){let r='';for(let x=0;x<13;x++)r+=d[(y*13+x)*4+3]>110?'1':'0';SAL.push(r)}}
+const rect=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h)};
+function glyph(rows,x,y,c,s=1){for(let j=0;j<rows.length;j++)for(let i=0;i<rows[j].length;i++)if(rows[j][i]==='1')rect(x+i*s,y+j*s,s,s,c)}
+const cw=(ch,s)=>(ch==='~'?14:6)*s;
+function width(t,s=1){let w=0;for(const ch of t)w+=cw(ch,s);return w-s}
+// draw text, n = number of chars revealed
+function text(t,x,y,c,s=1,n=1e9,center=true){
+  const full=t;if(center)x=Math.round((135-width(full,s))/2);
+  let i=0;for(const ch of t){if(i++>=n)break;
+    if(ch==='~'){if(SAL)glyph(SAL,x,y-s,c,s)}else if(F[ch])glyph(F[ch],x,y,c,s);x+=cw(ch,s)}
+}
+// 8x8 sprites
+const SP={
+  star:['00011000','00011000','11111111','01111110','00111100','01111110','01100110','01000010'],
+  flame:['00010000','00110000','00111000','01111100','01111110','11111110','01111100','00111000'],
+  coin:['00111100','01111110','11100111','11000011','11000011','11100111','01111110','00111100'],
+  seed:['00000000','00000000','00011000','00011000','01111110','00111100','00011000','00000000'],
+};
+function sprite(n,x,y,c,s=1){glyph(SP[n],x,y,c,s)}
+// timeline
+const HOOK1='THE PROPHET ~|NAMED THE DEED|ALLAH LOVES MOST.'.split('|');
+const HOOK2='IT IS NOT|THE BIGGEST ONE.'.split('|');
+const CAP1='SAME DAYS.',CAP2='ONE KEPT GOING.';
+const T1=0.3,T2=2.6,SW=4.5,BAR0=5.0,BAR1=5.8,DR0=6.4,DR1=9.0,D0=5.0,DS=0.7,TC1=7.6,TC2=8.5;
+for(let i=0;i<21;i++)if(i%3==0)add(T1+i*.05,'key',.16);
+add(T1,'tap',.25);add(T2,'tap',.25);add(T2+.5,'key',.16);add(T2+.9,'key',.16);
+add(SW,'slide',.3);
+for(let i=0;i<5;i++)add(BAR0+i*.16,'tick',.22);
+add(BAR1,'bell',.25);
+for(let i=0;i<4;i++)add(DR0+.35+i*.6,'tick',.18);
+for(let k=0;k<5;k++)add(D0+k*DS,'plink',.25);
+add(TC1,'tap',.25);add(TC2,'bell2',.22);
+function wipe(t){ // dither sweep: in 4.3-4.6 from top, out 4.6-4.9
+  let front,below;
+  if(t>=4.3&&t<4.6){front=Math.floor((t-4.3)/.3*(240+8));below=false}
+  else if(t>=4.6&&t<4.9){front=Math.floor((t-4.6)/.3*(240+8));below=true}
+  else return;
+  for(let y=0;y<240;y++){const cover=below?y>front:y<front;if(cover){const edge=Math.abs(y-front)<8;for(let x=0;x<135;x++){if(!edge||((x+y)&1))rect(x,y,1,1,PN)}}}
+}
+function hud(f,mode){
+  rect(0,0,135,14,PN);
+  text('QUEST LOG',4,4,WH,1,1e9,false);
+  sprite('star',118,3,GD,1);
+  rect(0,225,135,1,PN);
+  text('@YOURPAGE',0,229,PN==='x'?WH:'#8a7fd0');
+}
+window.frame=function(t){
+  const f=Math.floor(t*10)/10; // stepped time
+  rect(0,0,135,240,BG);
+  hud(f);
+  if(f<4.6){
+    // typed hook
+    let n=Math.floor((f-T1)*20);
+    HOOK1.forEach((l,i)=>{const start=HOOK1.slice(0,i).join('').length;text(l,0,84+i*14,WH,1,n-start)});
+    n=Math.floor((f-T2)*20);
+    HOOK2.forEach((l,i)=>{const start=HOOK2.slice(0,i).join('').length;text(l,0,150+i*14,GD,1,n-start)});
+    // chest sprite appears with line 2
+    if(f>=T2+1.2)sprite('star',63,118,GD,1);
+  }else{
+    // big deed bar
+    text('ONE BIG DEED',0,26,WH);
+    const fill=clamp((f-BAR0)/(BAR1-BAR0)),drain=clamp((f-DR0)/(DR1-DR0));
+    const n=Math.round(Math.floor(fill*20)*(1-0)-Math.floor(drain*19));
+    rect(9,38,117,14,WH);rect(10,39,115,12,BG);
+    for(let i=0;i<Math.max(0,n);i++)rect(12+i*5.5|0,41,4,8,i<14?GR:GD);
+    text(n>=20?'MAX':n>0?'XP '+(n*5):'XP 0',0,58,'#8a7fd0');
+    // streak
+    text('A SMALL ONE',0,92,WH);text('EVERY DAY',0,104,WH);
+    const day=Math.min(7,Math.max(0,Math.floor((f-D0)/DS)+1));
+    text('DAY '+day,0,122,GD,2);
+    for(let i=0;i<7;i++){
+      const x=7+i*17;rect(x,148,14,14,PN);
+      if(i<day){rect(x,148,14,14,PN);sprite('flame',x+3,151,i==day-1?GD:GR,1)}
+      else rect(x+5,154,4,2,'#51468f');
+    }
+    text('STREAK '+day,0,172,GR);
+    if(f>=TC1)text(CAP1,0,196,WH,1,Math.floor((f-TC1)*20));
+    if(f>=TC2)text(CAP2,0,208,GD,1,Math.floor((f-TC2)*20));
+  }
+  wipe(t);
+  return {};
+};
+document.fonts.load('13px ScheherazadePQ','ﷺ').then(()=>document.fonts.ready).then(()=>{buildSal();frame(0);window.ready=true});
+</script></body></html>

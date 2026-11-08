@@ -1,0 +1,95 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0b1028}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.t{position:absolute;left:110px;right:110px;text-align:center;color:#fff1dc;font-family:Baskerville,"Baskerville Old Face",Georgia,serif;opacity:0;text-wrap:balance}
+.hook{font-size:66px;line-height:1.22;text-shadow:0 0 30px rgba(10,8,20,.9),0 0 60px rgba(255,170,70,.25)}
+#hd{font-family:Menlo,monospace;font-size:22px;letter-spacing:.3em;color:rgba(255,241,220,.5);top:1450px}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div class="t hook" id="h1" style="top:300px">Every night, she cooked a little extra.</div>
+<div class="t hook" id="h2" style="top:300px">Not for herself.</div>
+<div class="t hook" id="h3" style="top:330px;color:#ffd47e">For the door that never opened.</div>
+<div class="t" id="hd">@YOURPAGE</div>
+<script src="../stick-rig.js"></script>
+<script>
+// Rim-light stick: the engine is RIG (assets/stick-rig.js). Three shots: wide street walk, giant face, the door.
+window.SIZE={W:1080,H:1920};window.DURATION=10;window.SFX=[];
+const {E,setStyle,mood,S,layer,blurLayer,veil,ease,prog,key,clamp,lerp,rng,glow,circle,rr,linGrad,radGrad,
+  drawFigure,POSES,posesAt,breathe,walkPose,bigFace,stars,moon,pool,lampPost,lightCone,facade,dust,lensStreak,fog}=RIG;
+E.W=1080;E.H=1920;E.vertical=true;setStyle('dusk');
+const g=document.getElementById('c').getContext('2d'),$=id=>document.getElementById(id);
+const GY=E.H*.68,HERO={top:'hoodie',color:'#d64a33',head:'beanie',headColor:'#7a2a20'},OLD={top:'dress',color:'#3a6ea5',head:'bun'};
+const add=(t,id,v)=>window.SFX.push({t,src:'kit:'+id,v});
+add(4.0,'whoosh-fast-soft',.12);add(6.5,'click-latch-soft',.14);
+
+// the street: sky, moon, stars, two house facades, a lamp, the neighbour's door at x 820
+function street(t,cam,M,doorOpen=0){
+  layer(g,cam,.12,g=>{g.fillStyle=linGrad(g,0,-400,0,GY,M.sky);g.fillRect(-1200,-800,3600,GY+800);stars(g,t,{count:120,area:[-600,-300,2400,900]});moon(g,860,600,48)});
+  layer(g,cam,.45,g=>{facade(g,{x:-500,y:GY-40,w:700,h:760,color:'#1f2340',win:'#ffcf8a',cols:4,rows:5,lit:.45,seed:4})});
+  layer(g,cam,1,g=>{
+    g.fillStyle=M.floor;g.fillRect(-1200,GY,3600,1400);
+    g.fillStyle=M.road;g.fillRect(-1200,GY+40,3600,16);
+    // the neighbour's house, one dark window, the door
+    g.fillStyle='#262a46';g.fillRect(560,GY-820,760,820);
+    g.fillStyle='#14162a';rr(g,640,GY-640,160,190,6);g.fill();
+    g.fillStyle='#0d0f1e';g.fillRect(790,GY-300,150,300);
+    if(doorOpen>0){g.fillStyle=`rgba(255,207,138,${.9*doorOpen})`;g.fillRect(790,GY-300,150*doorOpen,300);
+      g.save();g.globalCompositeOperation='lighter';g.fillStyle=linGrad(g,790,0,560,0,[`rgba(255,200,130,${.35*doorOpen})`,'rgba(255,200,130,0)']);
+      g.beginPath();g.moveTo(790,GY-300);g.lineTo(790,GY);g.lineTo(420,GY+220);g.lineTo(560,GY-40);g.fill();g.restore()}
+    lampPost(g,240,GY,520,{color:'#0f1122',light:M.practical});
+    lightCone(g,274,GY-530,{angle:Math.PI/2,spread:.42,len:640,color:M.practical,a:.2});
+    pool(g,280,GY+10,260,46,M.practical,.32);
+  });
+}
+// shot 1 (0 to 4 s): she walks right under the lamp, carrying the bowl; slow push
+function shot1(t){
+  const M=mood('night'),cam={z:1+.08*ease.inOut(t/4),x:-60+90*ease.inOut(t/4)};
+  street(t,cam,M);
+  const s=1.55,x=-40+150*s*Math.min(t,3.6)/1.6,ph=t*2*Math.PI*.9;
+  layer(g,cam,1,g=>drawFigure(g,{x,y:GY,s,facing:1,outfit:HERO,pose:t<3.6?walkPose(ph):breathe(POSES.holdFront,t),
+    prop:'cup',expr:'neutral',blink:(t%3.1)>3.0,rim:{color:M.practical,dir:x<280?[1,-.4]:[-1,-.4]}}));
+  dust(g,t,{count:30,color:'#ffe2bd',a:.25});
+}
+// shot 2 (4 to 6.5 s): giant face, worried then a small smile; the street blurred behind
+function shot2(t){
+  const M=mood('night');
+  blurLayer(g,14,g=>street(t+4,{z:1.6,x:120,y:-180},M));veil(g,'#0b0816',.4);
+  const r=330*(1+.04*t);
+  bigFace(g,540,E.H*.56,r,{outfit:HERO,expr:t<1.3?'worried':'smile',blink:t>.9&&t<1.0,look:[.5,-.1],rimColor:M.practical,rimSide:-1});
+}
+// shot 3 (6.5 to 10 s): the door opens; the neighbour leans out; she holds out the bowl
+function shot3(t){
+  const M=mood('night'),cam={z:1.22+.05*ease.inOut(t/3.5),x:300,y:-60},op=ease.out(prog(t,.2,1.1));
+  street(t+6.5,cam,M,op);
+  layer(g,cam,1,g=>{
+    drawFigure(g,{x:870,y:GY,s:1.45,facing:-1,outfit:OLD,pose:breathe(posesAt(t,[[0,'stand'],[1.4,'reach']]),t,1,3),
+      expr:t<1.6?'surprised':'happy',alpha:op,rim:{color:M.practical,dir:[1,-.3]},shadow:false});
+    drawFigure(g,{x:640,y:GY,s:1.55,facing:1,outfit:HERO,pose:breathe(POSES.holdFront,t),prop:'cup',expr:t<1.6?'nervous':'smile',
+      rim:{color:M.practical,dir:[1,-.4]}});
+  });
+  dust(g,t,{count:40,color:'#ffe2bd',a:.3});lensStreak(g,860,GY-160,900,'#ffe0b0',.1*op);
+}
+// film finish from the style grade: vignette + seeded grain that changes every frame
+const GR=document.createElement('canvas');GR.width=GR.height=256;{const x=GR.getContext('2d'),d=x.createImageData(256,256),r=rng(9);
+  for(let i=0;i<d.data.length;i+=4){const v=r()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}x.putImageData(d,0,0)}
+function finish(t){
+  const gd=S().grade,v=g.createRadialGradient(540,900,420,540,960,1250);
+  v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,`rgba(4,3,10,${gd.vignette})`);g.fillStyle=v;g.fillRect(0,0,1080,1920);
+  const f=Math.floor(t*30),r=rng(f+1);g.save();g.globalAlpha=gd.grain*1.6;g.globalCompositeOperation='overlay';
+  g.translate(-r()*256,-r()*256);g.fillStyle=g.createPattern(GR,'repeat');g.fillRect(0,0,1080+256,1920+256);g.restore();
+}
+function up(el,t,t0,out){const a=ease.out((t-t0)/.6)*(out?1-clamp((t-out)/.4):1);el.style.opacity=t<t0?0:a;el.style.transform=`translateY(${(1-ease.out((t-t0)/.8))*24}px)`}
+window.frame=function(t){
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1080,1920);
+  if(t<4)shot1(t);else if(t<6.5)shot2(t-4);else shot3(t-6.5);
+  finish(t);
+  up($('h1'),t,.6,3.7);up($('h2'),t,4.3,6.2);up($('h3'),t,7.6);
+  $('hd').style.opacity=.2;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

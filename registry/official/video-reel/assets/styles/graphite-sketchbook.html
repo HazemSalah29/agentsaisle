@@ -1,0 +1,160 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#2a2420}
+canvas{position:absolute;left:0;top:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Graphite sketchbook: a pencil study in a spiral sketchbook. Faint construction ellipses first, firm contours over
+// them, directional hatching that breaks on the paper tooth, a smudged tone, kneaded-eraser highlights, a margin note.
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan});
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2},sm=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+const win=(t,a,b)=>clamp((t-a)/(b-a));
+const layer=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+function rng(seed){let a=(seed>>>0)||1;const r=function(){a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(l,h)=>l+r()*(h-l);r.gauss=()=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};return r}
+function makeNoise(seed=1){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}for(let i=0;i<512;i++)p[i]=perm[i&255];const fade=t=>t*t*t*(t*(t*6-15)+10),lerp=(a,b,t)=>a+(b-a)*t;
+const g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);const u=fade(x),v=fade(y),w=fade(z);const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+return lerp(lerp(lerp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lerp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),lerp(lerp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lerp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+const fbm3=(x,y,z,o=4)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,z*f);n+=a;a*=.5;f*=2}return s/n};
+return{n2:(x,y)=>n3(x,y,.5),fbm2:(x,y,o)=>fbm3(x,y,.5,o)}}
+const nz=makeNoise(23);
+const ctx=document.getElementById('c').getContext('2d');
+const W=1080,H=1920,PX=74,GR='38,38,44',CX=PX+(W-PX)/2;
+const HAND=`'Bradley Hand','Noteworthy',cursive`,NOTE=`'Noteworthy','Bradley Hand',cursive`;
+// ---- sounds: pencil on paper, light
+add(.2,'kit:writing-pencil-draw',.5);add(.5,'kit:writing-pencil-write',.5);add(1.9,'kit:writing-pencil-draw',.5);add(2.6,'kit:writing-pencil-draw',.45);
+add(3.2,'kit:writing-scribble',.35);add(3.9,'kit:writing-pencil-draw',.4);add(4.15,'kit:writing-eraser',.5);add(4.35,'kit:writing-pencil-write',.4);
+add(5.0,'kit:writing-pen-write',.7);add(6.2,'kit:writing-pencil-write',.6);add(6.3,'tap',.2);add(7.6,'bell',.24);
+// ---- geometry helpers
+const seg=(pts,step=3)=>{const out=[];for(let i=0;i<pts.length-1;i++){const[x0,y0]=pts[i],[x1,y1]=pts[i+1],n=Math.max(1,Math.ceil(Math.hypot(x1-x0,y1-y0)/step));for(let j=0;j<n;j++)out.push([x0+(x1-x0)*j/n,y0+(y1-y0)*j/n])}out.push(pts[pts.length-1]);return out};
+const normals=P=>P.map((p,i)=>{const a=P[Math.max(0,i-1)],b=P[Math.min(P.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy)||1;return[-dy/d,dx/d]});
+const wob=(pts,seed,amp=1.2,freq=.01)=>{const N=normals(pts);let L=0;return pts.map((p,i)=>{if(i)L+=Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1]);const o=nz.n2(L*freq+seed*1.37,seed*.71)*amp+nz.n2(L*freq*7+seed,seed+3.3)*amp*.2;return[p[0]+N[i][0]*o,p[1]+N[i][1]*o]})};
+const ell=(cx,cy,rx,ry,a0=0,a1=Math.PI*2)=>{const n=Math.max(10,Math.ceil(Math.abs(a1-a0)*Math.max(rx,ry)/3)),o=[];for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;o.push([cx+Math.cos(a)*rx,cy+Math.sin(a)*ry])}return o};
+const bez=(p0,p1,p2,p3,n=40)=>{const o=[];for(let i=0;i<=n;i++){const t=i/n,m=1-t;o.push([m*m*m*p0[0]+3*m*m*t*p1[0]+3*m*t*t*p2[0]+t*t*t*p3[0],m*m*m*p0[1]+3*m*m*t*p1[1]+3*m*t*t*p2[1]+t*t*t*p3[1]])}return o};
+// ---- the stones: a path of six stepping stones, near to far
+const ST=[[CX-120,1010,176],[CX+90,868,144],[CX-90,738,118],[CX+70,624,96],[CX-50,528,76],[CX+36,450,58]].map(([cx,cy,rx],i)=>({cx,cy,rx,ry:rx*.31,d:rx*.2,i}));
+const inTop=(s,x,y)=>{const dx=(x-s.cx)/s.rx,dy=(y-s.cy)/s.ry;return dx*dx+dy*dy<1};
+const inSide=(s,x,y)=>{const dx=(x-s.cx)/s.rx;if(Math.abs(dx)>=1||y<s.cy)return false;return y<s.cy+s.d+s.ry*Math.sqrt(1-dx*dx)&&!inTop(s,x,y)};
+const shade=(s,x,y)=>{const dx=(x-s.cx)/s.rx,dy=(y-s.cy)/s.ry;
+  if(inTop(s,x,y))return .1+.5*clamp(dx*.7+dy*.5+.32)+nz.n2(x*.04,y*.04)*.05;
+  if(inSide(s,x,y))return .52+.4*dx+.08;return -1};
+// ---------------------------------------------------------------- baked: desk, paper, tooth
+let PAGE=null,TOOTH=null,DESK=null;
+function bake(){
+  PAGE=layer(W,H);{const c=PAGE.getContext('2d'),base='#efe6d2',br=239,bg=230,bb=210;c.fillStyle=base;c.fillRect(0,0,W,H);const n=makeNoise(31),cell=4;
+    for(let y=0;y<H;y+=cell)for(let x=0;x<W;x+=cell){const v=n.fbm2(x*.01,y*.01,3)*.6+n.n2(x*.15,y*.04)*.4,s=1+v*.025*2;c.fillStyle=`rgb(${br*s|0},${bg*s|0},${bb*s|0})`;c.fillRect(x,y,cell,cell)}
+    const cur=c.createLinearGradient(PX,0,PX+90,0);cur.addColorStop(0,'rgba(90,70,40,0.28)');cur.addColorStop(1,'rgba(90,70,40,0)');c.fillStyle=cur;c.fillRect(PX,0,90,H);
+    const lamp=c.createRadialGradient(560,700,80,640,1000,1400);lamp.addColorStop(0,'rgba(255,250,235,0.18)');lamp.addColorStop(1,'rgba(70,50,20,0.16)');c.fillStyle=lamp;c.fillRect(PX,0,W,H)}
+  DESK=layer(W,H);{const c=DESK.getContext('2d'),dk=c.createLinearGradient(0,0,PX,0);dk.addColorStop(0,'#2a2420');dk.addColorStop(1,'#3b332c');c.fillStyle=dk;c.fillRect(0,0,PX+10,H);c.fillStyle='rgba(0,0,0,0.35)';c.fillRect(PX-6,0,10,H)}
+  // graphite only bites the peaks of the paper tooth
+  TOOTH=new Float32Array(W*H);{const tc=layer(W,H),tx=tc.getContext('2d'),small=layer(W/2,H/2),sx=small.getContext('2d'),id=sx.createImageData(W/2,H/2),rr=rng(5);for(let i=0;i<id.data.length;i+=4){const v=rr()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=255}sx.putImageData(id,0,0);tx.imageSmoothingEnabled=true;tx.drawImage(small,0,0,W,H);
+    const td=tx.getImageData(0,0,W,H).data,r2=rng(6);for(let i=0,j=0;i<TOOTH.length;i++,j+=4)TOOTH[i]=td[j]/255*.65+r2()*.35}
+}
+const L=layer(W,H),g=L.getContext('2d'),S=layer(W,H),sm_=S.getContext('2d');
+let TIP=null;
+function pencil(c,pts,w,a,seed,gate=1,tin=.15,tout=.25){
+  if(pts.length<2||gate<=0)return;w*=1.5;const n=gate<1?Math.max(2,Math.ceil(pts.length*gate)):pts.length;if(gate<1&&c===g)TIP=pts[n-1];
+  c.lineCap='butt';c.lineJoin='round';
+  for(let i=0;i<n-1;i+=2){const u=i/(n-1);let p=Math.min(1,u/tin,(1-u)/tout);p=.25+.75*Math.sqrt(Math.max(0,p));const fl=.8+.4*(.5+.5*nz.n2(i*.07,seed*.13));
+    c.strokeStyle=`rgba(${GR},${Math.min(1,a*p*fl)})`;c.lineWidth=w*(.55+.45*p);c.beginPath();c.moveTo(pts[i][0],pts[i][1]);c.lineTo(pts[i+1][0],pts[i+1][1]);if(pts[i+2])c.lineTo(pts[i+2][0],pts[i+2][1]);c.stroke()}}
+const con=(pts,s,gate,a=.3,w=1.2)=>pencil(g,wob(seg(pts),s,1,.006),w,a,s,gate,.05,.05);
+const contour=(pts,s,gate,a=.75,w=2,passes=2)=>{for(let k=0;k<passes;k++){const P=wob(seg(pts),s+k*17,.9+k*.4,.012);pencil(g,P.map(([x,y])=>[x+k*.8,y+k*.6]),w*(k?.7:1),a*(k?.55:1),s+k,gate,.08,.15)}};
+// hatching in short hand-length flicks, running only where the light model says it is dark enough
+function hatchPass(s,ang,sp,thr,a,w,seed,t0,t1,t){
+  const gate=win(t,t0,t1);if(gate<=0)return;const rr=rng(seed),ca=Math.cos(ang),sa=Math.sin(ang),ext=Math.max(s.rx,s.ry+s.d)*1.25,oMax=-ext+2*ext*inout(gate),cx=s.cx,cy=s.cy+s.d*.5;
+  for(let o=-ext;o<ext;o+=sp*(.8+rr()*.4)){if(o>oMax)break;const ox=cx-sa*o,oy=cy+ca*o;let run=[];
+    const flush=()=>{if(run.length>4){let i=0;while(i<run.length-3){const len=Math.floor(rr.range(8,22)),part=run.slice(i,i+len);if(part.length>3){const jx=rr.range(-1.5,1.5),jy=rr.range(-1.5,1.5);pencil(g,part.map(([x,y])=>[x+jx,y+jy]),w,a*rr.range(.75,1.15),seed+i,1,.1,.45)}i+=len-Math.floor(rr.range(0,3))}}run=[]};
+    for(let q=-ext;q<ext;q+=3){const x=ox+ca*q,y=oy+sa*q,v=shade(s,x,y);if(v>thr+nz.n2(x*.02,y*.02)*.06)run.push([x,y]);else flush()}flush()}
+  if(gate<1){const o=oMax,ca2=Math.cos(ang),sa2=Math.sin(ang),q=Math.sin(t*40)*s.rx*.5;TIP=[cx-sa2*o+ca2*q,cy+ca2*o+sa2*q];const dx=TIP[0]-s.cx,dy=TIP[1]-s.cy;if(Math.hypot(dx/s.rx,dy/(s.ry+s.d))>1){const k=Math.hypot(dx/s.rx,dy/(s.ry+s.d));TIP=[s.cx+dx/k,s.cy+dy/k]}}}
+// the word, written with the pen mask right to left in graphite (body first, marks after)
+const strip=s=>s.replace(/[ً-ٰٟ]/g,'');
+function arabic(str,cx,y,size,t0,t1,t){
+  if(t<t0)return;g.save();g.font=`${size}px ScheherazadeG`;g.direction='rtl';g.textAlign='center';
+  const wd=g.measureText(str).width,xr=cx+wd/2+40,xl=cx-wd/2-40,p=inout((t-t0)/(t1-t0)),fx=xr-(xr-xl)*p,m=ease((t-t1)/.45),paint=(txt,al)=>{g.fillStyle=`rgba(${GR},${.88*al})`;g.fillText(txt,cx,y);g.fillStyle=`rgba(${GR},${.5*al})`;g.fillText(txt,cx+1,y+.8)};
+  g.save();g.beginPath();g.moveTo(fx,y-size*1.1);g.lineTo(xr+60,y-size*1.1);g.lineTo(xr+60,y+size*.9);g.lineTo(fx-60,y+size*.9);g.closePath();g.clip();paint(strip(str),1-m);g.restore();
+  if(m>0)paint(str,m);if(p<1&&p>0)TIP=[fx,y-size*.25];g.restore()}
+function write(str,x,y,font,a,rot,seed,t0,t1,t,align='l'){
+  const pr=win(t,t0,t1);if(pr<=0)return;g.save();g.font=font;const tw=g.measureText(str).width;if(align==='c')x-=tw/2;g.translate(x,y);g.rotate(rot);const rr=rng(seed);let px=0;const nCh=Math.ceil(str.length*pr);
+  if(nCh<str.length)TIP=[x+Math.cos(rot)*g.measureText(str.slice(0,nCh)).width,y+Math.sin(rot)*g.measureText(str.slice(0,nCh)).width-8];
+  let ci=0;for(const ch of str){if(ci++>=nCh)break;const w=g.measureText(ch).width;g.fillStyle=`rgba(${GR},${a*rr.range(.85,1.05)})`;g.save();g.translate(px,rr.range(-1,1));g.rotate(rr.range(-.03,.03));g.fillText(ch,0,0);g.fillText(ch,.7,.5);g.restore();px+=w}g.restore()}
+const AR='وَلْيَتَلَطَّفْ';
+let READY=false;
+window.frame=function(t){
+  if(!READY)return{};
+  TIP=null;
+  // ---- the graphite and smudge layers are rebuilt every frame
+  g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);sm_.setTransform(1,0,0,1,0,0);sm_.clearRect(0,0,W,H);
+  // 1. construction: a vertical axis, a faint sight line, and a loose ellipse for every stone (slightly overshooting)
+  con([[CX+4,380],[CX-6,1160]],1,win(t,.2,.9),.14);
+  con([[PX+120,1034],[W-60,800]],2,win(t,.3,1.0),.1);
+  ST.forEach((s,k)=>{const r=rng(10+k),a=.3+k*.2;for(let j=0;j<2;j++){const a0=r.range(0,6.28);pencil(g,wob(ell(s.cx+r.range(-4,4),s.cy+r.range(-3,3),s.rx+r.range(-5,8),s.ry+r.range(-2,4),a0,a0+6.6),10+k+j,1.2,.02),1.1,.2,10+k+j,win(t,a,a+.5),.05,.05)}
+    con(ell(s.cx,s.cy+s.d,s.rx,s.ry,0,Math.PI),20+k,win(t,a+.2,a+.6),.14)});
+  // 2. a few long flow lines of the stream, kept out from under the stones
+  for(let k=0;k<9;k++){const y0=430+k*84,pts=[];for(let i=0;i<=40;i++){const u=i/40;pts.push([PX+60+u*(W-PX-120),y0+Math.sin(u*9+k*1.7)*5+nz.n2(u*3,k)*8])}
+    pencil(g,pts,1.1,.16,70+k,win(t,1.6+k*.12,2.8+k*.12),.08,.12)}
+  // rub the stones' bodies clear of the flow lines
+  g.save();g.globalCompositeOperation='destination-out';ST.forEach(s=>{g.beginPath();g.ellipse(s.cx,s.cy,s.rx+3,s.ry+3,0,0,7);g.fill();g.beginPath();g.moveTo(s.cx-s.rx-3,s.cy);g.lineTo(s.cx+s.rx+3,s.cy);g.lineTo(s.cx+s.rx+3,s.cy+s.d);g.ellipse(s.cx,s.cy+s.d,s.rx+3,s.ry+3,0,0,Math.PI);g.lineTo(s.cx-s.rx-3,s.cy);g.fill()});g.restore();
+  // 3. smudge tone: stone sides, cast shadows on the water, blended with a finger
+  {sm_.save();ST.forEach((s,k)=>{const a=win(t,2.3+k*.25,3.8+k*.25);if(a<=0)return;sm_.globalAlpha=a;
+     sm_.save();sm_.beginPath();sm_.moveTo(s.cx-s.rx,s.cy);sm_.lineTo(s.cx+s.rx,s.cy);sm_.lineTo(s.cx+s.rx,s.cy+s.d);sm_.ellipse(s.cx,s.cy+s.d,s.rx,s.ry,0,0,Math.PI);sm_.lineTo(s.cx-s.rx,s.cy);sm_.clip();
+     const bt=sm_.createLinearGradient(s.cx-s.rx,0,s.cx+s.rx,0);bt.addColorStop(0,`rgba(${GR},0.08)`);bt.addColorStop(.6,`rgba(${GR},0.26)`);bt.addColorStop(1,`rgba(${GR},0.46)`);sm_.fillStyle=bt;sm_.fillRect(s.cx-s.rx,s.cy,s.rx*2,s.d+s.ry+2);sm_.restore();
+     sm_.save();sm_.beginPath();sm_.ellipse(s.cx,s.cy,s.rx,s.ry,0,0,7);sm_.clip();const tg=sm_.createRadialGradient(s.cx-s.rx*.4,s.cy-s.ry*.4,s.ry*.2,s.cx+s.rx*.2,s.cy+s.ry*.2,s.rx*1.1);tg.addColorStop(0,`rgba(${GR},0)`);tg.addColorStop(.6,`rgba(${GR},0.1)`);tg.addColorStop(1,`rgba(${GR},0.3)`);sm_.fillStyle=tg;sm_.fillRect(s.cx-s.rx,s.cy-s.ry,s.rx*2,s.ry*2);sm_.restore();
+     sm_.save();sm_.translate(s.cx+s.rx*.45,s.cy+s.d+s.ry*.9);sm_.scale(1,.2);const cs=sm_.createRadialGradient(0,0,s.rx*.1,0,0,s.rx*1.15);cs.addColorStop(0,`rgba(${GR},0.5)`);cs.addColorStop(.6,`rgba(${GR},0.22)`);cs.addColorStop(1,`rgba(${GR},0)`);sm_.fillStyle=cs;sm_.beginPath();sm_.arc(0,0,s.rx*1.15,0,7);sm_.fill();sm_.restore()});sm_.restore()}
+  // 4. hatching, three passes, stone by stone
+  ST.forEach((s,k)=>{const b=2.4+k*.28;hatchPass(s,-.85,6.5,.3,.5,1.4,101+k*100,b,b+.8,t);hatchPass(s,.32,7.4,.58,.48,1.35,202+k*100,b+.3,b+1.0,t);hatchPass(s,-1.4,8.2,.78,.5,1.3,303+k*100,b+.55,b+1.2,t)});
+  // 5. firm contours over the construction, stone by stone (near first)
+  ST.forEach((s,k)=>{const b=1.0+k*.3,gt=win(t,b,b+.6),gt2=win(t,b+.25,b+.8);
+    contour(ell(s.cx,s.cy,s.rx,s.ry,0,Math.PI*2),40+k*7,gt,.75,2.3);
+    contour(ell(s.cx,s.cy+s.d,s.rx,s.ry,.05,Math.PI-.05),41+k*7,gt2,.78,2.2,1);
+    contour([[s.cx-s.rx,s.cy],[s.cx-s.rx+1,s.cy+s.d]],42+k*7,gt2,.7,2,1);contour([[s.cx+s.rx,s.cy],[s.cx+s.rx-1,s.cy+s.d]],43+k*7,gt2,.85,2.6,1);
+    contour(ell(s.cx+1,s.cy+1,s.rx,s.ry,-.3,1.35),44+k*7,gt,.7,2.8,1);
+    // a few chips and pits on the top face
+    const r=rng(900+k);for(let q=0;q<5;q++){const a=r.range(0,6.28),rad=r.range(.2,.7),x=s.cx+Math.cos(a)*s.rx*rad,y=s.cy+Math.sin(a)*s.ry*rad;pencil(g,seg([[x-5,y+1],[x+3,y-2],[x+8,y+1]],2),1.1,.4,950+k*10+q,gt2,.1,.4)}});
+  // 6. ripples round each stone's foot: thin rings that slowly spread and fade (they never stop, the water is alive)
+  ST.forEach((s,k)=>{const a=win(t,3.4+k*.12,4.4+k*.12);if(a<=0)return;for(let j=0;j<3;j++){const life=((t*.18+j/3+k*.13)%1),sc=1.04+life*.34,al=.32*Math.sin(life*Math.PI)*a;if(al<=.01)continue;
+    pencil(g,ell(s.cx,s.cy+s.d+s.ry*.15,s.rx*sc,s.ry*sc*.95,.15,Math.PI-.15),1.2,al,300+k*3+j,1,.15,.15)}});
+  // 7. kneaded-eraser highlights lifted off the top of every stone
+  {const la=win(t,4.0,4.7);if(la>0){[g,sm_].forEach(c=>{ST.forEach(s=>{c.save();c.globalCompositeOperation='destination-out';c.translate(s.cx-s.rx*.38,s.cy-s.ry*.3);c.rotate(-.25);const hg=c.createRadialGradient(0,0,2,0,0,s.rx*.34);hg.addColorStop(0,`rgba(0,0,0,${.9*la})`);hg.addColorStop(.7,`rgba(0,0,0,${.7*la})`);hg.addColorStop(1,'rgba(0,0,0,0)');c.scale(1,.42);c.fillStyle=hg;c.beginPath();c.arc(0,0,s.rx*.34,0,7);c.fill();c.restore()})})}}
+  // 8. lettering and the margin note
+  write('Some steps need slow hands.',CX-330,308,`56px ${HAND}`,.8,-.02,7,.4,2.1,t);
+  pencil(g,wob(seg([[CX-332,326],[CX+330,318]]),300,1.6,.01),1.6,.5,300,win(t,2.1,2.4),.05,.4);
+  write('test each one',CX+100,520,`40px ${NOTE}`,.72,-.05,10,3.8,4.6,t);
+  contour(bez([CX+190,540],[CX+170,590],[CX+140,630],[CX+120,652],30),97,win(t,4.5,4.9),.6,1.6,1);contour([[CX+120,652],[CX+136,650]],98,win(t,4.85,4.95),.6,1.5,1);contour([[CX+120,652],[CX+124,636]],99,win(t,4.9,5.0),.6,1.5,1);
+  // 9. the verse: one word, written on, then English and the source
+  arabic(AR,CX,1300,138,5.0,6.1,t);
+  write('and let him be cautious',CX,1410,`62px ${HAND}`,.82,-.01,12,6.2,7.4,t,'c');
+  if(t>7.6){const a=ease((t-7.6)/.5);g.save();g.font='26px Menlo,monospace';g.letterSpacing='9px';g.textAlign='center';g.fillStyle=`rgba(${GR},${.7*a})`;g.fillText('QURAN 18:19',CX,1478);g.font='24px Menlo,monospace';g.letterSpacing='6px';g.fillStyle=`rgba(${GR},${.5*a})`;g.fillText('@YOURPAGE',CX,1700);g.restore()}
+  // ---- tooth: graphite only bites the paper's peaks
+  const tooth=(c,hard)=>{const im=c.getImageData(0,0,W,H),d=im.data;for(let i=0,j=3;i<TOOTH.length;i++,j+=4){const a=d[j]/255;if(!a)continue;const need=1-Math.min(1,a*hard),k=clamp((TOOTH[i]-need*.75)*3.2+.15);d[j]=255*a*(.25+.75*k)}c.putImageData(im,0,0)};
+  tooth(g,1.4);tooth(sm_,2.2);
+  // ---- compose on the page, with the slow pull-back of the camera
+  const kz=1+.05*(1-inout(win(t,0,6.5)));
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.fillStyle='#2a2420';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.translate(W*.47,H*.45);ctx.scale(kz,kz);ctx.translate(-W*.47,-H*.45);
+  ctx.drawImage(DESK,0,0);ctx.drawImage(PAGE,PX,0,W-PX,H,PX,0,W-PX,H);
+  ctx.save();ctx.globalAlpha=sm(2.2,3.7,t);ctx.drawImage(S,0,0);ctx.restore();ctx.drawImage(L,0,0);
+  // eraser crumbs
+  {const rr=rng(808);for(let i=0;i<(t>4.1?9:0);i++){const x=rr.range(200,380),y=rr.range(1560,1660),l=rr.range(9,18),a=rr.range(0,3);ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle='rgba(60,40,30,0.22)';ctx.beginPath();ctx.ellipse(1.5,2.5,l/2,3.4,0,0,7);ctx.fill();const cg=ctx.createLinearGradient(0,-3,0,3);cg.addColorStop(0,'#e9d7cf');cg.addColorStop(1,'#a99791');ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(0,0,l/2,3.1,0,0,7);ctx.fill();ctx.restore()}}
+  // spiral binding down the left edge
+  for(let y=24;y<H;y+=34){ctx.fillStyle='#2b2520';ctx.beginPath();ctx.ellipse(PX+22,y,6,7.5,0,0,7);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(PX+22,y+.8,6,7.5,0,.2,2.9);ctx.stroke();
+    ctx.strokeStyle='rgba(40,30,20,0.25)';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(PX+24,y+5);ctx.quadraticCurveTo(PX-6,y+2,PX-22,y+12);ctx.stroke();
+    const wg=ctx.createLinearGradient(0,y-6,0,y+6);wg.addColorStop(0,'#f2f2f2');wg.addColorStop(.45,'#9a9ca0');wg.addColorStop(1,'#3e3f42');ctx.strokeStyle=wg;ctx.lineWidth=4.2;ctx.beginPath();ctx.moveTo(PX+22,y-2);ctx.quadraticCurveTo(PX-4,y-14,PX-26,y+2);ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PX+16,y-6);ctx.quadraticCurveTo(PX-4,y-14,PX-20,y-6);ctx.stroke()}
+  // the pencil in hand while drawing
+  if(TIP&&t<7.3){const[tx,ty]=TIP,ang=.72,len=300;ctx.save();ctx.save();ctx.filter='blur(7px)';ctx.fillStyle='rgba(50,35,15,0.28)';ctx.translate(tx+22,ty+26);ctx.rotate(ang+.05);ctx.beginPath();ctx.roundRect(30,-8,len,16,6);ctx.fill();ctx.restore();ctx.translate(tx,ty);ctx.rotate(ang);
+    ctx.fillStyle='#2c2c30';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(12,-2.6);ctx.lineTo(12,2.6);ctx.closePath();ctx.fill();const wg=ctx.createLinearGradient(0,-8,0,8);wg.addColorStop(0,'#f1d9b0');wg.addColorStop(1,'#b98e5a');ctx.fillStyle=wg;ctx.beginPath();ctx.moveTo(11,-2.8);ctx.lineTo(40,-8);ctx.lineTo(40,8);ctx.lineTo(11,2.8);ctx.closePath();ctx.fill();
+    const bg=ctx.createLinearGradient(0,-8,0,8);bg.addColorStop(0,'#5f8c6a');bg.addColorStop(.35,'#2f5a3c');bg.addColorStop(.36,'#24472f');bg.addColorStop(1,'#16301f');ctx.fillStyle=bg;ctx.fillRect(40,-8,len-40,16);ctx.fillStyle='rgba(220,190,110,0.8)';ctx.font='600 8px Menlo,monospace';ctx.fillText('2B',120,-1);ctx.restore()}
+  ctx.restore();
+  // film grain and a warm vignette
+  {const id=ctx.getImageData(0,0,W,H),d=id.data,r=rng(3+(Math.floor(t*12)%3)),k=.035*255;for(let i=0;i<d.length;i+=4){const q=(r()-.5)*k;d[i]+=q;d[i+1]+=q;d[i+2]+=q}ctx.putImageData(id,0,0)}
+  const vg=ctx.createRadialGradient(540,960,500,540,960,1300);vg.addColorStop(0,'rgba(40,28,10,0)');vg.addColorStop(1,'rgba(40,28,10,0.22)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+  return{};
+};
+Promise.all([`138px ScheherazadeG`,`62px 'Bradley Hand'`,`40px 'Noteworthy'`,'26px Menlo'].map(f=>document.fonts.load(f))).then(()=>document.fonts.ready).then(()=>{bake();READY=true;frame(0);window.ready=true});
+</script></body></html>

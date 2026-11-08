@@ -1,0 +1,90 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0b3d91}
+svg{position:absolute;inset:0}
+.cap{position:absolute;left:110px;width:860px;color:#f4f8ff;font-family:Menlo,monospace;font-weight:700;font-size:42px;line-height:1.35;opacity:0}
+.cap em{font-style:normal;background:#f4f8ff;color:#0b3d91;padding:0 8px}
+.sm{font-size:36px}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="cap" id="c1" style="top:700px">The Prophet ﷺ named the deed Allah loves most.</div>
+<div class="cap" id="c2" style="top:900px">It is <em>not the biggest one.</em></div>
+<div class="cap sm" id="c3" style="top:1400px">Same days. <em>One kept going.</em></div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const W='#f4f8ff',BL='#0b3d91';
+// draw-on path: p 0..1
+const P=(d,p,w=2.5,o=1,dash='')=>p<=0?'':`<path d="${d}" pathLength="1" fill="none" stroke="${W}" stroke-width="${w}" stroke-opacity="${o}" ${dash?`stroke-dasharray="${dash}"`:`stroke-dasharray="1" stroke-dashoffset="${1-clamp(p)}"`} stroke-linecap="square"/>`;
+const T=(x,y,txt,o=1,a='start',sz=18)=>o<=0?'':`<text x="${x}" y="${y}" text-anchor="${a}" font-family="Menlo,monospace" font-size="${sz}" letter-spacing="3" fill="${W}" opacity="${o}">${txt}</text>`;
+// dimension arrow vertical/horizontal with end ticks
+const dimV=(x,y1,y2,p)=>P(`M${x} ${y1} V${y2}`,p,2)+P(`M${x-12} ${y1} H${x+12} M${x-12} ${y2} H${x+12}`,p,2)+P(`M${x} ${y1} l-6 14 M${x} ${y1} l6 14 M${x} ${y2} l-6 -14 M${x} ${y2} l6 -14`,p,2);
+// seeded grid dots not needed; static grid
+let grid='';
+for(let x=0;x<=1080;x+=40)grid+=`<path d="M${x} 0V1920" stroke="${W}" stroke-opacity="${x%200?.09:.22}" stroke-width="${x%200?1:1.5}"/>`;
+for(let y=0;y<=1920;y+=40)grid+=`<path d="M0 ${y}H1080" stroke="${W}" stroke-opacity="${y%200?.09:.22}" stroke-width="${y%200?1:1.5}"/>`;
+const BASE=1220,TW=240,TH=520,TX=150,SX=640,BH=60,N0=5.3,NS=.46;
+add(.3,'key',.25);add(.9,'slide',.2);add(2.6,'key',.25);add(4.5,'slide',.25);
+add(5.2,'tap',.25);
+// tower floors thud / blocks ticks
+for(let k=0;k<10;k++)add(N0+k*NS,'tick',.28);
+add(6.9,'thud',.35);add(8.2,'plink',.25);add(9.6,'bell',.2);
+window.frame=function(t){
+  let s=`<g>${grid}</g>`;
+  const p=(a,d)=>ease((t-a)/d);
+  // frame + title block
+  s+=P('M50 250 H1030 V1560 H50 Z',p(.1,1.4),3);
+  s+=P('M50 1470 H1030 M700 1470 V1560 M860 1470 V1560',p(.8,1.2),2);
+  s+=T(70,1500,'',1)+T(70,1498,'DWG 6464 / BUKHARI',p(1.6,.5),'start',17)+T(70,1536,'DEED, LOVED MOST',p(1.8,.5),'start',17);
+  s+=T(720,1498,'SCALE 1:1',p(1.8,.5),'start',17)+T(720,1536,'REV A',p(1.9,.5),'start',17);
+  s+=T(880,1498,'@YOURPAGE',p(2,.5),'start',13);
+  // corner crosshairs + compass circle (hook)
+  s+=P('M980 300 H1010 M995 285 V315',p(.4,1),2)+P('M70 300 H100 M85 285 V315',p(.5,1),2);
+  const hookO=1-p(4.2,.5);
+  if(hookO>0){
+    s+=`<g opacity="${hookO}">`+P('M540 260 V660 M340 460 H740',p(.6,1.6),1.5,.6,'8 8')+`<circle cx="540" cy="460" r="150" fill="none" stroke="${W}" stroke-width="2.5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${1-p(1,2.4)}" transform="rotate(-90 540 460)"/>`+P('M540 460 L640 354',p(2.4,1),2.5)+T(540,660,'DEED A : ?',p(3,.5),'middle',20)+`</g>`;
+  }
+  // second half drawing
+  const q=t-4.5;
+  if(q>0){
+    // baseline + day axis
+    s+=P(`M90 ${BASE} H990`,p(4.5,.8),3);
+    s+=P(`M${SX-20} ${BASE+50} H${SX+TW+20} M${SX+TW+20} ${BASE+50} l-12 -6 M${SX+TW+20} ${BASE+50} l-12 6`,p(5,.8),2);
+    s+=T(SX-20,BASE+84,'DAYS',p(5.2,.4),'start',17);
+    // tower: drawn once between 4.9 and 6.8, then it stops
+    const tp=(t-4.9)/1.9, o=ease(tp);
+    s+=P(`M${TX} ${BASE} V${BASE-TH} H${TX+TW} V${BASE}`,clamp(tp*1.1),3.5);
+    const fl=7;for(let i=1;i<fl;i++)s+=P(`M${TX} ${BASE-TH*i/fl} H${TX+TW}`,clamp(tp*1.4-.2-i*.02),1.5,.5);
+    s+=P(`M${TX+TW/2} ${BASE} V${BASE-TH}`,clamp(tp-.2),1.5,.4,'10 10');
+    // dimension of tower
+    s+=dimV(TX-44,BASE,BASE-TH,p(6.2,.8))+T(TX-62,BASE-TH/2,'',1);
+    if(t>6.4)s+=`<text transform="translate(${TX-62} ${BASE-TH/2}) rotate(-90)" text-anchor="middle" font-family="Menlo,monospace" font-size="17" letter-spacing="3" fill="${W}" opacity="${p(6.4,.4)}">ONE BIG ACT</text>`;
+    // halted: hatch top + label
+    if(t>6.9){const h=p(6.9,.5);s+=`<rect x="${TX}" y="${BASE-TH-26}" width="${TW}" height="26" fill="none" stroke="${W}" stroke-opacity="${h}" stroke-dasharray="6 6" stroke-width="2"/>`+T(TX+TW/2,BASE-TH-40,'STOPS HERE',h,'middle',18);}
+    // blocks added daily
+    let top=BASE;
+    for(let k=0;k<10;k++){
+      const a=N0+k*NS;if(t<a)break;
+      const b=p(a,.3),y=BASE-(k+1)*BH,drop=(1-b)*-40;
+      s+=`<g transform="translate(0 ${drop})" opacity="${Math.min(1,b*2)}"><rect x="${SX}" y="${y}" width="${TW}" height="${BH-4}" fill="${W}" fill-opacity="${.10}" stroke="${W}" stroke-width="3"/>`+T(SX+14,y+36,'D'+String(k+1).padStart(2,'0'),1,'start',17)+`</g>`;
+      top=y;
+    }
+    // stack dimension
+    const sh=BASE-top;
+    if(sh>0){const dp=Math.min(1,p(N0,.4));s+=dimV(SX+TW+44,BASE,top,dp);
+      s+=`<text transform="translate(${SX+TW+80} ${BASE-sh/2}) rotate(-90)" text-anchor="middle" font-family="Menlo,monospace" font-size="17" letter-spacing="3" fill="${W}">+1 A DAY</text>`;}
+    // tower-height datum line across
+    if(t>6.9)s+=P(`M${TX+TW+10} ${BASE-TH} H${SX+TW+10}`,p(7,1.2),1.5,.8,'4 8');
+    if(t>8.2)s+=T(SX-30,BASE-TH-12,'PAST IT',p(8.2,.4),'end',18);
+  }
+  $('s').innerHTML=s;
+  const up=(id,a,b)=>{const pp=ease((t-a)/.5),qq=b?1-ease((t-b)/.4):1;$(id).style.opacity=Math.min(pp,qq);$(id).style.transform=`translateY(${(1-pp)*10}px)`};
+  up('c1',.4,4.2);up('c2',2.6,4.2);up('c3',6.4);
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

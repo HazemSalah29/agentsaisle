@@ -205,7 +205,7 @@ describe("no false criticals", () => {
         if (f.severity === "high") highs.push(`${r.skill} ${f.rule} ${f.file}:${f.line}`);
     }
     expect(highs).toEqual([]);
-  });
+  }, 60_000); // scans every official skill, including the audio and vendored packs; CI runners are slow
 });
 
 describe("safety and speed", () => {

@@ -1,6 +1,6 @@
 ---
 name: video
-description: Make a short, scroll-stopping video from a plain request, rendered with Remotion on your own computer. Three formats done well - a tech explainer ("explain how rate limiting works"), a kinetic-type short (bold words that hit on the voice) and an app showcase (a recorded demo of your own app). Use whenever the user asks to make a video, short, reel or demo. Don't use to upload a video.
+description: Make a short, scroll-stopping video from a plain request, rendered with Remotion on your own computer. Three formats done well - a tech explainer ("explain how rate limiting works"), a kinetic-type short (bold words that hit on the voice) and an app showcase (a recorded demo of your own app). Also `/video reel` for a motion-graphics Instagram reel or carousel for your page, made from a checked source. Use whenever the user asks to make a video, short, reel or demo. Don't use to upload a video.
 allowed-tools: Read Write Glob Grep Bash(node *)
 ---
 
@@ -11,11 +11,12 @@ The user says what video they want in their own words; you make the best short t
 ## Use when
 
 - The user wants a short video: explain an idea, algorithm, API or tool (explainer); punchy words on a voice, a hot take, a motivational or announcement short (kinetic); or a demo of their own app or site (showcase).
+- The user wants a motion-graphics Instagram reel, an animated lesson or a carousel for their page (reel format: `references/reel.md`), or types `/video reel`.
 - The user asks what is possible, or why a tool is missing (run `doctor`). `/video init` and `/video doctor` still work as shortcuts.
 
 ## Don't use when
 
-- The request is for cartoons, characters, AI-generated footage, footage editing, dubbing or a long video. Say in one sentence that this skill makes three kinds of short (explainer, kinetic, showcase) and offer the nearest one.
+- The request is for cartoons, characters, AI-generated footage, footage editing, dubbing or a long video. Say in one sentence that this skill makes three kinds of short (explainer, kinetic, showcase) and the page reels of `/video reel`, and offer the nearest one.
 - The user wants a video uploaded. The last step prepares a pack to upload by hand; nothing is ever uploaded.
 - The request is for a known character, a real person's likeness, someone else's footage or logo, or a fact you cannot source. Say no in one sentence and offer an original alternative.
 - The folder is a code project that should not get video folders. Ask for an empty folder first.

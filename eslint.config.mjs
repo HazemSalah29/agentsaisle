@@ -16,6 +16,11 @@ export default tseslint.config(
       "registry/official/arch-visualize/evals/fixture-app/**",
       // Parts of one browser script: they share variables, so each file alone is not a module.
       "registry/official/arch-visualize/assets/viewer/src/**",
+      // Reel kit ported as authored (page templates, recipes, vendored three.js, scripts); studio.mjs stays linted.
+      "registry/official/video-reel/assets/**",
+      "registry/official/video-reel/scripts/!(studio).mjs",
+      "registry/official/video-reel-*/assets/**",
+      "registry/official/video-reel-*/scripts/**",
     ],
   },
   js.configs.recommended,

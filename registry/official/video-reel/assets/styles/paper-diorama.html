@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#1f3f46}
+svg{position:absolute;inset:0}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<filter id="f1" x="-8%" y="-8%" width="116%" height="124%"><feTurbulence type="fractalNoise" baseFrequency=".022" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="9" result="d"/><feDropShadow in="d" dx="0" dy="5" stdDeviation="4" flood-color="#0a1416" flood-opacity=".45"/></filter>
+<filter id="f2" x="-8%" y="-8%" width="116%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="2" seed="9" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="12" result="d"/><feDropShadow in="d" dx="0" dy="12" stdDeviation="9" flood-color="#0a1416" flood-opacity=".5"/></filter>
+<filter id="fs" x="-10%" y="-10%" width="120%" height="130%"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="1" seed="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" result="d"/><feDropShadow in="d" dx="0" dy="3" stdDeviation="2.2" flood-color="#0a1416" flood-opacity=".5"/></filter>
+<filter id="gr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .06  0 0 0 .5 -.12"/></filter>
+</defs>
+<g id="bg"></g><g id="sc"></g><g id="tg"></g>
+<rect width="1080" height="1920" filter="url(#gr)" style="mix-blend-mode:multiply;pointer-events:none"/>
+</svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c=1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const CREAM='#f3e9d2',INK='#3a2a22',TEAL='#2f5d62',SAGE='#6f9a85',MUS='#e0a93b',TERRA='#c8553d',ROSE='#e29a86',GREY='#b9b4a6';
+// seeded PRNG
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const hillPath=(base,amp,seed,off)=>{const r=rng(seed),p=[r()*6,r()*6,r()*6];let d=`M-80 2000 L-80 ${base}`;for(let x=-80;x<=1160;x+=40){const y=base+Math.sin((x+off)*.006+p[0])*amp+Math.sin((x+off)*.014+p[1])*amp*.4+Math.sin((x+off)*.031+p[2])*amp*.15;d+=` L${x} ${y.toFixed(1)}`}return d+' L1160 2000 Z'};
+// timeline
+const DAY0=5.1,DS=.55,N=7,X0=104,PITCH=124;
+add(.3,'tap',.25);add(2.6,'tap',.25);
+add(4.6,'slide',.3);
+add(DAY0,'thud',.35);
+for(let k=1;k<N;k++){add(DAY0+k*DS,'tick',.2);add(DAY0+k*DS+.08,'plink',.2)}
+add(9.0,'tap',.25);
+const q=t=>Math.floor(t*12)/12;
+function tag(x,y,w,h,rot,fill,txt,size,o,dy,fw){
+  return `<g opacity="${o}" transform="translate(${x} ${y+dy}) rotate(${rot})"><g filter="url(#f1)"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" fill="${fill}"/></g><text x="0" y="${size*.34}" text-anchor="middle" font-family="Baskerville,Georgia,serif" font-weight="${fw||600}" font-size="${size}" fill="${INK}">${txt}</text></g>`;
+}
+function sun(cx,cy,s){ // layered paper sun
+  let o='';const cols=[TERRA,MUS,CREAM];
+  [1,.74,.46].forEach((k,i)=>{o+=`<g filter="url(#fs)"><circle cx="${cx}" cy="${cy}" r="${74*s*k}" fill="${cols[i]}"/></g>`});
+  return o;
+}
+function flower(cx,by,g,sway){ // grows from baseline by
+  const h=54*g,tx=cx+Math.sin(sway)*4*g;let o=`<g filter="url(#fs)"><path d="M${cx-3} ${by} L${tx-3} ${by-h} L${tx+3} ${by-h} L${cx+3} ${by} Z" fill="${SAGE}"/><path d="M${cx} ${by-h*.45} q${22*g} ${-4*g} ${24*g} ${-20*g} q${-20*g} ${2*g} ${-24*g} ${20*g} Z" fill="${TEAL}"/></g>`;
+  const r=22*g;
+  o+=`<g filter="url(#fs)"><circle cx="${tx}" cy="${by-h-4}" r="${r}" fill="${ROSE}"/></g><g filter="url(#fs)"><circle cx="${tx}" cy="${by-h-4}" r="${r*.55}" fill="${MUS}"/></g>`;
+  return o;
+}
+window.frame=function(t){
+  const tt=q(t);
+  // BACKGROUND: night sheet, moon, hills with parallax
+  let b=`<rect width="1080" height="1920" fill="#1f3f46"/>`;
+  const st=rng(5);for(let i=0;i<14;i++){const x=st()*1000+40,y=250+st()*520,r=3+st()*3;b+=`<g filter="url(#fs)" opacity="${.55+.4*Math.sin(tt*2+i)}"><rect x="${x-r}" y="${y-r}" width="${2*r}" height="${2*r}" fill="${CREAM}" transform="rotate(45 ${x} ${y})"/></g>`}
+  const mp=Math.sin(tt*.6)*6;
+  b+=`<g transform="translate(${870+mp*1.5} 330)"><g filter="url(#f1)"><circle r="62" fill="${CREAM}"/></g><g filter="url(#fs)"><circle cx="24" cy="-8" r="52" fill="#1f3f46"/></g></g>`;
+  const hl=[[1260,40,3,TEAL,1.2,'f1'],[1380,36,8,SAGE,2.4,'f1'],[1500,30,12,MUS,3.6,'f2'],[1620,26,15,TERRA,5,'f2'],[1740,22,21,'#7a2f27',7,'f2']];
+  hl.forEach(([base,amp,seed,c,par,f])=>{b+=`<g filter="url(#${f})"><path d="${hillPath(base,amp,seed,Math.sin(tt*.5)*par*10)}" fill="${c}"/></g>`});
+  $('bg').innerHTML=b;
+  // SCENE (second half): two paper lanes
+  let s='';
+  const so=ease((t-4.6)/.6);
+  if(t>=4.5){
+    const lane=(y,label,delay)=>{
+      const dy=(1-ease((t-4.6-delay)/.6))*-80;
+      let o=`<g opacity="${so}" transform="translate(0 ${dy})"><g filter="url(#f2)"><rect x="70" y="${y}" width="940" height="280" fill="${CREAM}" transform="rotate(${y<700?-.6:.5} 540 ${y+140})"/></g>`;
+      o+=`<text x="104" y="${y+40}" font-family="Menlo,monospace" font-size="21" letter-spacing="4" fill="${TERRA}">${label}</text>`;
+      for(let k=0;k<N;k++){o+=`<rect x="${X0+k*PITCH}" y="${y+66}" width="104" height="176" fill="none" stroke="${INK}" stroke-opacity=".18" stroke-width="2" stroke-dasharray="8 7"/>`}
+      return o+`</g>`;
+    };
+    s+=lane(520,'ONE BIG DEED',0)+lane(880,'A SMALL ONE, DAILY',.2);
+    const yA=520+242,yB=880+242;
+    for(let k=0;k<N;k++){
+      const p=(t-(DAY0+k*DS))/.5, cx=X0+k*PITCH+52;
+      if(p<=0)continue;
+      if(k===0){ // big deed, once
+        const g=back(p*1.1);
+        s+=sun(cx+50,yA-95,g*1.2);
+      } else { // top lane stays empty, tile dims to grey
+        s+=`<g opacity="${.9*clamp(p)}" filter="url(#fs)"><rect x="${cx-40}" y="${yA-14}" width="80" height="14" fill="${GREY}"/></g>`;
+      }
+      // bottom lane: a flower every day
+      const g=back(p*1.1);
+      s+=flower(cx,yB,g,tt*3+k);
+    }
+    // top lane fades its sun to grey after the last day starts? sun holds, nothing follows
+    // arrow of a path continuing on the bottom lane
+    const ap=ease((t-8.4)/.7);
+    if(ap>0)s+=`<g opacity="${ap}" transform="translate(${ -60+ap*60} 0)"><g filter="url(#f1)"><path d="M930 ${yB-130} L992 ${yB-100} L930 ${yB-70} L944 ${yB-100} Z" fill="${MUS}"/></g></g>`;
+  }
+  $('sc').innerHTML=s;
+  // TAGS
+  let g='';
+  const fa=1-ease((t-4.2)/.5);
+  const a1=ease((t-.3)/.6)*fa,a2=ease((t-2.6)/.6)*fa;
+  if(a1>0)g+=tag(540,560,880,170,-1.2,CREAM,'The Prophet ﷺ named the deed',44,a1,(1-ease((t-.3)/.6))*40,600).replace('named the deed','named the deed')
+  if(a1>0)g+=`<g opacity="${a1}" transform="translate(540 ${590+(1-ease((t-.3)/.6))*40})"><text x="0" y="36" text-anchor="middle" font-family="Baskerville,Georgia,serif" font-weight="600" font-size="44" fill="${INK}">Allah loves most.</text></g>`;
+  if(a2>0)g+=tag(540,860,780,120,1,MUS,'It is not the biggest one.',44,a2,(1-ease((t-2.6)/.6))*40,600);
+  const a3=ease((t-5.9)/.6);
+  if(a3>0)g+=tag(540,1330,820,120,-.8,CREAM,'Same days. One kept going.',44,a3,(1-a3)*40,600);
+  g+=`<text x="540" y="1840" text-anchor="middle" font-family="Menlo,monospace" font-size="20" letter-spacing="5" fill="${CREAM}" opacity=".7">@YOURPAGE</text>`;
+  $('tg').innerHTML=g;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

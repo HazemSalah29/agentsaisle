@@ -1,0 +1,286 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#fbf8f0}
+canvas{position:absolute;left:0;top:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Watercolour sketchbook: a long sheet of cold-press paper. Pencil under-sketch first, then layered
+// wet washes with pooled drying edges and paper granulation, then the camera pans along the sheet.
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const SFX=[];window.SFX=SFX;const add=(t,type,v,pan)=>SFX.push({t,type,v,pan});
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const win=(t,a,b)=>clamp((t-a)/(b-a));
+const layer=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+function rng(seed){let a=(seed>>>0)||1;const r=function(){a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(l,h)=>l+r()*(h-l);r.gauss=()=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};r.pick=a=>a[Math.floor(r()*a.length)];return r}
+const rgba=(c,a=1)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+const ctx=document.getElementById('c').getContext('2d');
+const EXW=2400,EXH=1920,PAPER=[251,248,240];
+const CAM=t=>540+1320*inout(win(t,3.0,3.95));          // camera centre x along the sheet
+// ---- sounds (light only: pencil, pen, paper, glass, a drip)
+add(.25,'kit:writing-pencil-draw',.5);add(1.0,'kit:writing-pencil-draw',.4);
+add(1.1,'kit:foley-paper-touch',.4);add(1.6,'plink',.12);add(2.0,'kit:writing-pen-write',.5);
+[1.7,2.0,2.3,2.6].forEach((t,i)=>add(t,'drop',.07,-.3+i*.2));
+add(3.0,'kit:foley-paper-slide',.7);add(3.4,'kit:writing-pencil-draw',.45);
+add(4.3,'kit:shimmer-short-soft',.5);add(4.6,'plink',.18);
+add(4.7,'kit:writing-pen-write',.7);add(5.4,'kit:writing-pen-write',.6);add(5.2,'kit:props-drip',.3);
+add(5.9,'tap',.2);add(6.7,'tap',.2);add(7.6,'bell',.26);
+// ---- seeded noise helpers
+function makeNoise(seed=1){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}for(let i=0;i<512;i++)p[i]=perm[i&255];const fade=t=>t*t*t*(t*(t*6-15)+10),lerp=(a,b,t)=>a+(b-a)*t;
+const g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);const u=fade(x),v=fade(y),w=fade(z);const A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+return lerp(lerp(lerp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lerp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),lerp(lerp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lerp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+return{n2:(x,y)=>n3(x,y,.5)}}
+// ---- deformed-polygon washes (recursive midpoint displacement; each vertex carries a wobble weight v)
+const P=(x,y,v=1)=>({x,y,v});
+function deform(pts,r,depth,amt){let p=pts;for(let d=0;d<depth;d++){const out=[];for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];out.push(a);const len=Math.hypot(b.x-a.x,b.y-a.y),v=(a.v+b.v)*.5,s=len*amt*v;out.push({x:(a.x+b.x)/2+r.gauss()*s,y:(a.y+b.y)/2+r.gauss()*s,v:v*(.7+r()*.6)})}p=out}return p}
+function poly(c,pts){c.beginPath();c.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)c.lineTo(pts[i].x,pts[i].y);c.closePath()}
+function circlePts(cx,cy,rx,ry,n,r,vv=1){const o=[];for(let i=0;i<n;i++){const a=Math.PI*2*i/n;o.push(P(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry,vv*(.6+r()*.8)))}return o}
+const shape=(pts,seed,depth=3,amt=.4)=>deform(pts,rng(seed),depth,amt);
+const blob=(x,y,rx,ry,seed,n=10,v=1)=>deform(circlePts(x,y,rx,ry,n,rng(seed),v),rng(seed+1),2,.25);
+function exWash(c,base,col,{layers=26,alpha=.06,amt=.14,depth=3,seed=1,comp='source-over'}={}){const r=rng(seed);c.save();c.globalCompositeOperation=comp;c.fillStyle=Array.isArray(col)?rgba(col,1):col;for(let i=0;i<layers;i++){c.globalAlpha=alpha*(.6+r()*.8);poly(c,deform(base,r,depth,amt));c.fill()}c.restore()}
+function exBloom(c,x,y,r0,seed,a=.5){exWash(c,blob(x,y,r0,r0*.85,seed,12,.9),'#000',{layers:10,alpha:a/5,amt:.16,depth:2,seed:seed+3,comp:'destination-out'})}
+// value-noise grid (bilinear) for the paper tooth
+function grid(w,h,cell,r){const gw=Math.ceil(w/cell)+2,gh=Math.ceil(h/cell)+2,g=new Float32Array(gw*gh);for(let i=0;i<g.length;i++)g[i]=r();return(x,y)=>{const fx=x/cell,fy=y/cell,ix=fx|0,iy=fy|0,tx=fx-ix,ty=fy-iy,sx=tx*tx*(3-2*tx),sy=ty*ty*(3-2*ty);const a=g[iy*gw+ix],b=g[iy*gw+ix+1],c=g[(iy+1)*gw+ix],d=g[(iy+1)*gw+ix+1];return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy}}
+// ---------------------------------------------------------------- the sheet (baked once)
+let SHEET=null,HM=null,MOT=null;
+function bakeSheet(){
+  const pw=layer(EXW,EXH),px=pw.getContext('2d'),gr=rng(99),fine=grid(EXW,EXH,2.2,gr),mid=grid(EXW,EXH,7,gr),big=grid(EXW,EXH,40,gr);
+  const img=px.createImageData(EXW,EXH),d=img.data;HM=new Float32Array(EXW*EXH);
+  let prev=new Float32Array(EXW),cur=new Float32Array(EXW);
+  for(let y=0;y<EXH;y++){
+    for(let x=0;x<EXW;x++)cur[x]=HM[y*EXW+x]=fine(x,y)*.3+mid(x,y)*.5+big(x,y)*.2;
+    for(let x=0;x<EXW;x++){const sh=1+((x>0?prev[x-1]:prev[x])-cur[x])*.1+(big(x,y)-.5)*.03,o=(y*EXW+x)*4;d[o]=PAPER[0]*sh;d[o+1]=PAPER[1]*sh;d[o+2]=PAPER[2]*sh;d[o+3]=255}
+    const tmp=prev;prev=cur;cur=tmp}
+  px.putImageData(img,0,0);
+  // not bare white: a faint warm tone that gathers at the top and bottom edges, plus old ghost washes
+  px.save();px.globalCompositeOperation='multiply';
+  const ev=px.createLinearGradient(0,0,0,EXH);ev.addColorStop(0,'rgba(232,214,182,0.55)');ev.addColorStop(.12,'rgba(250,240,222,0.2)');ev.addColorStop(.88,'rgba(250,240,222,0.2)');ev.addColorStop(1,'rgba(228,208,172,0.6)');px.fillStyle=ev;px.fillRect(0,0,EXW,EXH);
+  const gw=rng(404);
+  for(let k=0;k<20;k++){const warm=gw()<.5,x0=gw.range(0,EXW),y0=gw.range(0,EXH),rx=gw.range(140,320),ry=gw.range(70,200);px.save();px.translate(x0,y0);px.scale(1,ry/rx);const g=px.createRadialGradient(0,0,0,0,0,rx);g.addColorStop(0,warm?'rgba(236,214,170,0.2)':'rgba(214,214,226,0.16)');g.addColorStop(1,'rgba(255,255,255,0)');px.fillStyle=g;px.fillRect(-rx,-rx,rx*2,rx*2);px.restore()}
+  px.restore();SHEET=pw;
+  // pigment-load mottle (softened: alpha .5 + .5 * mottle)
+  const mot=layer(1400,700);{const r=rng(77),cell=(w,h,lo)=>{const c=layer(w,h),x=c.getContext('2d'),im=x.createImageData(w,h);for(let i=0;i<w*h;i++)im.data[i*4+3]=(lo+r()*(1-lo))*255;x.putImageData(im,0,0);return c};
+    const sm=cell(48,27,.55),md=cell(160,90,.75),mx=mot.getContext('2d');mx.imageSmoothingQuality='high';mx.drawImage(sm,0,0,1400,700);mx.globalCompositeOperation='destination-in';mx.drawImage(md,0,0,1400,700)}
+  MOT=layer(1400,700);{const sx=MOT.getContext('2d');sx.fillStyle='rgba(0,0,0,0.5)';sx.fillRect(0,0,1400,700);sx.drawImage(mot,0,0)}
+}
+// pooled drying edge + granulation in one pixel pass. Returns the rim layer; the canvas itself becomes the body.
+// rim alpha = (alpha - blurred alpha) * pool ; blue/violet pigments granulate into the paper pits, yellows do not
+function poolGran(cv,pool,blur,wx,wy,k=1){
+  const w=cv.width,h=cv.height,c=cv.getContext('2d'),w2=Math.ceil(w/2),h2=Math.ceil(h/2),B=layer(w2,h2),b=B.getContext('2d');
+  b.filter=`blur(${blur/2}px)`;b.drawImage(cv,0,0,w2,h2);
+  const im=c.getImageData(0,0,w,h),dd=im.data,e=b.getImageData(0,0,w2,h2).data;
+  const R=layer(w,h),rc=R.getContext('2d'),ri=rc.createImageData(w,h),rd=ri.data;let hs=9173;
+  for(let y=0;y<h;y++){const Y=y+wy,row=Y>=0&&Y<EXH?Y*EXW:-1;for(let x=0;x<w;x++){
+    const i=(y*w+x)*4;let a=dd[i+3];hs=(hs*1103515245+12345)&0x7fffffff;if(!a)continue;
+    const rim=a-e[((y>>1)*w2+(x>>1))*4+3],ra=rim>0?Math.min(255,rim*pool):0;
+    const X=x+wx,hh=row>=0&&X>=0&&X<EXW?HM[row+X]:.5,blue=Math.max(0,(dd[i+2]-dd[i])/120),sp=(hs&1023)/1023;
+    const gm=1+k*((.5-hh)*2*(.18+blue*.7)+(sp>.88?(sp-.88)*4*(.2+blue):0));
+    dd[i+3]=Math.min(255,a*gm);rd[i]=dd[i];rd[i+1]=dd[i+1];rd[i+2]=dd[i+2];rd[i+3]=Math.min(255,ra*gm)}}
+  c.putImageData(im,0,0);rc.putImageData(ri,0,0);return R}
+// paint a wash into a local canvas (world coords inside fn), then mottle, then pool + granulate
+function mk(x0,y0,w,h,fn,{pool=2.4,blur=8,half=false,grain=.8}={}){
+  const cv=layer(w,h),c=cv.getContext('2d');
+  if(half){const hv=layer(Math.ceil(w/2),Math.ceil(h/2)),hc=hv.getContext('2d');hc.scale(.5,.5);hc.translate(-x0,-y0);fn(hc);c.imageSmoothingQuality='high';c.drawImage(hv,0,0,w,h);
+    c.globalCompositeOperation='destination-in';const fx=c.createLinearGradient(0,0,w,0),fy=c.createLinearGradient(0,0,0,h);
+    [[0,0],[40/w,1],[1-40/w,1],[1,0]].forEach(([o,a])=>fx.addColorStop(o,`rgba(0,0,0,${a})`));[[0,0],[40/h,1],[1-40/h,1],[1,0]].forEach(([o,a])=>fy.addColorStop(o,`rgba(0,0,0,${a})`));c.fillStyle=fx;c.fillRect(0,0,w,h);c.fillStyle=fy;c.fillRect(0,0,w,h)}
+  else{c.translate(-x0,-y0);fn(c);c.setTransform(1,0,0,1,0,0)}
+  c.globalCompositeOperation='destination-in';c.drawImage(MOT,0,0,w,h);c.globalCompositeOperation='source-over';
+  const R=poolGran(cv,pool,blur,x0,y0,grain);
+  return{A:cv,R,x:x0,y:y0,cx:x0+w/2,cy:y0+h/2}}
+function drawWash(o,cur,dry,a=1){
+  if(cur<=0)return;const sc=.55+.45*ease(cur),al=clamp(cur*1.6)*a;
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.translate(o.cx,o.cy);ctx.scale(sc,sc);ctx.translate(-o.cx,-o.cy);
+  ctx.globalAlpha=al;ctx.drawImage(o.A,o.x,o.y);ctx.globalAlpha=al*clamp(dry);ctx.drawImage(o.R,o.x,o.y);ctx.restore()}
+// wet-in-wet: a second pigment dropped in as soft blooms that only tint where the wash already is
+const drop=(c,col,blobs)=>{c.save();c.globalCompositeOperation='source-atop';blobs.forEach(([x,y,rx,ry,a])=>{c.save();c.translate(x,y);c.scale(1,ry/rx);const g=c.createRadialGradient(0,0,0,0,0,rx*1.3);g.addColorStop(0,rgba(col,a));g.addColorStop(.55,rgba(col,a*.7));g.addColorStop(1,rgba(col,0));c.fillStyle=g;c.fillRect(-rx*1.3,-rx*1.3,rx*2.6,rx*2.6);c.restore()});c.restore()};
+const dropBlur=(c,col,list,px)=>{c.save();c.filter=`blur(${px}px)`;list.forEach(([x,y,rr,sq,a,seed])=>{c.globalAlpha=a;c.fillStyle=rgba(col,1);poly(c,shape(circlePts(x,y,rr,rr*sq,8,rng(seed),1.2),seed+1,3,.45));c.fill()});c.restore()};
+// ---------------------------------------------------------------- geometry
+const arc=(x,y,rx,ry,a0,a1,n=60)=>{const o=[];for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;o.push([x+Math.cos(a)*rx,y+Math.sin(a)*ry])}return o};
+const bez=(p0,p1,p2,p3,n=30)=>{const o=[];for(let i=0;i<=n;i++){const t=i/n,m=1-t;o.push([m*m*m*p0[0]+3*m*m*t*p1[0]+3*m*t*t*p2[0]+t*t*t*p3[0],m*m*m*p0[1]+3*m*m*t*p1[1]+3*m*t*t*p2[1]+t*t*t*p3[1]])}return o};
+// the lantern (world x 1320..2400)
+const LX=1860,LY=560;
+const ARCHR=bez([1768,470],[1770,420],[1818,392],[1860,372]).concat(bez([1860,372],[1902,392],[1950,420],[1952,470]).slice(1));
+const globe=[];
+bez([1772,472],[1738,520],[1736,630],[1780,694],18).forEach(p=>globe.push(P(p[0],p[1],.5)));
+bez([1944,694],[1984,630],[1982,520],[1948,472],18).forEach(p=>globe.push(P(p[0],p[1],.5)));
+const NOSE=[[0,0]];
+let W_={},TX={};
+function bakeAll(){
+  bakeSheet();
+  // ---- panel 1: the restless sky (world x 0..1080)
+  W_.cloud=mk(60,200,960,520,c=>{
+    const base=deform([P(190,560,1.3),P(160,470,1.2),P(230,390,1.2),P(350,360,1.0),P(430,300,1.2),P(570,280,1.1),P(700,320,1.2),P(790,380,1.1),P(900,400,1.2),P(950,480,1.3),P(900,570,1.2),P(740,610,1.0),P(560,590,1.1),P(380,620,1.1),P(250,610,1.2)],rng(3),3,.2);
+    exWash(c,base,[142,134,172],{layers:30,alpha:.055,amt:.15,depth:3,seed:4});
+    exWash(c,deform([P(240,520,1.2),P(420,470,1.1),P(640,490,1.2),P(860,500,1.3),P(820,590,1.2),P(560,610,1.0),P(300,600,1.3)],rng(31),3,.22),[92,88,142],{layers:18,alpha:.045,amt:.15,depth:3,seed:32});
+    exWash(c,deform([P(330,330,1.2),P(560,290,1.1),P(760,340,1.3),P(700,420,1.2),P(480,430,1.1)],rng(41),3,.22),[196,176,206],{layers:12,alpha:.03,amt:.15,depth:3,seed:42});
+    drop(c,[58,70,112],[[380,540,130,46,.34],[700,560,110,40,.3]]);
+    drop(c,[156,92,132],[[760,450,100,42,.24],[260,480,80,34,.2]]);
+    exBloom(c,560,360,36,7,.6);exBloom(c,820,470,30,8,.55);exBloom(c,300,520,26,17,.5);exBloom(c,640,540,22,18,.5);
+  },{pool:2.6,blur:8,half:true});
+  W_.puddle=mk(120,1010,840,120,c=>{
+    exWash(c,deform([P(150,1060,1.4),P(540,1042,1.2),P(940,1062,1.4),P(900,1098,1.5),P(520,1112,1.2),P(170,1096,1.4)],rng(21),3,.2),[110,124,170],{layers:20,alpha:.05,amt:.16,depth:3,seed:22});
+  },{pool:2.2,blur:6});
+  // ---- panel 2: evening sky around the lantern, glass, frame, pond
+  W_.sky=mk(1300,160,1100,800,c=>{
+    const sky=shape([P(1400,420,1.6),P(1560,330,1.2),P(1760,290,1.5),P(1960,300,1.3),P(2160,330,1.6),P(2300,430,1.4),P(2330,600,1.4),P(2290,780,1.5),P(2120,880,1.2),P(1860,905,1.0),P(1600,880,1.2),P(1440,780,1.5),P(1380,600,1.4)],5,3,.2);
+    exWash(c,sky,[126,178,214],{layers:34,alpha:.05,amt:.12,depth:4,seed:11});
+    c.save();c.filter='blur(14px)';const dr=rng(19);
+    for(let k=0;k<7;k++){const x=dr.range(1420,2300),y=dr.range(330,560),rr=dr.range(60,130);c.globalAlpha=.18+dr()*.12;c.fillStyle=k%3===2?'rgb(200,120,150)':'rgb(70,82,170)';poly(c,shape(circlePts(x,y,rr,rr*.7,8,dr,1.2),40+k,3,.45));c.fill()}
+    c.restore();
+    // negative painting: lift a ragged white halo round the lantern
+    const R=rng(77),halo=shape(circlePts(LX+6,LY+10,262,268,22,R,1),23,4,.18);
+    exWash(c,halo,'#000',{layers:10,alpha:.35,amt:.12,depth:2,seed:24,comp:'destination-out'});
+    exWash(c,shape(circlePts(LX,LY+4,214,218,12,R,1),25,3,.25),'#000',{layers:10,alpha:.5,amt:.1,depth:2,seed:26,comp:'destination-out'});
+    exBloom(c,2210,420,40,301,.75);exBloom(c,1480,700,44,311,.7);exBloom(c,2150,780,34,321,.6);exBloom(c,1450,470,30,351,.6);
+  },{pool:2.6,blur:8,half:true});
+  W_.sky2=mk(1340,200,1040,500,c=>{
+    exWash(c,shape([P(1460,330,1.4),P(1720,285,1.2),P(2000,300,1.4),P(2200,370,1.6),P(2080,430,1.4),P(1950,380,1.0),P(1620,430,1.4),P(1440,470,1.6)],7,3,.3),[64,92,168],{layers:26,alpha:.045,amt:.12,depth:4,seed:12});
+    const R=rng(78);exWash(c,shape(circlePts(LX+6,LY+10,262,268,22,R,1),23,4,.18),'#000',{layers:6,alpha:.6,amt:.1,depth:2,seed:27,comp:'destination-out'});
+    exBloom(c,1700,340,36,331,.75);
+  },{pool:2.8,blur:6});
+  W_.glass=mk(1700,400,320,360,c=>{
+    const R=rng(5);
+    exWash(c,shape(globe,61,2,.12),[250,214,90],{layers:30,alpha:.05,amt:.08,seed:16});
+    c.save();c.filter='blur(18px)';
+    c.globalAlpha=.55;c.fillStyle='rgb(246,150,60)';poly(c,shape(circlePts(LX+4,LY+30,70,92,9,R,1.2),62,3,.4));c.fill();
+    c.globalAlpha=.3;c.fillStyle='rgb(225,90,90)';poly(c,shape(circlePts(LX+22,LY+92,44,40,8,R,1.2),63,3,.4));c.fill();c.restore();
+    // the flame: white paper left unpainted, a darker wick of colour under it
+    exWash(c,shape([P(LX,LY+46,.2),P(LX+20,LY+8,.2),P(LX+6,LY-34,.2),P(LX,LY-52,.2),P(LX-8,LY-30,.2),P(LX-22,LY+6,.2)],64,2,.18),'#000',{layers:16,alpha:.16,amt:.2,depth:2,seed:65,comp:'destination-out'});
+    exWash(c,shape(circlePts(LX-50,LY-40,16,26,8,R),66,2,.2),'#000',{layers:6,alpha:.8,amt:.1,depth:2,seed:67,comp:'destination-out'});
+    exBloom(c,LX-40,LY+92,24,341,.45);
+  },{pool:2.8,blur:6});
+  W_.frame=mk(1700,330,320,470,c=>{
+    const gray=[86,84,112];
+    [ARCHR.map(p=>P(p[0],p[1],.3)).concat([P(1952,486,.2),P(1768,486,.2)]),
+     [P(1752,470,.2),P(1968,470,.2),P(1964,490,.2),P(1756,490,.2)],
+     [P(1770,688,.2),P(1950,688,.2),P(1944,716,.2),P(1776,716,.2)],
+     [P(1782,716,.2),P(1938,716,.2),P(1906,764,.3),P(1814,764,.3)],
+     [P(1834,464,.2),P(1846,464,.2),P(1842,700,.2),P(1830,700,.2)],[P(1874,464,.2),P(1886,464,.2),P(1890,700,.2),P(1878,700,.2)]
+    ].forEach((b,i)=>exWash(c,shape(b,91+i,2,.06),gray,{layers:i===0?18:14,alpha:i===0?.06:.075,amt:.06,seed:92+i}));
+    
+    // ring + hook
+    c.save();c.strokeStyle=rgba(gray,.5);c.lineWidth=7;c.lineCap='round';c.beginPath();c.arc(LX,350,22,0,7);c.stroke();c.beginPath();c.moveTo(LX,372);c.lineTo(LX,372);c.stroke();c.restore();
+  },{pool:2.2,blur:4});
+  W_.pond=mk(1390,890,960,170,c=>{
+    exWash(c,shape([P(1400,930,1.3),P(1860,905,1.2),P(2330,935,1.3),P(2340,1008,1.4),P(1860,1040,1.2),P(1390,1010,1.3)],9,3,.22),[120,170,205],{layers:26,alpha:.05,amt:.12,seed:13});
+    drop(c,[70,110,160],[[1600,985,160,36,.3],[2180,990,130,30,.26]]);
+    // the lantern's warm reflection, a soft vertical smear
+    c.save();c.globalCompositeOperation='source-atop';c.filter='blur(10px)';c.fillStyle='rgba(246,156,66,0.55)';c.beginPath();c.ellipse(LX,968,34,76,0,0,7);c.fill();c.restore();
+  },{pool:2.2,blur:6,grain:.9});
+  // ---- hand lettering baked as ink with pooled edges (plum, violet dropped in)
+  const letter=(key,str,font,size,x,y,rot,w,h,col,spacing)=>{
+    const cv=layer(w,h),c=cv.getContext('2d');c.save();c.font=`${size}px ${font}`;
+    let tot=0;for(const ch of str)tot+=c.measureText(ch).width*(spacing||.98);
+    if(x===null)x=(w-tot)/2;
+    c.translate(x,y);c.rotate(rot);c.fillStyle=rgba(col,.84);
+    const r=rng(808+size);let xx=0;for(const ch of str){const cw=c.measureText(ch).width;c.save();c.translate(xx,r.gauss()*1.6);c.rotate(r.gauss()*.014);c.fillText(ch,0,0);c.globalAlpha=.3;c.fillText(ch,1.4,1);c.restore();xx+=cw*(spacing||.98)}
+    c.restore();c.save();c.globalCompositeOperation='source-atop';c.filter='blur(14px)';c.fillStyle='rgba(130,70,150,0.5)';c.beginPath();c.ellipse(x+tot*.55,y-size*.3,tot*.2,size*.35,0,0,7);c.fill();c.restore();
+    return{...mkText(cv,key),w,h,s0:x,s1:x+tot}};
+  const mkText=(cv,key)=>{const R=poolGran(cv,2.4,3,key[0],key[1],1);return{A:cv,R,x:key[0],y:key[1]}};
+  TX.t1=letter([40,1080],'When the heart',`'Bradley Hand'`,128,80,1210-1080,-.03,1000,300,[66,48,112]);
+  TX.t2=letter([40,1230],'is restless,',`'Bradley Hand'`,128,100,1360-1230,-.025,1000,200,[66,48,112]);
+  const enF=`Baskerville,Georgia,serif`;
+  TX.e1=letter([1320,1300],'Unquestionably, by the remembrance',`'Bradley Hand'`,60,null,1360-1300,-.012,1080,100,[62,46,104],.985);
+  TX.e2=letter([1320,1380],'of Allah hearts are assured.',`'Bradley Hand'`,60,null,1430-1380,-.01,1080,100,[62,46,104],.985);
+}
+// ---------------------------------------------------------------- per-frame pieces
+function pencil(pts,prog,a=.3,w=1.2,seed=1,passes=2){
+  if(prog<=0)return;const pr=rng(seed);w*=1.7;
+  for(let p=0;p<passes;p++){
+    ctx.save();ctx.globalCompositeOperation='multiply';ctx.strokeStyle=`rgba(70,68,76,${a*(.6+pr()*.5)})`;ctx.lineWidth=w*(.7+pr()*.6);ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+    const ox=pr.gauss()*1.5,oy=pr.gauss()*1.5,lim=prog*(pts.length-1);
+    for(let i=0;i<pts.length;i++){const q=pts[i];let x=q[0]+ox+pr.gauss()*.5,y=q[1]+oy+pr.gauss()*.5;if(i>lim+1)continue;if(i>lim){const f=lim-(i-1),qp=pts[i-1];x=qp[0]+(x-qp[0])*f;y=qp[1]+(y-qp[1])*f}i?ctx.lineTo(x,y):ctx.moveTo(x,y)}
+    ctx.stroke();ctx.restore()}}
+// a brush stroke with a swelling and tapering width, multiplied onto the paper
+function brush(pts,prog,col,wmax,seed,a=.5){
+  if(prog<=0)return;const br=rng(seed),n=pts.length-1,lim=Math.floor(prog*n);
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.lineCap='round';
+  for(let i=0;i<lim;i++){const u=i/n,w=Math.sin(Math.pow(u,.8)*Math.PI)*wmax+.6;ctx.strokeStyle=rgba(col,a*(.75+br()*.25));ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(pts[i][0],pts[i][1]);ctx.lineTo(pts[i+1][0],pts[i+1][1]);ctx.stroke()}
+  ctx.restore()}
+function reveal(o,prog,alpha=1){
+  if(prog<=0)return;const x0=o.x+o.s0-24,wd=(o.s1-o.s0+48)*prog;
+  ctx.save();ctx.beginPath();ctx.rect(x0,o.y,wd,o.A.height);ctx.clip();ctx.globalCompositeOperation='multiply';
+  ctx.globalAlpha=alpha;ctx.drawImage(o.A,o.x,o.y);ctx.drawImage(o.R,o.x,o.y);ctx.restore()}
+// ---- the Arabic, written on right to left with the pen mask (body first, then the vowel marks)
+const AR1='أَلَا بِذِكْرِ ٱللَّهِ',AR2='تَطْمَئِنُّ ٱلْقُلُوبُ';
+const strip=s=>s.replace(/[ً-ٰٟ]/g,'');
+const INKP=[62,42,100];
+function drawArabic(t,str,cx,y,size,t0,t1){
+  if(t<t0)return;
+  ctx.save();ctx.font=`${size}px ScheherazadeG`;ctx.direction='rtl';ctx.textAlign='center';
+  const wdt=ctx.measureText(str).width,xr=cx+wdt/2+40,xl=cx-wdt/2-40,p=inout((t-t0)/(t1-t0)),fx=xr-(xr-xl)*p;
+  const body=strip(str),m=ease((t-t1)/.5);
+  const paint=(txt,al)=>{ctx.globalCompositeOperation='multiply';ctx.fillStyle=rgba(INKP,.78*al);ctx.fillText(txt,cx,y);ctx.fillStyle=rgba(INKP,.26*al);ctx.fillText(txt,cx+1.4,y+1.2)};
+  ctx.save();ctx.beginPath();ctx.moveTo(fx,y-size*1.1);ctx.lineTo(xr+60,y-size*1.1);ctx.lineTo(xr+60,y+size*.9);ctx.lineTo(fx-60,y+size*.9);ctx.closePath();ctx.clip();paint(body,1-m);ctx.restore();
+  if(m>0)paint(str,m);
+  // a soft violet bleed where the nib is
+  if(p<1&&p>0){ctx.globalCompositeOperation='multiply';const g=ctx.createRadialGradient(fx,y-size*.3,2,fx,y-size*.3,46);g.addColorStop(0,'rgba(120,70,160,0.4)');g.addColorStop(1,'rgba(120,70,160,0)');ctx.fillStyle=g;ctx.fillRect(fx-50,y-size*.3-50,100,100)}
+  ctx.restore()}
+// ---------------------------------------------------------------- frame
+let READY=false;
+window.frame=function(t){
+  if(!READY)return{};
+  const cx=CAM(t),camx=cx-540;
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+  ctx.drawImage(SHEET,camx,0,1080,1920,0,0,1080,1920);
+  ctx.save();ctx.translate(-camx,0);
+  const dryOf=(a,b)=>{const u=clamp((t-a)/(b-a+1.2));return u*u};
+  // ===== panel 1: pencil, restless cloud, rain, the tangle
+  const cloudCur=win(t,.9,2.2),scrib=[];
+  for(let i=0;i<=260;i++){const u=i/260,a=u*Math.PI*2*5.3,r0=60+60*Math.sin(a*.62+1)+22*Math.sin(a*2.3);scrib.push([540+Math.cos(a)*r0*1.5+Math.sin(a*3.1)*10,880+Math.sin(a*1.07)*r0*.9+Math.cos(a*2.6)*12])}
+  const cl=[];
+  [[[190,560],[160,470],[230,395],[350,365],[430,310],[570,288],[700,325],[790,385],[900,404],[950,484],[900,572],[740,610],[560,592],[380,622],[250,612],[190,562]]].forEach(pts=>{for(let i=0;i<pts.length-1;i++){for(let k=0;k<6;k++){const u=k/6;cl.push([pts[i][0]+(pts[i+1][0]-pts[i][0])*u,pts[i][1]+(pts[i+1][1]-pts[i][1])*u])}}cl.push(pts[pts.length-1])});
+  pencil(cl,win(t,.15,1.1),.3,1.1,31,3);
+  pencil([[540,200],[540,1060]],win(t,.2,.9),.12,.8,32,1);
+  pencil([[110,1090],[990,1086]],win(t,.4,1.0),.12,.8,33,1);
+  pencil(scrib,win(t,.5,2.2),.28,1.1,34,2);
+  [[200,1200],[200,1350]].forEach(([x,y],i)=>pencil([[x-60,y+12],[x+880,y+6]],win(t,.6+i*.1,1.2),.11,.8,35+i,1));
+  drawWash(W_.cloud,cloudCur,dryOf(.9,2.2));
+  drawWash(W_.puddle,win(t,1.6,2.6),dryOf(1.6,2.6));
+  // rain streaks: brush strokes of slate blue, slanted, painted one by one
+  {const rr=rng(404);for(let k=0;k<30;k++){const x=rr.range(190,900),y0=rr.range(600,690),len=rr.range(220,380),sl=-.2+rr.range(-.04,.04),t0=1.5+k*.032,pts=[];for(let i=0;i<=14;i++){const u=i/14;pts.push([x+Math.sin(sl)*len*u*-1,y0+Math.cos(sl)*len*u])}brush(pts,win(t,t0,t0+.4),[72,86,150],rr.range(2.4,4.4),500+k,.46)}}
+  brush(scrib,win(t,1.7,3.0),[96,78,150],2.8,610,.34);
+  reveal(TX.t1,ease(win(t,1.5,2.4)));reveal(TX.t2,ease(win(t,2.2,2.9)));
+  // ===== panel 2: lantern at evening
+  pencil([[LX,300],[LX,860]],win(t,3.0,3.5),.13,.8,60,1);
+  pencil([[1560,LY],[2160,LY]],win(t,3.1,3.6),.1,.8,61,1);
+  pencil(arc(LX,LY,205,205,0,Math.PI*2,80),win(t,3.1,3.9),.1,1,62,1);
+  pencil(ARCHR,win(t,3.2,3.9),.34,1.2,63,2);
+  pencil(bez([1772,472],[1738,520],[1736,630],[1780,694],20),win(t,3.4,4.0),.34,1.2,64,2);
+  pencil(bez([1948,472],[1984,520],[1982,630],[1944,694],20),win(t,3.5,4.1),.34,1.2,65,2);
+  pencil([[1750,472],[1970,470]],win(t,3.6,4.0),.3,1.1,66,1);pencil([[1774,696],[1948,694]],win(t,3.7,4.1),.3,1.1,67,1);
+  pencil(arc(LX,350,24,24,0,Math.PI*2,24),win(t,3.6,4.0),.3,1.1,68,2);
+  pencil([[1400,938],[2330,942]],win(t,3.8,4.4),.14,.9,69,1);
+  drawWash(W_.sky,win(t,3.7,4.9),dryOf(3.7,4.9));
+  drawWash(W_.sky2,win(t,4.1,5.1),dryOf(4.1,5.1));
+  drawWash(W_.pond,win(t,4.3,5.3),dryOf(4.3,5.3));
+  drawWash(W_.glass,win(t,4.2,5.2),dryOf(4.2,5.2));
+  drawWash(W_.frame,win(t,4.7,5.5),dryOf(4.7,5.5));
+  // the glow breathes, a slow warm bloom behind the glass; calm ripples spread on the water and thin out
+  if(t>5){const k=ease(win(t,5,5.8)),br=.5+.5*Math.sin(t*1.7);ctx.save();ctx.globalCompositeOperation='multiply';const g=ctx.createRadialGradient(LX,LY+20,10,LX,LY+20,230);g.addColorStop(0,`rgba(255,196,96,${.22*k*(.7+.3*br)})`);g.addColorStop(1,'rgba(255,196,96,0)');ctx.fillStyle=g;ctx.fillRect(LX-240,LY-220,480,480);ctx.restore()}
+  {const calm=1-.85*sm(5.2,8.8,t);for(let k=0;k<4;k++){const life=((t*.22+k/4)%1),rx=40+life*330,ry=rx*.12,a=.5*Math.sin(life*Math.PI)*calm*ease(win(t,4.8,5.6));if(a<=0)continue;ctx.save();ctx.globalCompositeOperation='multiply';ctx.strokeStyle=`rgba(70,110,170,${a})`;ctx.lineWidth=2.4;ctx.beginPath();ctx.ellipse(LX,962,rx,ry,0,0,Math.PI*2);ctx.stroke();ctx.restore()}}
+  // loose brush contour on the shadow side of the glass
+  {const br=rng(123);for(let s=0;s<3;s++){const a0=-Math.PI*.42+s*.45+br()*.15,a1=a0+.4+br()*.2,pts=[];for(let i=0;i<=16;i++){const a=a0+(a1-a0)*i/16;pts.push([LX+Math.cos(a)*(88)+10,LY+30+Math.sin(a)*120])}brush(pts,win(t,5.0+s*.12,5.4+s*.12),[50,48,92],3.4,700+s,.42)}}
+  // splatter of the colours used, flicked from the nib
+  {const sp=rng(555),cols=[[70,82,170],[250,190,70],[235,150,60],[126,178,214]];ctx.save();ctx.globalCompositeOperation='multiply';
+   for(let i=0;i<64;i++){const c=sp.pick(cols),ang=sp.range(-.9,.3),d=Math.abs(sp.gauss())*240,x=2150+Math.cos(ang)*d+sp.gauss()*50,y=420+Math.sin(ang)*d*.7+sp.gauss()*60,rr=(Math.pow(sp(),3)*8+1)*(1-Math.pow(1-clamp((t-5.2-i*.003)/.12),3));
+     if(rr<=.05){sp();sp();sp();continue}ctx.fillStyle=rgba(c,.25+sp()*.35);ctx.beginPath();ctx.ellipse(x,y,rr,rr*(.7+sp()*.3),sp()*3,0,7);ctx.fill();ctx.fillStyle=rgba(c,.25);ctx.beginPath();ctx.arc(x,y,rr*.7,0,7);ctx.fill()}ctx.restore()}
+  // ===== the verse, on bare paper under the pond
+  drawArabic(t,AR1,LX,1100,106,4.7,5.45);
+  drawArabic(t,AR2,LX,1215,106,5.3,6.05);
+  reveal(TX.e1,ease(win(t,5.95,6.7)));reveal(TX.e2,ease(win(t,6.75,7.4)));
+  {const a=ease(win(t,7.6,8.1));if(a>0){ctx.save();ctx.globalCompositeOperation='multiply';ctx.font='26px Menlo,monospace';ctx.textAlign='center';ctx.letterSpacing='9px';ctx.fillStyle=`rgba(110,80,130,${.78*a})`;ctx.fillText('QURAN 13:28',LX,1495);
+   ctx.font='24px Menlo,monospace';ctx.letterSpacing='6px';ctx.fillStyle=`rgba(110,80,130,${.55*a})`;ctx.fillText('@YOURPAGE',LX,1700);ctx.restore()}}
+  ctx.restore();
+  // paper vignette: the lamp falls off toward the corners
+  const vg=ctx.createRadialGradient(540,900,500,540,960,1300);vg.addColorStop(0,'rgba(120,90,50,0)');vg.addColorStop(1,'rgba(120,90,50,0.16)');ctx.save();ctx.globalCompositeOperation='multiply';ctx.fillStyle=vg;ctx.fillRect(0,0,1080,1920);ctx.restore();
+  return{};
+};
+function sm(a,b,x){const t=clamp((x-a)/(b-a));return t*t*(3-2*t)}
+Promise.all(['106px ScheherazadeG','60px "Bradley Hand"','26px Menlo'].map(f=>document.fonts.load(f))).then(()=>document.fonts.ready).then(()=>{bakeAll();READY=true;frame(0);window.ready=true});
+</script></body></html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#1d1b17}
+#paper{position:absolute;inset:0;background:radial-gradient(ellipse 900px 1300px at 50% 45%,#2a2722 0%,#1d1b17 60%,#141310 100%)}
+canvas{position:absolute;inset:0}
+.hw{position:absolute;color:#ecebe4;font-family:"Chalkboard SE","Bradley Hand",cursive;filter:url(#rough)}
+.w{opacity:0;display:inline-block;margin-right:.28em}
+svg{position:absolute;inset:0}
+</style></head>
+<body>
+<div id="paper"></div><canvas id="grain" width="1080" height="1920"></canvas>
+<svg width="0" height="0"><filter id="rough"><feTurbulence id="turb" type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="1"/><feDisplacementMap in="SourceGraphic" scale="5"/></filter></svg>
+<div class="hw" id="t1" style="top:330px;left:110px;width:860px;font-size:70px;line-height:1.25">The Prophet ﷺ named the deed Allah loves most.</div>
+<div class="hw" id="t2" style="top:640px;left:110px;width:860px;font-size:70px;line-height:1.25">It is <span style="color:#e3b55a">not</span> the biggest one.</div>
+<svg viewBox="0 0 1080 1920" width="1080" height="1920" style="filter:url(#rough)">
+  <path id="ul" d="M 300 740 q 40 12 92 -2" fill="none" stroke="#e3b55a" stroke-width="5" stroke-linecap="round"/>
+  <line x1="540" y1="930" x2="540" y2="1560" stroke="#ecebe4" stroke-width="3" stroke-linecap="round" id="mid" opacity="0"/>
+  <path id="bigmark" d="M 175 1180 C 160 1080 330 1040 380 1130 C 420 1210 300 1290 220 1250" fill="none" stroke="#ecebe4" stroke-width="16" stroke-linecap="round"/>
+  <path id="cross" d="M 160 1300 L 420 1100" fill="none" stroke="#d76a5a" stroke-width="7" stroke-linecap="round"/>
+  <g id="tally"></g>
+</svg>
+<div class="hw" id="la" style="top:960px;left:140px;font-size:54px;opacity:0">Big deed</div>
+<div class="hw" id="lb" style="top:960px;left:600px;font-size:54px;opacity:0">Small deed</div>
+<div class="hw" id="st" style="top:1380px;left:150px;font-size:44px;color:#d76a5a;opacity:0">stopped</div>
+<div class="hw" id="go" style="top:1600px;left:600px;font-size:44px;color:#e3b55a;opacity:0">still going...</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3);
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+// grain, drawn once from a fixed seed
+(()=>{const c=$('grain').getContext('2d');let s=7;const r=()=>(s=(s*16807)%2147483647)/2147483647;for(let i=0;i<90000;i++){c.fillStyle=`rgba(255,255,240,${r()*.05})`;c.fillRect(r()*1080,r()*1920,1.4,1.4)}})();
+// handwriting appears word by word
+function words(el,t0,gap){const out=[];(function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType===3){const f=document.createDocumentFragment();c.textContent.split(/\s+/).filter(Boolean).forEach(x=>{const s=document.createElement('span');s.className='w';s.textContent=x;f.appendChild(s);out.push(s)});c.replaceWith(f)}else w(c)})})(el);out.forEach((s,i)=>add(t0+i*gap,'key',.16));return out.map((s,i)=>[s,t0+i*gap])}
+const W=[...words($('t1'),.2,.24),...words($('t2'),2.4,.24)];
+const draw=(el,t,a,d)=>{const L=el.getTotalLength();el.style.strokeDasharray=L;el.style.strokeDashoffset=L*(1-ease((t-a)/d))};
+const TY0=5.6,TS=.17,N=Math.floor((10-TY0)/TS);
+for(let i=0;i<N;i++)add(TY0+i*TS,'key',.12);
+add(3.6,'drop',.2);add(4.7,'tap',.25);add(4.9,'thud',.4);add(5.3,'tap',.3);add(5.35,'thud',.35);add(TY0,'tap',.2);
+window.frame=function(t){
+  $('turb').setAttribute('seed',1+Math.floor(t/.13)%7);
+  const fade=1-ease((t-4.3)/.4);
+  W.forEach(([s,a])=>s.style.opacity=ease((t-a)/.18)*fade);
+  draw($('ul'),t,3.5,.4);$('ul').style.opacity=fade;
+  $('mid').setAttribute('opacity',ease((t-4.6)/.4)*.5);
+  $('la').style.opacity=$('lb').style.opacity=ease((t-4.6)/.4);
+  draw($('bigmark'),t,4.8,.35);draw($('cross'),t,5.3,.25);
+  $('st').style.opacity=ease((t-5.4)/.3);$('go').style.opacity=ease((t-6.6)/.4);
+  // tally marks in groups of five, one per day, never stopping
+  const n=clamp(Math.floor((t-TY0)/TS)+1,0,N);let g='';
+  for(let i=0;i<n;i++){const grp=Math.floor(i/5),j=i%5,gx=620+(grp%3)*120,gy=1110+Math.floor(grp/3)*120;
+    g+=j<4?`<path d="M ${gx+j*20} ${gy} q 3 40 -2 80" stroke="#ecebe4" stroke-width="5" fill="none" stroke-linecap="round"/>`:`<path d="M ${gx-12} ${gy+66} L ${gx+82} ${gy+10}" stroke="#e3b55a" stroke-width="5" fill="none" stroke-linecap="round"/>`}
+  $('tally').innerHTML=g;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

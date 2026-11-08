@@ -1,0 +1,110 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#f0e6d0}
+svg.ink{position:absolute;inset:0;mix-blend-mode:multiply}
+#grain{position:absolute;inset:0;mix-blend-mode:multiply;opacity:.5;pointer-events:none}
+</style></head>
+<body>
+<svg id="pink" class="ink" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<svg id="blue" class="ink" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<svg id="grain" viewBox="0 0 1080 1920" width="1080" height="1920"><defs><filter id="g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 .35  0 0 0 0 .3  0 0 0 0 .22  0 0 0 -9 4.6"/></filter></defs><rect width="1080" height="1920" filter="url(#g)"/></svg>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const PINK='#ff4aa8',BLUE='#1b6fc4',F='Futura,"Avenir Next",sans-serif',M='Menlo,monospace';
+// seeded hash
+const h=(n)=>{n=Math.imul(n^61,0x9e3779b1);n^=n>>>15;n=Math.imul(n,0x85ebca6b);n^=n>>>13;return ((n>>>0)%10000)/10000};
+const X0=135,DX=90,CY_A=700,CY_B=1010,N=10;
+const dayT=k=>5.5+k*.42; // blue dot k (0-based)
+// timeline
+add(.3,'tap',.25);add(2.6,'tap',.25);add(4.35,'slide',.3);
+add(5.0,'thud',.35);
+for(let k=0;k<N;k++)add(dayT(k),'tick',.22);
+add(7.7,'tap',.25);add(8.5,'bell',.3);
+function dots(cx,cy,R,sp,ang,col,maxr,fn){ // halftone disc
+  let s='';const ca=Math.cos(ang),sa=Math.sin(ang);
+  for(let i=-R;i<=R;i+=sp)for(let j=-R;j<=R;j+=sp){
+    const x=i*ca-j*sa,y=i*sa+j*ca,d=Math.hypot(x,y);if(d>R)continue;
+    const r=maxr*fn(d/R);if(r<.6)continue;
+    s+=`<circle cx="${(cx+x).toFixed(1)}" cy="${(cy+y).toFixed(1)}" r="${r.toFixed(1)}"/>`;
+  }
+  return `<g fill="${col}">${s}</g>`;
+}
+function txt(x,y,size,fill,str,anchor='start',w=800,ls=0){return `<text x="${x}" y="${y}" font-family='${F}' font-weight="${w}" font-size="${size}" fill="${fill}" text-anchor="${anchor}" letter-spacing="${ls}">${str}</text>`}
+function mono(x,y,fill,str,anchor='start'){return `<text x="${x}" y="${y}" font-family="${M}" font-size="24" letter-spacing="5" fill="${fill}" text-anchor="${anchor}">${str}</text>`}
+// stepped reveal: line appears with a 3-step print-in
+function pr(t,a){const p=clamp((t-a)/.3);return p<=0?0:Math.ceil(p*3)/3}
+window.frame=function(t){
+  const f=Math.floor(t*10),tq=f/10; // 10 fps stepped
+  const mp={x:(h(f*3+1)-.5)*8,y:(h(f*3+2)-.5)*8},mb={x:(h(f*3+3)-.5)*8,y:(h(f*3+4)-.5)*8};
+  let P='',B='';
+  if(tq<4.6){
+    const out=clamp((tq-4.3)/.3),sh=out*1100; // wipe off to the right in steps
+    const a1=pr(tq,.3),a2=pr(tq,2.6);
+    // line 1 in blue, line 2 in pink; second line overlaps nothing, but a pink halftone sun overprints line 1
+    const lines1=['The Prophet ﷺ','named the deed','Allah loves most.'];
+    let g1='';lines1.forEach((l,i)=>{g1+=txt(90,560+i*104,92,BLUE,l)});
+    B+=`<g opacity="${a1}" transform="translate(${sh} ${(1-a1)*16})">${g1}${mono(94,470,BLUE,'BUKHARI 6464')}</g>`;
+    const lines2=['It is','not the','biggest one.'];
+    let g2='';lines2.forEach((l,i)=>{g2+=txt(90,1010+i*128,118,PINK,l,'start',900)});
+    P+=`<g opacity="${a2}" transform="translate(${sh} ${(1-a2)*16})">${g2}</g>`;
+    // halftone sun, overprints line 1 so overlap goes purple
+    const sa=pr(tq,.3);
+    P+=`<g opacity="${sa}" transform="translate(${sh} 0)">`+dots(850,470,210,16,.26,PINK,8,d=>1-d*.85)+`</g>`;
+    // blue halftone block under line 2
+    B+=`<g opacity="${a2}" transform="translate(${sh} 0)">`+dots(940,1250,150,14,.78,BLUE,6.5,d=>.25+d*.75)+`</g>`;
+  }
+  if(tq>=4.5){
+    const o=pr(tq,4.5);
+    // headers
+    P+=`<g opacity="${o}">`+mono(90,480,PINK,'ONE BIG DEED')+`</g>`;
+    B+=`<g opacity="${o}">`+mono(200,860,BLUE,'A SMALL ONE, EVERY DAY')+`</g>`;
+    // day cells
+    let cellsP='',cellsB='';
+    for(let k=0;k<N;k++){
+      const cx=X0+k*DX;
+      cellsP+=`<rect x="${cx-34}" y="${CY_A-34}" width="68" height="68" fill="none" stroke="${PINK}" stroke-width="2.5" stroke-dasharray="5 7" opacity=".55"/>`;
+      cellsB+=`<rect x="${cx-34}" y="${CY_B-34}" width="68" height="68" fill="none" stroke="${BLUE}" stroke-width="2.5" stroke-dasharray="5 7" opacity=".55"/>`;
+      cellsB+=`<text x="${cx}" y="${CY_B+78}" font-family="${M}" font-size="20" fill="${BLUE}" text-anchor="middle" opacity=".7">${k+1}</text>`;
+    }
+    P+=`<g opacity="${o}">${cellsP}</g>`;B+=`<g opacity="${o}">${cellsB}</g>`;
+    // big deed, day 1
+    const bt=tq-5.0;
+    if(bt>=0){
+      const sc=bt<.4?1.35-0.35*Math.min(1,Math.floor(bt/.1)/3):1;
+      P+=`<g transform="translate(${X0} ${CY_A}) scale(${sc}) translate(${-X0} ${-CY_A})">`+`<circle cx="${X0}" cy="${CY_A}" r="40" fill="${PINK}"/>`+dots(X0,CY_A,86,12,.3,PINK,5,d=>d<.5?0:.4+d*.6)+`</g>`;
+      // flat line after the big deed
+      const len=clamp((tq-5.4)/.8);
+      P+=`<path d="M${X0+90} ${CY_A} H${X0+90+ (DX*3-60)*Math.ceil(len*6)/6}" stroke="${PINK}" stroke-width="5" stroke-linecap="round" fill="none" opacity="${len>0?.9:0}"/>`;
+      if(len>=1)P+=`<path d="M${X0+DX*3+40} ${CY_A-22} L${X0+DX*3+84} ${CY_A+22} M${X0+DX*3+84} ${CY_A-22} L${X0+DX*3+40} ${CY_A+22}" stroke="${PINK}" stroke-width="7" stroke-linecap="round"/>`;
+      // pink band down day 1 overprinting the blue dot
+      const bandA=clamp((tq-5.5)/.3);
+      P+=`<g opacity="${bandA>0?1:0}">`+dots(X0,(CY_A+CY_B)/2,1,1,0,PINK,0,()=>0)+`<g fill="${PINK}">${(()=>{let s='';for(let y=CY_A+110;y<CY_B+40;y+=13){const w=7*(1-Math.abs(y-(CY_A+CY_B)/2)/260);for(let dx=-30;dx<=30;dx+=15)s+=`<circle cx="${X0+dx}" cy="${y}" r="${Math.max(1.5,w*0.9).toFixed(1)}"/>`}return s})()}</g></g>`;
+    }
+    // small deeds, every day
+    let pts=[];
+    for(let k=0;k<N;k++){
+      const dt=tq-dayT(k);if(dt<0)continue;
+      const cx=X0+k*DX,sc=dt<.3?1.3-.3*Math.floor(dt/.1)/3:1;
+      pts.push(cx);
+      B+=`<g transform="translate(${cx} ${CY_B}) scale(${sc})"><circle r="22" fill="${BLUE}"/>`+dots(0,0,34,9,.5,BLUE,3.2,d=>d<.62?0:1)+`</g>`;
+    }
+    if(pts.length>1)B+=`<path d="M${pts[0]} ${CY_B} H${pts[pts.length-1]}" stroke="${BLUE}" stroke-width="5" stroke-linecap="round" opacity=".9"/>`;
+    // caption
+    const c1=pr(tq,7.7),c2=pr(tq,8.5);
+    B+=`<g opacity="${c1}" transform="translate(0 ${(1-c1)*14})">${txt(90,1320,112,BLUE,'Same days.')}</g>`;
+    P+=`<g opacity="${c2}" transform="translate(0 ${(1-c2)*14})">${txt(90,1462,112,PINK,'One kept going.','start',900)}</g>`;
+    B+=`<g opacity="${c2}">`+dots(900,1210,100,13,.6,BLUE,5,d=>.2+d*.8).replace('<g','<g transform="translate(0 0)"')+`</g>`;
+  }
+  // handle
+  B+=`<g opacity=".85">${mono(540,1660,BLUE,'@YOURPAGE','middle')}</g>`;
+  $('pink').innerHTML=`<g transform="translate(${mp.x.toFixed(1)} ${mp.y.toFixed(1)})">${P}</g>`;
+  $('blue').innerHTML=`<g transform="translate(${mb.x.toFixed(1)} ${mb.y.toFixed(1)})">${B}</g>`;
+  $('grain').style.transform=`translate(${Math.round((h(f*7+5)-.5)*40)}px,${Math.round((h(f*7+6)-.5)*40)}px) scale(1.1)`;
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

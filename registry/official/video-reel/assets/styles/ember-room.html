@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Ember room</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+canvas{position:absolute;left:0;top:0;width:1080px;height:1920px}
+</style>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js" } }</script>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<canvas id="ui" width="1080" height="1920"></canvas>
+<script type="module">
+// Ember room demo, 12 s: a doorway opens, one glowing figure walks in, stops, turns to the lamp. Slow dolly, seeded drift.
+// frame(t) is pure: the world is reset from t each call. ?set=hall swaps the plain room for the hall, ?color=gold|moon|ember.
+import * as THREE from 'three';
+import { makeEngine, W, H, Figure, EMBER, GOLD, MOON, buildHall, buildPlainRoom, stand, walk, pathAt, pathLen, travel, rng } from '../ember/index.js';
+
+const Q = new URLSearchParams(location.search);
+const PRESET = { ember: EMBER, gold: GOLD, moon: MOON }[Q.get('color')] || GOLD;
+const CREAM = '#f2e2be';
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, p) => a + (b - a) * p;
+const eio = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const ramp = (t, a, d) => clamp((t - a) / d);
+
+window.DURATION = 12;
+window.SFX = [];
+
+const TIMES = { door: [0.3, 1.3], walk0: 1.0, turn: [6.2, 1.6], cap: [6.6, 4.8] };
+const PATH = [[0, -4.9], [0, -3.1], [0.3, -0.7]];
+const SPEED = 0.85, L = pathLen(PATH), tStop = TIMES.walk0 + 0.35 / 2 + L / SPEED;
+
+const gl = document.getElementById('gl'), ui = document.getElementById('ui'), ctx = ui.getContext('2d');
+const set = Q.get('set') === 'hall' ? 'hall' : 'plain';
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);
+const engine = makeEngine(gl);
+const room = set === 'hall' ? buildHall(scene, engine.renderer) : buildPlainRoom(scene, engine.renderer);
+const hero = new Figure(scene, { kind: 2, color: PRESET });
+const other = new Figure(scene, { kind: 2, color: PRESET, coreGain: 0.35, rimGain: 1.1, light: 0.08 });
+const camera = new THREE.PerspectiveCamera(48, W / H, 0.03, 60);
+const LAMP = room.ROOM.lamp;
+
+// seeded camera drift: fixed phases from one seed, so every call with the same t gives the same shake
+const R = rng(31), PH = Array.from({ length: 6 }, () => R() * 6.28);
+const drift = (t, a) => [0, 1, 2].map((i) => (Math.sin(t * (0.35 + 0.17 * i) + PH[i]) * 0.65 + Math.sin(t * (1.1 + 0.3 * i) + PH[i + 3]) * 0.35) * a);
+
+// footfall sounds from the gait: one soft wood step every half stride
+const STRIDE = 1.3;
+(() => {
+  let last = -1;
+  for (let t = TIMES.walk0; t < tStop; t += 1 / 60) { const k = Math.floor(travel(t, TIMES.walk0, SPEED, L) / (STRIDE / 2)); if (k !== last && k > 0) window.SFX.push({ t: +t.toFixed(3), type: 'wood', v: 0.1 }); last = k; }
+  window.SFX.push({ t: 0.5, type: 'wood', v: 0.14 });
+})();
+
+const YAW0 = pathAt(PATH, L).yaw, FWD = new THREE.Vector3(0.3, 1.5, 3);
+function pose(t) {
+  const d = travel(t, TIMES.walk0, SPEED, L);
+  const amp = clamp(Math.min(d / 0.3, (L - d) / 0.55));
+  const turn = eio(ramp(t, TIMES.turn[0], TIMES.turn[1]));
+  const o = { amp, look: FWD.clone().lerp(new THREE.Vector3(LAMP.x, 1.3, LAMP.z), eio(ramp(t, TIMES.turn[0] - 0.3, TIMES.turn[1] + 0.3))) };
+  if (t >= tStop) o.yaw = lerp(YAW0, -75, turn);
+  return walk(PATH, d, t, o);
+}
+
+function renderFrame(t) {
+  // reset everything animated, from t
+  const open = eio(ramp(t, TIMES.door[0], TIMES.door[1] - TIMES.door[0]));
+  room.door.rotation.set(0, open * 1.55, 0);
+  room.spill.material.opacity = 0.3 + 0.7 * open;
+  room.lamp.intensity = 3.2 * (1 + 0.025 * Math.sin(t * 9.1) * Math.sin(t * 3.3));
+  hero.visible = true; hero.gain = 0.55 + 0.45 * open;
+  hero.pose(pose(t));
+  other.visible = true; other.gain = 1;
+  other.pose(stand([1.65, -2.4], -35, t, { contra: -1 }));
+
+  // camera: slow dolly in and a gentle rise, tiny drift
+  const k = eio(t / window.DURATION);
+  const [dx, dy, dz] = drift(t, 0.0032);
+  camera.fov = 48; camera.updateProjectionMatrix();
+  camera.position.set(lerp(0.9, 0.45, k), lerp(1.3, 1.22, k), lerp(3.6, 2.5, k) - (set === 'hall' ? 1.3 : 0));
+  camera.up.set(0, 1, 0); camera.lookAt(lerp(-0.1, -0.2, k), lerp(1.05, 0.98, k), -1.8);
+  camera.rotateX(dx); camera.rotateY(dy); camera.rotateZ(dz);
+
+  engine.render(scene, camera, t, { exposure: 1.0, bloom: 0.4, bloomThreshold: 0.36, vignette: 0.55, fade: clamp(t / 0.6) * clamp((window.DURATION - t) / 0.6) });
+}
+
+function overlay(t) {
+  ctx.clearRect(0, 0, W, H);
+  const a = ramp(t, TIMES.cap[0], 0.8) * (1 - ramp(t, TIMES.cap[0] + TIMES.cap[1] - 0.8, 0.8));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 24;
+  ctx.fillStyle = CREAM; ctx.font = 'italic 66px Baskerville, Georgia, serif';
+  ctx.fillText('Some guests arrive in silence.', W / 2, 1760 - 10 * (1 - a));
+  ctx.restore();
+}
+
+window.frame = (t) => { renderFrame(t); overlay(t); return {}; };
+
+(async () => {
+  await document.fonts.load('italic 60px Baskerville');
+  await document.fonts.ready;
+  window.frame(0); // compile shaders
+  window.ready = true;
+})();
+</script></body></html>

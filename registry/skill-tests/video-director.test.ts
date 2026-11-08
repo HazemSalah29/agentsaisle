@@ -11,6 +11,7 @@ const routing = [
   "references/explain.md",
   "references/kinetic.md",
   "references/showcase.md",
+  "references/reel.md",
   "references/craft.md",
 ]
   .map(text)
@@ -49,10 +50,11 @@ describe("the video director", () => {
     expect(skill).toMatch(/Pause for the user only at/);
   });
 
-  it("offers exactly three formats and says what is not offered", () => {
+  it("offers exactly four formats and says what is not offered", () => {
     const skill = text("SKILL.md");
     const choose = text("references/choose.md");
-    for (const f of ["Explainer", "Kinetic", "Showcase"]) expect(choose).toContain(`| ${f}`);
+    for (const f of ["Explainer", "Kinetic", "Showcase", "Reel"])
+      expect(choose).toContain(`| ${f}`);
     expect(choose).toMatch(/Not offered/);
     expect(skill + routing).not.toMatch(/video-kids|puppet|Higgsfield|HyperFrames/);
   });

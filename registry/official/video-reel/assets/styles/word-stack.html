@@ -1,0 +1,89 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeX;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0e0d0c}
+body{font-family:Didot,"Bodoni 72",Georgia,serif;color:#f1ebdc}
+.ln{position:absolute;left:70px;width:940px;overflow:hidden;white-space:nowrap}
+.ln span.in{display:block;will-change:transform}
+.sal{font-family:ScheherazadeX,serif;font-weight:400}
+.gold{color:#d9a441}
+.strike{position:absolute;height:14px;background:#d9a441;transform-origin:0 50%}
+#hd{position:absolute;bottom:250px;left:0;right:0;text-align:center;font-family:"Avenir Next",sans-serif;font-size:22px;letter-spacing:.2em;color:rgba(241,235,220,.5)}
+</style></head>
+<body>
+<div id="root"></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),4),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const root=document.getElementById('root');
+const L=[];
+// line: html, top y, font size, in time, out time (null = stays), extra css
+function line(html,y,fs,a,b,o={}){
+  const d=document.createElement('div');d.className='ln';
+  d.style.cssText=`top:${y}px;height:${fs*1.25}px;font-size:${fs}px;line-height:${fs}px;text-align:${o.align||'left'};font-weight:${o.w||700}`+(o.css||'');
+  d.innerHTML=`<span class="in">${html}</span>`;root.appendChild(d);
+  L.push({d,s:d.firstChild,a,b,o});
+}
+const sal='<span class="sal" style="font-size:.8em">ﷺ</span>';
+// hook line 1: six words stacked
+const h1=[['The',0],['Prophet '+sal,0],['named the',0],['deed Allah',0],['loves',0],['most.',0]];
+h1.forEach((w,i)=>{line(w[0],290+i*150,140,.3+i*.17,2.5+i*.07);add(.3+i*.17,'tick',.25)});
+add(1.5,'thud',.3);
+// hook line 2: key word "not" scales big and goes gold
+line('It is',330,140,3.0,4.5);
+line('<span class="gold">not</span>',480,400,3.25,4.55,{css:';overflow:visible;clip-path:inset(0 0 -10px 0)'});
+line('the biggest',870,140,3.55,4.6);
+line('one.',1020,140,3.75,4.65);
+add(3.0,'tick',.25);add(3.25,'thud',.5);add(3.55,'tick',.25);add(3.75,'tick',.25);
+// second half
+line('ONCE',270,270,5.0,null,{w:700,id:'once'});
+add(5.0,'thud',.45);
+// day slots: 8 per group, 4 per row
+const once=[],daily=[];
+for(let k=0;k<8;k++){
+  const x=70+(k%4)*240,y0=(k<4?560:640);
+  once.push({k,x,y:y0});
+}
+for(let k=0;k<8;k++){
+  const x=70+(k%4)*240,y0=(k<4?1060:1140);
+  daily.push({k,x,y:y0});
+}
+const slot=(p,cls)=>{const d=document.createElement('div');d.className='ln';d.style.cssText=`left:${p.x}px;width:230px;top:${p.y}px;height:62px;font-size:60px;line-height:62px;font-weight:400;font-style:italic`;d.innerHTML=`<span class="in">day</span>`;root.appendChild(d);p.d=d;p.s=d.firstChild};
+once.forEach(slot);daily.forEach(slot);
+line('DAILY',790,270,6.6,null,{w:700,id:'daily'});
+add(6.6,'thud',.45);
+add(5.6,'plink',.3);
+daily.forEach((p,i)=>{p.on=7.2+i*.35;add(p.on,'tick',.3)});
+once[0].on=5.6;
+add(9.0,'bell',.25);
+line('Same days. One kept going.',1290,66,9.0,null,{w:400,css:';font-style:italic;height:80px;line-height:70px'});
+// strike through ONCE
+const st=document.createElement('div');st.className='strike';st.style.cssText='left:70px;top:395px;width:760px';root.appendChild(st);
+add(6.3,'tap',.35);
+window.frame=function(t){
+  for(const l of L){
+    const p=ease((t-l.a)/.75),q=l.b==null?0:inout((t-l.b)/.5);
+    l.s.style.transform=`translateY(${(1-p)*125-q*125}%)`;
+    if(l.o.id==='once'){const dim=inout((t-6.3)/.5);l.s.style.color=`rgb(${241-dim*165},${235-dim*165},${220-dim*165})`}
+    if(l.o.id==='daily'){const g=inout((t-7.0)/.6);l.s.style.color=`rgb(${241-g*24},${235-g*70},${220-g*155})`}
+  }
+  st.style.transform=`scaleX(${ease((t-6.3)/.45)})`;
+  const sl=(p,ghost)=>{const on=p.on!=null&&t>=p.on;const r=on?ease((t-p.on)/.5):0;
+    p.d.style.opacity=on?1:(t>(ghost)?.0:0);
+    p.s.style.transform=`translateY(${(1-r)*110}%)`;
+    p.s.style.color=ghost>0?'':'#f1ebdc'};
+  once.forEach(p=>{const g=ease((t-(5.5+p.k*.03))/.5);const on=p.on!=null&&t>=p.on;
+    p.d.style.opacity=1;p.s.style.transform=`translateY(${(1-(on?ease((t-p.on)/.5):g))*140}%)`;
+    p.s.style.color=on?'#d9a441':'rgba(241,235,220,.18)';
+    p.s.style.opacity=1});
+  daily.forEach(p=>{const g=ease((t-(7.0))/.5);const on=t>=p.on;
+    p.d.style.opacity=1;p.s.style.transform=`translateY(${(1-(on?ease((t-p.on)/.5):g))*140}%)`;
+    p.s.style.color=on?'#d9a441':'rgba(241,235,220,.18)'});
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

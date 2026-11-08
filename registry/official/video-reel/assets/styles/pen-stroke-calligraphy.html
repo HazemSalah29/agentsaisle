@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeP;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0d1f19}
+svg{position:absolute;inset:0}
+.cap{position:absolute;left:90px;width:900px;text-align:center;color:#efe6cf;font-family:Baskerville,Georgia,serif;font-size:54px;line-height:1.25;opacity:0}
+.cap em{font-style:italic;color:#d9b45a}
+#hd{position:absolute;bottom:250px;left:0;right:0;text-align:center;font-family:Menlo,monospace;font-size:20px;letter-spacing:.2em;color:rgba(239,230,207,.5)}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="cap" id="c1" style="top:290px">The Prophet &#xFDFA; named the deed Allah loves most.</div>
+<div class="cap" id="c2" style="top:470px">It is <em>not the biggest one.</em></div>
+<div class="cap" id="c3" style="top:1440px;font-size:50px">Same days. <em>One kept going.</em></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const GOLD='#d9b45a',INK='#efe6cf';
+const LINES=[
+ {txt:'أَحَبَّ الأَعْمَالِ أَدْوَمُهَا',y:800,t0:1.0,t1:2.7,m1:3.2},
+ {txt:'إِلَى اللَّهِ، وَإِنْ قَلَّ',y:990,t0:3.0,t1:4.3,m1:4.8}
+];
+const X0=70,X1=1010,SL=60,BAND=[-95,30]; // body band relative to baseline
+for(const L of LINES){for(let t=L.t0;t<L.t1;t+=.22)add(t,'key',.12);add(L.t1+.1,'plink',.25);add(L.m1,'plink',.2)}
+add(.3,'tap',.25);add(2.6,'tap',.25);add(4.9,'bell',.3);add(5.1,'tap',.25);
+// day marks
+const D0=5.6,DS=.5;for(let k=0;k<9;k++)add(D0+k*DS,'tick',.18);add(D0,'thud',.3);
+function sweep(p){return X1+SL-(X1-X0+SL*2)*p} // front x moving right to left
+function maskPoly(front,y0,y1){return `${front},${y0} ${X1+40},${y0} ${X1+40},${y1} ${front-SL},${y1}`}
+function lineSvg(L,i,t){
+  const pb=ease((t-L.t0)/(L.t1-L.t0)),pm=ease((t-L.t1)/(L.m1-L.t1));
+  const fb=sweep(clamp(pb)),fm=sweep(clamp(pm));
+  const y=L.y;let s='';
+  s+=`<mask id="mb${i}"><polygon fill="#fff" points="${maskPoly(fb,y+BAND[0],y+BAND[1])}"/></mask>`;
+  s+=`<mask id="mm${i}"><polygon fill="#fff" points="${maskPoly(fm,y-200,y+120)}"/></mask>`;
+  const tx=`<text x="540" y="${y}" text-anchor="middle" direction="rtl" font-family="ScheherazadeP" font-size="124" fill="${INK}">${L.txt}</text>`;
+  if(t>=L.t0)s+=`<g mask="url(#mb${i})">${tx}</g>`;
+  if(t>=L.t1)s+=`<g mask="url(#mm${i})">${tx}</g>`;
+  // pen nib
+  if(t>=L.t0&&pb<1){const bob=Math.sin(t*38)*5;s+=`<circle cx="${fb}" cy="${y-30+bob}" r="46" fill="${GOLD}" opacity=".18"/><path d="M${fb} ${y-30+bob} l-4 -26 l16 -10 l10 6 z" fill="${GOLD}"/><circle cx="${fb}" cy="${y-30+bob}" r="5" fill="${INK}"/>`}
+  return s;
+}
+function days(t){
+  let s='';const y1=1250,y2=1380,x0=150,dx=88;
+  const ap=ease((t-5.2)/.5);
+  s+=`<g opacity="${ap}"><text x="90" y="${y1-125}" font-family="Menlo,monospace" font-size="18" letter-spacing="3" fill="${GOLD}">A BIG DEED</text><text x="90" y="${y2-60}" font-family="Menlo,monospace" font-size="18" letter-spacing="3" fill="${GOLD}">A SMALL ONE</text>`;
+  s+=`<path d="M90 ${y1+10} H990 M90 ${y2+10} H990" stroke="${INK}" stroke-opacity=".3" stroke-width="2" stroke-linecap="round"/>`;
+  for(let k=0;k<9;k++)s+=`<circle cx="${x0+k*dx}" cy="${y1+36}" r="3" fill="${INK}" opacity=".35"/>`;
+  s+=`</g>`;
+  // big deed on day 1, then nothing
+  const bp=ease((t-D0)/.4);
+  if(t>=D0)s+=`<rect x="${x0-14}" y="${y1+10-110*bp}" width="28" height="${110*bp}" rx="3" fill="${GOLD}"/>`;
+  // small deed every day
+  for(let k=0;k<9;k++){const p=ease((t-D0-k*DS)/.3);if(t>=D0+k*DS)s+=`<rect x="${x0+k*dx-9}" y="${y2+10-34*p}" width="18" height="${34*p}" rx="2" fill="${INK}"/>`}
+  return s;
+}
+window.frame=function(t){
+  let s='<rect x="40" y="40" width="1000" height="1840" fill="none" stroke="#d9b45a" stroke-opacity=".35" stroke-width="2"/>';
+  s+=LINES.map((L,i)=>lineSvg(L,i,t)).join('');
+  s+=days(t);
+  $('s').innerHTML=s;
+  const up=(id,a,b)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;$(id).style.opacity=Math.min(p,q);$(id).style.transform=`translateY(${(1-p)*12}px)`};
+  up('c1',.3);up('c2',2.6);up('c3',7.6);
+  return {};
+};
+document.fonts.load('124px ScheherazadeP').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>

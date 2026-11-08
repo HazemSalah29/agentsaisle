@@ -1,0 +1,107 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Scheherazade;src:url(../ScheherazadeNew-Regular.ttf)}
+.ar{font-family:Scheherazade,serif;font-weight:400}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#2b2a78}
+svg{position:absolute;inset:0}
+.cap{position:absolute;left:90px;width:900px;text-align:center;color:#fff;font-family:"Avenir Next",sans-serif;font-weight:800;font-size:66px;line-height:1.2;opacity:0;text-shadow:0 6px 0 #14134a}
+.cap em{font-style:normal;color:#ffd23f}
+#hd{position:absolute;bottom:230px;left:0;right:0;text-align:center;font-family:"Avenir Next",sans-serif;font-weight:700;font-size:24px;letter-spacing:.2em;color:rgba(255,255,255,.55)}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="cap" id="c1" style="top:330px">The Prophet <span class="ar">&#xFDFA;</span> named the deed Allah loves most.</div>
+<div class="cap" id="c2" style="top:600px">It is <em>not the biggest one.</em></div>
+<div class="cap" id="c3" style="top:1400px;font-size:58px;white-space:nowrap">Same days. <em>One kept going.</em></div>
+<div id="hd">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+// palette: base, top (light), shadow (dark)
+const P={yel:['#ffc21f','#ffe27a','#c98a00'],teal:['#18c5ae','#6cf0d8','#0a8576'],cor:['#ff6a5b','#ffa296','#b93a3e'],ind:['#4a49b8','#6b6ad8','#1d1c5c'],grey:['#5b5aa0','#7a79c0','#1d1c5c']};
+// seeded PRNG for background specks
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const SPECK=[];for(let i=0;i<26;i++)SPECK.push({x:rnd()*1080,y:rnd()*1920,r:4+rnd()*9,p:rnd()*6.28,c:['teal','yel','cor'][i%3]});
+const circ=(cx,cy,r,c,sc=1,dx=6,dy=10)=>{const[b,t,d]=P[c];return `<g transform="translate(${cx} ${cy}) scale(${sc})"><circle cx="${dx}" cy="${dy}" r="${r}" fill="${d}"/><circle r="${r}" fill="${b}"/><circle cx="${-r*.28}" cy="${-r*.3}" r="${r*.5}" fill="${t}" opacity=".85"/></g>`};
+const cap=(x,y,w,h,c,rot=0,sc=1)=>{const[b,t,d]=P[c],r=Math.min(w,h)/2;return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})"><rect x="${-w/2+5}" y="${-h/2+8}" width="${w}" height="${h}" rx="${r}" fill="${d}"/><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${r}" fill="${b}"/><rect x="${-w/2+w*.14}" y="${-h/2+h*.06}" width="${w*.22}" height="${h*.86}" rx="${w*.11}" fill="${t}" opacity=".7"/></g>`};
+const HEART="M0 46 C-100 -20 -62 -86 0 -42 C62 -86 100 -20 0 46Z";
+const heart=(cx,cy,sc,c,rot=0)=>{const[b,t,d]=P[c];return `<g transform="translate(${cx} ${cy}) rotate(${rot}) scale(${sc})"><path d="${HEART}" transform="translate(6 10)" fill="${d}"/><path d="${HEART}" fill="${b}"/><path d="${HEART}" transform="translate(-14 -14) scale(.5)" fill="${t}" opacity=".8"/></g>`};
+// faceless figure, feet at (0,0). pose: 'stand' | 'lift' (arms up, block) | 'lie'
+const fig=(x,y,c,pose,sc=1,bob=0)=>{
+  let g='';
+  if(pose==='lie')g=cap(0,-30,150,56,c,0)+circ(-100,-34,28,c,1,4,7).replace(/fill="#[0-9a-f]+"/,m=>m);
+  else{
+    g=cap(0,-70+bob,66,110,c)+circ(0,-150+bob,30,c,1,4,7);
+    if(pose==='lift')g=cap(-38,-120+bob,20,86,c,-14)+cap(38,-120+bob,20,86,c,14)+g;
+    else g=cap(-42,-70+bob,18,70,c,8)+cap(42,-70+bob,18,70,c,-8)+g;
+    g+=cap(-17,-4,24,36,'ind')+cap(17,-4,24,36,'ind');
+  }
+  return `<g transform="translate(${x} ${y}) scale(${sc})">${g}</g>`;
+};
+const panel=(x,y,w,h,label,t,o)=>{const sl=(1-ease(t))*60;return `<g opacity="${o}" transform="translate(0 ${sl})"><rect x="${x+6}" y="${y+12}" width="${w}" height="${h}" rx="44" fill="#14134a"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="#3b3a9a"/><rect x="${x+24}" y="${y+22}" width="${w-48}" height="14" rx="7" fill="#5a59b8" opacity=".5"/><text x="${x+w/2}" y="${y+h-24}" text-anchor="middle" font-family="Avenir Next,sans-serif" font-weight="800" font-size="26" letter-spacing="4" fill="#9a99e8">${label}</text></g>`};
+// timeline
+const D0=5.2,DS=.55,N=8; // day k pops at D0+k*DS
+add(.3,'tap',.25);add(.9,'plink',.3);add(2.6,'tap',.25);add(4.5,'slide',.3);add(D0,'thud',.35);
+for(let k=0;k<N;k++)add(D0+.1+k*DS,k===0?'plink':'drop',.28);
+add(9.2,'bell',.3);
+const PX=[0,1,2,3,4,5,6,7].map(k=>230+k*100);
+window.frame=function(t){
+  let s='';
+  // background: indigo gradient + drifting specks (pure sin)
+  s+=`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34329a"/><stop offset="1" stop-color="#1f1e6a"/></linearGradient></defs><rect width="1080" height="1920" fill="url(#g)"/>`;
+  for(const p of SPECK){s+=circ(p.x+Math.sin(t*.8+p.p)*14,p.y+Math.cos(t*.6+p.p)*18,p.r,p.c,1,2,3).replace('opacity=".85"','opacity=".5"')}
+  if(t<4.7){
+    const out=1-ease((t-4.2)/.5);
+    const bs=back((t-.8)/.7)*out,ss=back((t-1.3)/.7)*out;
+    const bob=Math.sin(t*2.4)*10;
+    const big=t<2.6?1:1-.18*ease((t-2.6)/.5);
+    // big heart (the grand deed) and small heart (the loved one)
+    s+=heart(350,1080+bob,bs*3.3*big,t<2.6?'yel':'grey',Math.sin(t*1.6)*4);
+    s+=heart(800,1180-bob,ss*1.5*(1+.08*ease((t-2.8)/.4)),'teal',Math.sin(t*1.9)*6);
+    if(t>2.8)for(let i=0;i<3;i++){const a=ease((t-3-i*.18)/.5);s+=circ(790+(i-1)*70,1000-a*40-i*10,10*Math.sin(Math.PI*clamp((t-3-i*.18)/.9)),'yel',1,3,5)}
+  }else{
+    const pa=(t-4.5)/.7;
+    const o=ease(pa);
+    s+=panel(80,430,920,430,'ONE BIG DEED',pa,o)+panel(80,890,920,430,'ONE SMALL DEED A DAY',pa-.15,ease(pa-.15));
+    const slide=(1-ease(pa))*60;
+    // lane A: figure lifts a big block on day 1, then lies down; later dots stay hollow
+    const bobA=t<D0+.7?Math.sin(t*6)*3:0;
+    const poseA=t<D0+.9?(t<D0?'stand':'lift'):'lie';
+    s+=`<g opacity="${o}" transform="translate(0 ${slide})">`;
+    s+=fig(poseA==='lie'?135:170,780,'cor',poseA,.9,bobA);
+    // big block (day 1)
+    const bk=back((t-D0)/.5);
+    if(t>=D0){
+      const lift=poseA==='lift'?-80:0;
+      const settle=t<D0+.9?0:ease((t-D0-.9)/.4);
+      s+=circ(PX[0]+60,720-lift*0+(-20*(1-settle))+10*settle,64*bk,'yel',1);
+    }
+    for(let k=1;k<N;k++){const x=PX[k]+60;if(x>930)continue;s+=`<circle cx="${x}" cy="760" r="14" fill="none" stroke="#7a79c0" stroke-width="5" stroke-dasharray="3 9" stroke-linecap="round" opacity=".7"/>`}
+    s+=`</g>`;
+    // lane B: figure stands and bobs, dots pop each day, a line grows
+    s+=`<g opacity="${ease(pa-.15)}" transform="translate(0 ${(1-ease(pa-.15))*60})">`;
+    s+=fig(170,1240,'teal','stand',.9,Math.sin(t*5)*4);
+    const last=Math.min(N-1,Math.floor((t-D0)/DS));
+    if(last>=0){
+      const xe=PX[Math.min(last,N-1)]+60;
+      const fillT=clamp((t-D0)/(N*DS));
+      s+=`<path d="M${PX[0]+60} 1190 H${PX[0]+60+(xe-PX[0]-60)}" stroke="#18c5ae" stroke-width="14" stroke-linecap="round" opacity=".45"/>`;
+    }
+    for(let k=0;k<N;k++){const x=PX[k]+60;if(x>930)continue;const sc=back((t-D0-k*DS)/.35);
+      if(t>=D0+k*DS)s+=circ(x,1190,26*sc*(1+.05*Math.sin(t*4+k)),'teal',1,3,6);
+      else s+=`<circle cx="${x}" cy="1190" r="12" fill="none" stroke="#7a79c0" stroke-width="5" stroke-dasharray="3 9" stroke-linecap="round" opacity=".7"/>`}
+    // day counter pips fill after the last dot: sparkle
+    if(t>8.2)for(let i=0;i<5;i++){const a=clamp((t-8.2-i*.1)/.6);s+=circ(900+Math.cos(i*1.3)*50*a,1120-a*70+Math.sin(i)*20,9*Math.sin(Math.PI*a),'yel',1,2,4)}
+    s+=`</g>`;
+  }
+  $('s').innerHTML=s;
+  const up=(id,a,b)=>{const p=ease((t-a)/.5),q=b?1-ease((t-b)/.4):1;$(id).style.opacity=Math.min(p,q);$(id).style.transform=`translateY(${(1-p)*24}px) scale(${.96+.04*p})`};
+  up('c1',.3,4.2);up('c2',2.6,4.2);up('c3',6.6);
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

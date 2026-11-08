@@ -1,0 +1,171 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#0b0908}
+svg{position:absolute;inset:0}
+.cap{position:absolute;color:#f2ead8;font-family:"Avenir Next",sans-serif;opacity:0;text-align:center;left:70px;width:940px;
+  background:rgba(10,8,6,.82);border-radius:36px;padding:26px 34px;box-shadow:0 0 70px 46px rgba(10,8,6,.5)}
+.h{font-weight:600;font-size:68px;line-height:1.16}
+.h2{font-weight:700;font-size:84px;line-height:1.14}
+.cap em{font-style:normal;color:#f0b44c}
+.w{display:inline-block;opacity:0}
+.lab{font-weight:600;font-size:40px;letter-spacing:.2em;padding:16px 30px;width:auto;left:auto}
+</style></head>
+<body>
+<svg id="s" viewBox="0 0 1080 1920" width="1080" height="1920"></svg>
+<div class="cap h" id="c1" style="top:290px"></div>
+<div class="cap h" id="c2" style="top:290px"></div>
+<div class="cap h2" id="c3" style="top:290px"><span id="c3a" style="display:block;opacity:0">Same nights.</span><span id="c3b" style="display:block;opacity:0;color:#f0b44c">One kept going.</span></div>
+<div class="cap lab" id="cit" style="top:1318px;left:150px;width:780px">SAHIH AL-BUKHARI 6464</div>
+<div class="cap lab" id="hd" style="top:1410px;left:260px;width:560px;color:#f0b44c">@YOURPAGE</div>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const $=id=>document.getElementById(id),clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+add(.3,'tap',.22);add(2.1,'slide',.28);add(3.55,'tap',.22);add(5.7,'slide',.28);add(6.25,'tap',.22);add(8.6,'plink',.25);
+// seeded random
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const GOLD='#f0b44c',IVORY='#f2ead8',N=4,GAP=1100;
+// one palette per era (ivory and gold are shared by all; the road and the lamp hold the eras together)
+const ERA=[
+ {sky:'#21182c',far:'#33233a',ground:'#3e2c22',gd:'#2a1d17'},
+ {sky:'#10272c',far:'#17383d',ground:'#1f3a38',gd:'#14292a'},
+ {sky:'#2b1712',far:'#3a1f18',ground:'#3d2519',gd:'#2a1810'},
+ {sky:'#0f1730',far:'#18244a',ground:'#222a3c',gd:'#181e2e'}
+];
+const SY=(wy,cam)=>wy-cam+1000;           // world y -> screen y
+const stationY=k=>-GAP*k;                  // world y of station centre
+const ROADX=wy=>540+70*Math.sin(wy/380);
+const STEPS=[2.1,3.9,5.7],TRAVEL=1.5;
+function camAt(t){let c=0;for(const s of STEPS)c-=GAP*inout((t-s)/TRAVEL);return c-14*Math.sin(t*.9)}
+const LIT=[.2,3.4,5.2,7.0];
+const P=(d,fill,extra='')=>`<path d="${d}" fill="${fill}" ${extra}/>`;
+const Ln=(d,c,w,o=1)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${o}"/>`;
+function flame(h,w,fill,o){return `<path d="M0 0 C${-w} ${-h*.18} ${-w*.9} ${-h*.62} ${w*.08} ${-h} C${w*.25} ${-h*.62} ${w*1.1} ${-h*.5} ${w*.9} ${-h*.2} C${w*.7} 0 ${w*.3} 0 0 0Z" fill="${fill}" opacity="${o}"/>`}
+function lamp(x,y,lit,t,sc=1){ // the same small lamp in every era
+  const fl=1+.08*Math.sin(t*9+x)+.04*Math.sin(t*17);
+  let s=`<circle cx="${x}" cy="${y-18}" r="${190*sc}" fill="url(#gl)" opacity="${lit*(.85+.1*Math.sin(t*2.2+x))}"/>`;
+  s+=`<g transform="translate(${x} ${y}) scale(${sc})">`;
+  s+=P('M-24 0 H24 L18 -16 H-18Z','#b9985a')+Ln('M-18 -16 Q0 -26 18 -16','#d9bd7d',3);
+  s+=`<g opacity="${.15+.85*lit}" transform="translate(0 -20) scale(${fl})">${flame(46,15,GOLD,1)}${flame(26,8,'#fff1c9',1)}</g></g>`;
+  return s;
+}
+function bonfire(x,y,F,t,seed){
+  let s='';if(F<=0.01)return s;
+  s+=`<circle cx="${x}" cy="${y-170*F}" r="${340*F}" fill="url(#gl)" opacity="${.9*F}"/>`;
+  s+=Ln(`M${x-110} ${y+4} L${x+90} ${y-26}`,'#5a3a22',22)+Ln(`M${x+110} ${y+4} L${x-90} ${y-26}`,'#6a4628',22);
+  const k=F*(1+.06*Math.sin(t*8)),k2=F*(1+.08*Math.sin(t*11+1));
+  s+=`<g transform="translate(${x} ${y-14})">`;
+  s+=`<g transform="scale(${k})">${flame(380,110,GOLD,.95)}</g><g transform="translate(-22 0) scale(${k2})">${flame(250,70,'#f7cf7a',.95)}</g><g transform="translate(18 0) scale(${k})">${flame(150,40,'#fff1c9',.95)}</g></g>`;
+  const r=rng(seed);
+  for(let i=0;i<16;i++){const a=r(),b=r(),sp=.25+r()*.3,ph=(t*sp+a)%1;
+    s+=`<circle cx="${x+(b-.5)*160+Math.sin(ph*9+i)*24}" cy="${y-60-ph*520*F}" r="${3+r()*3}" fill="${GOLD}" opacity="${(1-ph)*F}"/>`}
+  return s;
+}
+function station(k,cy,t){
+  const gy=cy+260,lit=ease((t-LIT[k])/.5);
+  let s='';
+  const lx=855,ly=cy+110;
+  if(k===0){
+    // desert camp: solid silhouettes, one tent
+    s+=P(`M0 ${gy-70} Q180 ${gy-190} 380 ${gy-90} T760 ${gy-110} T1080 ${gy-70} V${gy} H0Z`,ERA[0].far);
+    s+=P(`M690 ${gy} L855 ${cy-110} L1020 ${gy}Z`,'#5d4533')+P(`M855 ${cy-110} L1020 ${gy} L930 ${gy}Z`,'#46331f');
+    s+=Ln(`M855 ${cy-110} V${cy-150}`,'#c9a977',5);
+    s+=P(`M820 ${gy} L855 ${cy+10} L890 ${gy}Z`,'#150f0b');
+    s+=lamp(855,gy-6,lit,t,1);
+    s+=bonfire(250,gy-6,1-inout((t-2.3)/1.2),t,7);
+  }else if(k===1){
+    // stone house with a dome: hairline blocks
+    s+=P(`M690 ${cy-150} V${gy} H1020 V${cy-150}Z`,'#1f4047');
+    for(let r=0;r<8;r++){const y=cy-150+r*48;s+=Ln(`M690 ${y} H1020`,'#9bbcbc',2,.3);for(let c=0;c<4;c++)s+=Ln(`M${715+c*86+(r%2)*43} ${y} v48`,'#9bbcbc',2,.3)}
+    s+=P(`M730 ${cy-150} A125 125 0 0 1 980 ${cy-150}Z`,'#2a5961')+Ln(`M730 ${cy-150} A125 125 0 0 1 980 ${cy-150}`,'#bfdcdc',3,.7)+`<circle cx="855" cy="${cy-290}" r="9" fill="#bfdcdc"/>`;
+    s+=P(`M805 ${cy+190} V${cy+30} A50 50 0 0 1 905 ${cy+30} V${cy+190}Z`,'#091214')+Ln(`M805 ${cy+190} V${cy+30} A50 50 0 0 1 905 ${cy+30} V${cy+190}Z`,'#bfdcdc',3,.8);
+    s+=lamp(855,cy+190,lit,t,1);
+    // well on the left
+    s+=Ln(`M150 ${gy} V${gy-70} H290 V${gy}`,'#bfdcdc',3,.7)+Ln(`M145 ${gy-70} L220 ${gy-140} L295 ${gy-70}`,'#bfdcdc',3,.7)+Ln(`M220 ${gy-140} V${gy-80}`,'#bfdcdc',3,.5);
+  }else if(k===2){
+    // brick row house: stacked courses, shutters, a dark street lamp
+    s+=P(`M690 ${cy-110} V${gy} H1020 V${cy-110}Z`,'#5a3022');
+    for(let r=0;r<14;r++){const y=cy-110+r*25;s+=Ln(`M690 ${y} H1020`,'#2a1409',2,.7);for(let c=0;c<8;c++)s+=Ln(`M${690+c*44+(r%2)*22} ${y} v25`,'#2a1409',2,.55)}
+    s+=P(`M670 ${cy-110} L855 ${cy-250} L1040 ${cy-110}Z`,'#2c140e')+P(`M960 ${cy-250} V${cy-140} H995 V${cy-190}Z`,'#2c140e');
+    s+=P(`M800 ${cy+30} h110 v165 h-110Z`,'#150b07')+Ln(`M855 ${cy+30} V${cy+195} M800 ${cy+110} H910`,'#d9b48c',3,.7);
+    s+=P(`M755 ${cy+30} h40 v165 h-40Z M915 ${cy+30} h40 v165 h-40Z`,'#3e5a46');
+    s+=lamp(855,cy+192,lit,t,.9);
+    s+=Ln(`M230 ${gy} V${gy-300}`,'#d9b48c',5,.7)+Ln(`M230 ${gy-300} q40 0 54 20`,'#d9b48c',5,.7)+`<circle cx="292" cy="${gy-276}" r="14" fill="#6b4a38"/>`;
+  }else{
+    // apartment block: flat glass grid, one lit window; a dark street light and a parked car
+    s+=P(`M690 ${cy-330} V${gy} H1020 V${cy-330}Z`,'#1d2848');
+    s+=Ln(`M800 ${cy-330} V${cy-410} M800 ${cy-380} h40`,'#6c7da8',4,.8);
+    for(let r=0;r<5;r++)for(let c=0;c<3;c++){
+      const wx=705+c*115,wy=cy-300+r*110;
+      const isL=(r===4&&c===1);
+      if(!isL)s+=P(`M${wx} ${wy} h70 v84 h-70Z`,'#2c3c63');
+    }
+    s+=P(`M820 ${cy+140} h70 v84 h-70Z`,`#2c3c63`)+P(`M820 ${cy+140} h70 v84 h-70Z`,'#c98a2e',`opacity="${.75*lit}"`);
+    s+=lamp(855,cy+218,lit,t,.8);
+    s+=Ln(`M215 ${gy} V${gy-290} h70`,'#8c9bc4',5,.7);
+    s+=P(`M95 ${gy-4} h210 l-14 -52 h-120 l-20 22 h-56Z`,'#33415f')+`<circle cx="145" cy="${gy-2}" r="22" fill="#0b0f1c"/><circle cx="260" cy="${gy-2}" r="22" fill="#0b0f1c"/>`;
+  }
+  return s;
+}
+function world(t){
+  const cam=camAt(t);let s='';
+  // bands
+  for(let k=0;k<N;k++){
+    const yk=stationY(k),top=k===N-1?-9000:yk-GAP/2,bot=k===0?4000:yk+GAP/2;
+    const a=SY(top,cam),b=SY(bot,cam);if(b<-200||a>2120)continue;
+    const gyS=SY(yk+260,cam);
+    s+=`<rect x="0" y="${a}" width="1080" height="${b-a}" fill="${ERA[k].sky}"/>`;
+    s+=`<rect x="0" y="${gyS}" width="1080" height="${Math.max(0,b-gyS)}" fill="${ERA[k].ground}"/>`;
+    s+=`<rect x="0" y="${gyS+130}" width="1080" height="${Math.max(0,b-gyS-130)}" fill="${ERA[k].gd}"/>`;
+    // stars (round dots only) and a moon per era
+    const r=rng(31+k);
+    for(let i=0;i<34;i++){const x=r()*1080,y=SY(yk-GAP/2+r()*(GAP*.52),cam),tw=.5+.5*Math.sin(t*1.7+i*2.1);
+      if(y>-20&&y<1950)s+=`<circle cx="${x}" cy="${y}" r="${1.6+r()*1.6}" fill="${IVORY}" opacity="${.25+.55*tw}"/>`}
+    const my=SY(yk-300,cam);
+    s+=`<circle cx="165" cy="${my}" r="46" fill="${IVORY}" opacity=".92"/><circle cx="${165+[30,16,4,-60][k]}" cy="${my-6}" r="${[44,44,44,44][k]}" fill="${ERA[k].sky}" opacity="${k===3?0:1}"/>`;
+  }
+  // seams between eras
+  for(let k=1;k<N;k++){const y=SY(stationY(k)+GAP/2,cam);
+    s+=`<rect x="0" y="${y-110}" width="1080" height="220" fill="url(#seam${k})"/>`}
+  // road
+  let pts='';for(let sy=-60;sy<=1980;sy+=30)pts+=`${ROADX(sy+cam-1000).toFixed(1)},${sy} `;
+  s+=`<polyline points="${pts}" fill="none" stroke="#0a0807" stroke-width="124" opacity=".92"/>`;
+  for(const o of [-62,62]){let q='';for(let sy=-60;sy<=1980;sy+=30)q+=`${(ROADX(sy+cam-1000)+o).toFixed(1)},${sy} `;s+=`<polyline points="${q}" fill="none" stroke="${IVORY}" stroke-width="3" opacity=".42"/>`}
+  const w0=Math.floor((cam-1000)/70)*70;
+  for(let wy=w0;wy<w0+2300;wy+=70){const sy=SY(wy,cam);if(sy<-40||sy>1960)continue;
+    const d=`M${ROADX(wy)} ${sy} L${ROADX(wy+36)} ${sy+36}`;
+    const lit=clamp((sy-1180)/160)*(sy<1960?1:0);
+    s+=Ln(d,IVORY,7,.3)+Ln(d,GOLD,7,lit)}
+  // stations
+  for(let k=0;k<N;k++){const cy=SY(stationY(k),cam);if(cy>-700&&cy<2700)s+=station(k,cy,t)}
+  return s;
+}
+function grain(t){const r=rng(1000+Math.floor(t*30));let s='';
+  for(let i=0;i<520;i++){s+=`<rect x="${(r()*1080)|0}" y="${(r()*1920)|0}" width="2" height="2" fill="${r()<.5?IVORY:'#000'}" opacity="${.05+r()*.06}"/>`}
+  return s}
+const seamDefs=[1,2,3].map(k=>`<linearGradient id="seam${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${ERA[k].sky}"/><stop offset=".5" stop-color="${ERA[k].sky}" stop-opacity="0"/><stop offset=".5" stop-color="${ERA[k-1].sky}" stop-opacity="0"/><stop offset="1" stop-color="${ERA[k-1].sky}"/></linearGradient>`).join('');
+const DEFS=`<defs><radialGradient id="gl"><stop offset="0" stop-color="${GOLD}" stop-opacity=".55"/><stop offset=".55" stop-color="${GOLD}" stop-opacity=".16"/><stop offset="1" stop-color="${GOLD}" stop-opacity="0"/></radialGradient><radialGradient id="vg" cx=".5" cy=".5" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></radialGradient>${seamDefs}</defs>`;
+// words of the first line appear one by one
+const W1='The Prophet ﷺ named the deed Allah loves most.'.split(' '),W2='not the biggest one.'.split(' ');
+$('c1').innerHTML=W1.map(w=>`<span class="w">${w}</span>`).join(' ');
+$('c2').innerHTML=W2.map(w=>w==='biggest'?`<span class="w"><em>${w}</em></span>`:`<span class="w">${w}</span>`).join(' ');
+const WS1=[...$('c1').children],WS2=[...$('c2').children];
+function words(box,ws,t,t0,t1){
+  const out=t1?1-ease((t-t1)/.4):1;
+  box.style.opacity=(t>=t0-.05?Math.min(1,(t-t0)/.2+.01):0)*out;
+  ws.forEach((el,i)=>{const p=ease((t-t0-i*.2)/.35);el.style.opacity=p;el.style.transform=`translateY(${(1-p)*16}px)`});
+}
+window.frame=function(t){
+  $('s').innerHTML=DEFS+world(t)+`<rect width="1080" height="1920" fill="url(#vg)"/>`+grain(t);
+  words($('c1'),WS1,t,.3,3.3);
+  words($('c2'),WS2,t,3.5,6.0);
+  $('c3').style.opacity=t>=6.2?Math.min(1,(t-6.2)/.2+.01):0;
+  for(const [id,a] of [['c3a',6.2],['c3b',7.0]]){const p=ease((t-a)/.5),e=$(id);e.style.opacity=p;e.style.transform=`translateY(${(1-p)*16}px)`}
+  const sh=(id,a)=>{const p=ease((t-a)/.5);$(id).style.opacity=p;$(id).style.transform=`translateY(${(1-p)*14}px)`};
+  sh('cit',8.0);sh('hd',8.7);
+  return {};
+};
+document.fonts.ready.then(()=>{frame(0);window.ready=true});
+</script></body></html>

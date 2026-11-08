@@ -1,0 +1,187 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#050403}
+canvas{position:absolute;inset:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+// ---- core: seeded random, noise, easing, grain, vignette, pen-written Arabic (pure functions of t)
+const TAU=Math.PI*2,W=1080,HH=1920;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,t)=>a+(b-a)*t;
+const ease=x=>1-Math.pow(1-clamp(x),3),inout=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=clamp(x);const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+function rng(seed){let a=(seed>>>0)||1;const r=()=>{a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(lo,hi)=>lo+r()*(hi-lo);r.pick=a=>a[Math.floor(r()*a.length)];r.chance=p=>r()<p;return r}
+function makeNoise(seed){const r=rng(seed),p=new Uint8Array(512),perm=[...Array(256).keys()];
+  for(let i=255;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}
+  for(let i=0;i<512;i++)p[i]=perm[i&255];
+  const fade=t=>t*t*t*(t*(t*6-15)+10),lp=(a,b,t)=>a+(b-a)*t;
+  const g3=(h,x,y,z)=>{h&=15;const u=h<8?x:y,v=h<4?y:h===12||h===14?x:z;return((h&1)?-u:u)+((h&2)?-v:v)};
+  function n3(x,y,z){const X=Math.floor(x)&255,Y=Math.floor(y)&255,Z=Math.floor(z)&255;x-=Math.floor(x);y-=Math.floor(y);z-=Math.floor(z);
+    const u=fade(x),v=fade(y),w=fade(z),A=p[X]+Y,AA=p[A]+Z,AB=p[A+1]+Z,B=p[X+1]+Y,BA=p[B]+Z,BB=p[B+1]+Z;
+    return lp(lp(lp(g3(p[AA],x,y,z),g3(p[BA],x-1,y,z),u),lp(g3(p[AB],x,y-1,z),g3(p[BB],x-1,y-1,z),u),v),
+      lp(lp(g3(p[AA+1],x,y,z-1),g3(p[BA+1],x-1,y,z-1),u),lp(g3(p[AB+1],x,y-1,z-1),g3(p[BB+1],x-1,y-1,z-1),u),v),w)}
+  const n2=(x,y)=>n3(x,y,.5);
+  const fbm3=(x,y,z,o=4)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*n3(x*f,y*f,z*f);n+=a;a*=.5;f*=2}return s/n};
+  return{n2,n3,fbm3,fbm2:(x,y,o=4)=>fbm3(x,y,.5,o)}}
+const hexa=h=>{h=h.replace('#','');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const rgba=(c,a=1)=>{const[r,g,b]=Array.isArray(c)?c:hexa(c);return`rgba(${r|0},${g|0},${b|0},${a})`};
+const mixc=(a,b,t)=>{const A=Array.isArray(a)?a:hexa(a),B=Array.isArray(b)?b:hexa(b);return[0,1,2].map(i=>A[i]+(B[i]-A[i])*t)};
+const layer=(w=W,h=HH)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+// grain: six pre-built noise tiles (seeded), one picked per 1/12 s and laid on with 'overlay'
+const GT=[];
+function grainTiles(){if(GT.length)return;for(let k=0;k<6;k++){const c=layer(540,960),x=c.getContext('2d'),im=x.createImageData(540,960),d=im.data,r=rng(900+k);
+  for(let i=0;i<d.length;i+=4){const n=r()*255;d[i]=d[i+1]=d[i+2]=n;d[i+3]=255}x.putImageData(im,0,0);GT.push(c)}}
+function grain(ctx,amount,t,mono=true){grainTiles();const k=Math.floor(t*12)%6;ctx.save();ctx.globalCompositeOperation='overlay';ctx.globalAlpha=Math.min(1,amount*2.2);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(GT[k],0,0,W,HH);ctx.restore()}
+function vignette(ctx,strength=.5,col='0,0,0'){const g=ctx.createRadialGradient(W/2,HH/2,W*.35,W/2,HH/2,Math.hypot(W,HH)*.6);
+  g.addColorStop(0,`rgba(${col},0)`);g.addColorStop(1,`rgba(${col},${strength})`);ctx.save();ctx.fillStyle=g;ctx.fillRect(0,0,W,HH);ctx.restore()}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+// Arabic written with the pen: lines are written one after another, a slanted edge sweeps right to left,
+// the body (no vowel marks) goes first and the tashkeel comes in last, on its own pass.
+const MARKS=/[ً-ْٰٓ-ٕ]/g;
+function penArabic(c,lines,cx,y0,lh,size,fill,p,o={}){
+  const n=lines.length;c.save();c.direction='rtl';c.textAlign='center';c.textBaseline='alphabetic';c.font=`${size}px ScheherazadeG`;
+  const marks=ease(clamp((p-.86)/.14)),res=[];
+  lines.forEach((s,i)=>{const lp=clamp(p/.86*n-i,0,1),w=c.measureText(s).width,y=y0+i*lh,R=cx+w/2+30,L=cx-w/2-30,fx=R-(R-L)*inout(lp);
+    if(lp<=0)return;res.push({fx,y,w});
+    const clipp=()=>{c.beginPath();c.moveTo(fx,y-size*1.25);c.lineTo(R+60,y-size*1.25);c.lineTo(R+60,y+size*.85);c.lineTo(fx-46,y+size*.85);c.closePath()};
+    const draw=(str,a)=>{if(o.under)o.under(str,cx,y,a);c.fillStyle=typeof fill==='function'?fill(y):fill;c.globalAlpha=a;c.fillText(str,cx,y)};
+    c.save();clipp();c.clip();draw(s.replace(MARKS,''),1-marks);c.restore();
+    if(marks>0){c.save();clipp();c.clip();draw(s,marks);c.restore()}});
+  c.restore();return res}
+const fontsReady=specs=>Promise.all(specs.map(f=>document.fonts.load(f,'Aa'+(window.FONT_SAMPLE||'')))).then(()=>document.fonts.ready);
+
+// ---- style: art deco foil. Black lacquer, stamped gold foil on a mask, stepped arches, sunburst fans.
+const CREAM='#efe3c4',CX=540,B=930,SY=930;
+const DECO='Copperplate,"Copperplate Gothic Light",Futura,serif',SANS='Futura,"Avenir Next","Gill Sans",sans-serif';
+// sounds: light only (a soft reel)
+add(.3,'tap',.16);[.6,.85,1.1,1.35].forEach((t,i)=>add(t,'plink',.14+i*.01));
+for(let t=.95;t<2.6;t+=.14)add(t,'key',.06);
+add(4.0,'glass',.3);add(4.2,'bell',.26);
+for(let t=3.8;t<5.4;t+=.22)add(t,'key',.09);
+add(5.7,'tap',.2);add(6.7,'tap',.2);add(7.5,'bell2',.22);add(8.0,'plink',.12);
+// ---- layers (reused every frame)
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const M=layer(),m=M.getContext('2d'),Md=layer(),md=Md.getContext('2d'),G=layer(),g=G.getContext('2d'),T1=layer(),t1=T1.getContext('2d'),T2=layer(),t2=T2.getContext('2d');
+// brushed gold foil, built once (a moving glint is laid over it each frame)
+let FB=null;
+function foilBase(){if(FB)return FB;FB=layer();const f=FB.getContext('2d'),lin=f.createLinearGradient(0,0,W*.8,HH*.9);
+  [[0,'#6b4a16'],[.15,'#c99a3e'],[.27,'#f6e2a0'],[.33,'#fff3c8'],[.4,'#c08f36'],[.55,'#8a6220'],[.62,'#c99a3e'],[.72,'#e0b653'],[.8,'#a67a2a'],[.9,'#d6a948'],[1,'#6e4c16']].forEach(([o,c])=>lin.addColorStop(o,c));
+  f.fillStyle=lin;f.fillRect(0,0,W,HH);
+  const img=f.getImageData(0,0,W,HH),d=img.data,r=rng(6),nz=makeNoise(6),rowN=new Float32Array(HH);for(let y=0;y<HH;y++)rowN[y]=nz.n2(.5,y*.35)*.06;
+  for(let i=0,p=0;i<d.length;i+=4,p++){const y=(p/W)|0,s=1+rowN[y]+(r()-.5)*.09;d[i]*=s;d[i+1]*=s;d[i+2]*=s}
+  f.putImageData(img,0,0);return FB}
+const tint=(T,tc,src,col)=>{tc.globalCompositeOperation='source-over';tc.clearRect(0,0,W,HH);tc.drawImage(src,0,0);tc.globalCompositeOperation='source-in';tc.fillStyle=col;tc.fillRect(0,0,W,HH);tc.globalCompositeOperation='source-over';return T};
+// the stepped double border of the poster
+function borderFrame(c,ins,lw,prog){const s=34;c.lineWidth=lw;c.setLineDash([9000*prog+.01,12000]);c.beginPath();
+  c.moveTo(ins+s,ins);c.lineTo(W-ins-s,ins);c.lineTo(W-ins-s,ins+s*.4);c.lineTo(W-ins-s*.4,ins+s*.4);c.lineTo(W-ins-s*.4,ins+s);c.lineTo(W-ins,ins+s);
+  c.lineTo(W-ins,HH-ins-s);c.lineTo(W-ins-s*.4,HH-ins-s);c.lineTo(W-ins-s*.4,HH-ins-s*.4);c.lineTo(W-ins-s,HH-ins-s*.4);c.lineTo(W-ins-s,HH-ins);
+  c.lineTo(ins+s,HH-ins);c.lineTo(ins+s,HH-ins-s*.4);c.lineTo(ins+s*.4,HH-ins-s*.4);c.lineTo(ins+s*.4,HH-ins-s);c.lineTo(ins,HH-ins-s);
+  c.lineTo(ins,ins+s);c.lineTo(ins+s*.4,ins+s);c.lineTo(ins+s*.4,ins+s*.4);c.lineTo(ins+s,ins+s*.4);c.closePath();c.stroke();c.setLineDash([])}
+const diamond=(c,x,y,r)=>{c.beginPath();c.moveTo(x,y-r);c.lineTo(x+r,y);c.lineTo(x,y+r);c.lineTo(x-r,y);c.closePath();c.fill()};
+// the hanging lamp (mask): body filled, ribs and the glass cut out
+function lampMask(c,x,y,s){c.save();c.translate(x,y);c.scale(s,s);
+  c.beginPath();c.moveTo(-50,0);c.bezierCurveTo(-50,16,-24,22,-22,40);c.bezierCurveTo(-20,52,-70,62,-78,112);c.bezierCurveTo(-84,160,-50,196,-22,208);c.lineTo(-16,222);c.lineTo(-32,238);c.lineTo(32,238);c.lineTo(16,222);c.lineTo(22,208);
+  c.bezierCurveTo(50,196,84,160,78,112);c.bezierCurveTo(70,62,20,52,22,40);c.bezierCurveTo(24,22,50,16,50,0);c.closePath();c.fill();
+  c.globalCompositeOperation='destination-out';c.lineWidth=3.6;[24,36,84,106,140,158].forEach(yy=>{c.beginPath();c.moveTo(-90,yy);c.lineTo(90,yy);c.stroke()});
+  c.beginPath();c.moveTo(-30,152);c.lineTo(-30,98);c.quadraticCurveTo(-30,70,0,58);c.quadraticCurveTo(30,70,30,98);c.lineTo(30,152);c.closePath();c.fill();
+  c.restore()}
+// cream-on-lacquer plaque with a gold hairline and diamond studs
+function plaque(c,txt,x,y,size,a){c.save();c.globalAlpha=a;c.font=`400 ${size}px ${DECO}`;const ls=size*.16;c.letterSpacing=ls+'px';c.textAlign='left';c.textBaseline='middle';
+  const w=c.measureText(txt).width-ls,bw=w+size*1.5,bh=size*1.5,x0=Math.round(x-bw/2)+.5,y0=Math.round(y-bh/2)+.5;
+  c.fillStyle='rgba(0,0,0,0.6)';c.fillRect(x0+1.5,y0+2.5,bw,bh);const gg=c.createLinearGradient(0,y0,0,y0+bh);gg.addColorStop(0,'#1a140c');gg.addColorStop(.5,'#0d0a06');gg.addColorStop(1,'#070504');c.fillStyle=gg;c.fillRect(x0,y0,bw,bh);
+  c.strokeStyle='#d9ab52';c.lineWidth=1.4;c.strokeRect(x0,y0,bw,bh);c.strokeStyle='rgba(201,154,62,0.55)';c.strokeRect(x0+4,y0+4,bw-8,bh-8);
+  c.fillStyle='#e2b860';[x0,x0+bw].forEach(ex=>diamond(c,ex,y0+bh/2,5));
+  c.fillStyle=CREAM;c.strokeStyle=CREAM;c.lineWidth=size*.03;c.lineJoin='round';
+  const tx=x-w/2;for(let i=0;i<txt.length;i++){const aa=clamp((cur-.9-i*.07)/.14);if(aa<=0)continue;c.globalAlpha=a*aa;const px=tx+c.measureText(txt.slice(0,i)).width;c.fillText(txt[i],px,y+1)}
+  c.restore();c.letterSpacing='0px'}
+let cur=0;
+const AR='فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا';
+const fade=(t,a,b)=>{const p=ease((t-a)/.6),q=b?1-ease((t-b)/.4):1;return Math.min(p,q)};
+window.frame=function(t){
+  cur=t;const c=ctx;c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';
+  // lacquer ground
+  const bg=c.createRadialGradient(CX,620,40,CX,620,1250);bg.addColorStop(0,'#2a2013');bg.addColorStop(.45,'#0f0c08');bg.addColorStop(1,'#050403');c.fillStyle=bg;c.fillRect(0,0,W,HH);
+  m.clearRect(0,0,W,HH);md.clearRect(0,0,W,HH);m.fillStyle=m.strokeStyle='#fff';md.fillStyle=md.strokeStyle='#fff';m.globalAlpha=1;
+  const lit=clamp((t-4.0)/1.0),open=inout(clamp((t-4.0)/1.3)),dimA=lerp(.3,1,ease(lit));
+  // sunburst behind the arches (dim ink), opens at the light
+  if(open>0){md.save();md.beginPath();md.rect(34,34,W-68,SY-34);md.clip();const N=44,fall=md.createRadialGradient(CX,SY,330,CX,SY,1000);
+    fall.addColorStop(0,'rgba(255,255,255,0.6)');fall.addColorStop(.6,'rgba(255,255,255,0.25)');fall.addColorStop(1,'rgba(255,255,255,0.05)');md.fillStyle=fall;
+    for(let i=0;i<N;i++){const a0=Math.PI+(i/N)*Math.PI,a1=a0+(Math.PI/N)*.42,aa=Math.PI*1.5+(a0-Math.PI*1.5)*open,ab=Math.PI*1.5+(a1-Math.PI*1.5)*open;md.beginPath();md.moveTo(CX,SY);md.arc(CX,SY,1100,aa,ab);md.closePath();md.fill()}
+    md.restore();md.globalCompositeOperation='destination-out';md.beginPath();md.arc(CX,SY,335,0,7);md.fill();md.globalCompositeOperation='source-over'}
+  // halo arcs close from both ends, scalloped blades
+  const arcIn=(r,p)=>{if(p<=0)return;m.beginPath();m.arc(CX,SY,r,Math.PI,Math.PI+Math.PI/2*p);m.stroke();m.beginPath();m.arc(CX,SY,r,-Math.PI/2*p,0);m.stroke()};
+  m.lineWidth=3;for(let k=0;k<4;k++)arcIn(345+k*18,inout(clamp((t-4.0-k*.08)/.8)));m.lineWidth=1.5;arcIn(430,inout(clamp((t-4.3)/.8)));
+  for(let i=0;i<14;i++){if(t<4.5+Math.min(i,13-i)*.07)continue;const a=Math.PI+(i+.5)/14*Math.PI;m.beginPath();m.moveTo(CX+Math.cos(a)*410,SY+Math.sin(a)*410);m.lineTo(CX+Math.cos(a-.045)*436,SY+Math.sin(a-.045)*436);m.lineTo(CX+Math.cos(a+.045)*436,SY+Math.sin(a+.045)*436);m.closePath();m.fill()}
+  // stepped arches rise tier by tier (dim in the dark, full gold once lit)
+  m.save();m.globalAlpha=dimA;
+  const HW=[300,250,200,150],AP=[330,410,490,570];
+  for(let k=0;k<4;k++){const p=ease((t-.5-k*.22)/.7);if(p<=0)continue;const hw=HW[k],sp=AP[k]+hw;
+    m.save();m.beginPath();m.rect(0,B-(B-AP[k]+30)*p,W,B-AP[k]+60);m.clip();
+    m.lineWidth=7-k;m.beginPath();m.moveTo(CX-hw,B);m.lineTo(CX-hw,sp);m.arc(CX,sp,hw,Math.PI,0);m.lineTo(CX+hw,B);m.stroke();
+    // capitals at the springing and a stepped keystone
+    m.fillRect(CX-hw-12,sp-8,24,16);m.fillRect(CX+hw-12,sp-8,24,16);m.fillRect(CX-hw-6,B-14,12,14);m.fillRect(CX+hw-6,B-14,12,14);
+    m.lineWidth=2;for(let j=0;j<5;j++){const a=Math.PI+(j+.5)/5*Math.PI;if(k>2)break;m.beginPath();m.moveTo(CX+Math.cos(a)*(hw-18),sp+Math.sin(a)*(hw-18));m.lineTo(CX+Math.cos(a)*(hw-34),sp+Math.sin(a)*(hw-34));m.stroke()}
+    diamond(m,CX,AP[k]-10,k===0?10:7);
+    m.restore()}
+  m.restore();
+  // lamp in the innermost arch, plinth steps, floor rule
+  const lp=ease((t-1.3)/.8);
+  if(lp>0){m.save();m.globalAlpha=dimA*lp;m.lineWidth=3;
+    [-30,0,30].forEach(x0=>{m.beginPath();m.moveTo(CX,AP[3]+4);m.lineTo(CX+x0*.55,AP[3]+82);m.stroke()});
+    lampMask(m,CX,AP[3]+82,.62);m.restore()}
+  const pb=ease((t-.9)/.8);
+  m.save();m.globalAlpha=dimA;[[760,22],[700,20],[640,18]].forEach(([w,h],i)=>{const y=B+i*22,pw=w*pb;m.lineWidth=2.5;m.strokeRect(CX-pw/2,y,pw,h);if(i<2&&pb>.9){m.lineWidth=1.4;for(let k=-4;k<=4;k++){m.beginPath();m.moveTo(CX+k*40-8,y+h-2);m.lineTo(CX+k*40,y+3);m.lineTo(CX+k*40+8,y+h-2);m.stroke()}}});m.restore();
+  // pilasters either side: fluted lines, stepped capital, fan crown
+  [-1,1].forEach(sd=>{const x=CX+sd*455,pp=inout(clamp((t-.7)/.9));m.save();m.globalAlpha=dimA;m.beginPath();m.rect(x-50,B+30-640*pp,100,640*pp);m.clip();
+    m.fillRect(x-2,430,4,480);m.fillRect(x-12,446,1.5,450);m.fillRect(x+10.5,446,1.5,450);m.fillRect(x-20,900,40,4);m.fillRect(x-14,892,28,4);m.fillRect(x-20,426,40,4);m.fillRect(x-14,434,28,3);
+    m.lineWidth=1.5;for(let k=0;k<3;k++){m.beginPath();m.arc(x,420,18+k*10,Math.PI,0);m.stroke()}
+    for(let k=0;k<7;k++){const a=Math.PI+(k+.5)/7*Math.PI;m.beginPath();m.moveTo(x,420);m.lineTo(x+Math.cos(a)*38,420+Math.sin(a)*38);m.stroke()}
+    diamond(m,x,364,8);for(let k=0;k<6;k++){m.beginPath();m.arc(x,480+k*70,3.2,0,7);m.fill()}m.restore()});
+  // border: stepped double frame, corner fans, studs
+  m.save();m.globalAlpha=1;borderFrame(m,20,3,inout(clamp(t/1.3)));borderFrame(m,30,1.2,inout(clamp((t-.15)/1.3)));
+  [[30,30,0],[W-30,30,Math.PI/2],[W-30,HH-30,Math.PI],[30,HH-30,Math.PI*1.5]].forEach(([fx,fy,a0])=>{const fp=ease((t-.9)/.5);if(fp<=0)return;m.save();m.translate(fx,fy);m.scale(fp,fp);m.translate(-fx,-fy);m.lineWidth=1.4;
+    for(let k=0;k<3;k++){m.beginPath();m.arc(fx,fy,58+k*12,a0+.12,a0+Math.PI/2-.12);m.stroke()}
+    for(let k=0;k<7;k++){const a=a0+.2+(k/6)*(Math.PI/2-.4);m.beginPath();m.moveTo(fx+Math.cos(a)*58,fy+Math.sin(a)*58);m.lineTo(fx+Math.cos(a)*82,fy+Math.sin(a)*82);m.stroke()}
+    diamond(m,fx+Math.cos(a0+Math.PI/4)*40,fy+Math.sin(a0+Math.PI/4)*40,6);m.restore()});
+  [[W/2,20],[W/2,HH-20],[20,HH/2],[W-20,HH/2]].forEach(([x,y])=>diamond(m,x,y,7));
+  // rule with diamonds under the plinth
+  const rp=inout(clamp((t-1.9)/.7));m.fillRect(CX-(CX-130)*rp,1000,(W-260)*rp,2.5);if(rp>=1)[130,W-130].forEach(x=>{const d=x<CX?-1:1;m.beginPath();m.moveTo(x,1001);m.lineTo(x+d*10,993);m.lineTo(x+d*20,1001);m.lineTo(x+d*10,1009);m.closePath();m.fill()});
+  m.restore();
+  // Arabic and the citation are stamped in foil too
+  if(t>=3.7)penArabic(m,[AR],CX,1262,0,108,'#fff',clamp((t-3.8)/1.55));
+  const ca=fade(t,7.4);if(ca>0){m.save();m.globalAlpha=ca;m.font=`400 28px ${DECO}`;m.letterSpacing='10px';m.textAlign='center';m.textBaseline='alphabetic';m.fillText('QURAN 94:5',CX+5,1520);m.restore()}
+  // ---- composite: dim rays, then foil with bevel
+  const sx=lerp(-500,W+500,inout(clamp((t-7.6)/1.8)));
+  g.globalCompositeOperation='source-over';g.clearRect(0,0,W,HH);g.drawImage(foilBase(),0,0);
+  const sh=g.createLinearGradient(sx-260,0,sx+260,HH*.5);sh.addColorStop(0,'rgba(255,248,220,0)');sh.addColorStop(.5,'rgba(255,248,220,0.5)');sh.addColorStop(1,'rgba(255,248,220,0)');g.fillStyle=sh;g.fillRect(0,0,W,HH);
+  g.globalCompositeOperation='destination-in';g.drawImage(M,0,0);g.globalCompositeOperation='source-over';
+  c.save();c.globalAlpha=.85;c.drawImage(tint(T1,t1,Md,'#c08a34'),0,0);c.restore();
+  c.drawImage(tint(T1,t1,M,'rgba(0,0,0,0.85)'),1.5,2.5);c.drawImage(G,0,0);
+  c.save();c.globalCompositeOperation='screen';c.globalAlpha=.35;c.drawImage(tint(T2,t2,M,'#fff4cf'),-.8,-.8);c.drawImage(G,0,0);c.restore();
+  // lamp glass ignites (cream), a warm bloom behind it
+  if(lit>0){const k=ease(lit),fl=1+.06*Math.sin(t*12)+.03*Math.sin(t*21);
+    c.save();c.globalCompositeOperation='lighter';const gl=c.createRadialGradient(CX,AP[3]+82+112*.62,0,CX,AP[3]+82+112*.62,170);gl.addColorStop(0,`rgba(255,236,190,${.7*k})`);gl.addColorStop(.35,`rgba(255,214,150,${.25*k})`);gl.addColorStop(1,'rgba(255,200,130,0)');c.fillStyle=gl;c.fillRect(CX-180,AP[3]-60,360,400);c.restore();
+    c.save();c.translate(CX,AP[3]+82);c.scale(.62,.62);c.beginPath();c.moveTo(-30,152);c.lineTo(-30,98);c.quadraticCurveTo(-30,70,0,58);c.quadraticCurveTo(30,70,30,98);c.lineTo(30,152);c.closePath();c.fillStyle=rgba('#fff0c8',.55*k);c.fill();
+    const hgt=72*k*fl;c.beginPath();c.moveTo(0,146);c.bezierCurveTo(-18,140,-14,hgt<10?146:146-hgt*.5,0,146-hgt);c.bezierCurveTo(14,146-hgt*.5,18,140,0,146);c.fillStyle=rgba('#fffaf0',k);c.fill();c.restore()}
+  // twinkling lamps on the pilasters (round, five steps a second)
+  {const step=Math.floor(t*5);c.save();c.globalCompositeOperation='lighter';for(const sd of[-1,1])for(let k=0;k<6;k++){const x=CX+sd*455,y=480+k*70,r=rng((k+1)*977+step*13+(sd>0?5:0)),on=r()<.72;if(!on||t<1.6)continue;
+    const gl=c.createRadialGradient(x,y,0,x,y,12);gl.addColorStop(0,'rgba(255,240,205,0.55)');gl.addColorStop(1,'rgba(255,220,160,0)');c.fillStyle=gl;c.fillRect(x-12,y-12,24,24)}c.restore()}
+  // words in cream
+  const h1=fade(t,.9,3.6);if(h1>.01)plaque(c,'SOME NIGHTS FEEL ENDLESS.',CX,1135,38,h1);
+  c.save();c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle=CREAM;c.font=`400 50px ${SANS}`;c.letterSpacing='5px';
+  const e1=fade(t,5.7),e2=fade(t,6.7);
+  c.globalAlpha=e1;c.fillText('FOR INDEED, WITH HARDSHIP',CX+2,1370+(1-e1)*12);c.globalAlpha=e2;c.fillText('[WILL BE] EASE.',CX+2,1440+(1-e2)*12);
+  c.globalAlpha=.7*fade(t,1.2);c.font=`400 24px ${SANS}`;c.letterSpacing='8px';c.fillText('@YOURPAGE',CX+4,1640);c.restore();
+  vignette(c,.45);grain(c,.035,t);
+  return{};
+};
+fontsReady(['108px ScheherazadeG','38px Copperplate','50px Futura']).then(()=>{foilBase();frame(0);window.ready=true});
+</script></body></html>

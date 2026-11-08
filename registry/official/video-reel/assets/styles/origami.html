@@ -1,0 +1,171 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:ScheherazadeG;src:url(../ScheherazadeNew-Regular.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#d8d5ca}
+canvas{position:absolute;left:0;top:0}
+</style></head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+// Origami Studio: folded-paper facets on a seamless studio sweep. A flat net folds into a boat on pleated paper water.
+window.SIZE={W:1080,H:1920};window.DURATION=10;
+const SFX=[];window.SFX=SFX;const add=(t,type,v)=>SFX.push({t,type,v});
+const W=1080,H_=1920,TAU=Math.PI*2;
+const cv=document.getElementById('c'),ctx=cv.getContext('2d',{willReadFrequently:true});
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const inOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,eOut=t=>1-Math.pow(1-t,3);
+function rng(seed){let a=(seed>>>0)||1;const r=function(){a|=0;a=(a+0x6d2b79f5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296};r.range=(lo,hi)=>lo+r()*(hi-lo);return r}
+const layer=(w=W,h=H_)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const rgba=(a,al=1)=>`rgba(${a[0]|0},${a[1]|0},${a[2]|0},${al})`;
+// ---- vectors
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],add3=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l]};
+const rotY=(p,a)=>{const c=Math.cos(a),s=Math.sin(a);return[p[0]*c+p[2]*s,p[1],-p[0]*s+p[2]*c]};
+const rotZ=(p,a)=>{const c=Math.cos(a),s=Math.sin(a);return[p[0]*c-p[1]*s,p[0]*s+p[1]*c,p[2]]};
+const SANS='"Avenir Next","Helvetica Neue",Helvetica,Arial,sans-serif',MONO='Menlo,monospace';
+const HAR=/[ً-ْٰ]/g;
+const AR='فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا';
+const ORANGE=[232,135,76],CREAM=[246,242,233],INK='#23242a',RED='#e45a3e',IND=[58,82,150],TEAL=[44,160,150],SEA=[60,138,176],MUS=[241,182,68];
+// ---- sound: folds are paper, the water is a soft sweep, the verse is a pen
+add(.2,'kit:foley-paper-touch',.5);add(.5,'kit:appear-materialise',.4);
+[1.1,1.5,1.9,2.3,2.7].forEach((t,i)=>add(t,'kit:foley-paper-touch',.28));
+add(2.85,'tap',.16);add(3.05,'kit:foley-paper-touch',.5);
+add(3.4,'kit:whoosh-slow-soft',.45);add(3.6,'plink',.18);
+add(3.95,'kit:foley-paper-touch',.5);add(4.15,'kit:appear-materialise',.4);
+add(4.5,'kit:writing-pen-write',.5);
+add(5.75,'tap',.16);add(6.85,'tap',.16);add(7.7,'kit:tone-ding-mid',.35);add(8.6,'bell2',.14);
+// ---- paper texture (white-based fibre, multiplied over the facets)
+const makeTex=seed=>{const S=256,c=layer(S,S),x=c.getContext('2d'),r=rng(seed),img=x.createImageData(S,S),d=img.data;
+ for(let i=0;i<d.length;i+=4){const n=r(),w=n>.5;d[i]=d[i+1]=d[i+2]=w?255:0;d[i+3]=Math.abs(n-.5)*34}x.putImageData(img,0,0);x.lineCap='round';
+ for(let n=0;n<260;n++){const px=r()*S,py=r()*S,len=r.range(3,14),a=r()*TAU;x.strokeStyle=r()<.6?`rgba(255,255,255,${r.range(.06,.16)})`:`rgba(60,40,20,${r.range(.04,.09)})`;x.lineWidth=r.range(.4,.9);
+  for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){x.beginPath();x.moveTo(px+ox*S,py+oy*S);x.lineTo(px+ox*S+Math.cos(a)*len,py+oy*S+Math.sin(a)*len);x.stroke()}}return c};
+const TEX=makeTex(5);
+// ---- backdrop: a seamless sweep, cached
+const BG=(()=>{const C=layer(),c=C.getContext('2d'),bg=c.createLinearGradient(0,0,0,H_);bg.addColorStop(0,'#c9d3cf');bg.addColorStop(.45,'#dde3de');bg.addColorStop(.62,'#e6e6de');bg.addColorStop(1,'#d8d5ca');c.fillStyle=bg;c.fillRect(0,0,W,H_);
+ const spot=c.createRadialGradient(480,900,60,540,980,1200);spot.addColorStop(0,'rgba(255,252,240,.62)');spot.addColorStop(1,'rgba(255,252,240,0)');c.fillStyle=spot;c.fillRect(0,0,W,H_);
+ c.globalAlpha=.6;c.fillStyle=c.createPattern(TEX,'repeat');c.fillRect(0,0,W,H_);return C})();
+// ---- Arabic written with the pen on a card face (painted in card units)
+// stripped (no vowel marks) words, each centred where the same word sits in the full text, so the body and the full line overlap exactly
+function bodyWords(c,str,cx,y){const words=str.split(' '),w=c.measureText(str).width,R0=cx+w/2;c.save();c.textAlign='center';
+ for(let i=0;i<words.length;i++){const wi=c.measureText(words.slice(0,i+1).join(' ')).width,ww=c.measureText(words[i]).width;c.fillText(words[i].replace(HAR,''),R0-wi+ww/2,y)}c.restore()}
+function arabicPen(c,str,cx,y,size,u,marks,col,maxW){
+ if(u<=0)return;c.save();c.direction='rtl';c.textAlign='center';c.textBaseline='alphabetic';c.font=size+'px ScheherazadeG';c.fillStyle=col;
+ let w=c.measureText(str).width;if(maxW&&w>maxW){size*=maxW/w;c.font=size+'px ScheherazadeG';w=c.measureText(str).width}
+ const R=cx+w/2+16,L=cx-w/2-16,fx=R-(R-L)*u;
+ c.save();c.beginPath();c.moveTo(fx,y-size*1.3);c.lineTo(R+20,y-size*1.3);c.lineTo(R+20,y+size);c.lineTo(fx-16,y+size);c.closePath();c.clip();c.globalAlpha*=1-Math.min(1,Math.max(0,marks||0));bodyWords(c,str,cx,y);c.restore();
+ if(marks>0){c.globalAlpha=marks;c.fillText(str,cx,y)}c.restore()}
+const seg=(t,a,b)=>inOut(clamp((t-a)/(b-a)));
+const SZ=[0,0,0];
+const OL=layer(),OLc=OL.getContext('2d');
+const lowL=(key,sc0)=>{const w=Math.ceil(W*sc0),h=Math.ceil(H_*sc0);const L=lowL[key]||(lowL[key]=layer(w,h));const c=L.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,w,h);c.setTransform(sc0,0,0,sc0,0,0);return[L,c]};
+let SM=null;
+
+window.frame=function(t){
+ // ---- camera: a slow push-in on the studio table
+ const push=seg(t,0,10);
+ const Ecam=[0,5.6-.2*push,8.4-.5*push],TG=[0,.2,.3];
+ const fwd=norm(sub(TG,Ecam)),right=norm(cross(fwd,[0,1,0])),up=cross(right,fwd);
+ const F=1560,PCX=540,PCY=960;
+ const proj=p=>{const d=sub(p,Ecam),z=dot(d,fwd);return[PCX+(F*dot(d,right))/z,PCY-(F*dot(d,up))/z,z]};
+ // key light slowly orbits the table
+ const la=t*.11;const Lkey=norm([-.55*Math.cos(la)+.1*Math.sin(la),1,.55]),Lfill=norm([.9,.25,.35]),Ls=mul(Lkey,-1);
+ const faces=[];const face=(pts,col,ex={})=>faces.push({pts,col,...ex});
+
+ // ---------- tent card (stands up from flat, front face carries the print)
+ const tent=(x,z,w,h,u,paint)=>{if(u<=0)return;const dz=.34,Lf=Math.hypot(h,dz),th=Math.atan2(h,dz)*Math.min(1,u);
+  const T=p=>add3(p,[x,0,z]);const rid=[0,Lf*Math.sin(th),dz-Lf*Math.cos(th)];
+  const BLf=[-w,.003,dz],BRf=[w,.003,dz],TR=[w,rid[1],rid[2]],TL=[-w,rid[1],rid[2]],bz=rid[2]-dz*Math.min(1,u);
+  face([TL,TR,[w,.003,bz],[-w,.003,bz]].map(T),CREAM.map(v=>v*.97));
+  face([BLf,BRf,TR,TL].map(T),CREAM,{map:[T(TL),T(TR),T(BLf)],paint})};
+
+ // ---------- the boat: hull panels hinge on the keel, end triangles close the ends, a creased sail grows
+ const boat=(x,z,fold,sail,bob,rock,yaw)=>{
+  const th=(Math.PI*50/180)*fold,d=1.25,s=Math.sin(th),c=Math.cos(th);
+  const T=p=>{let q=rotZ(p,rock);q=rotY(q,yaw);return add3(q,[x,.012+bob,z])};
+  const K0=[-1.3,0,0],K1=[1.3,0,0];
+  for(const sg of[-1,1]){const G0=[-1.95,d*s,sg*d*c],G1=[1.95,d*s,sg*d*c];
+   face(sg>0?[K0,K1,G1,G0].map(T):[K1,K0,G0,G1].map(T),IND,{bcol:CREAM})}
+  const bowP=[K1,[1.95,d*s,d*c],[1.95,d*s,-d*c]],sternP=[K0,[-1.95,d*s,-d*c],[-1.95,d*s,d*c]];
+  face(bowP.map(T),IND.map(v=>v*.97),{bcol:CREAM});face(sternP.map(T),IND.map(v=>v*.97),{bcol:CREAM});
+  if(sail>0){const hs=2.1*sail,A=[.15,hs,0],M=[.15,.02,.14],B0=[-.85,.02,0],B1=[.95,.02,0];
+   face([B0,M,A].map(T),MUS,{bcol:CREAM});face([M,B1,A].map(T),MUS.map(v=>v*.96),{bcol:CREAM})}};
+
+ // ---------- pleated paper water: accordion ribbons, flat on the table until the boat sails
+ const sea=(z0,z1,col,amp,ph)=>{const p=.9,N=18,xs=-4.05;
+  for(let i=0;i<N;i++){const xa=xs+i*p/2,xb=xa+p/2;
+   const ha=amp*(((i+ph)%2)?1:0),hb=amp*(((i+1+ph)%2)?1:0);
+   face([[xa,.004+ha,z0],[xb,.004+hb,z0],[xb,.004+hb,z1],[xa,.004+ha,z1]],col)}};
+
+ // ================= scene =================
+ const wave=seg(t,3.3,4.5),bobT=clamp((t-3.5)/1)*1;
+ const wph=Math.floor(t*1.2)%2;
+ sea(.2,1.1,[TEAL[0]*.92,TEAL[1]*.92,TEAL[2]*.92],.14*wave,0);
+ sea(1.1,2.3,SEA,.16*wave,1);
+ sea(3.4,4.3,TEAL,.16*wave,0);
+ const fold=seg(t,1.0,2.8),sail=seg(t,2.7,3.6);
+ const bob=bobT*(.2+.05*Math.sin(t*2.1)),rock=bobT*.05*Math.sin(t*1.7);
+ // card A: the hook; it hops when the second line is printed, then folds away for the verse
+ const uA=seg(t,.15,.85)*(1-seg(t,3.85,4.35))*(1-.08*Math.exp(-Math.pow((t-2.95)*7,2)));
+ const second=t>=2.95;
+ tent(0,-2.2,2.75,2.3,uA,(c,w,h)=>{c.fillStyle=INK;c.textAlign='center';c.textBaseline='middle';
+  const lines=second?[['Fold it,',.17,.38,INK],['and it sails.',.2,.66,RED]]:[['A flat page',.19,.36,INK],['goes nowhere.',.19,.66,RED]];
+  for(const[s,fr,yy,col]of lines){let px=fr*h;c.font=`700 ${px}px ${SANS}`;const mw=c.measureText(s).width;if(mw>w*.9){px*=w*.9/mw;c.font=`700 ${px}px ${SANS}`}c.fillStyle=col;c.fillText(s,w/2,h*yy)}});
+ boat(-.05,1.95,fold,sail,bob,rock,.12);
+ // card B: the verse, pen-written
+ const uB=seg(t,3.95,4.5);
+ tent(0,-2.2,2.75,3.4,uB,(c,w,h)=>{
+  c.textAlign='center';c.textBaseline='middle';
+  arabicPen(c,AR,w/2,h*.34,70,clamp((t-4.5)/1.1),clamp((t-5.6)/.35),INK,w*.82);
+  const e1=clamp((t-5.75)/.5),e2=clamp((t-6.85)/.5),c3=clamp((t-7.7)/.5);
+  c.font=`700 25px ${SANS}`;
+  c.globalAlpha=e1;c.fillStyle=INK;c.fillText('For indeed, with hardship',w/2,h*.58+(1-e1)*8);
+  c.globalAlpha=e2;c.fillStyle=RED;c.fillText('[will be] ease.',w/2,h*.685+(1-e2)*8);
+  c.globalAlpha=c3;c.fillStyle='#6a6a70';c.font=`700 16px ${MONO}`;c.letterSpacing='6px';c.fillText('QURAN 94:5',w/2,h*.83);c.letterSpacing='0px';c.globalAlpha=1});
+
+ // ================= render =================
+ faces.forEach(f=>{const[a,b,c]=f.pts;let n=norm(cross(sub(b,a),sub(c,a)));const cen=mul(f.pts.reduce((s,p)=>add3(s,p),[0,0,0]),1/f.pts.length);
+  let back=false;if(dot(n,sub(Ecam,cen))<0){n=mul(n,-1);back=true}
+  const base=back&&f.bcol?f.bcol:f.col;
+  const I=.5+.7*Math.max(0,dot(n,Lkey))+.16*Math.max(0,dot(n,Lfill))+.1*Math.max(0,-n[1]);
+  f.rgb=base.map((ch,i)=>Math.min(255,ch*I*[1.04,1,.95][i]));f.I=I;f.n=n;f.cen=cen;f.sp=f.pts.map(proj);f.z=f.sp.reduce((s,p)=>s+p[2],0)/f.sp.length});
+ const vis=faces.filter(f=>f.sp.every(p=>p[2]>.5));
+ {const ek=p=>Math.round(p[0]*1000)+','+Math.round(p[1]*1000)+','+Math.round(p[2]*1000),edges=new Map();
+  vis.forEach((f,fi)=>f.pts.forEach((p,i)=>{const q=f.pts[(i+1)%f.pts.length],a=ek(p),b=ek(q),k=a<b?a+'|'+b:b+'|'+a;const e=edges.get(k);if(e)e.push(fi);else edges.set(k,[fi]);(f.ek||(f.ek=[]))[i]=k}));
+  vis.forEach((f,fi)=>{f.ekind=f.ek.map(k=>{const fs=edges.get(k);if(!fs||fs.length!==2)return 0;const g=vis[fs[0]===fi?fs[1]:fs[0]],d=dot(sub(g.cen,f.cen),f.n);return d>.004?-1:d<-.004?1:0})})}
+ vis.sort((a,b)=>b.z-a.z);
+ ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.drawImage(BG,0,0);
+ // soft table shadows + contact occlusion at reduced resolution, one multiply onto the frame
+ {const[SL,sc]=lowL('SLh',.5);sc.fillStyle='#000';
+  vis.forEach(f=>{if(f.pts.every(p=>p[1]<.02))return;sc.beginPath();f.pts.forEach((p,i)=>{const s=proj(add3(p,mul(Ls,p[1]/-Ls[1])));i?sc.lineTo(s[0],s[1]):sc.moveTo(s[0],s[1])});sc.closePath();sc.fill()});
+  const[CL,cc]=lowL('CLh',.5);cc.fillStyle='#000';
+  vis.forEach(f=>{let mn=1e9;f.pts.forEach(p=>{if(p[1]<mn)mn=p[1]});if(mn>.22)return;cc.beginPath();f.pts.forEach((p,i)=>{const s=proj([p[0],0,p[2]]);i?cc.lineTo(s[0],s[1]):cc.moveTo(s[0],s[1])});cc.closePath();cc.fill()});
+  const w=SL.width,h=SL.height;if(!SM)SM=layer(w,h);const m=SM.getContext('2d');m.setTransform(1,0,0,1,0,0);m.globalAlpha=1;m.filter='none';m.fillStyle='#fff';m.fillRect(0,0,w,h);
+  m.filter='blur(6px)';m.globalAlpha=.38;m.drawImage(SL,0,0);m.filter='blur(2.5px)';m.globalAlpha=.6;m.drawImage(CL,0,0);m.filter='none';m.globalAlpha=1;
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.drawImage(SM,0,0,W,H_);ctx.restore()}
+ // facets: light gradient, lit edge, valley (dark) and mountain (lit) creases, printed paint
+ const o=OLc;o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,W,H_);o.lineJoin='round';const Lscr=[-.6,-.8];
+ vis.forEach(f=>{const sp=f.sp;let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;sp.forEach(p=>{if(p[0]<mnx)mnx=p[0];if(p[0]>mxx)mxx=p[0];if(p[1]<mny)mny=p[1];if(p[1]>mxy)mxy=p[1]});
+  if(mxx<-20||mnx>W+20||mxy<-20||mny>H_+20)return;
+  const gx=(mnx+mxx)/2,gy=(mny+mxy)/2,rr=Math.max(1,Math.max(mxx-mnx,mxy-mny)/2);
+  const g=o.createLinearGradient(gx+Lscr[0]*rr,gy+Lscr[1]*rr,gx-Lscr[0]*rr,gy-Lscr[1]*rr);g.addColorStop(0,rgba(f.rgb.map(v=>Math.min(255,v*1.05))));g.addColorStop(1,rgba(f.rgb.map(v=>v*.94)));
+  o.beginPath();sp.forEach((p,i)=>i?o.lineTo(p[0],p[1]):o.moveTo(p[0],p[1]));o.closePath();o.fillStyle=g;o.fill();
+  o.strokeStyle=rgba(f.rgb);o.lineWidth=.8;o.stroke();o.strokeStyle=`rgba(255,255,250,${.05+.08*Math.min(1,f.I)})`;o.lineWidth=.7;o.stroke();
+  for(const kind of[-1,1]){let any=false;sp.forEach((p,i)=>{if(f.ekind[i]!==kind)return;if(!any){o.beginPath();any=true}const q=sp[(i+1)%sp.length];o.moveTo(p[0],p[1]);o.lineTo(q[0],q[1])});if(!any)continue;
+   if(kind<0){o.strokeStyle=rgba(f.rgb.map(v=>v*.55),.55);o.lineWidth=1.2}else{o.strokeStyle=`rgba(255,250,242,${.1+.2*clamp(f.I-.5)})`;o.lineWidth=1}o.stroke()}
+  if(f.paint){const[p0,p1,p3]=f.map.map(proj),cw=400,ch=400*(Math.hypot(p3[0]-p0[0],p3[1]-p0[1])/Math.max(1,Math.hypot(p1[0]-p0[0],p1[1]-p0[1])));
+   if(ch>2&&ch<4000){o.save();o.beginPath();sp.forEach((p,i)=>i?o.lineTo(p[0],p[1]):o.moveTo(p[0],p[1]));o.closePath();o.clip();
+    o.setTransform((p1[0]-p0[0])/cw,(p1[1]-p0[1])/cw,(p3[0]-p0[0])/ch,(p3[1]-p0[1])/ch,p0[0],p0[1]);f.paint(o,cw,ch);o.restore()}}});
+ o.setTransform(1,0,0,1,0,0);o.save();o.globalCompositeOperation='source-atop';o.globalAlpha=.9;o.fillStyle=o.createPattern(TEX,'repeat');o.fillRect(0,0,W,H_);o.restore();
+ ctx.drawImage(OL,0,0);
+ // key light flares as the boat first floats and as the last line lands
+ const flash=Math.max(Math.exp(-Math.pow((t-3.7)*5,2)),Math.exp(-Math.pow((t-7.75)*5,2)));
+ if(flash>.01){ctx.save();ctx.globalCompositeOperation='screen';ctx.fillStyle=`rgba(255,240,215,${flash*.18})`;ctx.fillRect(0,0,W,H_);ctx.restore()}
+ const vg=ctx.createRadialGradient(W/2,H_/2,Math.min(W,H_)*.3,W/2,H_/2,Math.hypot(W,H_)*.6);vg.addColorStop(0,'rgba(30,40,40,0)');vg.addColorStop(1,'rgba(30,40,40,.28)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H_);
+ // film grain, a new pattern every frame
+ {const img=ctx.getImageData(0,0,W,H_),d=img.data,r=rng(3+Math.floor(t*24)),k=.022*255;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*k;d[i]+=n;d[i+1]+=n;d[i+2]+=n}ctx.putImageData(img,0,0)}
+ return{};
+};
+document.fonts.load('78px ScheherazadeG','فَإِنَّ').then(()=>document.fonts.ready).then(()=>{frame(0);window.ready=true});
+</script></body></html>
