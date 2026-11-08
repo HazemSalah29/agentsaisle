@@ -4,6 +4,7 @@ import { Archivo, Geist_Mono, IBM_Plex_Sans, Instrument_Serif } from "next/font/
 import { SiteFooter } from "../components/SiteFooter";
 import { SITE_URL } from "../lib/site";
 import { SiteHeader } from "../components/SiteHeader";
+import { SimpleMotion } from "../components/simple/motion";
 import "./globals.css";
 
 const display = Archivo({ subsets: ["latin"], variable: "--f-display" });
@@ -22,7 +23,7 @@ const mono = Geist_Mono({ subsets: ["latin"], variable: "--f-mono" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Agent Aisle",
+  title: "Agents Aisle",
   description: "Audit Agent Skills before you trust them, and install audited skills.",
 };
 
@@ -47,9 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <SiteHeader />
-        <main id="main" className="mx-auto max-w-[1200px] border-x border-line">
-          {children}
-        </main>
+        <SimpleMotion>
+          <main id="main" className="mx-auto max-w-[1200px] border-x border-line">
+            {children}
+          </main>
+        </SimpleMotion>
         <SiteFooter />
         <Analytics />
       </body>

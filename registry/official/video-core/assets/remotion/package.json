@@ -2,7 +2,7 @@
   "name": "aisle-video-remotion",
   "private": true,
   "version": "1.0.0",
-  "description": "The Remotion engine for the Agent Aisle video skill. Installed once by the user; render.mjs refreshes src/ from the skill before each render.",
+  "description": "The Remotion engine for the Agents Aisle video skill. Installed once by the user; render.mjs refreshes src/ from the skill before each render.",
   "license": "UNLICENSED",
   "dependencies": {
     "@fontsource/anton": "5.3.0",

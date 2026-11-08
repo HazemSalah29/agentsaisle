@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Agent Aisle design tokens ("HUD" system): hairline grid, sharp corners, mono labels.
+ * Agents Aisle design tokens ("HUD" system): hairline grid, sharp corners, mono labels.
  * Light is the base palette; dark redefines only what changes. All values are solid hex so the
  * contrast test (tokens.test.ts) can read them.
  */

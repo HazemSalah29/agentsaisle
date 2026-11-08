@@ -5,6 +5,9 @@ import path from "node:path";
 import { Badge } from "../../components/Badge";
 import { InstallCommand } from "../../components/InstallCommand";
 import { Section } from "../../components/Section";
+import { CardGrid, CardItem } from "../../components/simple/Cards";
+import { HowItWorks } from "../../components/simple/HowItWorks";
+import { MoreDetails } from "../../components/simple/MoreDetails";
 import { SkillCard } from "../../components/SkillCard";
 import { aisleColor } from "../../lib/plate";
 import { FilterBarDemo, ReceiptDemo } from "./Demos";
@@ -295,6 +298,46 @@ export default async function DesignPage() {
         intro="A bundle from the profile picker. Adding a skill flashes the new line."
       >
         <ReceiptDemo date="23 Oct 2026" />
+      </Section>
+
+      <Section
+        id="simple"
+        number="09"
+        title="Plain-language kit"
+        intro="Every page uses these: a rising headline, separate cards that lift, steps, tabs and a details button. Motion stops when the visitor asks for less."
+      >
+        <div className="max-w-4xl space-y-6">
+          <CardGrid className="sm:grid-cols-2" label="Cards">
+            <CardItem>
+              <div className="p-5">
+                <h3 className="text-lg">A card</h3>
+                <p className="mt-2 text-sm text-muted">
+                  Point at it: it lifts and an orange bar grows.
+                </p>
+              </div>
+            </CardItem>
+            <CardItem plain>
+              <div className="p-5">
+                <h3 className="text-lg">A plain card</h3>
+                <p className="mt-2 text-sm text-muted">For notes that are not links.</p>
+              </div>
+            </CardItem>
+          </CardGrid>
+          <HowItWorks
+            steps={[
+              { title: "Add it", text: "One line, one paste." },
+              { title: "Use it", text: "Say what you want." },
+              { title: "Keep it", text: "Or remove it any time." },
+            ]}
+          />
+          <MoreDetails
+            tone="boxed"
+            title="A details button"
+            hint="Technical things live behind one of these"
+          >
+            <p className="text-sm text-muted">The panel opens with a soft height change.</p>
+          </MoreDetails>
+        </div>
       </Section>
 
       <div className="border-t border-line-strong bg-bg-sunken px-4 py-14 sm:px-8">

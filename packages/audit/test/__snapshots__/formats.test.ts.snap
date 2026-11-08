@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`markdown > matches the snapshot for a malicious fixture 1`] = `
-"### Agent Aisle audit: x02, grade F
+"### Agents Aisle audit: x02, grade F
 
 | Critical | High | Medium | Low | Info |
 | ---: | ---: | ---: | ---: | ---: |

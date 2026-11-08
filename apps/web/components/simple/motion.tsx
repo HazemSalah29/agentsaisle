@@ -40,3 +40,9 @@ export function Reveal({
     </m.div>
   );
 }
+
+/** The easing for list items: they rise one after another. */
+export const itemVariants = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+};

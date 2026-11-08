@@ -77,7 +77,7 @@ describe("applyRulesBlock", () => {
     );
     expect(() => applyRulesBlock(`${RULES_END}\n${RULES_START}\n`, RULES)).toThrow(/wrong order/);
     const twice = `${BLOCK}\ntext\n${BLOCK}\n`;
-    expect(() => applyRulesBlock(twice, RULES)).toThrow(/more than one Agent Aisle rules block/);
+    expect(() => applyRulesBlock(twice, RULES)).toThrow(/more than one Agents Aisle rules block/);
   });
 });
 

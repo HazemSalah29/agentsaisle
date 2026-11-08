@@ -6,10 +6,10 @@ import { EASE } from "./motion";
 export type Step = { title: string; text: string };
 
 /** Three steps in a row. A line draws itself across them as they scroll into view. */
-export function HowItWorks({ steps }: { steps: Step[] }) {
+export function HowItWorks({ steps, cols = 3 }: { steps: Step[]; cols?: 3 | 4 }) {
   return (
     <m.ol
-      className="relative grid gap-8 md:grid-cols-3"
+      className={`relative grid gap-8 ${cols === 4 ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3"}`}
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: "-80px" }}
@@ -17,7 +17,7 @@ export function HowItWorks({ steps }: { steps: Step[] }) {
     >
       <m.span
         aria-hidden="true"
-        className="absolute top-6 right-[16%] left-6 hidden h-px origin-left bg-line-strong md:block"
+        className={`absolute top-6 left-6 hidden h-px origin-left bg-line-strong ${cols === 4 ? "right-[10%] xl:block" : "right-[16%] md:block"}`}
         variants={{
           hidden: { scaleX: 0 },
           show: { scaleX: 1, transition: { duration: 1.1, ease: EASE } },

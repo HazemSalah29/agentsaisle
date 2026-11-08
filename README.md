@@ -1,14 +1,14 @@
 <div align="center">
 
-# Agent Aisle
+# Agents Aisle
 
-**Audit Agent Skills before you trust them.** `aisle audit` is a free, open-source scanner that reads a skill as text, never runs it, and grades it A to F. Agent Aisle is also a store: find an audited skill, install it with one command, and your AI coding agent knows a new job.
+**Audit Agent Skills before you trust them.** `aisle audit` is a free, open-source scanner that reads a skill as text, never runs it, and grades it A to F. Agents Aisle is also a store: find an audited skill, install it with one command, and your AI coding agent knows a new job.
 
 [Website](https://www.agentsaisle.dev) · [Docs](https://www.agentsaisle.dev/docs) · [Audit](https://www.agentsaisle.dev/audit) · [Browse skills](https://www.agentsaisle.dev/skills) · [Add your skill](https://www.agentsaisle.dev/submit)
 
 </div>
 
-![The Agent Aisle home page: the audit, how it works, and the skill store](docs/images/home.png)
+![The Agents Aisle home page: the audit, how it works, and the skill store](docs/images/home.png)
 
 ---
 
@@ -58,9 +58,9 @@ description: Write a clear git commit for the current changes. Use when asked to
 
 Some skills also carry small helper scripts or reference files, but the idea stays the same: **a folder of instructions your agent can use.**
 
-### What does Agent Aisle add?
+### What does Agents Aisle add?
 
-Skills live in many GitHub repositories. Agent Aisle gives you one place to find, compare and install them.
+Skills live in many GitHub repositories. Agents Aisle gives you one place to find, compare and install them.
 
 | Part         | Where it lives | What it does                                                                   |
 | ------------ | -------------- | ------------------------------------------------------------------------------ |
@@ -273,7 +273,7 @@ Great skills exist outside this registry. The **Elsewhere** shelf on an aisle pa
 
 ## 6. How installs stay safe
 
-Installing a skill means copying someone else's text (and sometimes scripts) into your project. Agent Aisle is built so that this stays predictable.
+Installing a skill means copying someone else's text (and sometimes scripts) into your project. Agents Aisle is built so that this stays predictable.
 
 1. **Pinned versions.** Every version points at a full commit SHA. If the author pushes new code later, what you install does not change.
 2. **No execution.** The CLI only downloads and copies files. It never runs anything from a skill.
@@ -333,7 +333,7 @@ runs_scripts: false
 
 ## 8. How it works inside
 
-You do not need this to use Agent Aisle, but it helps if you want to contribute.
+You do not need this to use Agents Aisle, but it helps if you want to contribute.
 
 ### The registry
 
@@ -472,7 +472,7 @@ The site deploys to Vercel from this repository (root directory `apps/web`, sett
 | **CLI**           | A program you run in the terminal. Here it is `aisle`.                       |
 | **Aisle**         | A group of skills by purpose, like Database or Testing.                      |
 | **Kit / profile** | A bundle of skills installed with one command.                               |
-| **Official**      | Made and maintained by the Agent Aisle team.                                 |
+| **Official**      | Made and maintained by the Agents Aisle team.                                |
 | **Verified**      | A maintainer read the skill and its scripts in full.                         |
 | **Elsewhere**     | Other authors' skills that we link to but do not host.                       |
 | **SHA**           | A 40-character ID of an exact git commit. Pinning to it freezes the content. |
@@ -484,11 +484,11 @@ The site deploys to Vercel from this repository (root directory `apps/web`, sett
 
 Two licenses apply, depending on the folder:
 
-| Part                                                                                                                                                   | License                                                                                                                            |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/cli` (the `aisle` command), `packages/audit` (the scanner), `packages/registry-schema`, `registry/`, `integrations/` and the official skills | [MIT](LICENSE)                                                                                                                     |
-| `apps/web` (the website)                                                                                                                               | [PolyForm Shield 1.0.0](apps/web/LICENSE): free to read, use and modify, but not to build a product that competes with Agent Aisle |
+| Part                                                                                                                                                   | License                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/cli` (the `aisle` command), `packages/audit` (the scanner), `packages/registry-schema`, `registry/`, `integrations/` and the official skills | [MIT](LICENSE)                                                                                                                      |
+| `apps/web` (the website)                                                                                                                               | [PolyForm Shield 1.0.0](apps/web/LICENSE): free to read, use and modify, but not to build a product that competes with Agents Aisle |
 
 Versions of the website published before this change stay available under the MIT license they were released with.
 
-**Name and logo.** "Agent Aisle", the logo and the site's visual design are not licensed for reuse. Forks are welcome, but they must use a different name and logo and must not suggest they are the official registry, audit grades or reviews.
+**Name and logo.** "Agents Aisle", the logo and the site's visual design are not licensed for reuse. Forks are welcome, but they must use a different name and logo and must not suggest they are the official registry, audit grades or reviews.

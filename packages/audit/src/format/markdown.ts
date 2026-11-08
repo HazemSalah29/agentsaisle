@@ -29,7 +29,7 @@ export function formatMarkdown(report: AuditReport, options: MarkdownOptions = {
   const c = report.counts;
   const name = `${report.skill}${report.version ? "@" + report.version : ""}`;
   const out: string[] = [
-    `### Agent Aisle audit: ${name}, grade ${report.grade}`,
+    `### Agents Aisle audit: ${name}, grade ${report.grade}`,
     "",
     "| Critical | High | Medium | Low | Info |",
     "| ---: | ---: | ---: | ---: | ---: |",

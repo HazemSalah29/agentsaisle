@@ -1,4 +1,4 @@
-# Agent Aisle audit (GitHub Action)
+# Agents Aisle audit (GitHub Action)
 
 Audits Agent Skills in your repository for risky patterns and shows the findings in your repository's
 **Security > Code scanning** tab. It runs [`aisle audit`](https://www.agentsaisle.dev/audit) on your
@@ -59,7 +59,7 @@ ignore:
 
 ## Add the badge
 
-Every skill in the Agent Aisle registry has a badge at `/badges/<name>.json`; the skill page shows the Markdown.
+Every skill in the Agents Aisle registry has a badge at `/badges/<name>.json`; the skill page shows the Markdown.
 
 ## Security notes
 

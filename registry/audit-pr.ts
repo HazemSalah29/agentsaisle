@@ -90,7 +90,7 @@ export const failed = (results: EntryResult[]) =>
 /** The PR comment: a verdict line, then one report per skill. */
 export function renderComment(results: EntryResult[]): string {
   const bad = results.filter((r) => r.problem || (r.report?.counts.critical ?? 0) > 0);
-  const lines = [MARKER, "## Agent Aisle audit", ""];
+  const lines = [MARKER, "## Agents Aisle audit", ""];
   if (results.length === 0) lines.push("No community entries changed.");
   else if (bad.length > 0)
     lines.push(

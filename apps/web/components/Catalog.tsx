@@ -6,6 +6,7 @@ import { defaultFilters, type Filters } from "../lib/filters";
 import { applyFilters, filterOptions, type CatalogSkill } from "../lib/search";
 import { FilterBar } from "./FilterBar";
 import { SkillCard } from "./SkillCard";
+import { CardGrid, CardItem } from "./simple/Cards";
 
 /** Search, filter and sort over the whole (small) index in the browser. State lives in the URL. */
 export function Catalog({ skills }: { skills: CatalogSkill[] }) {
@@ -51,13 +52,13 @@ export function Catalog({ skills }: { skills: CatalogSkill[] }) {
           </button>
         </div>
       ) : (
-        <ul className="grid pl-px pt-px sm:grid-cols-2 xl:grid-cols-3">
+        <CardGrid label="Skills">
           {results.map((s) => (
-            <li key={s.name} className="-ml-px -mt-px border border-line-strong bg-bg-raised">
+            <CardItem key={s.name}>
               <SkillCard skill={s} href={`/skills/${s.name}`} stars={s.stars} headingAs="h2" />
-            </li>
+            </CardItem>
           ))}
-        </ul>
+        </CardGrid>
       )}
     </div>
   );

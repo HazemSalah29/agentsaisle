@@ -64,7 +64,7 @@ export function createProgram(): Command {
     program
       .command("init")
       .description(
-        "Install a starter bundle and add the Agent Aisle house rules to CLAUDE.md or AGENTS.md",
+        "Install a starter bundle and add the Agents Aisle house rules to CLAUDE.md or AGENTS.md",
       )
       .option("--profile <id>", "install this profile without asking")
       .option("--no-rules", "do not write the house rules block")

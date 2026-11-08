@@ -97,7 +97,7 @@ Exit codes: `0` nothing at or above `--fail-on`, `1` findings at or above it, `2
 
 Downloads are limited to 20 MB per archive, 2,000 files and 2 MB per file, and refuse absolute paths, `..` and hardlinks. Symlinks are never installed.
 
-To run the audit on every push and see findings in GitHub's Security tab, use the `aisle-audit-action` GitHub Action (`integrations/aisle-audit-action` in the Agent Aisle repository).
+To run the audit on every push and see findings in GitHub's Security tab, use the `aisle-audit-action` GitHub Action (`integrations/aisle-audit-action` in the Agents Aisle repository).
 
 Automated checks found no known risky patterns is not a guarantee of safety: an audit reduces risk, it cannot prove a skill safe.
 
@@ -116,6 +116,6 @@ Automated checks found no known risky patterns is not a guarantee of safety: an 
 ## Links
 
 - Source and issues: https://github.com/HazemSalah29/agentsaisle
-- Browse skills and submit your own on the Agent Aisle website.
+- Browse skills and submit your own on the Agents Aisle website.
 
 MIT licensed.

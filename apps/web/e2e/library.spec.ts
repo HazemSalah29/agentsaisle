@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { openDetails } from "./helpers";
 
 const registry = JSON.parse(
   readFileSync(path.join(__dirname, "..", "public", "registry.json"), "utf8"),
@@ -25,7 +26,7 @@ test.describe("a library of skills", () => {
     await page.goto(`/skills/${library.name}`);
     await expect(page.getByRole("heading", { name: "What you can ask for" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Add, update or remove" })).toBeVisible();
-    await page.getByRole("button", { name: /All the details/ }).click();
+    await openDetails(page);
     await expect(
       page.getByRole("heading", { name: `Built from ${library.requires!.length} parts` }),
     ).toBeVisible();

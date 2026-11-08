@@ -1,4 +1,4 @@
-## Agent Aisle house rules
+## Agents Aisle house rules
 
 - Search before you read. Find the right spot with grep or a symbol search, then read line ranges instead of whole files, and stop after a few files per step.
 - Change only what the task needs. No drive-by refactors, renames or formatting sweeps.

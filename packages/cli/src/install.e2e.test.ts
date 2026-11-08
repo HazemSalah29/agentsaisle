@@ -184,7 +184,7 @@ describe("aisle CLI (end to end, no network)", () => {
     const project = await tmpDir();
     const res = await aisle(project, ["add", "trusted"]); // no --yes and no terminal: a prompt would fail
     expect(res.code, res.stderr).toBe(0);
-    expect(res.stdout).toContain("trusted includes scripts (reviewed by Agent Aisle):");
+    expect(res.stdout).toContain("trusted includes scripts (reviewed by Agents Aisle):");
     expect(res.stdout).toContain("- scripts/check.mjs");
     expect(res.stderr).not.toContain("Warning");
     expect(

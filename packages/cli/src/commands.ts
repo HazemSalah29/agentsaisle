@@ -88,7 +88,7 @@ export async function showInfo(name: string, ctx: Context): Promise<void> {
     ctx.log(`Part of:   ${skill.partOf} (install that one: aisle add ${skill.partOf})`);
   if (skill.runsScripts)
     ctx.warn("\nWarning: this skill runs scripts. Read them before installing.");
-  if (!skill.verified) ctx.warn("Warning: not verified by Agent Aisle.");
+  if (!skill.verified) ctx.warn("Warning: not verified by Agents Aisle.");
   ctx.log();
   ctx.log(`Install:   aisle add ${skill.name}`);
 }

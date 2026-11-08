@@ -3,7 +3,7 @@
 # List accepted forms of one term with "|" (definite, indefinite, possessive: Arabic changes them).
 # Add your product's own terms and brand names before translating.
 brands:
-  - Agent Aisle
+  - Agents Aisle
 terms:
   - en: Sign in
     ar: تسجيل الدخول

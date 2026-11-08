@@ -88,7 +88,7 @@ export function UnverifiedNotice({ skill }: { skill: RegistrySkill }) {
     >
       <h2 id="unverified" className="flex items-center gap-3 text-lg">
         <Badge kind="unverified" />
-        Not reviewed by Agent Aisle
+        Not reviewed by Agents Aisle
       </h2>
       <p className="mt-3 text-sm">
         This skill was submitted by its author. The version you install is pinned to one commit, so
@@ -204,7 +204,7 @@ export function FooterLinks({ skill }: { skill: RegistrySkill }) {
         rel="noopener noreferrer"
         className="text-muted underline underline-offset-4"
       >
-        Agent Aisle on GitHub
+        Agents Aisle on GitHub
       </a>
     </p>
   );
