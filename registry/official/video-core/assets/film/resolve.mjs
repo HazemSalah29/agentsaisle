@@ -199,9 +199,9 @@ export function groupWords(words, phrases) {
 // punctuation everywhere else.
 const shownWord = (w) =>
   String(w)
-    .replace(/(?<=\p{L})['‘’](?=\p{L})/gu, "\u0000")
+    .replace(/(?<=\p{L})['‘’](?=\p{L})/gu, "\uE000")
     .replace(/["'“”‘’,;:()]/g, "")
-    .replace(/\u0000/g, "'")
+    .replace(/\uE000/g, "'")
     .trim();
 
 function kinetic(props, ctx) {
