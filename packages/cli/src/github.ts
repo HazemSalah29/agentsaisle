@@ -41,6 +41,27 @@ export const EXTRACT_LIMITS = {
   maxUnpackedBytes: 256 * 1024 * 1024,
 } as const;
 
+/**
+ * The official registry repo. A download is the whole repository archive at one commit, not just the skill, so a repo
+ * that bundles media (the reel sound packs) has a big archive. It is the owner's own repo, so it gets higher archive
+ * caps; every other repo keeps the strict ones. Per-file and per-skill file limits are the same for all.
+ */
+export const OFFICIAL_REPO = "HazemSalah29/agentsaisle";
+const OFFICIAL_LIMITS = {
+  maxArchiveBytes: 200 * 1024 * 1024,
+  maxUnpackedBytes: 768 * 1024 * 1024,
+} as const;
+
+/** Archive caps for a repo: the strict ones, or the official repo's. */
+export function limitsFor(repo: string): { maxArchiveBytes: number; maxUnpackedBytes: number } {
+  return repo.toLowerCase() === OFFICIAL_REPO.toLowerCase()
+    ? OFFICIAL_LIMITS
+    : {
+        maxArchiveBytes: EXTRACT_LIMITS.maxArchiveBytes,
+        maxUnpackedBytes: EXTRACT_LIMITS.maxUnpackedBytes,
+      };
+}
+
 export interface DownloadOptions {
   /** Keep files the CLI never installs (evals/, preview/, README.md); `aisle audit` wants everything. */
   keepAll?: boolean;
@@ -75,8 +96,9 @@ function byteLimit(max: number, message: string): Transform {
  * With a cache folder the file is saved once and every later call for the same commit reads it from disk.
  */
 async function openArchive(url: string, source: SkillSource, cacheDir?: string): Promise<Readable> {
+  const { maxArchiveBytes } = limitsFor(source.repo);
   const tooBig = () =>
-    new CliError(`The archive is larger than ${mb(EXTRACT_LIMITS.maxArchiveBytes)}; refusing it.`);
+    new CliError(`The archive is larger than ${mb(maxArchiveBytes)}; refusing it.`);
   const file = cacheDir
     ? path.join(cacheDir, `${createHash("sha256").update(url).digest("hex").slice(0, 24)}.tgz`)
     : undefined;
@@ -96,10 +118,9 @@ async function openArchive(url: string, source: SkillSource, cacheDir?: string):
         `Check that the repository is public and the commit exists.`,
     );
   }
-  if (Number(res.headers.get("content-length") ?? 0) > EXTRACT_LIMITS.maxArchiveBytes)
-    throw tooBig();
+  if (Number(res.headers.get("content-length") ?? 0) > maxArchiveBytes) throw tooBig();
   const body = Readable.fromWeb(res.body as never);
-  const limited = body.pipe(byteLimit(EXTRACT_LIMITS.maxArchiveBytes, tooBig().message));
+  const limited = body.pipe(byteLimit(maxArchiveBytes, tooBig().message));
   body.on("error", (e) => limited.destroy(e));
   if (!file) return limited;
   await mkdir(path.dirname(file), { recursive: true });
@@ -185,8 +206,8 @@ export async function downloadSkill(
       archive,
       createGunzip(),
       byteLimit(
-        EXTRACT_LIMITS.maxUnpackedBytes,
-        `The archive expands to more than ${mb(EXTRACT_LIMITS.maxUnpackedBytes)}; refusing it.`,
+        limitsFor(source.repo).maxUnpackedBytes,
+        `The archive expands to more than ${mb(limitsFor(source.repo).maxUnpackedBytes)}; refusing it.`,
       ),
       extractor,
     );

@@ -1,7 +1,14 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { EXTRACT_LIMITS, downloadSkill, isDevOnly, removeSymlinks } from "./github.js";
+import {
+  EXTRACT_LIMITS,
+  OFFICIAL_REPO,
+  downloadSkill,
+  isDevOnly,
+  limitsFor,
+  removeSymlinks,
+} from "./github.js";
 import { SHA, makeRawTarball, makeTarball, serveTarball, skillMd, tmpDir } from "./test-utils.js";
 
 let close: (() => Promise<void>) | undefined;
@@ -194,6 +201,33 @@ describe("downloadSkill hardening", () => {
       })),
     ];
     await expect(run(await makeRawTarball(files))).rejects.toThrow(/larger than 20 MB/);
+  });
+  it("accepts the same big archive from the official repo, but not from any other", async () => {
+    const { randomBytes } = await import("node:crypto");
+    const files = [
+      ok,
+      ...Array.from({ length: 24 }, (_, i) => ({
+        path: R + `s/n${i}.txt`,
+        content: randomBytes(1_400_000).toString("base64").slice(0, 1_900_000),
+      })),
+    ];
+    const server = await serveTarball(await makeRawTarball(files));
+    close = server.close;
+    const env = { AISLE_CODELOAD_URL: server.url };
+    const dest = path.join(await tmpDir(), "out");
+    await expect(
+      downloadSkill({ repo: OFFICIAL_REPO, sha: SHA, path: "s" }, dest, env),
+    ).resolves.toBeUndefined();
+    await expect(
+      downloadSkill(
+        { repo: "someone/else", sha: SHA, path: "s" },
+        path.join(await tmpDir(), "o2"),
+        env,
+      ),
+    ).rejects.toThrow(/larger than 20 MB/);
+    expect(limitsFor(OFFICIAL_REPO.toUpperCase()).maxArchiveBytes).toBeGreaterThan(
+      100 * 1024 * 1024,
+    );
   });
   it("keeps symlinks only on request, and removeSymlinks strips them", async () => {
     const body = await makeRawTarball([
